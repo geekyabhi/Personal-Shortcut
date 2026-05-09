@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(railway --version)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}
