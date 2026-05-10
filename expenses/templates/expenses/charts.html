@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Charts</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f7; color: #1d1d1f;
+      min-height: 100vh; padding: 1rem 0.75rem;
+    }
+
+    .container { max-width: 720px; margin: 0 auto; }
+
+    nav {
+      display: flex; gap: 0.5rem; margin-bottom: 1.25rem;
+    }
+    nav a {
+      padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.9rem;
+      font-weight: 600; text-decoration: none; transition: background 0.15s;
+      color: #6e6e73; background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    nav a.active { background: #0071e3; color: #fff; }
+    nav a:not(.active):hover { background: #e8e8ed; }
+
+    h1 { font-size: clamp(1.3rem, 5vw, 1.8rem); font-weight: 700; margin-bottom: 1.25rem; }
+
+    .card {
+      background: #fff; border-radius: 12px; padding: 1rem;
+      margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
+
+    label {
+      display: block; font-size: 0.72rem; font-weight: 600; color: #6e6e73;
+      margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+
+    select,
+    input[type="month"], input[type="week"], input[type="date"], input[type="number"] {
+      width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid #d2d2d7;
+      border-radius: 10px; font-size: 0.95rem; background: #fff;
+      appearance: none; outline: none; transition: border-color 0.15s; color: #1d1d1f;
+    }
+    select:focus, input:focus { border-color: #0071e3; }
+
+    .date-input { display: none; }
+    .date-input.visible { display: block; }
+
+    button {
+      margin-top: 1rem; width: 100%; padding: 0.8rem;
+      background: #0071e3; color: #fff; border: none;
+      border-radius: 10px; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:hover   { background: #0077ed; }
+    button:active  { background: #005bbf; }
+    button:disabled { background: #a1c4f5; cursor: not-allowed; }
+
+    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; }
+
+    .period-badge {
+      display: inline-block; font-size: 0.75rem; font-weight: 600;
+      background: #e8f0fe; color: #0071e3; border-radius: 6px;
+      padding: 0.2rem 0.55rem; margin-bottom: 0.6rem;
+    }
+    .grand-total { font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 700; }
+    .total-label { font-size: 0.85rem; color: #6e6e73; }
+
+    .chart-wrap { position: relative; width: 100%; }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+
+    .error-box {
+      background: #fff2f2; border: 1.5px solid #ffd2d2; color: #d00;
+      border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.9rem; margin-bottom: 1rem;
+    }
+
+    #results { display: none; }
+    .spinner { text-align: center; color: #6e6e73; padding: 1rem 0; font-size: 0.9rem; }
+
+    @media (min-width: 480px) {
+      body { padding: 1.5rem 1rem; }
+      .card { padding: 1.25rem; border-radius: 14px; }
+      .filters { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (min-width: 600px) {
+      .charts-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (min-width: 768px) {
+      body { padding: 2rem 1rem; }
+      h1 { margin-bottom: 1.5rem; }
+      .card { padding: 1.5rem; border-radius: 16px; margin-bottom: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <nav>
+    <a href="/expenses/">Dashboard</a>
+    <a href="/expenses/charts/" class="active">Charts</a>
+  </nav>
+
+  <h1>Expense Charts</h1>
+
+  <!-- Filters -->
+  <div class="card">
+    <div class="filters">
+      <div>
+        <label for="period">Period</label>
+        <select id="period" onchange="onPeriodChange()">
+          <option value="all">All Time</option>
+          <option value="yearly">Yearly</option>
+          <option value="monthly" selected>Monthly</option>
+          <option value="weekly">Weekly</option>
+          <option value="daily">Daily</option>
+        </select>
+      </div>
+      <div>
+        <label for="group_by">Group By</label>
+        <select id="group_by">
+          <option value="">None</option>
+          <option value="category">Category</option>
+          <option value="source">Source</option>
+        </select>
+      </div>
+      <div id="wrap-year" class="date-input">
+        <label for="year">Year</label>
+        <input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" />
+      </div>
+      <div id="wrap-month" class="date-input visible">
+        <label for="month">Month</label>
+        <input type="month" id="month" />
+      </div>
+      <div id="wrap-week" class="date-input">
+        <label for="week">Week</label>
+        <input type="week" id="week" />
+      </div>
+      <div id="wrap-day" class="date-input">
+        <label for="day">Day</label>
+        <input type="date" id="day" />
+      </div>
+    </div>
+    <button id="btn" onclick="loadCharts()">Load Charts</button>
+  </div>
+
+  <div id="loading" class="spinner" style="display:none;">Fetching from Notion...</div>
+  <div id="error-box" class="error-box" style="display:none;"></div>
+
+  <!-- Results -->
+  <div id="results">
+
+    <!-- Total -->
+    <div class="card">
+      <div class="period-badge" id="period-badge"></div><br/>
+      <span class="total-label">Grand Total &nbsp;</span>
+      <span class="grand-total" id="grand-total"></span>
+    </div>
+
+    <!-- Line chart — full width -->
+    <div class="card" id="line-card">
+      <h2>Spending Over Time</h2>
+      <div class="chart-wrap">
+        <canvas id="line-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Charts grid: bar + donut -->
+    <div class="charts-grid">
+
+      <!-- Bar chart -->
+      <div class="card" id="trend-card">
+        <h2>Expense by Period</h2>
+        <div class="chart-wrap">
+          <canvas id="trend-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Doughnut chart -->
+      <div class="card" id="donut-card" style="display:none;">
+        <h2 id="donut-title">Breakdown</h2>
+        <div class="chart-wrap">
+          <canvas id="donut-chart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const COLORS = [
+    "#0071e3","#34c759","#ff9f0a","#ff3b30",
+    "#af52de","#5ac8fa","#ff2d55","#a2845e",
+    "#30b0c7","#32ade6","#ffcc00","#ff6961",
+  ];
+
+  let lineChart  = null;
+  let trendChart = null;
+  let donutChart = null;
+
+  const today = new Date();
+  document.getElementById("year").value  = today.getFullYear();
+  document.getElementById("month").value = today.toISOString().slice(0, 7);
+  document.getElementById("week").value  = isoWeekString(today);
+  document.getElementById("day").value   = today.toISOString().slice(0, 10);
+
+  function isoWeekString(d) {
+    const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+    const ys = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+    const wk = Math.ceil((((tmp - ys) / 86400000) + 1) / 7);
+    return `${tmp.getUTCFullYear()}-W${String(wk).padStart(2, "0")}`;
+  }
+
+  function onPeriodChange() {
+    const p = document.getElementById("period").value;
+    document.getElementById("wrap-year").className  = "date-input" + (p === "yearly"  ? " visible" : "");
+    document.getElementById("wrap-month").className = "date-input" + (p === "monthly" ? " visible" : "");
+    document.getElementById("wrap-week").className  = "date-input" + (p === "weekly"  ? " visible" : "");
+    document.getElementById("wrap-day").className   = "date-input" + (p === "daily"   ? " visible" : "");
+  }
+
+  function buildParams() {
+    const period  = document.getElementById("period").value;
+    const groupBy = document.getElementById("group_by").value;
+    const year    = document.getElementById("year").value;
+    const month   = document.getElementById("month").value;
+    const week    = document.getElementById("week").value;
+    const day     = document.getElementById("day").value;
+    const p = new URLSearchParams({ period });
+    if (groupBy)               p.set("group_by", groupBy);
+    if (period === "yearly"  && year)  p.set("year",  year);
+    if (period === "monthly" && month) p.set("month", month);
+    if (period === "weekly"  && week)  p.set("week",  week);
+    if (period === "daily"   && day)   p.set("day",   day);
+    return p.toString();
+  }
+
+  function fmt(n) {
+    return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function periodLabel(data) {
+    if (data.period === "all")     return "All Time";
+    if (data.period === "yearly")  return data.year;
+    if (data.period === "monthly") return data.month;
+    if (data.period === "weekly")  return `${data.week_start} – ${data.week_end}`;
+    if (data.period === "daily")   return data.date;
+    return data.period;
+  }
+
+  function renderLineChart(labels, values) {
+    if (lineChart) lineChart.destroy();
+    lineChart = new Chart(document.getElementById("line-chart").getContext("2d"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          borderColor: "#0071e3",
+          backgroundColor: "rgba(0, 113, 227, 0.08)",
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: "#0071e3",
+          pointBorderColor: "#fff",
+          pointBorderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: window.innerWidth < 480 ? 1.4 : 2.8,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => " " + fmt(c.parsed.y) } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
+          y: {
+            beginAtZero: true,
+            grid: { color: "#f2f2f7" },
+            ticks: { font: { size: 10 }, callback: v => fmt(v) }
+          }
+        }
+      }
+    });
+  }
+
+  function renderTrendChart(labels, values) {
+    if (trendChart) trendChart.destroy();
+    trendChart = new Chart(document.getElementById("trend-chart").getContext("2d"), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: "#0071e3",
+          borderRadius: 6,
+          borderSkipped: false,
+          hoverBackgroundColor: "#005bbf",
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: window.innerWidth < 600 ? 1.5 : 1.8,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => " " + fmt(c.parsed.y) } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
+          y: { beginAtZero: true, grid: { color: "#f2f2f7" },
+               ticks: { font: { size: 10 }, callback: v => fmt(v) } }
+        }
+      }
+    });
+  }
+
+  function renderDonutChart(labels, values) {
+    if (donutChart) donutChart.destroy();
+    donutChart = new Chart(document.getElementById("donut-chart").getContext("2d"), {
+      type: "doughnut",
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: COLORS.slice(0, labels.length),
+          borderWidth: 2, borderColor: "#fff", hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { position: "bottom", labels: { boxWidth: 10, padding: 10, font: { size: 11 } } },
+          tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.parsed)}` } }
+        }
+      }
+    });
+  }
+
+  async function loadCharts() {
+    const btn = document.getElementById("btn");
+    btn.disabled = true;
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("results").style.display = "none";
+    document.getElementById("error-box").style.display = "none";
+
+    try {
+      const res  = await fetch(`/expenses/chart/?${buildParams()}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        document.getElementById("error-box").textContent = data.error || "Something went wrong.";
+        document.getElementById("error-box").style.display = "block";
+        return;
+      }
+
+      document.getElementById("period-badge").textContent = periodLabel(data);
+      document.getElementById("grand-total").textContent  = fmt(data.grand_total);
+
+      renderLineChart(data.trend.labels, data.trend.values);
+      renderTrendChart(data.trend.labels, data.trend.values);
+
+      const donutCard = document.getElementById("donut-card");
+      if (data.breakdown && data.breakdown.labels.length) {
+        document.getElementById("donut-title").textContent =
+          `By ${data.group_by.charAt(0).toUpperCase() + data.group_by.slice(1)}`;
+        renderDonutChart(data.breakdown.labels, data.breakdown.values);
+        donutCard.style.display = "block";
+      } else {
+        donutCard.style.display = "none";
+      }
+
+      document.getElementById("results").style.display = "block";
+    } catch (e) {
+      document.getElementById("error-box").textContent = "Network error: " + e.message;
+      document.getElementById("error-box").style.display = "block";
+    } finally {
+      document.getElementById("loading").style.display = "none";
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

@@ -16,6 +16,15 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
 ]
 
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {"context_processors": []},
+    },
+]
+
 ROOT_URLCONF = "core.urls"
 
 WSGI_APPLICATION = "core.wsgi.application"
