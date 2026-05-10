@@ -21,6 +21,10 @@
     select:focus, input:focus { border-color: #34c759; }
     .date-input { display: none; }
     .date-input.visible { display: block; }
+    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; }
+    .presets.visible { display: flex; }
+    .preset-btn { padding: 0.3rem 0.7rem; font-size: 0.78rem; font-weight: 600; background: #f2f2f7; color: #3a3a3c; border: none; border-radius: 7px; cursor: pointer; transition: background 0.15s; }
+    .preset-btn:hover { background: #e2e2e7; }
     button { margin-top: 1rem; width: 100%; padding: 0.8rem; background: #34c759; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
     button:hover { background: #30b955; }
     button:disabled { background: #a8e6bc; cursor: not-allowed; }
@@ -33,10 +37,22 @@
     .error-box { background: #fff2f2; border: 1.5px solid #ffd2d2; color: #d00; border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; }
     #results { display: none; }
     .spinner { text-align: center; color: #6e6e73; padding: 1rem 0; font-size: 0.9rem; }
+
+    /* Heatmap grid */
+    .grid-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .grid-table { border-collapse: separate; border-spacing: 3px; }
+    .grid-table th { font-size: 0.62rem; font-weight: 500; color: #6e6e73; text-align: center; padding: 0; }
+    .grid-table .habit-label { font-size: 0.78rem; font-weight: 500; white-space: nowrap; padding-right: 10px; text-align: left; }
+    .grid-cell { width: 14px; height: 14px; border-radius: 3px; }
+    .grid-cell.done     { background: #34c759; }
+    .grid-cell.not-done { background: #e8e8ed; }
+    .grid-cell.missing  { background: #f5f5f7; border: 1px solid #e5e5ea; }
+
     @media (min-width: 480px) {
       body { padding: 1.5rem 1rem; }
       .card { padding: 1.25rem; border-radius: 14px; }
       .filters { grid-template-columns: 1fr 1fr; }
+      .grid-cell { width: 18px; height: 18px; border-radius: 4px; }
     }
     @media (min-width: 768px) {
       body { padding: 2rem 1rem; }
@@ -64,6 +80,7 @@
           <option value="monthly" selected>Monthly</option>
           <option value="weekly">Weekly</option>
           <option value="daily">Daily</option>
+          <option value="custom">Custom Range</option>
         </select>
       </div>
       <div id="wrap-year" class="date-input">
@@ -82,7 +99,24 @@
         <label for="day">Day</label>
         <input type="date" id="day" />
       </div>
+      <div id="wrap-start" class="date-input">
+        <label for="start-date">Start Date</label>
+        <input type="date" id="start-date" />
+      </div>
+      <div id="wrap-end" class="date-input">
+        <label for="end-date">End Date</label>
+        <input type="date" id="end-date" />
+      </div>
     </div>
+
+    <div class="presets" id="wrap-presets">
+      <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
+      <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
+      <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
+      <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
+      <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
+    </div>
+
     <button id="btn" onclick="loadCharts()">Load Charts</button>
   </div>
 
@@ -106,9 +140,22 @@
       </div>
     </div>
 
-    <!-- Habit completion rate bar chart -->
+    <!-- Daily binary heatmap grid (short ranges only) -->
+    <div class="card" id="grid-card" style="display:none;">
+      <h2>Daily Achievement</h2>
+      <div class="grid-scroll">
+        <div id="habit-grid"></div>
+      </div>
+      <div style="display:flex; gap:1rem; margin-top:0.85rem; font-size:0.72rem; color:#6e6e73;">
+        <span><span style="display:inline-block;width:12px;height:12px;background:#34c759;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Done</span>
+        <span><span style="display:inline-block;width:12px;height:12px;background:#e8e8ed;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Not done</span>
+        <span><span style="display:inline-block;width:12px;height:12px;background:#f5f5f7;border:1px solid #e5e5ea;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>No entry</span>
+      </div>
+    </div>
+
+    <!-- Habit days-done bar chart -->
     <div class="card">
-      <h2>Completion Rate by Habit</h2>
+      <h2>Days Done per Habit</h2>
       <div class="chart-wrap">
         <canvas id="habit-chart"></canvas>
       </div>
@@ -121,10 +168,12 @@
   let habitChart = null;
 
   const today = new Date();
-  document.getElementById("year").value  = today.getFullYear();
-  document.getElementById("month").value = today.toISOString().slice(0, 7);
-  document.getElementById("week").value  = isoWeek(today);
-  document.getElementById("day").value   = today.toISOString().slice(0, 10);
+  document.getElementById("year").value       = today.getFullYear();
+  document.getElementById("month").value      = today.toISOString().slice(0, 7);
+  document.getElementById("week").value       = isoWeek(today);
+  document.getElementById("day").value        = today.toISOString().slice(0, 10);
+  document.getElementById("end-date").value   = today.toISOString().slice(0, 10);
+  document.getElementById("start-date").value = monthsAgo(1).toISOString().slice(0, 10);
 
   function isoWeek(d) {
     const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -134,12 +183,34 @@
     return `${t.getUTCFullYear()}-W${String(w).padStart(2, "0")}`;
   }
 
+  function monthsAgo(n) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - n);
+    return d;
+  }
+
+  function setPreset(key) {
+    const end = new Date();
+    const start = new Date();
+    if (key === "7d")  start.setDate(start.getDate() - 6);
+    if (key === "30d") start.setDate(start.getDate() - 29);
+    if (key === "3m")  start.setMonth(start.getMonth() - 3);
+    if (key === "6m")  start.setMonth(start.getMonth() - 6);
+    if (key === "ytd") start.setMonth(0, 1);
+    document.getElementById("start-date").value = start.toISOString().slice(0, 10);
+    document.getElementById("end-date").value   = end.toISOString().slice(0, 10);
+  }
+
   function onPeriodChange() {
     const p = document.getElementById("period").value;
-    ["year","month","week","day"].forEach(id => {
-      document.getElementById(`wrap-${id}`).className =
-        "date-input" + (p === (id === "year" ? "yearly" : id === "month" ? "monthly" : id === "week" ? "weekly" : "daily") ? " visible" : "");
+    const map = { year: "yearly", month: "monthly", week: "weekly", day: "daily" };
+    Object.entries(map).forEach(([id, val]) => {
+      document.getElementById(`wrap-${id}`).className = "date-input" + (p === val ? " visible" : "");
     });
+    ["start", "end"].forEach(id => {
+      document.getElementById(`wrap-${id}`).className = "date-input" + (p === "custom" ? " visible" : "");
+    });
+    document.getElementById("wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
   }
 
   function buildParams() {
@@ -149,6 +220,10 @@
     if (period === "monthly") p.set("month", document.getElementById("month").value);
     if (period === "weekly")  p.set("week",  document.getElementById("week").value);
     if (period === "daily")   p.set("day",   document.getElementById("day").value);
+    if (period === "custom") {
+      p.set("start", document.getElementById("start-date").value);
+      p.set("end",   document.getElementById("end-date").value);
+    }
     return p.toString();
   }
 
@@ -158,11 +233,12 @@
     if (d.period === "monthly") return d.month;
     if (d.period === "weekly")  return `${d.week_start} – ${d.week_end}`;
     if (d.period === "daily")   return d.date;
+    if (d.period === "custom")  return `${d.start} – ${d.end}`;
   }
 
-  function rateColor(r) {
-    if (r >= 80) return "#34c759";
-    if (r >= 50) return "#ff9f0a";
+  function rateColor(ratio) {
+    if (ratio >= 0.8) return "#34c759";
+    if (ratio >= 0.5) return "#ff9f0a";
     return "#ff3b30";
   }
 
@@ -196,22 +272,61 @@
         },
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
-          y: { beginAtZero: true, max: 100, grid: { color: "#f2f2f7" }, ticks: { font: { size: 10 }, callback: v => v + "%" } }
+          y: { beginAtZero: true, grid: { color: "#f2f2f7" }, ticks: { font: { size: 10 } } }
         }
       }
     });
   }
 
-  function renderHabitChart(labels, values) {
+  function renderHabitGrid(grid) {
+    const card = document.getElementById("grid-card");
+    const container = document.getElementById("habit-grid");
+    if (!grid || !grid.habits.length) {
+      card.style.display = "none";
+      return;
+    }
+    card.style.display = "block";
+
+    const { dates, habits } = grid;
+    const isWeekly = dates.length <= 7;
+    const colLabels = dates.map(d => {
+      const dt = new Date(d + "T00:00:00");
+      return isWeekly
+        ? dt.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2)
+        : String(dt.getUTCDate());
+    });
+
+    let html = `<table class="grid-table"><thead><tr><th class="habit-label"></th>`;
+    colLabels.forEach(l => { html += `<th>${l}</th>`; });
+    html += `</tr></thead><tbody>`;
+
+    habits.forEach(({ name, values }) => {
+      html += `<tr><td class="habit-label">${name}</td>`;
+      values.forEach((v, i) => {
+        const cls = v === null ? "missing" : v === 1 ? "done" : "not-done";
+        const title = `${dates[i]}: ${v === null ? "no entry" : v === 1 ? "done" : "not done"}`;
+        html += `<td title="${title}"><div class="grid-cell ${cls}"></div></td>`;
+      });
+      html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+  }
+
+  function renderHabitChart(labels, values, totalDays) {
     if (habitChart) habitChart.destroy();
-    habitChart = new Chart(document.getElementById("habit-chart").getContext("2d"), {
+    const canvas = document.getElementById("habit-chart");
+    canvas.style.height = `${Math.max(200, labels.length * 36)}px`;
+
+    habitChart = new Chart(canvas.getContext("2d"), {
       type: "bar",
       data: {
         labels,
         datasets: [{
           data: values,
-          backgroundColor: values.map(v => rateColor(v)),
-          borderRadius: 6,
+          backgroundColor: values.map(v => rateColor(totalDays ? v / totalDays : 0)),
+          borderRadius: 5,
           borderSkipped: false,
         }]
       },
@@ -221,16 +336,23 @@
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: c => ` ${c.parsed.x}%` } }
+          tooltip: {
+            callbacks: {
+              label: c => ` ${c.parsed.x} / ${totalDays} day${totalDays === 1 ? "" : "s"}`
+            }
+          }
         },
         scales: {
-          x: { beginAtZero: true, max: 100, grid: { color: "#f2f2f7" }, ticks: { font: { size: 10 }, callback: v => v + "%" } },
+          x: {
+            beginAtZero: true,
+            max: totalDays || 1,
+            grid: { color: "#f2f2f7" },
+            ticks: { font: { size: 10 }, stepSize: 1, callback: v => Number.isInteger(v) ? v : "" }
+          },
           y: { grid: { display: false }, ticks: { font: { size: 10 } } }
         }
       }
     });
-    const canvas = document.getElementById("habit-chart");
-    canvas.style.height = `${Math.max(200, labels.length * 32)}px`;
   }
 
   async function loadCharts() {
@@ -253,7 +375,8 @@
       document.getElementById("stat-days").textContent    = data.total_days + " days";
 
       renderScoreChart(data.score_trend.labels, data.score_trend.values);
-      renderHabitChart(data.habit_rates.labels, data.habit_rates.values);
+      renderHabitGrid(data.habit_grid);
+      renderHabitChart(data.habit_counts.labels, data.habit_counts.values, data.total_days);
 
       document.getElementById("results").style.display = "block";
     } catch (e) {

@@ -11,7 +11,7 @@ from django.views import View
 NOTION_API_URL = "https://api.notion.com/v1/databases/{db_id}/query"
 NOTION_VERSION = "2022-06-28"
 
-VALID_PERIODS = ("all", "yearly", "monthly", "weekly", "daily")
+VALID_PERIODS = ("all", "yearly", "monthly", "weekly", "daily", "custom")
 VALID_GROUPS = ("category", "source")
 
 YEAR_RE  = re.compile(r"^\d{4}$")
@@ -28,7 +28,7 @@ def _notion_headers(token):
     }
 
 
-def _build_date_filter(period, year=None, month=None, week=None, day=None):
+def _build_date_filter(period, year=None, month=None, week=None, day=None, start=None, end=None):
     """Returns (notion_filter_dict, range_start, range_end). All None for period='all'."""
     today = date.today()
 
@@ -37,36 +37,40 @@ def _build_date_filter(period, year=None, month=None, week=None, day=None):
 
     if period == "yearly":
         y = int(year) if year else today.year
-        start = date(y, 1, 1)
-        end = date(y + 1, 1, 1)
+        s = date(y, 1, 1)
+        e = date(y + 1, 1, 1)
 
     elif period == "monthly":
         if month:
-            year, m = int(month[:4]), int(month[5:])
-            start = date(year, m, 1)
+            yr, m = int(month[:4]), int(month[5:])
+            s = date(yr, m, 1)
         else:
-            start = today.replace(day=1)
-        end = date(start.year + 1, 1, 1) if start.month == 12 else date(start.year, start.month + 1, 1)
+            s = today.replace(day=1)
+        e = date(s.year + 1, 1, 1) if s.month == 12 else date(s.year, s.month + 1, 1)
 
     elif period == "weekly":
         if week:
-            year, week_num = int(week[:4]), int(week[6:])
-            start = date.fromisocalendar(year, week_num, 1)
+            yr, week_num = int(week[:4]), int(week[6:])
+            s = date.fromisocalendar(yr, week_num, 1)
         else:
-            start = today - timedelta(days=today.weekday())
-        end = start + timedelta(days=7)
+            s = today - timedelta(days=today.weekday())
+        e = s + timedelta(days=7)
 
     elif period == "daily":
-        start = date.fromisoformat(day) if day else today
-        end = start + timedelta(days=1)
+        s = date.fromisoformat(day) if day else today
+        e = s + timedelta(days=1)
+
+    elif period == "custom":
+        s = date.fromisoformat(start) if start else date(today.year, 1, 1)
+        e = date.fromisoformat(end) + timedelta(days=1) if end else today + timedelta(days=1)
 
     notion_filter = {
         "and": [
-            {"property": "Date", "date": {"on_or_after": start.isoformat()}},
-            {"property": "Date", "date": {"before": end.isoformat()}},
+            {"property": "Date", "date": {"on_or_after": s.isoformat()}},
+            {"property": "Date", "date": {"before": e.isoformat()}},
         ]
     }
-    return notion_filter, start, end - timedelta(days=1)
+    return notion_filter, s, e - timedelta(days=1)
 
 
 def _fetch_all_rows(token, db_id, notion_filter):
@@ -101,6 +105,8 @@ def _build_display(period, grand_total, group_by, group_totals, range_start, ran
         header = f"Week of {range_start.strftime('%d %b')} - {range_end.strftime('%d %b %Y')}"
     elif period == "daily":
         header = range_start.strftime("%d %B %Y")
+    elif period == "custom":
+        header = f"{range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}"
 
     lines = [f"{header}  |  Total: {grand_total:,.2f}"]
 
@@ -145,6 +151,8 @@ class ExpensesSummaryView(View):
         month = request.GET.get("month", "")
         week = request.GET.get("week", "")
         day = request.GET.get("day", "")
+        start = request.GET.get("start", "")
+        end = request.GET.get("end", "")
 
         if period not in VALID_PERIODS:
             return JsonResponse(
@@ -159,24 +167,22 @@ class ExpensesSummaryView(View):
             )
 
         if year and not YEAR_RE.match(year):
-            return JsonResponse(
-                {"error": "Invalid year format. Use YYYY (e.g. 2026)"}, status=400
-            )
-
+            return JsonResponse({"error": "Invalid year format. Use YYYY (e.g. 2026)"}, status=400)
         if month and not MONTH_RE.match(month):
-            return JsonResponse(
-                {"error": "Invalid month format. Use YYYY-MM (e.g. 2026-03)"}, status=400
-            )
-
+            return JsonResponse({"error": "Invalid month format. Use YYYY-MM (e.g. 2026-03)"}, status=400)
         if week and not WEEK_RE.match(week):
-            return JsonResponse(
-                {"error": "Invalid week format. Use YYYY-Www (e.g. 2026-W19)"}, status=400
-            )
-
+            return JsonResponse({"error": "Invalid week format. Use YYYY-Www (e.g. 2026-W19)"}, status=400)
         if day and not DAY_RE.match(day):
-            return JsonResponse(
-                {"error": "Invalid day format. Use YYYY-MM-DD (e.g. 2026-05-10)"}, status=400
-            )
+            return JsonResponse({"error": "Invalid day format. Use YYYY-MM-DD (e.g. 2026-05-10)"}, status=400)
+        if period == "custom":
+            if not start or not end:
+                return JsonResponse({"error": "Custom period requires both start and end"}, status=400)
+            if not DAY_RE.match(start):
+                return JsonResponse({"error": "Invalid start date. Use YYYY-MM-DD"}, status=400)
+            if not DAY_RE.match(end):
+                return JsonResponse({"error": "Invalid end date. Use YYYY-MM-DD"}, status=400)
+            if start > end:
+                return JsonResponse({"error": "start must be on or before end"}, status=400)
 
         try:
             notion_filter, range_start, range_end = _build_date_filter(
@@ -185,6 +191,8 @@ class ExpensesSummaryView(View):
                 month=month or None,
                 week=week or None,
                 day=day or None,
+                start=start or None,
+                end=end or None,
             )
         except ValueError:
             return JsonResponse({"error": "Invalid date value."}, status=400)
@@ -219,6 +227,9 @@ class ExpensesSummaryView(View):
             response["week_end"] = range_end.isoformat()
         elif period == "daily":
             response["date"] = range_start.isoformat()
+        elif period == "custom":
+            response["start"] = range_start.isoformat()
+            response["end"] = range_end.isoformat()
 
         if group_by:
             response["group_by"] = group_by
@@ -276,6 +287,38 @@ def _build_timeseries(period, year, rows, range_start, range_end):
             [buckets[k] for k in sorted(buckets)],
         )
 
+    if period == "custom":
+        delta = (range_end - range_start).days
+        if delta <= 60:
+            buckets: dict[str, float] = {}
+            d = range_start
+            while d <= range_end:
+                buckets[d.isoformat()] = 0.0
+                d += timedelta(days=1)
+            for row in rows:
+                k = row_date(row)
+                if k in buckets:
+                    buckets[k] = round(buckets[k] + row_amount(row), 2)
+            return (
+                [date.fromisoformat(k).strftime("%-d %b") for k in sorted(buckets)],
+                [buckets[k] for k in sorted(buckets)],
+            )
+        buckets2: dict[str, float] = {}
+        d = range_start
+        while d <= range_end:
+            k = d.strftime("%Y-%m")
+            buckets2.setdefault(k, 0.0)
+            d += timedelta(days=1)
+        for row in rows:
+            k = row_date(row)[:7]
+            if k in buckets2:
+                buckets2[k] = round(buckets2[k] + row_amount(row), 2)
+        sorted_keys2 = sorted(buckets2)
+        return (
+            [date(int(k[:4]), int(k[5:]), 1).strftime("%b %Y") for k in sorted_keys2],
+            [buckets2[k] for k in sorted_keys2],
+        )
+
     # all — dynamic month buckets from data
     buckets = {}
     for row in rows:
@@ -304,6 +347,8 @@ class ExpensesTimeseriesView(View):
         month  = request.GET.get("month", "")
         week   = request.GET.get("week", "")
         day    = request.GET.get("day", "")
+        start  = request.GET.get("start", "")
+        end    = request.GET.get("end", "")
 
         if period not in VALID_PERIODS:
             return JsonResponse({"error": f"Invalid period. Valid: {', '.join(VALID_PERIODS)}"}, status=400)
@@ -315,11 +360,21 @@ class ExpensesTimeseriesView(View):
             return JsonResponse({"error": "Invalid week. Use YYYY-Www"}, status=400)
         if day   and not DAY_RE.match(day):
             return JsonResponse({"error": "Invalid day. Use YYYY-MM-DD"}, status=400)
+        if period == "custom":
+            if not start or not end:
+                return JsonResponse({"error": "Custom period requires both start and end"}, status=400)
+            if not DAY_RE.match(start):
+                return JsonResponse({"error": "Invalid start date. Use YYYY-MM-DD"}, status=400)
+            if not DAY_RE.match(end):
+                return JsonResponse({"error": "Invalid end date. Use YYYY-MM-DD"}, status=400)
+            if start > end:
+                return JsonResponse({"error": "start must be on or before end"}, status=400)
 
         try:
             notion_filter, range_start, range_end = _build_date_filter(
                 period, year=year or None, month=month or None,
                 week=week or None, day=day or None,
+                start=start or None, end=end or None,
             )
         except ValueError:
             return JsonResponse({"error": "Invalid date value."}, status=400)
@@ -353,6 +408,8 @@ class ExpensesChartView(View):
         month    = request.GET.get("month", "")
         week     = request.GET.get("week", "")
         day      = request.GET.get("day", "")
+        start    = request.GET.get("start", "")
+        end      = request.GET.get("end", "")
 
         if period not in VALID_PERIODS:
             return JsonResponse({"error": f"Invalid period. Valid: {', '.join(VALID_PERIODS)}"}, status=400)
@@ -366,11 +423,21 @@ class ExpensesChartView(View):
             return JsonResponse({"error": "Invalid week. Use YYYY-Www"}, status=400)
         if day   and not DAY_RE.match(day):
             return JsonResponse({"error": "Invalid day. Use YYYY-MM-DD"}, status=400)
+        if period == "custom":
+            if not start or not end:
+                return JsonResponse({"error": "Custom period requires both start and end"}, status=400)
+            if not DAY_RE.match(start):
+                return JsonResponse({"error": "Invalid start date. Use YYYY-MM-DD"}, status=400)
+            if not DAY_RE.match(end):
+                return JsonResponse({"error": "Invalid end date. Use YYYY-MM-DD"}, status=400)
+            if start > end:
+                return JsonResponse({"error": "start must be on or before end"}, status=400)
 
         try:
             notion_filter, range_start, range_end = _build_date_filter(
                 period, year=year or None, month=month or None,
                 week=week or None, day=day or None,
+                start=start or None, end=end or None,
             )
         except ValueError:
             return JsonResponse({"error": "Invalid date value."}, status=400)
@@ -431,6 +498,9 @@ class ExpensesChartView(View):
             response["week_end"]   = range_end.isoformat()
         elif period == "daily":
             response["date"] = range_start.isoformat()
+        elif period == "custom":
+            response["start"] = range_start.isoformat()
+            response["end"]   = range_end.isoformat()
 
         if breakdown:
             response["group_by"]  = group_by

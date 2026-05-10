@@ -20,9 +20,19 @@
     select:focus, input:focus { border-color: #34c759; }
     .date-input { display: none; }
     .date-input.visible { display: block; }
-    button { margin-top: 1rem; width: 100%; padding: 0.8rem; background: #34c759; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
-    button:hover { background: #30b955; }
-    button:disabled { background: #a8e6bc; cursor: not-allowed; }
+    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; }
+    .presets.visible { display: flex; }
+    .preset-btn { padding: 0.3rem 0.7rem; font-size: 0.78rem; font-weight: 600; background: #f2f2f7; color: #3a3a3c; border: none; border-radius: 7px; cursor: pointer; transition: background 0.15s; }
+    .preset-btn:hover { background: #e2e2e7; }
+    button.primary { margin-top: 1rem; width: 100%; padding: 0.8rem; background: #34c759; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
+    button.primary:hover { background: #30b955; }
+    button.primary:disabled { background: #a8e6bc; cursor: not-allowed; }
+    .btn-secondary { background: #fff; color: #34c759; border: 2px solid #34c759; margin-top: 0.6rem; width: 100%; padding: 0.8rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+    .btn-secondary:hover { background: #e8fdf0; }
+    .btn-secondary:disabled { background: #fff; color: #a8e6bc; border-color: #a8e6bc; }
+    .backfill-result { margin-top: 0.75rem; padding: 0.65rem 0.9rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600; display: none; }
+    .backfill-result.success { background: #e8fdf0; color: #1a7a3a; }
+    .backfill-result.error   { background: #fff2f2; color: #d00; }
 
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
     .stat-card { background: #fff; border-radius: 12px; padding: 0.85rem 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center; }
@@ -79,6 +89,7 @@
           <option value="monthly" selected>Monthly</option>
           <option value="weekly">Weekly</option>
           <option value="daily">Daily</option>
+          <option value="custom">Custom Range</option>
         </select>
       </div>
       <div id="wrap-year" class="date-input">
@@ -97,8 +108,27 @@
         <label for="day">Day</label>
         <input type="date" id="day" />
       </div>
+      <div id="wrap-start" class="date-input">
+        <label for="start-date">Start Date</label>
+        <input type="date" id="start-date" />
+      </div>
+      <div id="wrap-end" class="date-input">
+        <label for="end-date">End Date</label>
+        <input type="date" id="end-date" />
+      </div>
     </div>
-    <button id="btn" onclick="fetchSummary()">Fetch Summary</button>
+
+    <div class="presets" id="wrap-presets">
+      <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
+      <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
+      <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
+      <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
+      <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
+    </div>
+
+    <button class="primary" id="btn" onclick="fetchSummary()">Fetch Summary</button>
+    <button class="btn-secondary" id="backfill-btn" onclick="runBackfill()">Backfill Missing Entries</button>
+    <div id="backfill-result" class="backfill-result"></div>
   </div>
 
   <div id="loading" class="spinner" style="display:none;">Fetching from Notion...</div>
@@ -131,10 +161,12 @@
 
 <script>
   const today = new Date();
-  document.getElementById("year").value  = today.getFullYear();
-  document.getElementById("month").value = today.toISOString().slice(0, 7);
-  document.getElementById("week").value  = isoWeek(today);
-  document.getElementById("day").value   = today.toISOString().slice(0, 10);
+  document.getElementById("year").value       = today.getFullYear();
+  document.getElementById("month").value      = today.toISOString().slice(0, 7);
+  document.getElementById("week").value       = isoWeek(today);
+  document.getElementById("day").value        = today.toISOString().slice(0, 10);
+  document.getElementById("end-date").value   = today.toISOString().slice(0, 10);
+  document.getElementById("start-date").value = monthsAgo(1).toISOString().slice(0, 10);
 
   function isoWeek(d) {
     const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -144,12 +176,34 @@
     return `${t.getUTCFullYear()}-W${String(w).padStart(2, "0")}`;
   }
 
+  function monthsAgo(n) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - n);
+    return d;
+  }
+
+  function setPreset(key) {
+    const end = new Date();
+    const start = new Date();
+    if (key === "7d")  start.setDate(start.getDate() - 6);
+    if (key === "30d") start.setDate(start.getDate() - 29);
+    if (key === "3m")  start.setMonth(start.getMonth() - 3);
+    if (key === "6m")  start.setMonth(start.getMonth() - 6);
+    if (key === "ytd") start.setMonth(0, 1);
+    document.getElementById("start-date").value = start.toISOString().slice(0, 10);
+    document.getElementById("end-date").value   = end.toISOString().slice(0, 10);
+  }
+
   function onPeriodChange() {
     const p = document.getElementById("period").value;
-    ["year","month","week","day"].forEach(id => {
-      document.getElementById(`wrap-${id}`).className =
-        "date-input" + (p === (id === "year" ? "yearly" : id === "month" ? "monthly" : id === "week" ? "weekly" : "daily") ? " visible" : "");
+    const map = { year: "yearly", month: "monthly", week: "weekly", day: "daily" };
+    Object.entries(map).forEach(([id, val]) => {
+      document.getElementById(`wrap-${id}`).className = "date-input" + (p === val ? " visible" : "");
     });
+    ["start", "end"].forEach(id => {
+      document.getElementById(`wrap-${id}`).className = "date-input" + (p === "custom" ? " visible" : "");
+    });
+    document.getElementById("wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
   }
 
   function buildParams() {
@@ -159,6 +213,10 @@
     if (period === "monthly") p.set("month", document.getElementById("month").value);
     if (period === "weekly")  p.set("week",  document.getElementById("week").value);
     if (period === "daily")   p.set("day",   document.getElementById("day").value);
+    if (period === "custom") {
+      p.set("start", document.getElementById("start-date").value);
+      p.set("end",   document.getElementById("end-date").value);
+    }
     return p.toString();
   }
 
@@ -168,12 +226,45 @@
     if (d.period === "monthly") return d.month;
     if (d.period === "weekly")  return `${d.week_start} – ${d.week_end}`;
     if (d.period === "daily")   return d.date;
+    if (d.period === "custom")  return `${d.start} – ${d.end}`;
   }
 
   function rateColor(r) {
     if (r >= 80) return "#34c759";
     if (r >= 50) return "#ff9f0a";
     return "#ff3b30";
+  }
+
+  async function runBackfill() {
+    const btn = document.getElementById("backfill-btn");
+    const result = document.getElementById("backfill-result");
+    btn.disabled = true;
+    btn.textContent = "Backfilling...";
+    result.style.display = "none";
+    result.className = "backfill-result";
+
+    try {
+      const res = await fetch("/habits/backfill/", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        result.textContent = data.error || "Backfill failed.";
+        result.classList.add("error");
+      } else if (data.created === 0) {
+        result.textContent = "No missing entries — everything is up to date.";
+        result.classList.add("success");
+      } else {
+        result.textContent = `Created ${data.created} missing entr${data.created === 1 ? "y" : "ies"} for ${new Date().getFullYear()}.` +
+          (data.failed.length ? ` ${data.failed.length} failed.` : "");
+        result.classList.add("success");
+      }
+    } catch (e) {
+      result.textContent = "Network error: " + e.message;
+      result.classList.add("error");
+    } finally {
+      result.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Backfill Missing Entries";
+    }
   }
 
   async function fetchSummary() {

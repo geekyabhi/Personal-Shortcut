@@ -7,82 +7,35 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f5f7; color: #1d1d1f;
-      min-height: 100vh; padding: 1rem 0.75rem;
-    }
-
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f7; color: #1d1d1f; min-height: 100vh; padding: 1rem 0.75rem; }
     .container { max-width: 720px; margin: 0 auto; }
-
-    nav {
-      display: flex; gap: 0.5rem; margin-bottom: 1.25rem;
-    }
-    nav a {
-      padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.9rem;
-      font-weight: 600; text-decoration: none; transition: background 0.15s;
-      color: #6e6e73; background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
+    nav { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    nav a { padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: background 0.15s; color: #6e6e73; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     nav a.active { background: #0071e3; color: #fff; }
     nav a:not(.active):hover { background: #e8e8ed; }
-
     h1 { font-size: clamp(1.3rem, 5vw, 1.8rem); font-weight: 700; margin-bottom: 1.25rem; }
-
-    .card {
-      background: #fff; border-radius: 12px; padding: 1rem;
-      margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
-
+    .card { background: #fff; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
     .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
-
-    label {
-      display: block; font-size: 0.72rem; font-weight: 600; color: #6e6e73;
-      margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em;
-    }
-
-    select,
-    input[type="month"], input[type="week"], input[type="date"], input[type="number"] {
-      width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid #d2d2d7;
-      border-radius: 10px; font-size: 0.95rem; background: #fff;
-      appearance: none; outline: none; transition: border-color 0.15s; color: #1d1d1f;
-    }
+    label { display: block; font-size: 0.72rem; font-weight: 600; color: #6e6e73; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    select, input[type="month"], input[type="week"], input[type="date"], input[type="number"] { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid #d2d2d7; border-radius: 10px; font-size: 0.95rem; background: #fff; appearance: none; outline: none; transition: border-color 0.15s; color: #1d1d1f; }
     select:focus, input:focus { border-color: #0071e3; }
-
     .date-input { display: none; }
     .date-input.visible { display: block; }
-
-    button {
-      margin-top: 1rem; width: 100%; padding: 0.8rem;
-      background: #0071e3; color: #fff; border: none;
-      border-radius: 10px; font-size: 1rem; font-weight: 600;
-      cursor: pointer; transition: background 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
+    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; }
+    .presets.visible { display: flex; }
+    .preset-btn { padding: 0.3rem 0.7rem; font-size: 0.78rem; font-weight: 600; background: #f2f2f7; color: #3a3a3c; border: none; border-radius: 7px; cursor: pointer; transition: background 0.15s; }
+    .preset-btn:hover { background: #e2e2e7; }
+    button { margin-top: 1rem; width: 100%; padding: 0.8rem; background: #0071e3; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
     button:hover   { background: #0077ed; }
     button:active  { background: #005bbf; }
     button:disabled { background: #a1c4f5; cursor: not-allowed; }
-
     h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; }
-
-    .period-badge {
-      display: inline-block; font-size: 0.75rem; font-weight: 600;
-      background: #e8f0fe; color: #0071e3; border-radius: 6px;
-      padding: 0.2rem 0.55rem; margin-bottom: 0.6rem;
-    }
+    .period-badge { display: inline-block; font-size: 0.75rem; font-weight: 600; background: #e8f0fe; color: #0071e3; border-radius: 6px; padding: 0.2rem 0.55rem; margin-bottom: 0.6rem; }
     .grand-total { font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 700; }
     .total-label { font-size: 0.85rem; color: #6e6e73; }
-
     .chart-wrap { position: relative; width: 100%; }
-
     .charts-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-
-    .error-box {
-      background: #fff2f2; border: 1.5px solid #ffd2d2; color: #d00;
-      border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.9rem; margin-bottom: 1rem;
-    }
-
+    .error-box { background: #fff2f2; border: 1.5px solid #ffd2d2; color: #d00; border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; }
     #results { display: none; }
     .spinner { text-align: center; color: #6e6e73; padding: 1rem 0; font-size: 0.9rem; }
 
@@ -91,11 +44,9 @@
       .card { padding: 1.25rem; border-radius: 14px; }
       .filters { grid-template-columns: 1fr 1fr; }
     }
-
     @media (min-width: 600px) {
       .charts-grid { grid-template-columns: 1fr 1fr; }
     }
-
     @media (min-width: 768px) {
       body { padding: 2rem 1rem; }
       h1 { margin-bottom: 1.5rem; }
@@ -105,15 +56,14 @@
 </head>
 <body>
 <div class="container">
-
   <nav>
+    <a href="/">Home</a>
     <a href="/expenses/">Dashboard</a>
     <a href="/expenses/charts/" class="active">Charts</a>
   </nav>
 
   <h1>Expense Charts</h1>
 
-  <!-- Filters -->
   <div class="card">
     <div class="filters">
       <div>
@@ -124,6 +74,7 @@
           <option value="monthly" selected>Monthly</option>
           <option value="weekly">Weekly</option>
           <option value="daily">Daily</option>
+          <option value="custom">Custom Range</option>
         </select>
       </div>
       <div>
@@ -150,24 +101,37 @@
         <label for="day">Day</label>
         <input type="date" id="day" />
       </div>
+      <div id="wrap-start" class="date-input">
+        <label for="start-date">Start Date</label>
+        <input type="date" id="start-date" />
+      </div>
+      <div id="wrap-end" class="date-input">
+        <label for="end-date">End Date</label>
+        <input type="date" id="end-date" />
+      </div>
     </div>
+
+    <div class="presets" id="wrap-presets">
+      <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
+      <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
+      <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
+      <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
+      <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
+    </div>
+
     <button id="btn" onclick="loadCharts()">Load Charts</button>
   </div>
 
   <div id="loading" class="spinner" style="display:none;">Fetching from Notion...</div>
   <div id="error-box" class="error-box" style="display:none;"></div>
 
-  <!-- Results -->
   <div id="results">
-
-    <!-- Total -->
     <div class="card">
       <div class="period-badge" id="period-badge"></div><br/>
       <span class="total-label">Grand Total &nbsp;</span>
       <span class="grand-total" id="grand-total"></span>
     </div>
 
-    <!-- Line chart — full width -->
     <div class="card" id="line-card">
       <h2>Spending Over Time</h2>
       <div class="chart-wrap">
@@ -175,10 +139,7 @@
       </div>
     </div>
 
-    <!-- Charts grid: bar + donut -->
     <div class="charts-grid">
-
-      <!-- Bar chart -->
       <div class="card" id="trend-card">
         <h2>Expense by Period</h2>
         <div class="chart-wrap">
@@ -186,16 +147,13 @@
         </div>
       </div>
 
-      <!-- Doughnut chart -->
       <div class="card" id="donut-card" style="display:none;">
         <h2 id="donut-title">Breakdown</h2>
         <div class="chart-wrap">
           <canvas id="donut-chart"></canvas>
         </div>
       </div>
-
     </div>
-
   </div>
 </div>
 
@@ -211,10 +169,12 @@
   let donutChart = null;
 
   const today = new Date();
-  document.getElementById("year").value  = today.getFullYear();
-  document.getElementById("month").value = today.toISOString().slice(0, 7);
-  document.getElementById("week").value  = isoWeekString(today);
-  document.getElementById("day").value   = today.toISOString().slice(0, 10);
+  document.getElementById("year").value       = today.getFullYear();
+  document.getElementById("month").value      = today.toISOString().slice(0, 7);
+  document.getElementById("week").value       = isoWeekString(today);
+  document.getElementById("day").value        = today.toISOString().slice(0, 10);
+  document.getElementById("end-date").value   = today.toISOString().slice(0, 10);
+  document.getElementById("start-date").value = monthsAgo(1).toISOString().slice(0, 10);
 
   function isoWeekString(d) {
     const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -224,27 +184,49 @@
     return `${tmp.getUTCFullYear()}-W${String(wk).padStart(2, "0")}`;
   }
 
+  function monthsAgo(n) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - n);
+    return d;
+  }
+
+  function setPreset(key) {
+    const end = new Date();
+    const start = new Date();
+    if (key === "7d")  start.setDate(start.getDate() - 6);
+    if (key === "30d") start.setDate(start.getDate() - 29);
+    if (key === "3m")  start.setMonth(start.getMonth() - 3);
+    if (key === "6m")  start.setMonth(start.getMonth() - 6);
+    if (key === "ytd") start.setMonth(0, 1);
+    document.getElementById("start-date").value = start.toISOString().slice(0, 10);
+    document.getElementById("end-date").value   = end.toISOString().slice(0, 10);
+  }
+
   function onPeriodChange() {
     const p = document.getElementById("period").value;
-    document.getElementById("wrap-year").className  = "date-input" + (p === "yearly"  ? " visible" : "");
-    document.getElementById("wrap-month").className = "date-input" + (p === "monthly" ? " visible" : "");
-    document.getElementById("wrap-week").className  = "date-input" + (p === "weekly"  ? " visible" : "");
-    document.getElementById("wrap-day").className   = "date-input" + (p === "daily"   ? " visible" : "");
+    const map = { year: "yearly", month: "monthly", week: "weekly", day: "daily" };
+    Object.entries(map).forEach(([id, val]) => {
+      document.getElementById(`wrap-${id}`).className = "date-input" + (p === val ? " visible" : "");
+    });
+    ["start", "end"].forEach(id => {
+      document.getElementById(`wrap-${id}`).className = "date-input" + (p === "custom" ? " visible" : "");
+    });
+    document.getElementById("wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
   }
 
   function buildParams() {
     const period  = document.getElementById("period").value;
     const groupBy = document.getElementById("group_by").value;
-    const year    = document.getElementById("year").value;
-    const month   = document.getElementById("month").value;
-    const week    = document.getElementById("week").value;
-    const day     = document.getElementById("day").value;
     const p = new URLSearchParams({ period });
-    if (groupBy)               p.set("group_by", groupBy);
-    if (period === "yearly"  && year)  p.set("year",  year);
-    if (period === "monthly" && month) p.set("month", month);
-    if (period === "weekly"  && week)  p.set("week",  week);
-    if (period === "daily"   && day)   p.set("day",   day);
+    if (groupBy) p.set("group_by", groupBy);
+    if (period === "yearly")  p.set("year",  document.getElementById("year").value);
+    if (period === "monthly") p.set("month", document.getElementById("month").value);
+    if (period === "weekly")  p.set("week",  document.getElementById("week").value);
+    if (period === "daily")   p.set("day",   document.getElementById("day").value);
+    if (period === "custom") {
+      p.set("start", document.getElementById("start-date").value);
+      p.set("end",   document.getElementById("end-date").value);
+    }
     return p.toString();
   }
 
@@ -258,6 +240,7 @@
     if (data.period === "monthly") return data.month;
     if (data.period === "weekly")  return `${data.week_start} – ${data.week_end}`;
     if (data.period === "daily")   return data.date;
+    if (data.period === "custom")  return `${data.start} – ${data.end}`;
     return data.period;
   }
 
@@ -290,11 +273,7 @@
         },
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
-          y: {
-            beginAtZero: true,
-            grid: { color: "#f2f2f7" },
-            ticks: { font: { size: 10 }, callback: v => fmt(v) }
-          }
+          y: { beginAtZero: true, grid: { color: "#f2f2f7" }, ticks: { font: { size: 10 }, callback: v => fmt(v) } }
         }
       }
     });
@@ -324,8 +303,7 @@
         },
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
-          y: { beginAtZero: true, grid: { color: "#f2f2f7" },
-               ticks: { font: { size: 10 }, callback: v => fmt(v) } }
+          y: { beginAtZero: true, grid: { color: "#f2f2f7" }, ticks: { font: { size: 10 }, callback: v => fmt(v) } }
         }
       }
     });
