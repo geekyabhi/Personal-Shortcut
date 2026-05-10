@@ -4,164 +4,314 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Habits Charts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
+    :root {
+      --accent:   #059669;
+      --accent-2: #0891B2;
+      --grad:     linear-gradient(135deg, #059669, #0891B2);
+      --grad-bg:  linear-gradient(135deg, rgba(5,150,105,0.12), rgba(8,145,178,0.08));
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f7; color: #1d1d1f; min-height: 100vh; padding: 1rem 0.75rem; }
-    .container { max-width: 720px; margin: 0 auto; }
-    nav { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-    nav a { padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: background 0.15s; color: #6e6e73; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    nav a.active { background: #34c759; color: #fff; }
-    nav a:not(.active):hover { background: #e8e8ed; }
-    h1 { font-size: clamp(1.3rem, 5vw, 1.8rem); font-weight: 700; margin-bottom: 1.25rem; }
-    .card { background: #fff; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F5F4FA;
+      color: #111827;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient orbs */
+    .orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(90px); z-index: 0; pointer-events: none;
+    }
+    .orb-1 { width: 480px; height: 480px; background: rgba(5,150,105,0.12); top: -160px; right: -100px; }
+    .orb-2 { width: 420px; height: 420px; background: rgba(8,145,178,0.09); bottom: -160px; left: -100px; }
+
+    .container { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; }
+
+    /* Nav */
+    nav {
+      display: flex; gap: 0.4rem; margin-bottom: 2rem; flex-wrap: wrap;
+      background: rgba(255,255,255,0.7); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.35rem; width: fit-content;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    nav a {
+      padding: 0.4rem 1rem; border-radius: 100px; font-size: 0.85rem;
+      font-weight: 600; text-decoration: none; transition: all 0.2s ease;
+      color: #6B7280;
+    }
+    nav a:hover:not(.active) { color: #111827; background: rgba(0,0,0,0.04); }
+    nav a.active { background: var(--grad); color: #fff; box-shadow: 0 2px 8px rgba(5,150,105,0.3); }
+
+    h1 {
+      font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 900;
+      letter-spacing: -0.03em; margin-bottom: 1.75rem;
+      background: var(--grad);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    /* Cards */
+    .card {
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9);
+      border-radius: 20px; padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+
+    h2 {
+      font-size: 1rem; font-weight: 700; margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    /* Filters */
     .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
-    label { display: block; font-size: 0.72rem; font-weight: 600; color: #6e6e73; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    select, input[type="month"], input[type="week"], input[type="date"], input[type="number"] { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid #d2d2d7; border-radius: 10px; font-size: 0.95rem; background: #fff; appearance: none; outline: none; transition: border-color 0.15s; color: #1d1d1f; }
-    select:focus, input:focus { border-color: #34c759; }
+
+    label {
+      display: block; font-size: 0.72rem; font-weight: 700;
+      color: #6B7280; margin-bottom: 0.3rem;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    select, input[type="month"], input[type="week"], input[type="date"], input[type="number"] {
+      width: 100%; padding: 0.65rem 0.9rem;
+      border: 1.5px solid rgba(0,0,0,0.08); border-radius: 12px;
+      font-size: 0.95rem; font-family: inherit;
+      background: rgba(255,255,255,0.8); appearance: none; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s; color: #111827;
+    }
+    select:focus, input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(5,150,105,0.12);
+    }
+
     .date-input { display: none; }
     .date-input.visible { display: block; }
-    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; }
+
+    /* Presets */
+    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; }
     .presets.visible { display: flex; }
-    .preset-btn { padding: 0.3rem 0.7rem; font-size: 0.78rem; font-weight: 600; background: #f2f2f7; color: #3a3a3c; border: none; border-radius: 7px; cursor: pointer; transition: background 0.15s; }
-    .preset-btn:hover { background: #e2e2e7; }
-    button { margin-top: 1rem; width: 100%; padding: 0.8rem; background: #34c759; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
-    button:hover { background: #30b955; }
-    button:disabled { background: #a8e6bc; cursor: not-allowed; }
-    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; }
-    .period-badge { display: inline-block; font-size: 0.75rem; font-weight: 600; background: #e8fdf0; color: #34c759; border-radius: 6px; padding: 0.2rem 0.55rem; margin-bottom: 0.6rem; }
+    .preset-btn {
+      padding: 0.35rem 0.85rem; font-size: 0.78rem; font-weight: 600;
+      background: rgba(255,255,255,0.8); color: #374151;
+      border: 1.5px solid rgba(0,0,0,0.08); border-radius: 100px;
+      cursor: pointer; transition: all 0.2s ease; font-family: inherit;
+    }
+    .preset-btn:hover {
+      background: var(--grad); color: #fff; border-color: transparent;
+      box-shadow: 0 2px 8px rgba(5,150,105,0.25);
+    }
+
+    /* Load button */
+    .btn-load {
+      margin-top: 1.25rem; width: 100%; padding: 0.85rem;
+      background: var(--grad); color: #fff;
+      border: none; border-radius: 100px;
+      font-size: 1rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; letter-spacing: -0.01em;
+      box-shadow: 0 4px 16px rgba(5,150,105,0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-load:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(5,150,105,0.4); }
+    .btn-load:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Spinner */
+    .spinner-wrap { display: none; text-align: center; padding: 1.5rem 0; }
+    .spinner-ring {
+      display: inline-block; width: 32px; height: 32px;
+      border: 3px solid rgba(5,150,105,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-text { font-size: 0.85rem; color: #6B7280; margin-top: 0.6rem; font-weight: 500; }
+
+    /* Error */
+    .error-box {
+      background: rgba(255,242,242,0.9); border: 1.5px solid #FCA5A5;
+      color: #B91C1C; border-radius: 14px; padding: 0.9rem 1rem;
+      font-size: 0.9rem; margin-bottom: 1.25rem; display: none;
+    }
+
+    /* Period badge */
+    .period-badge {
+      display: inline-flex; align-items: center;
+      background: var(--grad-bg);
+      border: 1px solid rgba(5,150,105,0.2);
+      color: var(--accent); border-radius: 100px;
+      padding: 0.25rem 0.75rem; font-size: 0.78rem; font-weight: 700;
+      margin-bottom: 1rem; letter-spacing: 0.01em;
+    }
+
+    /* Stat row */
     .stat-row { display: flex; justify-content: space-between; align-items: baseline; }
-    .stat-label { font-size: 0.85rem; color: #6e6e73; }
-    .stat-value { font-size: clamp(1.4rem, 4vw, 1.8rem); font-weight: 700; color: #34c759; }
+    .stat-label { font-size: 0.88rem; color: #6B7280; font-weight: 500; }
+    .stat-value {
+      font-size: clamp(1.6rem, 4vw, 2rem); font-weight: 900;
+      letter-spacing: -0.03em;
+      background: var(--grad);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
     .chart-wrap { position: relative; width: 100%; }
-    .error-box { background: #fff2f2; border: 1.5px solid #ffd2d2; color: #d00; border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; }
+
     #results { display: none; }
-    .spinner { text-align: center; color: #6e6e73; padding: 1rem 0; font-size: 0.9rem; }
 
     /* Heatmap grid */
     .grid-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .grid-table { border-collapse: separate; border-spacing: 3px; }
-    .grid-table th { font-size: 0.62rem; font-weight: 500; color: #6e6e73; text-align: center; padding: 0; }
-    .grid-table .habit-label { font-size: 0.78rem; font-weight: 500; white-space: nowrap; padding-right: 10px; text-align: left; }
-    .grid-cell { width: 14px; height: 14px; border-radius: 3px; }
-    .grid-cell.done     { background: #34c759; }
-    .grid-cell.not-done { background: #e8e8ed; }
-    .grid-cell.missing  { background: #f5f5f7; border: 1px solid #e5e5ea; }
+    .grid-table th {
+      font-size: 0.6rem; font-weight: 600; color: #9CA3AF;
+      text-align: center; padding: 0;
+    }
+    .grid-table .habit-label {
+      font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+      padding-right: 10px; text-align: left; color: #374151;
+    }
+    .grid-cell { width: 16px; height: 16px; border-radius: 4px; }
+    .grid-cell.done     { background: var(--grad); }
+    .grid-cell.not-done { background: rgba(0,0,0,0.06); }
+    .grid-cell.missing  { background: transparent; border: 1.5px dashed rgba(0,0,0,0.1); }
+
+    .legend {
+      display: flex; gap: 1rem; margin-top: 1rem;
+      font-size: 0.72rem; color: #6B7280; font-weight: 500; flex-wrap: wrap;
+    }
+    .legend-dot {
+      display: inline-block; width: 12px; height: 12px;
+      border-radius: 3px; vertical-align: middle; margin-right: 4px;
+    }
 
     @media (min-width: 480px) {
-      body { padding: 1.5rem 1rem; }
-      .card { padding: 1.25rem; border-radius: 14px; }
+      body { padding: 2rem 1.25rem; }
       .filters { grid-template-columns: 1fr 1fr; }
-      .grid-cell { width: 18px; height: 18px; border-radius: 4px; }
+      .grid-cell { width: 20px; height: 20px; border-radius: 5px; }
     }
     @media (min-width: 768px) {
-      body { padding: 2rem 1rem; }
-      .card { padding: 1.5rem; border-radius: 16px; margin-bottom: 1.25rem; }
+      body { padding: 2.5rem 1.5rem; }
     }
   </style>
 </head>
 <body>
-<div class="container">
-  <nav>
-    <a href="/">Home</a>
-    <a href="/habits/">Dashboard</a>
-    <a href="/habits/charts/" class="active">Charts</a>
-  </nav>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
 
-  <h1>Habits Charts</h1>
+  <div class="container">
+    <nav>
+      <a href="/">Home</a>
+      <a href="/habits/">Dashboard</a>
+      <a href="/habits/charts/" class="active">Charts</a>
+    </nav>
 
-  <div class="card">
-    <div class="filters">
-      <div>
-        <label for="period">Period</label>
-        <select id="period" onchange="onPeriodChange()">
-          <option value="all">All Time</option>
-          <option value="yearly">Yearly</option>
-          <option value="monthly" selected>Monthly</option>
-          <option value="weekly">Weekly</option>
-          <option value="daily">Daily</option>
-          <option value="custom">Custom Range</option>
-        </select>
+    <h1>Habits Charts</h1>
+
+    <div class="card">
+      <div class="filters">
+        <div>
+          <label for="period">Period</label>
+          <select id="period" onchange="onPeriodChange()">
+            <option value="all">All Time</option>
+            <option value="yearly">Yearly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div id="wrap-year" class="date-input">
+          <label for="year">Year</label>
+          <input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" />
+        </div>
+        <div id="wrap-month" class="date-input visible">
+          <label for="month">Month</label>
+          <input type="month" id="month" />
+        </div>
+        <div id="wrap-week" class="date-input">
+          <label for="week">Week</label>
+          <input type="week" id="week" />
+        </div>
+        <div id="wrap-day" class="date-input">
+          <label for="day">Day</label>
+          <input type="date" id="day" />
+        </div>
+        <div id="wrap-start" class="date-input">
+          <label for="start-date">Start Date</label>
+          <input type="date" id="start-date" />
+        </div>
+        <div id="wrap-end" class="date-input">
+          <label for="end-date">End Date</label>
+          <input type="date" id="end-date" />
+        </div>
       </div>
-      <div id="wrap-year" class="date-input">
-        <label for="year">Year</label>
-        <input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" />
+
+      <div class="presets" id="wrap-presets">
+        <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
+        <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
+        <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
+        <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
+        <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
       </div>
-      <div id="wrap-month" class="date-input visible">
-        <label for="month">Month</label>
-        <input type="month" id="month" />
-      </div>
-      <div id="wrap-week" class="date-input">
-        <label for="week">Week</label>
-        <input type="week" id="week" />
-      </div>
-      <div id="wrap-day" class="date-input">
-        <label for="day">Day</label>
-        <input type="date" id="day" />
-      </div>
-      <div id="wrap-start" class="date-input">
-        <label for="start-date">Start Date</label>
-        <input type="date" id="start-date" />
-      </div>
-      <div id="wrap-end" class="date-input">
-        <label for="end-date">End Date</label>
-        <input type="date" id="end-date" />
-      </div>
+
+      <button class="btn-load" id="btn" onclick="loadCharts()">Load Charts</button>
     </div>
 
-    <div class="presets" id="wrap-presets">
-      <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
-      <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
-      <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
-      <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
-      <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
+    <div class="spinner-wrap" id="loading">
+      <div class="spinner-ring"></div>
+      <div class="spinner-text">Fetching from Notion…</div>
     </div>
+    <div class="error-box" id="error-box"></div>
 
-    <button id="btn" onclick="loadCharts()">Load Charts</button>
+    <div id="results">
+      <div class="card">
+        <div class="period-badge" id="period-badge"></div>
+        <div class="stat-row">
+          <span class="stat-label">Days Tracked</span>
+          <span class="stat-value" id="stat-days">—</span>
+        </div>
+      </div>
+
+      <!-- Score trend -->
+      <div class="card">
+        <h2>Score Trend</h2>
+        <div class="chart-wrap">
+          <canvas id="score-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Daily binary heatmap grid -->
+      <div class="card" id="grid-card" style="display:none;">
+        <h2>Daily Achievement</h2>
+        <div class="grid-scroll">
+          <div id="habit-grid"></div>
+        </div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:var(--accent);"></span>Done</span>
+          <span><span class="legend-dot" style="background:rgba(0,0,0,0.06);"></span>Not done</span>
+          <span><span class="legend-dot" style="background:transparent;border:1.5px dashed rgba(0,0,0,0.15);"></span>No entry</span>
+        </div>
+      </div>
+
+      <!-- Days done bar chart -->
+      <div class="card">
+        <h2>Days Done per Habit</h2>
+        <div class="chart-wrap">
+          <canvas id="habit-chart"></canvas>
+        </div>
+      </div>
+    </div>
   </div>
-
-  <div id="loading" class="spinner" style="display:none;">Fetching from Notion...</div>
-  <div id="error-box" class="error-box" style="display:none;"></div>
-
-  <div id="results">
-    <div class="card">
-      <div class="period-badge" id="period-badge"></div>
-      <div class="stat-row">
-        <span class="stat-label">Days Tracked</span>
-        <span class="stat-value" id="stat-days">—</span>
-      </div>
-    </div>
-
-    <!-- Score trend line chart -->
-    <div class="card">
-      <h2>Score Trend</h2>
-      <div class="chart-wrap">
-        <canvas id="score-chart"></canvas>
-      </div>
-    </div>
-
-    <!-- Daily binary heatmap grid (short ranges only) -->
-    <div class="card" id="grid-card" style="display:none;">
-      <h2>Daily Achievement</h2>
-      <div class="grid-scroll">
-        <div id="habit-grid"></div>
-      </div>
-      <div style="display:flex; gap:1rem; margin-top:0.85rem; font-size:0.72rem; color:#6e6e73;">
-        <span><span style="display:inline-block;width:12px;height:12px;background:#34c759;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Done</span>
-        <span><span style="display:inline-block;width:12px;height:12px;background:#e8e8ed;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Not done</span>
-        <span><span style="display:inline-block;width:12px;height:12px;background:#f5f5f7;border:1px solid #e5e5ea;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>No entry</span>
-      </div>
-    </div>
-
-    <!-- Habit days-done bar chart -->
-    <div class="card">
-      <h2>Days Done per Habit</h2>
-      <div class="chart-wrap">
-        <canvas id="habit-chart"></canvas>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script>
   let scoreChart = null;
@@ -237,9 +387,9 @@
   }
 
   function rateColor(ratio) {
-    if (ratio >= 0.8) return "#34c759";
-    if (ratio >= 0.5) return "#ff9f0a";
-    return "#ff3b30";
+    if (ratio >= 0.8) return "#059669";
+    if (ratio >= 0.5) return "#D97706";
+    return "#DC2626";
   }
 
   function renderScoreChart(labels, values) {
@@ -250,13 +400,13 @@
         labels,
         datasets: [{
           data: values,
-          borderColor: "#34c759",
-          backgroundColor: "rgba(52, 199, 89, 0.08)",
+          borderColor: "#059669",
+          backgroundColor: "rgba(5,150,105,0.08)",
           fill: true,
           tension: 0.4,
           pointRadius: 4,
           pointHoverRadius: 6,
-          pointBackgroundColor: "#34c759",
+          pointBackgroundColor: "#059669",
           pointBorderColor: "#fff",
           pointBorderWidth: 2,
           spanGaps: false,
@@ -272,7 +422,7 @@
         },
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
-          y: { beginAtZero: true, grid: { color: "#f2f2f7" }, ticks: { font: { size: 10 } } }
+          y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.04)" }, ticks: { font: { size: 10 } } }
         }
       }
     });
@@ -317,7 +467,7 @@
   function renderHabitChart(labels, values, totalDays) {
     if (habitChart) habitChart.destroy();
     const canvas = document.getElementById("habit-chart");
-    canvas.style.height = `${Math.max(200, labels.length * 36)}px`;
+    canvas.style.height = `${Math.max(200, labels.length * 40)}px`;
 
     habitChart = new Chart(canvas.getContext("2d"), {
       type: "bar",
@@ -326,7 +476,7 @@
         datasets: [{
           data: values,
           backgroundColor: values.map(v => rateColor(totalDays ? v / totalDays : 0)),
-          borderRadius: 5,
+          borderRadius: 6,
           borderSkipped: false,
         }]
       },
@@ -346,7 +496,7 @@
           x: {
             beginAtZero: true,
             max: totalDays || 1,
-            grid: { color: "#f2f2f7" },
+            grid: { color: "rgba(0,0,0,0.04)" },
             ticks: { font: { size: 10 }, stepSize: 1, callback: v => Number.isInteger(v) ? v : "" }
           },
           y: { grid: { display: false }, ticks: { font: { size: 10 } } }

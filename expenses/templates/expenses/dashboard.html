@@ -4,178 +4,307 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Expenses Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f7; color: #1d1d1f; min-height: 100vh; padding: 1rem 0.75rem; }
-    .container { max-width: 720px; margin: 0 auto; }
-    nav { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-    nav a { padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: background 0.15s; color: #6e6e73; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    nav a.active { background: #0071e3; color: #fff; }
-    nav a:not(.active):hover { background: #e8e8ed; }
-    h1 { font-size: clamp(1.3rem, 5vw, 1.8rem); font-weight: 700; margin-bottom: 1.25rem; }
-    .card { background: #fff; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+    :root {
+      --accent:    #4F46E5;
+      --accent-2:  #7C3AED;
+      --grad:      linear-gradient(135deg, #4F46E5, #7C3AED);
+      --grad-soft: linear-gradient(135deg, #EEF2FF, #F5F3FF);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F5F4FA; color: #111827;
+      min-height: 100vh; padding: 1.25rem 0.75rem;
+      position: relative;
+    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
+    .orb-1 { width: 450px; height: 450px; background: rgba(79,70,229,0.10); top: -120px; right: -80px; }
+    .orb-2 { width: 350px; height: 350px; background: rgba(124,58,237,0.08); bottom: -100px; left: -80px; }
+
+    .container { max-width: 740px; margin: 0 auto; position: relative; z-index: 1; }
+
+    /* Nav */
+    nav {
+      display: inline-flex; gap: 0.2rem; flex-wrap: wrap;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+      margin-bottom: 2rem;
+    }
+    nav a {
+      padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem;
+      font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280;
+    }
+    nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
+    nav a:not(.active):hover { background: rgba(79,70,229,0.07); color: var(--accent); }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 900; letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      background: var(--grad);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    /* Cards */
+    .card {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
+      padding: 1.25rem; margin-bottom: 1rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+
+    /* Filters */
     .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
-    label { display: block; font-size: 0.72rem; font-weight: 600; color: #6e6e73; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    select, input[type="month"], input[type="week"], input[type="date"], input[type="number"] { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid #d2d2d7; border-radius: 10px; font-size: 0.95rem; background: #fff; appearance: none; outline: none; transition: border-color 0.15s; color: #1d1d1f; }
-    select:focus, input:focus { border-color: #0071e3; }
+
+    label {
+      display: block; font-size: 0.7rem; font-weight: 700; color: #9CA3AF;
+      margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    select,
+    input[type="month"], input[type="week"], input[type="date"], input[type="number"] {
+      width: 100%; padding: 0.65rem 0.9rem;
+      border: 1.5px solid #E5E7EB; border-radius: 12px;
+      font-size: 0.93rem; font-family: inherit;
+      background: rgba(255,255,255,0.9); color: #111827;
+      appearance: none; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    select:focus, input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+    }
+
     .date-input { display: none; }
     .date-input.visible { display: block; }
-    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; }
+
+    /* Presets */
+    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; }
     .presets.visible { display: flex; }
-    .preset-btn { padding: 0.3rem 0.7rem; font-size: 0.78rem; font-weight: 600; background: #f2f2f7; color: #3a3a3c; border: none; border-radius: 7px; cursor: pointer; transition: background 0.15s; }
-    .preset-btn:hover { background: #e2e2e7; }
-    button { margin-top: 1rem; width: 100%; padding: 0.8rem; background: #0071e3; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
-    button:hover   { background: #0077ed; }
-    button:active  { background: #005bbf; }
-    button:disabled { background: #a1c4f5; cursor: not-allowed; }
-    .period-badge { display: inline-block; font-size: 0.75rem; font-weight: 600; background: #e8f0fe; color: #0071e3; border-radius: 6px; padding: 0.2rem 0.55rem; margin-bottom: 0.75rem; }
-    .stat-row { display: flex; justify-content: space-between; align-items: baseline; }
-    .stat-label { font-size: 0.85rem; color: #6e6e73; }
-    .stat-value { font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 700; }
-    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; }
-    h3 { font-size: 0.75rem; font-weight: 600; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.65rem; }
+    .preset-btn {
+      padding: 0.35rem 0.8rem; font-size: 0.77rem; font-weight: 600;
+      background: rgba(79,70,229,0.07); color: var(--accent);
+      border: 1px solid rgba(79,70,229,0.15); border-radius: 100px;
+      cursor: pointer; transition: all 0.2s ease; font-family: inherit;
+    }
+    .preset-btn:hover { background: var(--grad); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
+
+    /* Buttons */
+    .btn-primary {
+      margin-top: 1.1rem; width: 100%; padding: 0.85rem;
+      background: var(--grad); color: #fff; border: none; border-radius: 100px;
+      font-size: 0.97rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: all 0.25s ease;
+      box-shadow: 0 4px 15px rgba(79,70,229,0.35);
+      letter-spacing: 0.01em;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79,70,229,0.45); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Period badge */
+    .period-badge {
+      display: inline-block; padding: 0.3rem 0.9rem; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em;
+      background: var(--grad); color: white;
+      box-shadow: 0 2px 10px rgba(79,70,229,0.3);
+      margin-bottom: 0.85rem;
+    }
+
+    .stat-row { display: flex; justify-content: space-between; align-items: center; }
+    .stat-label { font-size: 0.85rem; color: #6B7280; font-weight: 600; }
+    .stat-value {
+      font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 900; letter-spacing: -0.03em;
+      background: var(--grad);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; color: #374151; }
+    h3 { font-size: 0.72rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+
     .chart-wrap { position: relative; width: 100%; }
+
+    /* Breakdown */
     .breakdown-layout { display: flex; flex-direction: column; gap: 1.25rem; }
-    .breakdown-item { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid #f2f2f7; gap: 0.5rem; }
+    .breakdown-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.6rem 0; border-bottom: 1px solid #F3F4F6; gap: 0.6rem;
+    }
     .breakdown-item:last-child { border-bottom: none; }
-    .breakdown-name   { font-size: 0.9rem; min-width: 0; flex-shrink: 1; word-break: break-word; }
-    .breakdown-amount { font-size: 0.9rem; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+    .breakdown-name   { font-size: 0.9rem; font-weight: 600; min-width: 0; flex-shrink: 1; word-break: break-word; }
+    .breakdown-amount { font-size: 0.9rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; color: var(--accent); }
     .bar-wrap { display: none; }
-    pre.display-text { font-family: "SF Mono", "Fira Code", ui-monospace, monospace; font-size: clamp(0.75rem, 2.5vw, 0.85rem); background: #f5f5f7; border-radius: 10px; padding: 0.85rem; white-space: pre-wrap; line-height: 1.6; color: #3a3a3c; overflow-x: auto; }
-    .error-box { background: #fff2f2; border: 1.5px solid #ffd2d2; color: #d00; border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; }
+    .bar { height: 100%; border-radius: 3px; background: var(--grad); transition: width 0.4s ease; }
+
+    pre.display-text {
+      font-family: "SF Mono", ui-monospace, monospace;
+      font-size: clamp(0.73rem, 2.3vw, 0.82rem);
+      background: rgba(79,70,229,0.04); border-radius: 12px;
+      border: 1px solid rgba(79,70,229,0.1);
+      padding: 0.9rem; white-space: pre-wrap; line-height: 1.7; color: #374151;
+    }
+
+    .error-box {
+      background: #FEF2F2; border-left: 4px solid #EF4444; color: #B91C1C;
+      border-radius: 12px; padding: 0.9rem 1rem; font-size: 0.9rem;
+      margin-bottom: 1rem; font-weight: 500;
+    }
     #results { display: none; }
-    .spinner { text-align: center; color: #6e6e73; padding: 1rem 0; font-size: 0.9rem; }
+
+    /* Spinner */
+    .spinner { display: flex; flex-direction: column; align-items: center; gap: 0.65rem; padding: 1.5rem 0; }
+    .spinner-ring {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(79,70,229,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    .spinner-text { font-size: 0.85rem; color: #9CA3AF; font-weight: 500; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Page fade in */
+    .container { animation: fadeUp 0.5s ease both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 
     @media (min-width: 480px) {
-      body { padding: 1.5rem 1rem; }
-      .card { padding: 1.25rem; border-radius: 14px; }
+      body { padding: 1.75rem 1.25rem; }
+      .card { padding: 1.5rem; border-radius: 22px; }
       .filters { grid-template-columns: 1fr 1fr; }
-      .bar-wrap { display: block; flex: 1; height: 6px; background: #f2f2f7; border-radius: 3px; overflow: hidden; }
-      .bar { height: 100%; background: #0071e3; border-radius: 3px; transition: width 0.4s ease; }
+      .bar-wrap { display: block; flex: 1; height: 6px; background: #F3F4F6; border-radius: 3px; overflow: hidden; }
       .breakdown-layout { flex-direction: row; align-items: flex-start; }
       .breakdown-list-wrap { flex: 1; min-width: 0; }
-      .donut-wrap { width: 180px; flex-shrink: 0; }
+      .donut-wrap { width: 185px; flex-shrink: 0; }
     }
     @media (min-width: 768px) {
-      body { padding: 2rem 1rem; }
-      h1 { margin-bottom: 1.5rem; }
-      .card { padding: 1.5rem; border-radius: 16px; margin-bottom: 1.25rem; }
-      .donut-wrap { width: 200px; }
+      body { padding: 2.5rem 1.5rem; }
+      .card { margin-bottom: 1.25rem; }
+      .donut-wrap { width: 210px; }
     }
   </style>
 </head>
 <body>
-<div class="container">
-  <nav>
-    <a href="/">Home</a>
-    <a href="/expenses/" class="active">Dashboard</a>
-    <a href="/expenses/charts/">Charts</a>
-  </nav>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
 
-  <h1>Expenses Dashboard</h1>
+  <div class="container">
+    <nav>
+      <a href="/">Home</a>
+      <a href="/expenses/" class="active">Dashboard</a>
+      <a href="/expenses/charts/">Charts</a>
+    </nav>
 
-  <div class="card">
-    <div class="filters">
-      <div>
-        <label for="period">Period</label>
-        <select id="period" onchange="onPeriodChange()">
-          <option value="all">All Time</option>
-          <option value="yearly">Yearly</option>
-          <option value="monthly" selected>Monthly</option>
-          <option value="weekly">Weekly</option>
-          <option value="daily">Daily</option>
-          <option value="custom">Custom Range</option>
-        </select>
-      </div>
-      <div>
-        <label for="group_by">Group By</label>
-        <select id="group_by">
-          <option value="">None</option>
-          <option value="category">Category</option>
-          <option value="source">Source</option>
-        </select>
-      </div>
-      <div id="wrap-year" class="date-input">
-        <label for="year">Year</label>
-        <input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" />
-      </div>
-      <div id="wrap-month" class="date-input visible">
-        <label for="month">Month</label>
-        <input type="month" id="month" />
-      </div>
-      <div id="wrap-week" class="date-input">
-        <label for="week">Week</label>
-        <input type="week" id="week" />
-      </div>
-      <div id="wrap-day" class="date-input">
-        <label for="day">Day</label>
-        <input type="date" id="day" />
-      </div>
-      <div id="wrap-start" class="date-input">
-        <label for="start-date">Start Date</label>
-        <input type="date" id="start-date" />
-      </div>
-      <div id="wrap-end" class="date-input">
-        <label for="end-date">End Date</label>
-        <input type="date" id="end-date" />
-      </div>
-    </div>
-
-    <div class="presets" id="wrap-presets">
-      <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
-      <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
-      <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
-      <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
-      <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
-    </div>
-
-    <button id="btn" onclick="fetchAll()">Fetch Summary</button>
-  </div>
-
-  <div id="loading" class="spinner" style="display:none;">Fetching from Notion...</div>
-  <div id="error-box" class="error-box" style="display:none;"></div>
-
-  <div id="results">
-    <div class="card">
-      <div class="period-badge" id="period-badge"></div>
-      <div class="stat-row">
-        <span class="stat-label">Grand Total</span>
-        <span class="stat-value" id="grand-total"></span>
-      </div>
-    </div>
-
-    <div class="card" id="trend-card">
-      <h2>Expense Trend</h2>
-      <div class="chart-wrap">
-        <canvas id="trend-chart"></canvas>
-      </div>
-    </div>
-
-    <div class="card" id="breakdown-card" style="display:none;">
-      <h2 id="breakdown-title"></h2>
-      <div class="breakdown-layout">
-        <div class="breakdown-list-wrap">
-          <div id="breakdown-list"></div>
-        </div>
-        <div class="donut-wrap">
-          <canvas id="donut-chart"></canvas>
-        </div>
-      </div>
-    </div>
+    <h1>Expenses Dashboard</h1>
 
     <div class="card">
-      <h3>Summary Text</h3>
-      <pre class="display-text" id="display-text"></pre>
+      <div class="filters">
+        <div>
+          <label for="period">Period</label>
+          <select id="period" onchange="onPeriodChange()">
+            <option value="all">All Time</option>
+            <option value="yearly">Yearly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div>
+          <label for="group_by">Group By</label>
+          <select id="group_by">
+            <option value="">None</option>
+            <option value="category">Category</option>
+            <option value="source">Source</option>
+          </select>
+        </div>
+        <div id="wrap-year" class="date-input">
+          <label for="year">Year</label>
+          <input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" />
+        </div>
+        <div id="wrap-month" class="date-input visible">
+          <label for="month">Month</label>
+          <input type="month" id="month" />
+        </div>
+        <div id="wrap-week" class="date-input">
+          <label for="week">Week</label>
+          <input type="week" id="week" />
+        </div>
+        <div id="wrap-day" class="date-input">
+          <label for="day">Day</label>
+          <input type="date" id="day" />
+        </div>
+        <div id="wrap-start" class="date-input">
+          <label for="start-date">Start Date</label>
+          <input type="date" id="start-date" />
+        </div>
+        <div id="wrap-end" class="date-input">
+          <label for="end-date">End Date</label>
+          <input type="date" id="end-date" />
+        </div>
+      </div>
+
+      <div class="presets" id="wrap-presets">
+        <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
+        <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
+        <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
+        <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
+        <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
+      </div>
+
+      <button class="btn-primary" id="btn" onclick="fetchAll()">Fetch Summary</button>
+    </div>
+
+    <div id="loading" class="spinner" style="display:none;">
+      <div class="spinner-ring"></div>
+      <span class="spinner-text">Fetching from Notion…</span>
+    </div>
+    <div id="error-box" class="error-box" style="display:none;"></div>
+
+    <div id="results">
+      <div class="card">
+        <div class="period-badge" id="period-badge"></div>
+        <div class="stat-row">
+          <span class="stat-label">Grand Total</span>
+          <span class="stat-value" id="grand-total"></span>
+        </div>
+      </div>
+
+      <div class="card" id="trend-card">
+        <h2>Expense Trend</h2>
+        <div class="chart-wrap">
+          <canvas id="trend-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="card" id="breakdown-card" style="display:none;">
+        <h2 id="breakdown-title"></h2>
+        <div class="breakdown-layout">
+          <div class="breakdown-list-wrap">
+            <div id="breakdown-list"></div>
+          </div>
+          <div class="donut-wrap">
+            <canvas id="donut-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Summary Text</h3>
+        <pre class="display-text" id="display-text"></pre>
+      </div>
     </div>
   </div>
-</div>
 
 <script>
   const CHART_COLORS = [
-    "#0071e3","#34c759","#ff9f0a","#ff3b30",
-    "#af52de","#5ac8fa","#ff2d55","#a2845e",
-    "#30b0c7","#32ade6","#ffcc00","#ff6961",
+    "#4F46E5","#7C3AED","#059669","#F59E0B","#EF4444",
+    "#0891B2","#EC4899","#8B5CF6","#10B981","#F97316","#6366F1","#14B8A6",
   ];
 
   let trendChart = null;
@@ -196,16 +325,10 @@
     const week = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
     return `${tmp.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
   }
-
-  function monthsAgo(n) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - n);
-    return d;
-  }
+  function monthsAgo(n) { const d = new Date(); d.setMonth(d.getMonth() - n); return d; }
 
   function setPreset(key) {
-    const end = new Date();
-    const start = new Date();
+    const end = new Date(), start = new Date();
     if (key === "7d")  start.setDate(start.getDate() - 6);
     if (key === "30d") start.setDate(start.getDate() - 29);
     if (key === "3m")  start.setMonth(start.getMonth() - 3);
@@ -221,14 +344,14 @@
     Object.entries(map).forEach(([id, val]) => {
       document.getElementById(`wrap-${id}`).className = "date-input" + (p === val ? " visible" : "");
     });
-    ["start", "end"].forEach(id => {
+    ["start","end"].forEach(id => {
       document.getElementById(`wrap-${id}`).className = "date-input" + (p === "custom" ? " visible" : "");
     });
     document.getElementById("wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
   }
 
   function buildParams() {
-    const period  = document.getElementById("period").value;
+    const period = document.getElementById("period").value;
     const groupBy = document.getElementById("group_by").value;
     const p = new URLSearchParams({ period });
     if (groupBy) p.set("group_by", groupBy);
@@ -265,23 +388,22 @@
         labels,
         datasets: [{
           data: values,
-          backgroundColor: "#0071e3",
-          borderRadius: 6,
-          borderSkipped: false,
-          hoverBackgroundColor: "#005bbf",
+          backgroundColor: "rgba(79,70,229,0.85)",
+          borderRadius: 8, borderSkipped: false,
+          hoverBackgroundColor: "#7C3AED",
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: true,
+        responsive: true, maintainAspectRatio: true,
         aspectRatio: window.innerWidth < 480 ? 1.6 : 2.4,
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: ctx => " " + fmt(ctx.parsed.y) } }
+          tooltip: { callbacks: { label: ctx => " " + fmt(ctx.parsed.y) }, cornerRadius: 10 }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 45 } },
-          y: { beginAtZero: true, grid: { color: "#f2f2f7" }, ticks: { font: { size: 11 }, callback: v => fmt(v) } }
+          x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter' }, maxRotation: 45 } },
+          y: { beginAtZero: true, grid: { color: "#F3F4F6" },
+               ticks: { font: { size: 11, family: 'Inter' }, callback: v => fmt(v) } }
         }
       }
     });
@@ -293,20 +415,13 @@
       type: "doughnut",
       data: {
         labels,
-        datasets: [{
-          data: values,
-          backgroundColor: CHART_COLORS.slice(0, labels.length),
-          borderWidth: 2,
-          borderColor: "#fff",
-          hoverOffset: 6,
-        }]
+        datasets: [{ data: values, backgroundColor: CHART_COLORS.slice(0, labels.length), borderWidth: 3, borderColor: "#fff", hoverOffset: 8 }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: true,
+        responsive: true, maintainAspectRatio: true,
         plugins: {
-          legend: { position: "bottom", labels: { boxWidth: 10, padding: 10, font: { size: 11 } } },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.parsed)}` } }
+          legend: { position: "bottom", labels: { boxWidth: 10, padding: 12, font: { size: 11, family: 'Inter' } } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.parsed)}` }, cornerRadius: 10 }
         }
       }
     });
@@ -315,14 +430,13 @@
   async function fetchAll() {
     const btn = document.getElementById("btn");
     btn.disabled = true;
-    document.getElementById("loading").style.display = "block";
+    document.getElementById("loading").style.display = "flex";
     document.getElementById("results").style.display = "none";
     document.getElementById("error-box").style.display = "none";
 
     try {
       const res  = await fetch(`/expenses/chart/?${buildParams()}`);
       const data = await res.json();
-
       if (!res.ok) {
         document.getElementById("error-box").textContent = data.error || "Something went wrong.";
         document.getElementById("error-box").style.display = "block";
@@ -345,15 +459,12 @@
         const maxVal = Math.max(...data.breakdown.values);
         document.getElementById("breakdown-title").textContent =
           `By ${data.group_by.charAt(0).toUpperCase() + data.group_by.slice(1)}`;
-
         document.getElementById("breakdown-list").innerHTML = data.breakdown.labels.map((label, i) => `
           <div class="breakdown-item">
             <span class="breakdown-name">${label}</span>
             <div class="bar-wrap"><div class="bar" style="width:${(data.breakdown.values[i]/maxVal*100).toFixed(1)}%"></div></div>
             <span class="breakdown-amount">${fmt(data.breakdown.values[i])}</span>
-          </div>
-        `).join("");
-
+          </div>`).join("");
         renderDonutChart(data.breakdown.labels, data.breakdown.values);
         breakdownCard.style.display = "block";
       } else {

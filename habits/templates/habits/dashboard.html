@@ -4,160 +4,225 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Habits Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f7; color: #1d1d1f; min-height: 100vh; padding: 1rem 0.75rem; }
-    .container { max-width: 720px; margin: 0 auto; }
-    nav { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-    nav a { padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: background 0.15s; color: #6e6e73; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    nav a.active { background: #34c759; color: #fff; }
-    nav a:not(.active):hover { background: #e8e8ed; }
-    h1 { font-size: clamp(1.3rem, 5vw, 1.8rem); font-weight: 700; margin-bottom: 1.25rem; }
-    .card { background: #fff; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+    :root {
+      --accent:   #059669;
+      --accent-2: #0891B2;
+      --grad:     linear-gradient(135deg, #059669, #0891B2);
+      --grad-a:   rgba(5,150,105,0.12);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F2FAF7; color: #111827;
+      min-height: 100vh; padding: 1.25rem 0.75rem; position: relative;
+    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
+    .orb-1 { width: 450px; height: 450px; background: rgba(5,150,105,0.10); top: -120px; right: -80px; }
+    .orb-2 { width: 350px; height: 350px; background: rgba(8,145,178,0.08); bottom: -100px; left: -80px; }
+
+    .container { max-width: 740px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+
+    nav {
+      display: inline-flex; gap: 0.2rem; flex-wrap: wrap;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); margin-bottom: 2rem;
+    }
+    nav a { padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280; }
+    nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(5,150,105,0.35); }
+    nav a:not(.active):hover { background: rgba(5,150,105,0.07); color: var(--accent); }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 900; letter-spacing: -0.03em; margin-bottom: 1.5rem;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
+      padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+
     .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
-    label { display: block; font-size: 0.72rem; font-weight: 600; color: #6e6e73; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    select, input[type="month"], input[type="week"], input[type="date"], input[type="number"] { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid #d2d2d7; border-radius: 10px; font-size: 0.95rem; background: #fff; appearance: none; outline: none; transition: border-color 0.15s; color: #1d1d1f; }
-    select:focus, input:focus { border-color: #34c759; }
+    label { display: block; font-size: 0.7rem; font-weight: 700; color: #9CA3AF; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    select, input[type="month"], input[type="week"], input[type="date"], input[type="number"] {
+      width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid #E5E7EB; border-radius: 12px;
+      font-size: 0.93rem; font-family: inherit; background: rgba(255,255,255,0.9); color: #111827;
+      appearance: none; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    select:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5,150,105,0.12); }
     .date-input { display: none; }
     .date-input.visible { display: block; }
-    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; }
+
+    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; }
     .presets.visible { display: flex; }
-    .preset-btn { padding: 0.3rem 0.7rem; font-size: 0.78rem; font-weight: 600; background: #f2f2f7; color: #3a3a3c; border: none; border-radius: 7px; cursor: pointer; transition: background 0.15s; }
-    .preset-btn:hover { background: #e2e2e7; }
-    button.primary { margin-top: 1rem; width: 100%; padding: 0.8rem; background: #34c759; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
-    button.primary:hover { background: #30b955; }
-    button.primary:disabled { background: #a8e6bc; cursor: not-allowed; }
-    .btn-secondary { background: #fff; color: #34c759; border: 2px solid #34c759; margin-top: 0.6rem; width: 100%; padding: 0.8rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
-    .btn-secondary:hover { background: #e8fdf0; }
-    .btn-secondary:disabled { background: #fff; color: #a8e6bc; border-color: #a8e6bc; }
-    .backfill-result { margin-top: 0.75rem; padding: 0.65rem 0.9rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600; display: none; }
-    .backfill-result.success { background: #e8fdf0; color: #1a7a3a; }
-    .backfill-result.error   { background: #fff2f2; color: #d00; }
+    .preset-btn {
+      padding: 0.35rem 0.8rem; font-size: 0.77rem; font-weight: 600;
+      background: rgba(5,150,105,0.08); color: var(--accent);
+      border: 1px solid rgba(5,150,105,0.18); border-radius: 100px;
+      cursor: pointer; transition: all 0.2s ease; font-family: inherit;
+    }
+    .preset-btn:hover { background: var(--grad); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
-    .stat-card { background: #fff; border-radius: 12px; padding: 0.85rem 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center; }
-    .stat-value { font-size: clamp(1.2rem, 4vw, 1.6rem); font-weight: 700; }
-    .stat-label { font-size: 0.72rem; color: #6e6e73; margin-top: 0.2rem; }
-    .stat-value.green  { color: #34c759; }
-    .stat-value.orange { color: #ff9f0a; }
-    .stat-value.blue   { color: #0071e3; }
+    .btn-primary {
+      margin-top: 1.1rem; width: 100%; padding: 0.85rem;
+      background: var(--grad); color: #fff; border: none; border-radius: 100px;
+      font-size: 0.97rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: all 0.25s ease;
+      box-shadow: 0 4px 15px rgba(5,150,105,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(5,150,105,0.45); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    .period-badge { display: inline-block; font-size: 0.75rem; font-weight: 600; background: #e8fdf0; color: #34c759; border-radius: 6px; padding: 0.2rem 0.55rem; margin-bottom: 0.85rem; }
-    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; }
+    .btn-secondary {
+      margin-top: 0.6rem; width: 100%; padding: 0.85rem;
+      background: rgba(255,255,255,0.8); color: var(--accent);
+      border: 2px solid rgba(5,150,105,0.3); border-radius: 100px;
+      font-size: 0.97rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: all 0.25s ease;
+    }
+    .btn-secondary:hover { background: rgba(5,150,105,0.07); border-color: var(--accent); transform: translateY(-1px); }
+    .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-    .habit-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0; border-bottom: 1px solid #f2f2f7; }
+    .backfill-result {
+      margin-top: 0.75rem; padding: 0.7rem 1rem; border-radius: 12px;
+      font-size: 0.88rem; font-weight: 600; display: none;
+    }
+    .backfill-result.success { background: rgba(5,150,105,0.1); color: #065F46; border: 1px solid rgba(5,150,105,0.2); }
+    .backfill-result.error   { background: #FEF2F2; color: #B91C1C; border: 1px solid #FCA5A5; }
+
+    /* Stats */
+    .period-badge {
+      display: inline-block; padding: 0.3rem 0.9rem; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 700; background: var(--grad); color: white;
+      box-shadow: 0 2px 10px rgba(5,150,105,0.3); margin-bottom: 1rem;
+    }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.85rem; margin-bottom: 1rem; }
+    .stat-card {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 18px;
+      padding: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center;
+    }
+    .stat-value { font-size: clamp(1.3rem, 4vw, 1.8rem); font-weight: 900; letter-spacing: -0.02em; }
+    .stat-label { font-size: 0.7rem; color: #6B7280; margin-top: 0.25rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-value.green {
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .stat-value.blue  { background: linear-gradient(135deg,#4F46E5,#7C3AED); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .stat-value.amber { background: linear-gradient(135deg,#D97706,#F59E0B); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; color: #374151; }
+
+    /* Habit list */
+    .habit-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0; border-bottom: 1px solid #F3F4F6; transition: background 0.15s; }
     .habit-item:last-child { border-bottom: none; }
-    .habit-name { font-size: 0.88rem; min-width: 0; flex-shrink: 1; word-break: break-word; flex: 1; }
-    .habit-rate { font-size: 0.88rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; width: 3.5rem; text-align: right; }
-    .habit-bar-wrap { width: 80px; flex-shrink: 0; height: 6px; background: #f2f2f7; border-radius: 3px; overflow: hidden; display: none; }
-    .habit-bar { height: 100%; border-radius: 3px; background: #34c759; transition: width 0.4s ease; }
-    .habit-done { font-size: 0.78rem; color: #6e6e73; white-space: nowrap; flex-shrink: 0; }
+    .habit-name { font-size: 0.88rem; font-weight: 600; min-width: 0; flex-shrink: 1; word-break: break-word; flex: 1; }
+    .habit-rate { font-size: 0.88rem; font-weight: 800; white-space: nowrap; flex-shrink: 0; width: 3.5rem; text-align: right; }
+    .habit-bar-wrap { width: 80px; flex-shrink: 0; height: 6px; background: #E5E7EB; border-radius: 3px; overflow: hidden; display: none; }
+    .habit-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+    .habit-done { font-size: 0.78rem; color: #9CA3AF; white-space: nowrap; flex-shrink: 0; font-weight: 500; }
 
-    .error-box { background: #fff2f2; border: 1.5px solid #ffd2d2; color: #d00; border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; }
+    .error-box { background: #FEF2F2; border-left: 4px solid #EF4444; color: #B91C1C; border-radius: 12px; padding: 0.9rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; font-weight: 500; }
     #results { display: none; }
-    .spinner { text-align: center; color: #6e6e73; padding: 1rem 0; font-size: 0.9rem; }
+    .spinner { display: flex; flex-direction: column; align-items: center; gap: 0.65rem; padding: 1.5rem 0; }
+    .spinner-ring { width: 36px; height: 36px; border: 3px solid rgba(5,150,105,0.15); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.75s linear infinite; }
+    .spinner-text { font-size: 0.85rem; color: #9CA3AF; font-weight: 500; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (min-width: 480px) {
-      body { padding: 1.5rem 1rem; }
-      .card { padding: 1.25rem; border-radius: 14px; }
+      body { padding: 1.75rem 1.25rem; }
+      .card { padding: 1.5rem; border-radius: 22px; }
       .filters { grid-template-columns: 1fr 1fr; }
       .habit-bar-wrap { display: block; }
     }
-    @media (min-width: 768px) {
-      body { padding: 2rem 1rem; }
-      .card { padding: 1.5rem; border-radius: 16px; margin-bottom: 1.25rem; }
-    }
+    @media (min-width: 768px) { body { padding: 2.5rem 1.5rem; } .card { margin-bottom: 1.25rem; } }
   </style>
 </head>
 <body>
-<div class="container">
-  <nav>
-    <a href="/">Home</a>
-    <a href="/habits/" class="active">Dashboard</a>
-    <a href="/habits/charts/">Charts</a>
-  </nav>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
 
-  <h1>Habits Dashboard</h1>
+  <div class="container">
+    <nav>
+      <a href="/">Home</a>
+      <a href="/habits/" class="active">Dashboard</a>
+      <a href="/habits/charts/">Charts</a>
+    </nav>
 
-  <div class="card">
-    <div class="filters">
-      <div>
-        <label for="period">Period</label>
-        <select id="period" onchange="onPeriodChange()">
-          <option value="all">All Time</option>
-          <option value="yearly">Yearly</option>
-          <option value="monthly" selected>Monthly</option>
-          <option value="weekly">Weekly</option>
-          <option value="daily">Daily</option>
-          <option value="custom">Custom Range</option>
-        </select>
-      </div>
-      <div id="wrap-year" class="date-input">
-        <label for="year">Year</label>
-        <input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" />
-      </div>
-      <div id="wrap-month" class="date-input visible">
-        <label for="month">Month</label>
-        <input type="month" id="month" />
-      </div>
-      <div id="wrap-week" class="date-input">
-        <label for="week">Week</label>
-        <input type="week" id="week" />
-      </div>
-      <div id="wrap-day" class="date-input">
-        <label for="day">Day</label>
-        <input type="date" id="day" />
-      </div>
-      <div id="wrap-start" class="date-input">
-        <label for="start-date">Start Date</label>
-        <input type="date" id="start-date" />
-      </div>
-      <div id="wrap-end" class="date-input">
-        <label for="end-date">End Date</label>
-        <input type="date" id="end-date" />
-      </div>
-    </div>
-
-    <div class="presets" id="wrap-presets">
-      <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
-      <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
-      <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
-      <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
-      <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
-    </div>
-
-    <button class="primary" id="btn" onclick="fetchSummary()">Fetch Summary</button>
-    <button class="btn-secondary" id="backfill-btn" onclick="runBackfill()">Backfill Missing Entries</button>
-    <div id="backfill-result" class="backfill-result"></div>
-  </div>
-
-  <div id="loading" class="spinner" style="display:none;">Fetching from Notion...</div>
-  <div id="error-box" class="error-box" style="display:none;"></div>
-
-  <div id="results">
-    <div class="period-badge" id="period-badge"></div>
-
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-value blue" id="stat-days">—</div>
-        <div class="stat-label">Days Tracked</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value green" id="stat-rate">—</div>
-        <div class="stat-label">Completion</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value orange" id="stat-score">—</div>
-        <div class="stat-label">Avg Score</div>
-      </div>
-    </div>
+    <h1>Habits Dashboard</h1>
 
     <div class="card">
-      <h2>Habit Completion</h2>
-      <div id="habit-list"></div>
+      <div class="filters">
+        <div>
+          <label for="period">Period</label>
+          <select id="period" onchange="onPeriodChange()">
+            <option value="all">All Time</option>
+            <option value="yearly">Yearly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div id="wrap-year" class="date-input"><label for="year">Year</label><input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" /></div>
+        <div id="wrap-month" class="date-input visible"><label for="month">Month</label><input type="month" id="month" /></div>
+        <div id="wrap-week" class="date-input"><label for="week">Week</label><input type="week" id="week" /></div>
+        <div id="wrap-day" class="date-input"><label for="day">Day</label><input type="date" id="day" /></div>
+        <div id="wrap-start" class="date-input"><label for="start-date">Start Date</label><input type="date" id="start-date" /></div>
+        <div id="wrap-end" class="date-input"><label for="end-date">End Date</label><input type="date" id="end-date" /></div>
+      </div>
+
+      <div class="presets" id="wrap-presets">
+        <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
+        <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
+        <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
+        <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
+        <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
+      </div>
+
+      <button class="btn-primary" id="btn" onclick="fetchSummary()">Fetch Summary</button>
+      <button class="btn-secondary" id="backfill-btn" onclick="runBackfill()">Backfill Missing Entries</button>
+      <div id="backfill-result" class="backfill-result"></div>
+    </div>
+
+    <div id="loading" class="spinner" style="display:none;">
+      <div class="spinner-ring"></div>
+      <span class="spinner-text">Fetching from Notion…</span>
+    </div>
+    <div id="error-box" class="error-box" style="display:none;"></div>
+
+    <div id="results">
+      <div class="period-badge" id="period-badge"></div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value blue" id="stat-days">—</div>
+          <div class="stat-label">Days Tracked</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value green" id="stat-rate">—</div>
+          <div class="stat-label">Completion</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value amber" id="stat-score">—</div>
+          <div class="stat-label">Avg Score</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Habit Completion</h2>
+        <div id="habit-list"></div>
+      </div>
     </div>
   </div>
-</div>
 
 <script>
   const today = new Date();
@@ -175,16 +240,10 @@
     const w = Math.ceil((((t - ys) / 86400000) + 1) / 7);
     return `${t.getUTCFullYear()}-W${String(w).padStart(2, "0")}`;
   }
-
-  function monthsAgo(n) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - n);
-    return d;
-  }
+  function monthsAgo(n) { const d = new Date(); d.setMonth(d.getMonth() - n); return d; }
 
   function setPreset(key) {
-    const end = new Date();
-    const start = new Date();
+    const end = new Date(), start = new Date();
     if (key === "7d")  start.setDate(start.getDate() - 6);
     if (key === "30d") start.setDate(start.getDate() - 29);
     if (key === "3m")  start.setMonth(start.getMonth() - 3);
@@ -200,7 +259,7 @@
     Object.entries(map).forEach(([id, val]) => {
       document.getElementById(`wrap-${id}`).className = "date-input" + (p === val ? " visible" : "");
     });
-    ["start", "end"].forEach(id => {
+    ["start","end"].forEach(id => {
       document.getElementById(`wrap-${id}`).className = "date-input" + (p === "custom" ? " visible" : "");
     });
     document.getElementById("wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
@@ -213,10 +272,7 @@
     if (period === "monthly") p.set("month", document.getElementById("month").value);
     if (period === "weekly")  p.set("week",  document.getElementById("week").value);
     if (period === "daily")   p.set("day",   document.getElementById("day").value);
-    if (period === "custom") {
-      p.set("start", document.getElementById("start-date").value);
-      p.set("end",   document.getElementById("end-date").value);
-    }
+    if (period === "custom")  { p.set("start", document.getElementById("start-date").value); p.set("end", document.getElementById("end-date").value); }
     return p.toString();
   }
 
@@ -230,74 +286,59 @@
   }
 
   function rateColor(r) {
-    if (r >= 80) return "#34c759";
-    if (r >= 50) return "#ff9f0a";
-    return "#ff3b30";
+    if (r >= 80) return "linear-gradient(135deg,#059669,#0891B2)";
+    if (r >= 50) return "linear-gradient(135deg,#D97706,#F59E0B)";
+    return "linear-gradient(135deg,#DC2626,#EF4444)";
+  }
+  function rateTextColor(r) {
+    if (r >= 80) return "#059669";
+    if (r >= 50) return "#D97706";
+    return "#DC2626";
   }
 
   async function runBackfill() {
     const btn = document.getElementById("backfill-btn");
     const result = document.getElementById("backfill-result");
-    btn.disabled = true;
-    btn.textContent = "Backfilling...";
-    result.style.display = "none";
-    result.className = "backfill-result";
-
+    btn.disabled = true; btn.textContent = "Backfilling…";
+    result.style.display = "none"; result.className = "backfill-result";
     try {
       const res = await fetch("/habits/backfill/", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) {
-        result.textContent = data.error || "Backfill failed.";
-        result.classList.add("error");
-      } else if (data.created === 0) {
-        result.textContent = "No missing entries — everything is up to date.";
-        result.classList.add("success");
-      } else {
-        result.textContent = `Created ${data.created} missing entr${data.created === 1 ? "y" : "ies"} for ${new Date().getFullYear()}.` +
-          (data.failed.length ? ` ${data.failed.length} failed.` : "");
-        result.classList.add("success");
-      }
+      if (!res.ok) { result.textContent = data.error || "Backfill failed."; result.classList.add("error"); }
+      else if (data.created === 0) { result.textContent = "No missing entries — everything is up to date."; result.classList.add("success"); }
+      else { result.textContent = `Created ${data.created} missing entr${data.created === 1 ? "y" : "ies"} for ${new Date().getFullYear()}.${data.failed.length ? ` ${data.failed.length} failed.` : ""}`; result.classList.add("success"); }
     } catch (e) {
-      result.textContent = "Network error: " + e.message;
-      result.classList.add("error");
+      result.textContent = "Network error: " + e.message; result.classList.add("error");
     } finally {
-      result.style.display = "block";
-      btn.disabled = false;
-      btn.textContent = "Backfill Missing Entries";
+      result.style.display = "block"; btn.disabled = false; btn.textContent = "Backfill Missing Entries";
     }
   }
 
   async function fetchSummary() {
     const btn = document.getElementById("btn");
     btn.disabled = true;
-    document.getElementById("loading").style.display = "block";
+    document.getElementById("loading").style.display = "flex";
     document.getElementById("results").style.display = "none";
     document.getElementById("error-box").style.display = "none";
-
     try {
       const res  = await fetch(`/habits/summary/?${buildParams()}`);
       const data = await res.json();
-      if (!res.ok) {
-        document.getElementById("error-box").textContent = data.error || "Error";
-        document.getElementById("error-box").style.display = "block";
-        return;
-      }
+      if (!res.ok) { document.getElementById("error-box").textContent = data.error || "Error"; document.getElementById("error-box").style.display = "block"; return; }
 
-      document.getElementById("period-badge").textContent    = periodLabel(data);
-      document.getElementById("stat-days").textContent       = data.total_days;
-      document.getElementById("stat-rate").textContent       = data.overall_completion_rate + "%";
-      document.getElementById("stat-score").textContent      = data.avg_score;
+      document.getElementById("period-badge").textContent = periodLabel(data);
+      document.getElementById("stat-days").textContent    = data.total_days;
+      document.getElementById("stat-rate").textContent    = data.overall_completion_rate + "%";
+      document.getElementById("stat-score").textContent   = data.avg_score;
 
       document.getElementById("habit-list").innerHTML = data.habits.map(h => `
         <div class="habit-item">
           <span class="habit-name">${h.name}</span>
           <div class="habit-bar-wrap">
-            <div class="habit-bar" style="width:${h.rate}%; background:${rateColor(h.rate)};"></div>
+            <div class="habit-bar" style="width:${h.rate}%;background:${rateColor(h.rate)};"></div>
           </div>
           <span class="habit-done">${h.done}/${h.total}</span>
-          <span class="habit-rate" style="color:${rateColor(h.rate)}">${h.rate}%</span>
-        </div>
-      `).join("");
+          <span class="habit-rate" style="color:${rateTextColor(h.rate)}">${h.rate}%</span>
+        </div>`).join("");
 
       document.getElementById("results").style.display = "block";
     } catch (e) {

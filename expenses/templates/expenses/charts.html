@@ -4,169 +4,209 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Expense Charts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f7; color: #1d1d1f; min-height: 100vh; padding: 1rem 0.75rem; }
-    .container { max-width: 720px; margin: 0 auto; }
-    nav { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-    nav a { padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: background 0.15s; color: #6e6e73; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    nav a.active { background: #0071e3; color: #fff; }
-    nav a:not(.active):hover { background: #e8e8ed; }
-    h1 { font-size: clamp(1.3rem, 5vw, 1.8rem); font-weight: 700; margin-bottom: 1.25rem; }
-    .card { background: #fff; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+    :root {
+      --accent:   #4F46E5;
+      --accent-2: #7C3AED;
+      --grad:     linear-gradient(135deg, #4F46E5, #7C3AED);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F5F4FA; color: #111827;
+      min-height: 100vh; padding: 1.25rem 0.75rem; position: relative;
+    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
+    .orb-1 { width: 450px; height: 450px; background: rgba(79,70,229,0.10); top: -120px; right: -80px; }
+    .orb-2 { width: 350px; height: 350px; background: rgba(124,58,237,0.08); bottom: -100px; left: -80px; }
+
+    .container { max-width: 740px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+
+    nav {
+      display: inline-flex; gap: 0.2rem; flex-wrap: wrap;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); margin-bottom: 2rem;
+    }
+    nav a { padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280; }
+    nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
+    nav a:not(.active):hover { background: rgba(79,70,229,0.07); color: var(--accent); }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 900; letter-spacing: -0.03em; margin-bottom: 1.5rem;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
+      padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+
     .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
-    label { display: block; font-size: 0.72rem; font-weight: 600; color: #6e6e73; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    select, input[type="month"], input[type="week"], input[type="date"], input[type="number"] { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid #d2d2d7; border-radius: 10px; font-size: 0.95rem; background: #fff; appearance: none; outline: none; transition: border-color 0.15s; color: #1d1d1f; }
-    select:focus, input:focus { border-color: #0071e3; }
+    label { display: block; font-size: 0.7rem; font-weight: 700; color: #9CA3AF; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    select, input[type="month"], input[type="week"], input[type="date"], input[type="number"] {
+      width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid #E5E7EB; border-radius: 12px;
+      font-size: 0.93rem; font-family: inherit; background: rgba(255,255,255,0.9); color: #111827;
+      appearance: none; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    select:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
     .date-input { display: none; }
     .date-input.visible { display: block; }
-    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; }
+
+    .presets { display: none; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; }
     .presets.visible { display: flex; }
-    .preset-btn { padding: 0.3rem 0.7rem; font-size: 0.78rem; font-weight: 600; background: #f2f2f7; color: #3a3a3c; border: none; border-radius: 7px; cursor: pointer; transition: background 0.15s; }
-    .preset-btn:hover { background: #e2e2e7; }
-    button { margin-top: 1rem; width: 100%; padding: 0.8rem; background: #0071e3; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
-    button:hover   { background: #0077ed; }
-    button:active  { background: #005bbf; }
-    button:disabled { background: #a1c4f5; cursor: not-allowed; }
-    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; }
-    .period-badge { display: inline-block; font-size: 0.75rem; font-weight: 600; background: #e8f0fe; color: #0071e3; border-radius: 6px; padding: 0.2rem 0.55rem; margin-bottom: 0.6rem; }
-    .grand-total { font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 700; }
-    .total-label { font-size: 0.85rem; color: #6e6e73; }
+    .preset-btn {
+      padding: 0.35rem 0.8rem; font-size: 0.77rem; font-weight: 600;
+      background: rgba(79,70,229,0.07); color: var(--accent);
+      border: 1px solid rgba(79,70,229,0.15); border-radius: 100px;
+      cursor: pointer; transition: all 0.2s ease; font-family: inherit;
+    }
+    .preset-btn:hover { background: var(--grad); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
+
+    button {
+      margin-top: 1.1rem; width: 100%; padding: 0.85rem;
+      background: var(--grad); color: #fff; border: none; border-radius: 100px;
+      font-size: 0.97rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: all 0.25s ease;
+      box-shadow: 0 4px 15px rgba(79,70,229,0.35);
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79,70,229,0.45); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; color: #374151; }
+
+    .period-badge {
+      display: inline-block; padding: 0.3rem 0.9rem; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 700; background: var(--grad); color: white;
+      box-shadow: 0 2px 10px rgba(79,70,229,0.3); margin-bottom: 0.5rem;
+    }
+    .grand-total {
+      font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 900; letter-spacing: -0.03em;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .total-label { font-size: 0.85rem; color: #6B7280; font-weight: 600; }
+
     .chart-wrap { position: relative; width: 100%; }
     .charts-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-    .error-box { background: #fff2f2; border: 1.5px solid #ffd2d2; color: #d00; border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; }
+
+    .error-box {
+      background: #FEF2F2; border-left: 4px solid #EF4444; color: #B91C1C;
+      border-radius: 12px; padding: 0.9rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; font-weight: 500;
+    }
     #results { display: none; }
-    .spinner { text-align: center; color: #6e6e73; padding: 1rem 0; font-size: 0.9rem; }
+    .spinner { display: flex; flex-direction: column; align-items: center; gap: 0.65rem; padding: 1.5rem 0; }
+    .spinner-ring { width: 36px; height: 36px; border: 3px solid rgba(79,70,229,0.15); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.75s linear infinite; }
+    .spinner-text { font-size: 0.85rem; color: #9CA3AF; font-weight: 500; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (min-width: 480px) {
-      body { padding: 1.5rem 1rem; }
-      .card { padding: 1.25rem; border-radius: 14px; }
+      body { padding: 1.75rem 1.25rem; }
+      .card { padding: 1.5rem; border-radius: 22px; }
       .filters { grid-template-columns: 1fr 1fr; }
     }
-    @media (min-width: 600px) {
-      .charts-grid { grid-template-columns: 1fr 1fr; }
-    }
-    @media (min-width: 768px) {
-      body { padding: 2rem 1rem; }
-      h1 { margin-bottom: 1.5rem; }
-      .card { padding: 1.5rem; border-radius: 16px; margin-bottom: 1.25rem; }
-    }
+    @media (min-width: 600px) { .charts-grid { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 768px) { body { padding: 2.5rem 1.5rem; } .card { margin-bottom: 1.25rem; } }
   </style>
 </head>
 <body>
-<div class="container">
-  <nav>
-    <a href="/">Home</a>
-    <a href="/expenses/">Dashboard</a>
-    <a href="/expenses/charts/" class="active">Charts</a>
-  </nav>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
 
-  <h1>Expense Charts</h1>
+  <div class="container">
+    <nav>
+      <a href="/">Home</a>
+      <a href="/expenses/">Dashboard</a>
+      <a href="/expenses/charts/" class="active">Charts</a>
+    </nav>
 
-  <div class="card">
-    <div class="filters">
-      <div>
-        <label for="period">Period</label>
-        <select id="period" onchange="onPeriodChange()">
-          <option value="all">All Time</option>
-          <option value="yearly">Yearly</option>
-          <option value="monthly" selected>Monthly</option>
-          <option value="weekly">Weekly</option>
-          <option value="daily">Daily</option>
-          <option value="custom">Custom Range</option>
-        </select>
-      </div>
-      <div>
-        <label for="group_by">Group By</label>
-        <select id="group_by">
-          <option value="">None</option>
-          <option value="category">Category</option>
-          <option value="source">Source</option>
-        </select>
-      </div>
-      <div id="wrap-year" class="date-input">
-        <label for="year">Year</label>
-        <input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" />
-      </div>
-      <div id="wrap-month" class="date-input visible">
-        <label for="month">Month</label>
-        <input type="month" id="month" />
-      </div>
-      <div id="wrap-week" class="date-input">
-        <label for="week">Week</label>
-        <input type="week" id="week" />
-      </div>
-      <div id="wrap-day" class="date-input">
-        <label for="day">Day</label>
-        <input type="date" id="day" />
-      </div>
-      <div id="wrap-start" class="date-input">
-        <label for="start-date">Start Date</label>
-        <input type="date" id="start-date" />
-      </div>
-      <div id="wrap-end" class="date-input">
-        <label for="end-date">End Date</label>
-        <input type="date" id="end-date" />
-      </div>
-    </div>
+    <h1>Expense Charts</h1>
 
-    <div class="presets" id="wrap-presets">
-      <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
-      <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
-      <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
-      <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
-      <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
-    </div>
-
-    <button id="btn" onclick="loadCharts()">Load Charts</button>
-  </div>
-
-  <div id="loading" class="spinner" style="display:none;">Fetching from Notion...</div>
-  <div id="error-box" class="error-box" style="display:none;"></div>
-
-  <div id="results">
     <div class="card">
-      <div class="period-badge" id="period-badge"></div><br/>
-      <span class="total-label">Grand Total &nbsp;</span>
-      <span class="grand-total" id="grand-total"></span>
-    </div>
-
-    <div class="card" id="line-card">
-      <h2>Spending Over Time</h2>
-      <div class="chart-wrap">
-        <canvas id="line-chart"></canvas>
-      </div>
-    </div>
-
-    <div class="charts-grid">
-      <div class="card" id="trend-card">
-        <h2>Expense by Period</h2>
-        <div class="chart-wrap">
-          <canvas id="trend-chart"></canvas>
+      <div class="filters">
+        <div>
+          <label for="period">Period</label>
+          <select id="period" onchange="onPeriodChange()">
+            <option value="all">All Time</option>
+            <option value="yearly">Yearly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+            <option value="custom">Custom Range</option>
+          </select>
         </div>
+        <div>
+          <label for="group_by">Group By</label>
+          <select id="group_by">
+            <option value="">None</option>
+            <option value="category">Category</option>
+            <option value="source">Source</option>
+          </select>
+        </div>
+        <div id="wrap-year" class="date-input"><label for="year">Year</label><input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" /></div>
+        <div id="wrap-month" class="date-input visible"><label for="month">Month</label><input type="month" id="month" /></div>
+        <div id="wrap-week" class="date-input"><label for="week">Week</label><input type="week" id="week" /></div>
+        <div id="wrap-day" class="date-input"><label for="day">Day</label><input type="date" id="day" /></div>
+        <div id="wrap-start" class="date-input"><label for="start-date">Start Date</label><input type="date" id="start-date" /></div>
+        <div id="wrap-end" class="date-input"><label for="end-date">End Date</label><input type="date" id="end-date" /></div>
       </div>
 
-      <div class="card" id="donut-card" style="display:none;">
-        <h2 id="donut-title">Breakdown</h2>
-        <div class="chart-wrap">
-          <canvas id="donut-chart"></canvas>
+      <div class="presets" id="wrap-presets">
+        <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
+        <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
+        <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
+        <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
+        <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
+      </div>
+
+      <button id="btn" onclick="loadCharts()">Load Charts</button>
+    </div>
+
+    <div id="loading" class="spinner" style="display:none;">
+      <div class="spinner-ring"></div>
+      <span class="spinner-text">Fetching from Notion…</span>
+    </div>
+    <div id="error-box" class="error-box" style="display:none;"></div>
+
+    <div id="results">
+      <div class="card">
+        <div class="period-badge" id="period-badge"></div><br/>
+        <span class="total-label">Grand Total &nbsp;</span>
+        <span class="grand-total" id="grand-total"></span>
+      </div>
+
+      <div class="card" id="line-card">
+        <h2>Spending Over Time</h2>
+        <div class="chart-wrap"><canvas id="line-chart"></canvas></div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="card" id="trend-card">
+          <h2>Expense by Period</h2>
+          <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+        </div>
+        <div class="card" id="donut-card" style="display:none;">
+          <h2 id="donut-title">Breakdown</h2>
+          <div class="chart-wrap"><canvas id="donut-chart"></canvas></div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
 <script>
   const COLORS = [
-    "#0071e3","#34c759","#ff9f0a","#ff3b30",
-    "#af52de","#5ac8fa","#ff2d55","#a2845e",
-    "#30b0c7","#32ade6","#ffcc00","#ff6961",
+    "#4F46E5","#7C3AED","#059669","#F59E0B","#EF4444",
+    "#0891B2","#EC4899","#8B5CF6","#10B981","#F97316","#6366F1","#14B8A6",
   ];
 
-  let lineChart  = null;
-  let trendChart = null;
-  let donutChart = null;
+  let lineChart = null, trendChart = null, donutChart = null;
 
   const today = new Date();
   document.getElementById("year").value       = today.getFullYear();
@@ -183,16 +223,10 @@
     const wk = Math.ceil((((tmp - ys) / 86400000) + 1) / 7);
     return `${tmp.getUTCFullYear()}-W${String(wk).padStart(2, "0")}`;
   }
-
-  function monthsAgo(n) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - n);
-    return d;
-  }
+  function monthsAgo(n) { const d = new Date(); d.setMonth(d.getMonth() - n); return d; }
 
   function setPreset(key) {
-    const end = new Date();
-    const start = new Date();
+    const end = new Date(), start = new Date();
     if (key === "7d")  start.setDate(start.getDate() - 6);
     if (key === "30d") start.setDate(start.getDate() - 29);
     if (key === "3m")  start.setMonth(start.getMonth() - 3);
@@ -208,14 +242,14 @@
     Object.entries(map).forEach(([id, val]) => {
       document.getElementById(`wrap-${id}`).className = "date-input" + (p === val ? " visible" : "");
     });
-    ["start", "end"].forEach(id => {
+    ["start","end"].forEach(id => {
       document.getElementById(`wrap-${id}`).className = "date-input" + (p === "custom" ? " visible" : "");
     });
     document.getElementById("wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
   }
 
   function buildParams() {
-    const period  = document.getElementById("period").value;
+    const period = document.getElementById("period").value;
     const groupBy = document.getElementById("group_by").value;
     const p = new URLSearchParams({ period });
     if (groupBy) p.set("group_by", groupBy);
@@ -223,16 +257,11 @@
     if (period === "monthly") p.set("month", document.getElementById("month").value);
     if (period === "weekly")  p.set("week",  document.getElementById("week").value);
     if (period === "daily")   p.set("day",   document.getElementById("day").value);
-    if (period === "custom") {
-      p.set("start", document.getElementById("start-date").value);
-      p.set("end",   document.getElementById("end-date").value);
-    }
+    if (period === "custom") { p.set("start", document.getElementById("start-date").value); p.set("end", document.getElementById("end-date").value); }
     return p.toString();
   }
 
-  function fmt(n) {
-    return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
+  function fmt(n) { return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
   function periodLabel(data) {
     if (data.period === "all")     return "All Time";
@@ -244,38 +273,21 @@
     return data.period;
   }
 
+  const chartOpts = (ar) => ({
+    responsive: true, maintainAspectRatio: true, aspectRatio: ar,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => " " + fmt(c.parsed.y) }, cornerRadius: 10 } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10, family:'Inter' }, maxRotation: 45 } },
+      y: { beginAtZero: true, grid: { color: "#F3F4F6" }, ticks: { font: { size: 10, family:'Inter' }, callback: v => fmt(v) } }
+    }
+  });
+
   function renderLineChart(labels, values) {
     if (lineChart) lineChart.destroy();
     lineChart = new Chart(document.getElementById("line-chart").getContext("2d"), {
       type: "line",
-      data: {
-        labels,
-        datasets: [{
-          data: values,
-          borderColor: "#0071e3",
-          backgroundColor: "rgba(0, 113, 227, 0.08)",
-          fill: true,
-          tension: 0.4,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: "#0071e3",
-          pointBorderColor: "#fff",
-          pointBorderWidth: 2,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        aspectRatio: window.innerWidth < 480 ? 1.4 : 2.8,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: c => " " + fmt(c.parsed.y) } }
-        },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
-          y: { beginAtZero: true, grid: { color: "#f2f2f7" }, ticks: { font: { size: 10 }, callback: v => fmt(v) } }
-        }
-      }
+      data: { labels, datasets: [{ data: values, borderColor: "#4F46E5", backgroundColor: "rgba(79,70,229,0.08)", fill: true, tension: 0.4, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: "#4F46E5", pointBorderColor: "#fff", pointBorderWidth: 2 }] },
+      options: chartOpts(window.innerWidth < 480 ? 1.4 : 2.8)
     });
   }
 
@@ -283,29 +295,8 @@
     if (trendChart) trendChart.destroy();
     trendChart = new Chart(document.getElementById("trend-chart").getContext("2d"), {
       type: "bar",
-      data: {
-        labels,
-        datasets: [{
-          data: values,
-          backgroundColor: "#0071e3",
-          borderRadius: 6,
-          borderSkipped: false,
-          hoverBackgroundColor: "#005bbf",
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        aspectRatio: window.innerWidth < 600 ? 1.5 : 1.8,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: c => " " + fmt(c.parsed.y) } }
-        },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
-          y: { beginAtZero: true, grid: { color: "#f2f2f7" }, ticks: { font: { size: 10 }, callback: v => fmt(v) } }
-        }
-      }
+      data: { labels, datasets: [{ data: values, backgroundColor: "rgba(79,70,229,0.85)", borderRadius: 8, borderSkipped: false, hoverBackgroundColor: "#7C3AED" }] },
+      options: { ...chartOpts(window.innerWidth < 600 ? 1.5 : 1.8) }
     });
   }
 
@@ -313,57 +304,34 @@
     if (donutChart) donutChart.destroy();
     donutChart = new Chart(document.getElementById("donut-chart").getContext("2d"), {
       type: "doughnut",
-      data: {
-        labels,
-        datasets: [{
-          data: values,
-          backgroundColor: COLORS.slice(0, labels.length),
-          borderWidth: 2, borderColor: "#fff", hoverOffset: 6,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { position: "bottom", labels: { boxWidth: 10, padding: 10, font: { size: 11 } } },
-          tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.parsed)}` } }
-        }
-      }
+      data: { labels, datasets: [{ data: values, backgroundColor: COLORS.slice(0, labels.length), borderWidth: 3, borderColor: "#fff", hoverOffset: 8 }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, padding: 12, font: { size: 11, family:'Inter' } } }, tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.parsed)}` }, cornerRadius: 10 } } }
     });
   }
 
   async function loadCharts() {
     const btn = document.getElementById("btn");
     btn.disabled = true;
-    document.getElementById("loading").style.display = "block";
+    document.getElementById("loading").style.display = "flex";
     document.getElementById("results").style.display = "none";
     document.getElementById("error-box").style.display = "none";
 
     try {
       const res  = await fetch(`/expenses/chart/?${buildParams()}`);
       const data = await res.json();
-
-      if (!res.ok) {
-        document.getElementById("error-box").textContent = data.error || "Something went wrong.";
-        document.getElementById("error-box").style.display = "block";
-        return;
-      }
+      if (!res.ok) { document.getElementById("error-box").textContent = data.error || "Something went wrong."; document.getElementById("error-box").style.display = "block"; return; }
 
       document.getElementById("period-badge").textContent = periodLabel(data);
       document.getElementById("grand-total").textContent  = fmt(data.grand_total);
-
       renderLineChart(data.trend.labels, data.trend.values);
       renderTrendChart(data.trend.labels, data.trend.values);
 
       const donutCard = document.getElementById("donut-card");
       if (data.breakdown && data.breakdown.labels.length) {
-        document.getElementById("donut-title").textContent =
-          `By ${data.group_by.charAt(0).toUpperCase() + data.group_by.slice(1)}`;
+        document.getElementById("donut-title").textContent = `By ${data.group_by.charAt(0).toUpperCase() + data.group_by.slice(1)}`;
         renderDonutChart(data.breakdown.labels, data.breakdown.values);
         donutCard.style.display = "block";
-      } else {
-        donutCard.style.display = "none";
-      }
+      } else { donutCard.style.display = "none"; }
 
       document.getElementById("results").style.display = "block";
     } catch (e) {
