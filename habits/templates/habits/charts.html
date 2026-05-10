@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habits Charts</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f7; color: #1d1d1f; min-height: 100vh; padding: 1rem 0.75rem; }
+    .container { max-width: 720px; margin: 0 auto; }
+    nav { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    nav a { padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: background 0.15s; color: #6e6e73; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    nav a.active { background: #34c759; color: #fff; }
+    nav a:not(.active):hover { background: #e8e8ed; }
+    h1 { font-size: clamp(1.3rem, 5vw, 1.8rem); font-weight: 700; margin-bottom: 1.25rem; }
+    .card { background: #fff; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
+    label { display: block; font-size: 0.72rem; font-weight: 600; color: #6e6e73; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    select, input[type="month"], input[type="week"], input[type="date"], input[type="number"] { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid #d2d2d7; border-radius: 10px; font-size: 0.95rem; background: #fff; appearance: none; outline: none; transition: border-color 0.15s; color: #1d1d1f; }
+    select:focus, input:focus { border-color: #34c759; }
+    .date-input { display: none; }
+    .date-input.visible { display: block; }
+    button { margin-top: 1rem; width: 100%; padding: 0.8rem; background: #34c759; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
+    button:hover { background: #30b955; }
+    button:disabled { background: #a8e6bc; cursor: not-allowed; }
+    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; }
+    .period-badge { display: inline-block; font-size: 0.75rem; font-weight: 600; background: #e8fdf0; color: #34c759; border-radius: 6px; padding: 0.2rem 0.55rem; margin-bottom: 0.6rem; }
+    .stat-row { display: flex; justify-content: space-between; align-items: baseline; }
+    .stat-label { font-size: 0.85rem; color: #6e6e73; }
+    .stat-value { font-size: clamp(1.4rem, 4vw, 1.8rem); font-weight: 700; color: #34c759; }
+    .chart-wrap { position: relative; width: 100%; }
+    .error-box { background: #fff2f2; border: 1.5px solid #ffd2d2; color: #d00; border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; }
+    #results { display: none; }
+    .spinner { text-align: center; color: #6e6e73; padding: 1rem 0; font-size: 0.9rem; }
+    @media (min-width: 480px) {
+      body { padding: 1.5rem 1rem; }
+      .card { padding: 1.25rem; border-radius: 14px; }
+      .filters { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 768px) {
+      body { padding: 2rem 1rem; }
+      .card { padding: 1.5rem; border-radius: 16px; margin-bottom: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <nav>
+    <a href="/">Home</a>
+    <a href="/habits/">Dashboard</a>
+    <a href="/habits/charts/" class="active">Charts</a>
+  </nav>
+
+  <h1>Habits Charts</h1>
+
+  <div class="card">
+    <div class="filters">
+      <div>
+        <label for="period">Period</label>
+        <select id="period" onchange="onPeriodChange()">
+          <option value="all">All Time</option>
+          <option value="yearly">Yearly</option>
+          <option value="monthly" selected>Monthly</option>
+          <option value="weekly">Weekly</option>
+          <option value="daily">Daily</option>
+        </select>
+      </div>
+      <div id="wrap-year" class="date-input">
+        <label for="year">Year</label>
+        <input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" />
+      </div>
+      <div id="wrap-month" class="date-input visible">
+        <label for="month">Month</label>
+        <input type="month" id="month" />
+      </div>
+      <div id="wrap-week" class="date-input">
+        <label for="week">Week</label>
+        <input type="week" id="week" />
+      </div>
+      <div id="wrap-day" class="date-input">
+        <label for="day">Day</label>
+        <input type="date" id="day" />
+      </div>
+    </div>
+    <button id="btn" onclick="loadCharts()">Load Charts</button>
+  </div>
+
+  <div id="loading" class="spinner" style="display:none;">Fetching from Notion...</div>
+  <div id="error-box" class="error-box" style="display:none;"></div>
+
+  <div id="results">
+    <div class="card">
+      <div class="period-badge" id="period-badge"></div>
+      <div class="stat-row">
+        <span class="stat-label">Days Tracked</span>
+        <span class="stat-value" id="stat-days">—</span>
+      </div>
+    </div>
+
+    <!-- Score trend line chart -->
+    <div class="card">
+      <h2>Score Trend</h2>
+      <div class="chart-wrap">
+        <canvas id="score-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Habit completion rate bar chart -->
+    <div class="card">
+      <h2>Completion Rate by Habit</h2>
+      <div class="chart-wrap">
+        <canvas id="habit-chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let scoreChart = null;
+  let habitChart = null;
+
+  const today = new Date();
+  document.getElementById("year").value  = today.getFullYear();
+  document.getElementById("month").value = today.toISOString().slice(0, 7);
+  document.getElementById("week").value  = isoWeek(today);
+  document.getElementById("day").value   = today.toISOString().slice(0, 10);
+
+  function isoWeek(d) {
+    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+    const ys = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    const w = Math.ceil((((t - ys) / 86400000) + 1) / 7);
+    return `${t.getUTCFullYear()}-W${String(w).padStart(2, "0")}`;
+  }
+
+  function onPeriodChange() {
+    const p = document.getElementById("period").value;
+    ["year","month","week","day"].forEach(id => {
+      document.getElementById(`wrap-${id}`).className =
+        "date-input" + (p === (id === "year" ? "yearly" : id === "month" ? "monthly" : id === "week" ? "weekly" : "daily") ? " visible" : "");
+    });
+  }
+
+  function buildParams() {
+    const period = document.getElementById("period").value;
+    const p = new URLSearchParams({ period });
+    if (period === "yearly")  p.set("year",  document.getElementById("year").value);
+    if (period === "monthly") p.set("month", document.getElementById("month").value);
+    if (period === "weekly")  p.set("week",  document.getElementById("week").value);
+    if (period === "daily")   p.set("day",   document.getElementById("day").value);
+    return p.toString();
+  }
+
+  function periodLabel(d) {
+    if (d.period === "all")     return "All Time";
+    if (d.period === "yearly")  return d.year;
+    if (d.period === "monthly") return d.month;
+    if (d.period === "weekly")  return `${d.week_start} – ${d.week_end}`;
+    if (d.period === "daily")   return d.date;
+  }
+
+  function rateColor(r) {
+    if (r >= 80) return "#34c759";
+    if (r >= 50) return "#ff9f0a";
+    return "#ff3b30";
+  }
+
+  function renderScoreChart(labels, values) {
+    if (scoreChart) scoreChart.destroy();
+    scoreChart = new Chart(document.getElementById("score-chart").getContext("2d"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          borderColor: "#34c759",
+          backgroundColor: "rgba(52, 199, 89, 0.08)",
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: "#34c759",
+          pointBorderColor: "#fff",
+          pointBorderWidth: 2,
+          spanGaps: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: window.innerWidth < 480 ? 1.4 : 2.8,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => ` Score: ${c.parsed.y}` } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
+          y: { beginAtZero: true, max: 100, grid: { color: "#f2f2f7" }, ticks: { font: { size: 10 }, callback: v => v + "%" } }
+        }
+      }
+    });
+  }
+
+  function renderHabitChart(labels, values) {
+    if (habitChart) habitChart.destroy();
+    habitChart = new Chart(document.getElementById("habit-chart").getContext("2d"), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: values.map(v => rateColor(v)),
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => ` ${c.parsed.x}%` } }
+        },
+        scales: {
+          x: { beginAtZero: true, max: 100, grid: { color: "#f2f2f7" }, ticks: { font: { size: 10 }, callback: v => v + "%" } },
+          y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+    const canvas = document.getElementById("habit-chart");
+    canvas.style.height = `${Math.max(200, labels.length * 32)}px`;
+  }
+
+  async function loadCharts() {
+    const btn = document.getElementById("btn");
+    btn.disabled = true;
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("results").style.display = "none";
+    document.getElementById("error-box").style.display = "none";
+
+    try {
+      const res  = await fetch(`/habits/chart/?${buildParams()}`);
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById("error-box").textContent = data.error || "Error";
+        document.getElementById("error-box").style.display = "block";
+        return;
+      }
+
+      document.getElementById("period-badge").textContent = periodLabel(data);
+      document.getElementById("stat-days").textContent    = data.total_days + " days";
+
+      renderScoreChart(data.score_trend.labels, data.score_trend.values);
+      renderHabitChart(data.habit_rates.labels, data.habit_rates.values);
+
+      document.getElementById("results").style.display = "block";
+    } catch (e) {
+      document.getElementById("error-box").textContent = "Network error: " + e.message;
+      document.getElementById("error-box").style.display = "block";
+    } finally {
+      document.getElementById("loading").style.display = "none";
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
