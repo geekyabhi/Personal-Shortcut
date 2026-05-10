@@ -83,6 +83,28 @@ def _fetch_all_rows(token, db_id, notion_filter):
     return rows
 
 
+def _build_display(period, grand_total, group_by, group_totals, range_start, range_end):
+    if period == "all":
+        header = "All Time"
+    elif period == "monthly":
+        header = range_start.strftime("%B %Y")
+    elif period == "weekly":
+        header = f"Week of {range_start.strftime('%d %b')} - {range_end.strftime('%d %b %Y')}"
+    elif period == "daily":
+        header = range_start.strftime("%d %B %Y")
+
+    lines = [f"{header}  |  Total: {grand_total:,.2f}"]
+
+    if group_by and group_totals:
+        lines.append("")
+        lines.append(f"By {group_by.title()}:")
+        pad = max(len(g) for g in group_totals)
+        for g, t in sorted(group_totals.items(), key=lambda x: -x[1]):
+            lines.append(f"  {g:<{pad}}   {t:>10,.2f}")
+
+    return "\n".join(lines)
+
+
 def _extract_groups(props, group_by):
     if group_by == "category":
         values = [opt["name"] for opt in (props.get("Category") or {}).get("multi_select", [])]
@@ -186,5 +208,11 @@ class ExpensesSummaryView(View):
                 {"group": g, "total": round(t, 2)}
                 for g, t in sorted(group_totals.items())
             ]
+
+        display_start = range_start or date.today()
+        display_end = range_end or date.today()
+        response["display"] = _build_display(
+            period, round(grand_total, 2), group_by, group_totals, display_start, display_end
+        )
 
         return JsonResponse(response)
