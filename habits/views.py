@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from datetime import date, timedelta
 
 import requests
@@ -398,6 +399,70 @@ class BackfillView(View):
                 failed.append({"date": date_str, "error": str(exc)})
 
         return JsonResponse({"created": len(created), "dates": created, "failed": failed})
+
+
+class CheckHabitsView(View):
+    def post(self, request):
+        token, db_id = _get_creds()
+        if not token or not db_id:
+            return JsonResponse({"error": "NOTION_TOKEN and NOTION_HABITS_DB_ID must be set"}, status=500)
+
+        try:
+            body = json.loads(request.body)
+        except (ValueError, json.JSONDecodeError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+        habits = body.get("habits", {})
+        if not isinstance(habits, dict):
+            return JsonResponse({"error": "'habits' must be an object e.g. {\"Exercise\": true}"}, status=400)
+
+        today     = date.today().isoformat()
+        headers   = _notion_headers(token)
+
+        # Find today's page
+        notion_filter = {"property": "Date", "date": {"equals": today}}
+        try:
+            rows = _fetch_all_rows(token, db_id, notion_filter)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Notion fetch error: {exc}"}, status=502)
+
+        created = False
+        if rows:
+            page_id = rows[0]["id"]
+        else:
+            # Create today's page
+            payload = {
+                "parent":     {"database_id": db_id},
+                "properties": {"Date": {"date": {"start": today}}},
+            }
+            try:
+                resp = requests.post(NOTION_PAGES_URL, headers=headers, json=payload, timeout=15)
+                resp.raise_for_status()
+            except requests.RequestException as exc:
+                return JsonResponse({"error": f"Failed to create page: {exc}"}, status=502)
+            page_id = resp.json()["id"]
+            created = True
+
+        # Patch the habits
+        if habits:
+            patch_props = {name: {"checkbox": bool(val)} for name, val in habits.items()}
+            try:
+                resp = requests.patch(
+                    f"https://api.notion.com/v1/pages/{page_id}",
+                    headers=headers,
+                    json={"properties": patch_props},
+                    timeout=15,
+                )
+                resp.raise_for_status()
+            except requests.RequestException as exc:
+                return JsonResponse({"error": f"Failed to update habits: {exc}"}, status=502)
+
+        return JsonResponse({
+            "date":    today,
+            "page_id": page_id,
+            "created": created,
+            "updated": habits,
+        })
 
 
 class DashboardView(View):
