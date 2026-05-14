@@ -2,6 +2,7 @@ import os
 import json
 import base64
 import requests
+from dateutil import parser as dateparser
 from django.views import View
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -69,7 +70,11 @@ class CreateIssueView(View):
             }
 
         if duedate:
-            payload["fields"]["duedate"] = duedate
+            try:
+                parsed = dateparser.parse(duedate, dayfirst=False)
+                payload["fields"]["duedate"] = parsed.strftime("%Y-%m-%d")
+            except (ValueError, OverflowError):
+                return JsonResponse({"error": f"Cannot parse date: '{duedate}'"}, status=400)
 
         try:
             resp = requests.post(
