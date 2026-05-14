@@ -445,7 +445,12 @@ class CheckHabitsView(View):
 
         # Patch the habits
         if habits:
-            patch_props = {name: {"checkbox": bool(val)} for name, val in habits.items()}
+            _TRUTHY = {"true", "1", "yes", "on"}
+            def _to_bool(v):
+                if isinstance(v, bool): return v
+                if isinstance(v, str):  return v.strip().lower() in _TRUTHY
+                return bool(v)
+            patch_props = {name: {"checkbox": _to_bool(val)} for name, val in habits.items()}
             try:
                 resp = requests.patch(
                     f"https://api.notion.com/v1/pages/{page_id}",
