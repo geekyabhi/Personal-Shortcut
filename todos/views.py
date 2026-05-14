@@ -2,9 +2,10 @@ import os
 import json
 import base64
 import requests
+from datetime import date
 from dateutil import parser as dateparser
 from django.views import View
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 
 def _conf():
@@ -144,3 +145,93 @@ class ListIssuesView(View):
             })
 
         return JsonResponse({"issues": issues})
+
+
+class DueSummaryView(View):
+    def get(self, request):
+        conf = _conf()
+        if not _configured(conf):
+            return HttpResponse("JIRA_EMAIL and JIRA_API_TOKEN must be set", status=500, content_type="text/plain")
+
+        jql = (
+            f"project={conf['project']} "
+            f"AND duedate is not EMPTY "
+            f"AND status != Done "
+            f"ORDER BY duedate ASC"
+        )
+        try:
+            resp = requests.get(
+                f"{conf['base_url']}/rest/api/3/search/jql",
+                headers=_headers(conf),
+                params={"jql": jql, "maxResults": 50, "fields": "summary,status,duedate"},
+                timeout=10,
+            )
+        except requests.RequestException as e:
+            return HttpResponse(str(e), status=502, content_type="text/plain")
+
+        if not resp.ok:
+            return HttpResponse(resp.text, status=resp.status_code, content_type="text/plain")
+
+        today    = date.today()
+        overdue  = []
+        due_today = []
+        due_soon = []
+        upcoming = []
+
+        for issue in resp.json().get("issues", []):
+            f       = issue.get("fields", {})
+            raw_due = f.get("duedate")
+            if not raw_due:
+                continue
+            due  = date.fromisoformat(raw_due)
+            diff = (due - today).days
+            item = f"{issue['key']}: {f.get('summary', '')}"
+            if diff < 0:
+                overdue.append((abs(diff), item))
+            elif diff == 0:
+                due_today.append(item)
+            elif diff <= 3:
+                due_soon.append((diff, item))
+            else:
+                upcoming.append((diff, item))
+
+        lines = []
+
+        if not overdue and not due_today and not due_soon and not upcoming:
+            lines.append("No due todos. All clear!")
+        else:
+            total = len(overdue) + len(due_today) + len(due_soon) + len(upcoming)
+            lines.append(f"{total} todo(s) with due dates:\n")
+
+            if overdue:
+                lines.append(f"OVERDUE ({len(overdue)})")
+                for days, item in sorted(overdue, reverse=True):
+                    lines.append(f"  - {item}  [{days}d overdue]")
+
+            if due_today:
+                lines.append(f"\nDUE TODAY ({len(due_today)})")
+                for item in due_today:
+                    lines.append(f"  - {item}")
+
+            if due_soon:
+                lines.append(f"\nDUE SOON — next 3 days ({len(due_soon)})")
+                for days, item in sorted(due_soon):
+                    lines.append(f"  - {item}  [in {days}d]")
+
+            if upcoming:
+                lines.append(f"\nUPCOMING ({len(upcoming)})")
+                for days, item in sorted(upcoming):
+                    lines.append(f"  - {item}  [in {days}d]")
+
+        fmt = request.GET.get("format", "text")
+        if fmt == "json":
+            return JsonResponse({
+                "total":     len(overdue) + len(due_today) + len(due_soon) + len(upcoming),
+                "overdue":   [i for _, i in overdue],
+                "due_today": due_today,
+                "due_soon":  [i for _, i in due_soon],
+                "upcoming":  [i for _, i in upcoming],
+                "text":      "\n".join(lines),
+            })
+
+        return HttpResponse("\n".join(lines), content_type="text/plain")
