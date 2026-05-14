@@ -71,9 +71,10 @@ class CreateIssueView(View):
 
         if duedate:
             try:
-                parsed = dateparser.parse(duedate, dayfirst=False)
+                cleaned = duedate.replace(" at ", " ")
+                parsed  = dateparser.parse(cleaned, dayfirst=True)
                 payload["fields"]["duedate"] = parsed.strftime("%Y-%m-%d")
-            except (ValueError, OverflowError):
+            except (ValueError, OverflowError, TypeError):
                 return JsonResponse({"error": f"Cannot parse date: '{duedate}'"}, status=400)
 
         try:
