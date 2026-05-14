@@ -453,7 +453,12 @@ class CheckHabitsView(View):
                     json={"properties": patch_props},
                     timeout=15,
                 )
-                resp.raise_for_status()
+                if not resp.ok:
+                    try:
+                        notion_err = resp.json()
+                    except Exception:
+                        notion_err = resp.text
+                    return JsonResponse({"error": notion_err}, status=resp.status_code)
             except requests.RequestException as exc:
                 return JsonResponse({"error": f"Failed to update habits: {exc}"}, status=502)
 
