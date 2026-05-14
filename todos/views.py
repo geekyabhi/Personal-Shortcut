@@ -6,22 +6,25 @@ from django.views import View
 from django.http import JsonResponse
 from django.shortcuts import render
 
-JIRA_BASE_URL  = os.environ.get("JIRA_BASE_URL", "https://abhistrike.atlassian.net")
-JIRA_EMAIL     = os.environ.get("JIRA_EMAIL", "")
-JIRA_API_TOKEN = os.environ.get("JIRA_API_TOKEN", "")
-JIRA_PROJECT   = os.environ.get("JIRA_PROJECT_KEY", "TODO")
-
-
-def _headers():
-    token = base64.b64encode(f"{JIRA_EMAIL}:{JIRA_API_TOKEN}".encode()).decode()
+def _conf():
     return {
-        "Content-Type": "application/json",
-        "Authorization": f"Basic {token}",
+        "base_url":  os.environ.get("JIRA_BASE_URL", "https://abhistrike.atlassian.net"),
+        "email":     os.environ.get("JIRA_EMAIL", ""),
+        "token":     os.environ.get("JIRA_API_TOKEN", ""),
+        "project":   os.environ.get("JIRA_PROJECT_KEY", "TODO"),
     }
 
 
-def _configured():
-    return bool(JIRA_EMAIL and JIRA_API_TOKEN)
+def _headers(conf):
+    encoded = base64.b64encode(f"{conf['email']}:{conf['token']}".encode()).decode()
+    return {
+        "Content-Type": "application/json",
+        "Authorization": f"Basic {encoded}",
+    }
+
+
+def _configured(conf):
+    return bool(conf["email"] and conf["token"])
 
 
 class TodoView(View):
@@ -31,7 +34,8 @@ class TodoView(View):
 
 class CreateIssueView(View):
     def post(self, request):
-        if not _configured():
+        conf = _conf()
+        if not _configured(conf):
             return JsonResponse({"error": "JIRA_EMAIL and JIRA_API_TOKEN must be set"}, status=500)
 
         try:
@@ -49,7 +53,7 @@ class CreateIssueView(View):
 
         payload = {
             "fields": {
-                "project":   {"key": JIRA_PROJECT},
+                "project":   {"key": conf["project"]},
                 "summary":   summary,
                 "issuetype": {"name": issuetype},
             }
@@ -69,8 +73,8 @@ class CreateIssueView(View):
 
         try:
             resp = requests.post(
-                f"{JIRA_BASE_URL}/rest/api/3/issue",
-                headers=_headers(),
+                f"{conf['base_url']}/rest/api/3/issue",
+                headers=_headers(conf),
                 json=payload,
                 timeout=10,
             )
@@ -80,7 +84,7 @@ class CreateIssueView(View):
         if resp.status_code == 201:
             key = resp.json().get("key")
             return JsonResponse(
-                {"key": key, "url": f"{JIRA_BASE_URL}/browse/{key}"},
+                {"key": key, "url": f"{conf['base_url']}/browse/{key}"},
                 status=201,
             )
 
@@ -93,16 +97,17 @@ class CreateIssueView(View):
 
 class ListIssuesView(View):
     def get(self, request):
-        if not _configured():
+        conf = _conf()
+        if not _configured(conf):
             return JsonResponse({"error": "JIRA_EMAIL and JIRA_API_TOKEN must be set"}, status=500)
 
         status = request.GET.get("status", "")
         status_filter = f' AND status="{status}"' if status else ""
-        jql = f"project={JIRA_PROJECT}{status_filter} ORDER BY created DESC"
+        jql = f"project={conf['project']}{status_filter} ORDER BY created DESC"
         try:
             resp = requests.get(
-                f"{JIRA_BASE_URL}/rest/api/3/search/jql",
-                headers=_headers(),
+                f"{conf['base_url']}/rest/api/3/search/jql",
+                headers=_headers(conf),
                 params={
                     "jql": jql,
                     "maxResults": 50,
@@ -129,7 +134,7 @@ class ListIssuesView(View):
                 "status":    f.get("status", {}).get("name", ""),
                 "issuetype": f.get("issuetype", {}).get("name", "Task"),
                 "duedate":   f.get("duedate") or "",
-                "url":       f"{JIRA_BASE_URL}/browse/{issue['key']}",
+                "url":       f"{conf['base_url']}/browse/{issue['key']}",
             })
 
         return JsonResponse({"issues": issues})
