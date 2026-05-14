@@ -80,6 +80,7 @@
     }
     .tile-expenses::after { background: linear-gradient(135deg, rgba(79,70,229,0.05), rgba(124,58,237,0.05)); }
     .tile-habits::after  { background: linear-gradient(135deg, rgba(5,150,105,0.05), rgba(8,145,178,0.05)); }
+    .tile-todos::after   { background: linear-gradient(135deg, rgba(2,132,199,0.05), rgba(99,102,241,0.05)); }
     .tile:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 20px 60px rgba(0,0,0,0.13); }
     .tile:hover::after { opacity: 1; }
 
@@ -90,6 +91,7 @@
     }
     .tile-expenses .tile-icon-wrap { background: linear-gradient(135deg, #EEF2FF, #E0E7FF); }
     .tile-habits   .tile-icon-wrap { background: linear-gradient(135deg, #ECFDF5, #D1FAE5); }
+    .tile-todos    .tile-icon-wrap { background: linear-gradient(135deg, #E0F2FE, #EEF2FF); }
 
     .tile-name { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
     .tile-desc { font-size: 0.85rem; color: #6B7280; line-height: 1.5; font-weight: 500; }
@@ -101,6 +103,7 @@
     }
     .tile-expenses .tile-arrow { background: linear-gradient(135deg, #4F46E5, #7C3AED); color: white; }
     .tile-habits   .tile-arrow { background: linear-gradient(135deg, #059669, #0891B2); color: white; }
+    .tile-todos    .tile-arrow { background: linear-gradient(135deg, #0284C7, #6366F1); color: white; }
     .tile:hover .tile-arrow { transform: translateX(3px); }
 
     .footer { margin-top: 3rem; font-size: 0.78rem; color: #9CA3AF; font-weight: 500; }
@@ -131,6 +134,12 @@
         <div class="tile-icon-wrap">✅</div>
         <span class="tile-name">Habits</span>
         <span class="tile-desc">Daily habit streaks, scores and completion heatmaps</span>
+        <span class="tile-arrow">→</span>
+      </a>
+      <a class="tile tile-todos" href="/todos/">
+        <div class="tile-icon-wrap">🎯</div>
+        <span class="tile-name">Jira Todos</span>
+        <span class="tile-desc">Create and track Jira issues from your TODO project</span>
         <span class="tile-arrow">→</span>
       </a>
     </div>

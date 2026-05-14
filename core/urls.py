@@ -10,4 +10,5 @@ urlpatterns = [
     path("", home, name="home"),
     path("expenses/", include("expenses.urls")),
     path("habits/", include("habits.urls")),
+    path("todos/",  include("todos.urls")),
 ]

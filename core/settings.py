@@ -9,6 +9,7 @@ ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     "expenses",
+    "todos",
 ]
 
 MIDDLEWARE = [
@@ -23,6 +24,7 @@ TEMPLATES = [
             BASE_DIR / "core" / "templates",
             BASE_DIR / "expenses" / "templates",
             BASE_DIR / "habits" / "templates",
+            BASE_DIR / "todos" / "templates",
         ],
         "APP_DIRS": False,
         "OPTIONS": {"context_processors": []},

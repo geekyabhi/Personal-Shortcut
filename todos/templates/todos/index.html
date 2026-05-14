@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jira Todos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent:   #0284C7;
+      --accent-2: #6366F1;
+      --grad:     linear-gradient(135deg, #0284C7, #6366F1);
+      --grad-bg:  linear-gradient(135deg, rgba(2,132,199,0.12), rgba(99,102,241,0.08));
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F5F4FA;
+      color: #111827;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(90px); z-index: 0; pointer-events: none;
+    }
+    .orb-1 { width: 480px; height: 480px; background: rgba(2,132,199,0.12); top: -160px; right: -100px; }
+    .orb-2 { width: 420px; height: 420px; background: rgba(99,102,241,0.09); bottom: -160px; left: -100px; }
+
+    .container { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; }
+
+    nav {
+      display: flex; gap: 0.4rem; margin-bottom: 2rem; flex-wrap: wrap;
+      background: rgba(255,255,255,0.7); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.35rem; width: fit-content;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    nav a {
+      padding: 0.4rem 1rem; border-radius: 100px; font-size: 0.85rem;
+      font-weight: 600; text-decoration: none; transition: all 0.2s ease;
+      color: #6B7280;
+    }
+    nav a:hover:not(.active) { color: #111827; background: rgba(0,0,0,0.04); }
+    nav a.active { background: var(--grad); color: #fff; box-shadow: 0 2px 8px rgba(2,132,199,0.3); }
+
+    h1 {
+      font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 900;
+      letter-spacing: -0.03em; margin-bottom: 1.75rem;
+      background: var(--grad);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9);
+      border-radius: 20px; padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+
+    h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.02em; }
+
+    /* Form */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+    .form-group { margin-bottom: 1rem; }
+
+    label {
+      display: block; font-size: 0.72rem; font-weight: 700;
+      color: #6B7280; margin-bottom: 0.35rem;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    input[type="text"], textarea, select {
+      width: 100%; padding: 0.7rem 0.9rem;
+      border: 1.5px solid rgba(0,0,0,0.08); border-radius: 12px;
+      font-size: 0.95rem; font-family: inherit;
+      background: rgba(255,255,255,0.8); appearance: none; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s; color: #111827;
+      resize: vertical;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(2,132,199,0.12);
+    }
+    textarea { min-height: 90px; }
+
+    .btn-primary {
+      width: 100%; padding: 0.85rem;
+      background: var(--grad); color: #fff;
+      border: none; border-radius: 100px;
+      font-size: 1rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; letter-spacing: -0.01em;
+      box-shadow: 0 4px 16px rgba(2,132,199,0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+      margin-top: 0.5rem;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(2,132,199,0.4); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Feedback banner */
+    .banner {
+      border-radius: 14px; padding: 0.9rem 1rem;
+      font-size: 0.9rem; font-weight: 500; margin-bottom: 1.25rem; display: none;
+    }
+    .banner.success {
+      background: rgba(236,253,245,0.9); border: 1.5px solid #6EE7B7; color: #065F46;
+    }
+    .banner.error {
+      background: rgba(255,242,242,0.9); border: 1.5px solid #FCA5A5; color: #B91C1C;
+    }
+    .banner a { color: inherit; font-weight: 700; }
+
+    /* Spinner */
+    .spinner-wrap { display: none; text-align: center; padding: 1.5rem 0; }
+    .spinner-ring {
+      display: inline-block; width: 32px; height: 32px;
+      border: 3px solid rgba(2,132,199,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-text { font-size: 0.85rem; color: #6B7280; margin-top: 0.6rem; font-weight: 500; }
+
+    /* Issues list */
+    .issues-wrap { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .issue-row {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.9);
+      border-radius: 14px;
+      text-decoration: none; color: #111827;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    }
+    .issue-row:hover { background: rgba(255,255,255,0.85); box-shadow: 0 4px 16px rgba(0,0,0,0.09); transform: translateY(-1px); }
+
+    .issue-key {
+      font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+      background: var(--grad-bg);
+      border: 1px solid rgba(2,132,199,0.2);
+      color: var(--accent); border-radius: 8px;
+      padding: 0.2rem 0.55rem; letter-spacing: 0.02em;
+    }
+
+    .issue-type-icon { font-size: 1rem; flex-shrink: 0; }
+
+    .issue-summary { flex: 1; font-size: 0.9rem; font-weight: 500; }
+
+    .issue-status {
+      font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+      padding: 0.2rem 0.6rem; border-radius: 100px;
+    }
+    .status-todo     { background: #F3F4F6; color: #6B7280; }
+    .status-progress { background: #EFF6FF; color: #1D4ED8; }
+    .status-done     { background: #ECFDF5; color: #065F46; }
+
+    /* Status tabs */
+    .status-tabs {
+      display: flex; gap: 0.35rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .status-tab {
+      padding: 0.3rem 0.85rem; font-size: 0.78rem; font-weight: 600;
+      background: rgba(0,0,0,0.04); color: #6B7280;
+      border: 1.5px solid transparent; border-radius: 100px;
+      cursor: pointer; font-family: inherit; transition: all 0.2s ease;
+    }
+    .status-tab:hover { color: var(--accent); border-color: rgba(2,132,199,0.2); }
+    .status-tab.active { background: var(--grad); color: #fff; box-shadow: 0 2px 8px rgba(2,132,199,0.25); }
+
+    .due-date {
+      font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+      padding: 0.2rem 0.6rem; border-radius: 100px;
+      display: inline-flex; align-items: center; gap: 0.3rem;
+    }
+    .due-date.overdue  { background: #FEF2F2; color: #B91C1C; }
+    .due-date.due-soon { background: #FFFBEB; color: #92400E; }
+    .due-date.on-track { background: #F0FDF4; color: #166534; }
+    .due-date.no-date  { background: #F3F4F6; color: #9CA3AF; }
+
+    .empty-state {
+      text-align: center; color: #9CA3AF; font-size: 0.9rem;
+      font-weight: 500; padding: 2rem 0;
+    }
+
+    .list-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem;
+    }
+    .refresh-btn {
+      font-size: 0.78rem; font-weight: 600; color: var(--accent);
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      padding: 0; transition: opacity 0.15s;
+    }
+    .refresh-btn:hover { opacity: 0.7; }
+
+    @media (min-width: 480px) {
+      body { padding: 2rem 1.25rem; }
+    }
+    @media (min-width: 768px) {
+      body { padding: 2.5rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="container">
+    <nav>
+      <a href="/">Home</a>
+      <a href="/todos/" class="active">Jira Todos</a>
+    </nav>
+
+    <h1>Jira Todos</h1>
+
+    <div id="banner" class="banner"></div>
+
+    <!-- Create form -->
+    <div class="card">
+      <h2>Create New Issue</h2>
+
+      <div class="form-group">
+        <label for="summary">Summary *</label>
+        <input type="text" id="summary" placeholder="What needs to be done?" />
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" placeholder="Add more detail (optional)…"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="issuetype">Issue Type</label>
+          <select id="issuetype">
+            <option value="Task">Task</option>
+            <option value="Bug">Bug</option>
+            <option value="Story">Story</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="duedate">Due Date</label>
+          <input type="date" id="duedate" />
+        </div>
+      </div>
+
+      <button class="btn-primary" id="create-btn" onclick="createIssue()">Create Issue</button>
+    </div>
+
+    <!-- Issues list -->
+    <div class="card">
+      <div class="list-header">
+        <h2 style="margin-bottom:0;">Issues</h2>
+        <button class="refresh-btn" onclick="loadIssues()">↻ Refresh</button>
+      </div>
+
+      <div class="status-tabs">
+        <button class="status-tab active" onclick="setFilter('')">All</button>
+        <button class="status-tab" onclick="setFilter('To Do')">To Do</button>
+        <button class="status-tab" onclick="setFilter('In Progress')">In Progress</button>
+        <button class="status-tab" onclick="setFilter('Done')">Done</button>
+      </div>
+
+      <div class="spinner-wrap" id="list-loading">
+        <div class="spinner-ring"></div>
+        <div class="spinner-text">Loading from Jira…</div>
+      </div>
+
+      <div class="issues-wrap" id="issues-wrap"></div>
+    </div>
+  </div>
+
+<script>
+  const ISSUE_TYPE_ICON = { Task: "☑️", Bug: "🐛", Story: "📖" };
+  let activeStatus = "";
+
+  function statusClass(s) {
+    const l = s.toLowerCase();
+    if (l.includes("progress") || l.includes("review")) return "status-progress";
+    if (l.includes("done") || l.includes("closed") || l.includes("complete")) return "status-done";
+    return "status-todo";
+  }
+
+  function showBanner(type, html) {
+    const b = document.getElementById("banner");
+    b.className = `banner ${type}`;
+    b.innerHTML = html;
+    b.style.display = "block";
+    if (type === "success") setTimeout(() => { b.style.display = "none"; }, 6000);
+  }
+
+  async function createIssue() {
+    const summary     = document.getElementById("summary").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const issuetype   = document.getElementById("issuetype").value;
+    const duedate     = document.getElementById("duedate").value;
+
+    if (!summary) {
+      showBanner("error", "Summary is required.");
+      return;
+    }
+
+    const btn = document.getElementById("create-btn");
+    btn.disabled = true;
+    btn.textContent = "Creating…";
+
+    try {
+      const res  = await fetch("/todos/create/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ summary, description, issuetype, duedate }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        showBanner("success",
+          `Created <a href="${data.url}" target="_blank" rel="noopener">${data.key}</a> — ${summary}`
+        );
+        document.getElementById("summary").value     = "";
+        document.getElementById("description").value = "";
+        document.getElementById("duedate").value     = "";
+        loadIssues();
+      } else {
+        const msg = typeof data.error === "string" ? data.error : JSON.stringify(data.error);
+        showBanner("error", `Jira error: ${msg}`);
+      }
+    } catch (e) {
+      showBanner("error", `Network error: ${e.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Create Issue";
+    }
+  }
+
+  function setFilter(status) {
+    activeStatus = status;
+    document.querySelectorAll(".status-tab").forEach(btn => {
+      btn.classList.toggle("active", btn.textContent.trim() === (status || "All"));
+    });
+    loadIssues();
+  }
+
+  async function loadIssues() {
+    const loading = document.getElementById("list-loading");
+    const wrap    = document.getElementById("issues-wrap");
+    loading.style.display = "block";
+    wrap.innerHTML = "";
+
+    try {
+      const url = activeStatus ? `/todos/issues/?status=${encodeURIComponent(activeStatus)}` : "/todos/issues/";
+      const res  = await fetch(url);
+      const data = await res.json();
+
+      if (!res.ok) {
+        wrap.innerHTML = `<div class="empty-state">Failed to load: ${JSON.stringify(data.error)}</div>`;
+        return;
+      }
+
+      const { issues } = data;
+      if (!issues.length) {
+        wrap.innerHTML = `<div class="empty-state">No issues found in ${location.hostname ? "Jira" : "project"} yet.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = issues.map(i => `
+        <a class="issue-row" href="${i.url}" target="_blank" rel="noopener">
+          <span class="issue-type-icon">${ISSUE_TYPE_ICON[i.issuetype] || "📋"}</span>
+          <span class="issue-key">${i.key}</span>
+          <span class="issue-summary">${escHtml(i.summary)}</span>
+          ${dueBadge(i.duedate)}
+          <span class="issue-status ${statusClass(i.status)}">${i.status}</span>
+        </a>
+      `).join("");
+    } catch (e) {
+      wrap.innerHTML = `<div class="empty-state">Network error: ${e.message}</div>`;
+    } finally {
+      loading.style.display = "none";
+    }
+  }
+
+  function dueBadge(duedate) {
+    if (!duedate) return `<span class="due-date no-date">No due date</span>`;
+    const due   = new Date(duedate + "T00:00:00");
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff  = Math.round((due - today) / 86400000);
+    const label = due.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    if (diff < 0)  return `<span class="due-date overdue">⚠ Overdue · ${label}</span>`;
+    if (diff <= 3) return `<span class="due-date due-soon">⏳ Due ${label}</span>`;
+    return `<span class="due-date on-track">📅 ${label}</span>`;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  // Enter key submits the form
+  document.getElementById("summary").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); createIssue(); }
+  });
+
+  loadIssues();
+</script>
+</body>
+</html>
