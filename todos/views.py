@@ -2,7 +2,7 @@ import os
 import json
 import base64
 import requests
-from datetime import date
+from datetime import date, datetime, timezone, timedelta
 from dateutil import parser as dateparser
 from django.views import View
 from django.http import JsonResponse, HttpResponse
@@ -172,11 +172,15 @@ class DueSummaryView(View):
         if not resp.ok:
             return HttpResponse(resp.text, status=resp.status_code, content_type="text/plain")
 
-        today    = date.today()
-        overdue  = []
-        due_today = []
-        due_soon = []
-        upcoming = []
+        now       = datetime.now(timezone.utc)
+        today     = now.date()
+        hour_from_now = now + timedelta(hours=1)
+
+        overdue      = []
+        due_next_hour = []
+        due_today    = []
+        due_soon     = []
+        upcoming     = []
 
         for issue in resp.json().get("issues", []):
             f       = issue.get("fields", {})
@@ -186,10 +190,16 @@ class DueSummaryView(View):
             due  = date.fromisoformat(raw_due)
             diff = (due - today).days
             item = f"{issue['key']}: {f.get('summary', '')}"
+
             if diff < 0:
                 overdue.append((abs(diff), item))
             elif diff == 0:
-                due_today.append(item)
+                # Jira has no time on duedate; treat as end-of-day.
+                # If we're within 1 hour of midnight (i.e. hour >= 23), flag as next-hour.
+                if hour_from_now.date() > today:
+                    due_next_hour.append(item)
+                else:
+                    due_today.append(item)
             elif diff <= 3:
                 due_soon.append((diff, item))
             else:
@@ -197,16 +207,21 @@ class DueSummaryView(View):
 
         lines = []
 
-        if not overdue and not due_today and not due_soon and not upcoming:
+        total = len(overdue) + len(due_next_hour) + len(due_today) + len(due_soon) + len(upcoming)
+        if total == 0:
             lines.append("No due todos. All clear!")
         else:
-            total = len(overdue) + len(due_today) + len(due_soon) + len(upcoming)
             lines.append(f"{total} todo(s) with due dates:\n")
 
             if overdue:
                 lines.append(f"OVERDUE ({len(overdue)})")
                 for days, item in sorted(overdue, reverse=True):
                     lines.append(f"  - {item}  [{days}d overdue]")
+
+            if due_next_hour:
+                lines.append(f"\nDUE IN NEXT 1 HOUR ({len(due_next_hour)})")
+                for item in due_next_hour:
+                    lines.append(f"  - {item}")
 
             if due_today:
                 lines.append(f"\nDUE TODAY ({len(due_today)})")
@@ -226,12 +241,13 @@ class DueSummaryView(View):
         fmt = request.GET.get("format", "text")
         if fmt == "json":
             return JsonResponse({
-                "total":     len(overdue) + len(due_today) + len(due_soon) + len(upcoming),
-                "overdue":   [i for _, i in overdue],
-                "due_today": due_today,
-                "due_soon":  [i for _, i in due_soon],
-                "upcoming":  [i for _, i in upcoming],
-                "text":      "\n".join(lines),
+                "total":          total,
+                "overdue":        [i for _, i in overdue],
+                "due_next_hour":  due_next_hour,
+                "due_today":      due_today,
+                "due_soon":       [i for _, i in due_soon],
+                "upcoming":       [i for _, i in upcoming],
+                "text":           "\n".join(lines),
             })
 
         return HttpResponse("\n".join(lines), content_type="text/plain")
