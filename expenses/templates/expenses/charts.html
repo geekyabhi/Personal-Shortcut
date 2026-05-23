@@ -411,6 +411,18 @@
     }
     .hm-legend-swatches { display: flex; gap: 3px; }
     .hm-legend-swatches span { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+    /* Full-bleed on desktop */
+    @media (min-width: 900px) {
+      #heatmap-card {
+        position: relative;
+        left: calc(-50vw + 50%);
+        width: 100vw;
+        border-radius: 0;
+        padding-left: max(2rem, calc(50vw - 380px));
+        padding-right: max(2rem, calc(50vw - 380px));
+      }
+    }
+
     /* Floating tooltip */
     .hm-tip {
       position: fixed; z-index: 9999; pointer-events: none; display: none;
@@ -1240,62 +1252,78 @@
       cells.push({ iso, val: inRange ? (daily?.[iso] || 0) : null, hasSpend: inRange && !!daily?.[iso] });
     }
 
+    const INTER_MONTH_PX = 6; // extra gap before first week of each new month
+
+    // Pre-count month boundaries to size the months row correctly
+    let _curM = null, _numBoundaries = 0;
+    for (let w = 0; w < numWeeks; w++) {
+      const fr = cells.slice(w * 7, w * 7 + 7).find(c => c.val !== null);
+      const wm = fr?.iso.slice(0, 7) || null;
+      if (wm && wm !== _curM) { if (_curM !== null) _numBoundaries++; _curM = wm; }
+    }
+    const totalExtra = _numBoundaries * INTER_MONTH_PX;
+
     // ── Month labels row ──
     const monthsRow = document.createElement("div");
     monthsRow.className = "hm-months-row";
-    monthsRow.style.width = (numWeeks * COL_W - CELL_GAP + DAY_LABELS_W + 4) + "px";
-    let lastMonth = null, lastLabelW = -4;
-    for (let w = 0; w < numWeeks; w++) {
-      const firstInRange = cells.slice(w * 7, w * 7 + 7).find(c => c.val !== null);
-      if (!firstInRange) continue;
-      const m = firstInRange.iso.slice(0, 7);
-      if (m !== lastMonth && w - lastLabelW >= 4) {
-        lastMonth = m;
-        lastLabelW = w;
-        const lbl = document.createElement("span");
-        lbl.className = "hm-month-lbl";
-        lbl.textContent = new Date(m + "-01T00:00:00").toLocaleString("en", { month: "short" });
-        lbl.style.left = (w * COL_W) + "px";
-        monthsRow.appendChild(lbl);
-      }
-    }
+    monthsRow.style.width = (numWeeks * COL_W - CELL_GAP + totalExtra + DAY_LABELS_W + 4) + "px";
 
     // ── Body: day labels + week columns ──
     const body = document.createElement("div");
     body.className = "hm-body";
 
-    // Day labels (Sun=0..Sat=6); show Mon, Wed, Fri
     const dayLabels = document.createElement("div");
     dayLabels.className = "hm-day-labels";
     ["", "Mon", "", "Wed", "", "Fri", ""].forEach(txt => {
       const s = document.createElement("span"); s.textContent = txt; dayLabels.appendChild(s);
     });
 
-    // Week columns
     const weeksDiv = document.createElement("div");
     weeksDiv.className = "hm-weeks";
 
     const tip = document.getElementById("hm-tip");
 
+    // Single pass: build week columns + month labels together
+    let curMonth = null, cumMargin = 0, lastLabelPx = -32;
+
     for (let w = 0; w < numWeeks; w++) {
+      const firstInRange = cells.slice(w * 7, w * 7 + 7).find(c => c.val !== null);
+      const wm = firstInRange?.iso.slice(0, 7) || null;
+
       const col = document.createElement("div");
       col.className = "hm-week";
+
+      if (wm && wm !== curMonth) {
+        if (curMonth !== null) {
+          // Add inter-month gap before this week column
+          col.style.marginLeft = INTER_MONTH_PX + "px";
+          cumMargin += INTER_MONTH_PX;
+        }
+        curMonth = wm;
+
+        // Month label
+        const labelPx = w * COL_W + cumMargin;
+        if (labelPx - lastLabelPx >= 30) {
+          lastLabelPx = labelPx;
+          const lbl = document.createElement("span");
+          lbl.className = "hm-month-lbl";
+          lbl.textContent = new Date(wm + "-01T00:00:00").toLocaleString("en", { month: "short" });
+          lbl.style.left = labelPx + "px";
+          monthsRow.appendChild(lbl);
+        }
+      }
+
       for (let d = 0; d < 7; d++) {
-        const { iso, val, hasSpend } = cells[w * 7 + d];
+        const { iso, val } = cells[w * 7 + d];
         const cell = document.createElement("div");
         cell.className = "hm-cell" + (val === null ? " oor" : "");
         if (val !== null) cell.style.background = _hmColor(val, maxVal);
-
         if (val !== null && val > 0) {
           const label = iso + " · ₹" + fmt(val);
           cell.addEventListener("mouseenter", () => { tip.textContent = label; tip.style.display = "block"; });
-          cell.addEventListener("mousemove",  e  => {
-            tip.style.left = (e.clientX + 10) + "px";
-            tip.style.top  = (e.clientY - 30) + "px";
-          });
+          cell.addEventListener("mousemove",  e  => { tip.style.left = (e.clientX + 10) + "px"; tip.style.top = (e.clientY - 30) + "px"; });
           cell.addEventListener("mouseleave", () => { tip.style.display = "none"; });
         }
-
         col.appendChild(cell);
       }
       weeksDiv.appendChild(col);
