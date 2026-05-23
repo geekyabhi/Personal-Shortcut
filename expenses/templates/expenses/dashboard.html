@@ -27,7 +27,8 @@
     .orb-1 { width: 450px; height: 450px; background: rgba(79,70,229,0.10); top: -120px; right: -80px; }
     .orb-2 { width: 350px; height: 350px; background: rgba(124,58,237,0.08); bottom: -100px; left: -80px; }
 
-    .container { max-width: 740px; margin: 0 auto; position: relative; z-index: 1; }
+    .container { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 
     /* Nav */
     nav {
@@ -51,6 +52,13 @@
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
 
+    /* Section headings */
+    .section-heading {
+      font-size: 1rem; font-weight: 800; color: #374151; margin: 1.75rem 0 0.75rem;
+      letter-spacing: -0.02em; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-heading span { font-size: 1.1rem; }
+
     /* Cards */
     .card {
       background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
@@ -68,7 +76,8 @@
     }
 
     select,
-    input[type="month"], input[type="week"], input[type="date"], input[type="number"] {
+    input[type="month"], input[type="week"], input[type="date"],
+    input[type="number"], input[type="text"] {
       width: 100%; padding: 0.65rem 0.9rem;
       border: 1.5px solid #E5E7EB; border-radius: 12px;
       font-size: 0.93rem; font-family: inherit;
@@ -107,6 +116,15 @@
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79,70,229,0.45); }
     .btn-primary:active { transform: translateY(0); }
     .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .btn-ghost {
+      padding: 0.45rem 1rem; font-size: 0.82rem; font-weight: 600;
+      background: rgba(79,70,229,0.07); color: var(--accent);
+      border: 1px solid rgba(79,70,229,0.18); border-radius: 100px;
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
+    }
+    .btn-ghost:hover { background: var(--grad); color: #fff; border-color: transparent; }
+    .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* Period badge */
     .period-badge {
@@ -155,43 +173,196 @@
       border-radius: 12px; padding: 0.9rem 1rem; font-size: 0.9rem;
       margin-bottom: 1rem; font-weight: 500;
     }
-    #results { display: none; }
 
     /* Spinner */
     .spinner { display: flex; flex-direction: column; align-items: center; gap: 0.65rem; padding: 1.5rem 0; }
     .spinner-ring {
       width: 36px; height: 36px;
-      border: 3px solid rgba(79,70,229,0.15);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.75s linear infinite;
+      border: 3px solid rgba(79,70,229,0.15); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.75s linear infinite;
     }
     .spinner-text { font-size: 0.85rem; color: #9CA3AF; font-weight: 500; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60%  { transform: translateX(-6px); }
+      40%,80%  { transform: translateX(6px); }
+    }
 
-    /* Page fade in */
-    .container { animation: fadeUp 0.5s ease both; }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    /* ── Unlock modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(17,24,39,0.45); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 20px; padding: 1.75rem 1.5rem;
+      width: min(360px, 90vw); box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: fadeUp 0.2s ease both;
+    }
+    .modal-title {
+      font-size: 1rem; font-weight: 800; color: #111827;
+      margin-bottom: 0.25rem; letter-spacing: -0.02em;
+    }
+    .modal-sub { font-size: 0.8rem; color: #9CA3AF; margin-bottom: 1.1rem; }
+    .modal-input {
+      width: 100%; padding: 0.7rem 0.9rem;
+      border: 1.5px solid #E5E7EB; border-radius: 12px;
+      font-size: 0.95rem; font-family: inherit; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #F9FAFB; color: #111827;
+    }
+    .modal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+    .modal-input.shake { animation: shake 0.35s ease; }
+    .modal-error { font-size: 0.78rem; color: #EF4444; font-weight: 600; margin-top: 0.4rem; display: none; }
+    .modal-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .modal-btn-cancel {
+      flex: 1; padding: 0.7rem; border-radius: 100px; border: 1.5px solid #E5E7EB;
+      background: #fff; color: #6B7280; font-size: 0.9rem; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: all 0.2s;
+    }
+    .modal-btn-cancel:hover { border-color: #D1D5DB; background: #F9FAFB; }
+    .modal-btn-ok {
+      flex: 2; padding: 0.7rem; border-radius: 100px; border: none;
+      background: var(--grad); color: #fff; font-size: 0.9rem; font-weight: 700;
+      font-family: inherit; cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(79,70,229,0.3);
+    }
+    .modal-btn-ok:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,0.4); }
+    /* tiny lock badge shown in header when unlocked */
+    #unlock-badge {
+      display: none; font-size: 0.72rem; font-weight: 700; color: #059669;
+      background: rgba(16,185,129,0.1); border-radius: 100px; padding: 0.2rem 0.6rem;
+      vertical-align: middle; margin-left: 0.5rem; cursor: pointer;
+    }
+    #unlock-badge.visible { display: inline-block; }
+
+    /* ── Insights ── */
+    .insight-hero {
+      background: var(--grad); border-radius: 16px; padding: 1rem 1.2rem;
+      color: #fff; margin-bottom: 1rem;
+      display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;
+    }
+    .insight-hero-label { font-size: 0.72rem; font-weight: 700; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.06em; }
+    .insight-hero-value { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.02em; }
+    .insight-hero-sub   { font-size: 0.8rem; opacity: 0.8; margin-top: 0.1rem; }
+
+    .insight-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem; }
+
+    .rank-list { display: flex; flex-direction: column; gap: 0; }
+    .rank-item {
+      display: grid; grid-template-columns: 1.6rem 1fr auto;
+      align-items: center; gap: 0.55rem;
+      padding: 0.55rem 0; border-bottom: 1px solid #F3F4F6;
+    }
+    .rank-item:last-child { border-bottom: none; }
+    .rank-num { font-size: 0.72rem; font-weight: 800; color: #D1D5DB; text-align: center; }
+    .rank-body { min-width: 0; }
+    .rank-name { font-size: 0.88rem; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-bar-track { height: 4px; background: #F3F4F6; border-radius: 2px; margin-top: 4px; }
+    .rank-bar-fill  { height: 4px; border-radius: 2px; background: var(--grad); transition: width 0.5s ease; }
+    .rank-right { text-align: right; flex-shrink: 0; }
+    .rank-amt  { font-size: 0.88rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
+    .rank-pct  { font-size: 0.72rem; color: #9CA3AF; font-weight: 600; white-space: nowrap; }
+
+    .top-entry {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 0.6rem 0; border-bottom: 1px solid #F3F4F6; gap: 0.5rem;
+    }
+    .top-entry:last-child { border-bottom: none; }
+    .top-entry-left { min-width: 0; flex: 1; }
+    .top-entry-title { font-size: 0.88rem; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top-entry-meta  { font-size: 0.75rem; color: #9CA3AF; margin-top: 2px; }
+    .top-entry-amt   { font-size: 0.92rem; font-weight: 700; color: var(--accent); white-space: nowrap; flex-shrink: 0; }
+
+    /* ── Browse / List ── */
+    .browse-filters { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
+
+    .tag { display: inline-block; padding: 0.18rem 0.55rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; }
+    .tag-cat { background: rgba(79,70,229,0.1); color: var(--accent); }
+    .tag-src { background: rgba(16,185,129,0.1); color: #059669; }
+
+    .expense-row {
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 0.4rem 0.75rem; padding: 0.75rem 0;
+      border-bottom: 1px solid #F3F4F6; align-items: start;
+    }
+    .expense-row:last-child { border-bottom: none; }
+    .expense-title { font-size: 0.9rem; font-weight: 600; color: #111827; }
+    .expense-meta  { font-size: 0.75rem; color: #9CA3AF; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+    .expense-amount { font-size: 0.95rem; font-weight: 700; color: var(--accent); text-align: right; white-space: nowrap; }
+    .expense-date   { font-size: 0.72rem; color: #9CA3AF; text-align: right; }
+
+    /* Pagination */
+    .pagination {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;
+    }
+    .pagination-info { font-size: 0.78rem; color: #6B7280; font-weight: 500; }
+    .pagination-btns { display: flex; gap: 0.4rem; }
+
+    .empty-state {
+      text-align: center; padding: 2rem 1rem; color: #9CA3AF; font-size: 0.9rem; font-weight: 500;
+    }
 
     @media (min-width: 480px) {
       body { padding: 1.75rem 1.25rem; }
       .card { padding: 1.5rem; border-radius: 22px; }
-      .filters { grid-template-columns: 1fr 1fr; }
+      .filters, .browse-filters { grid-template-columns: 1fr 1fr; }
       .bar-wrap { display: block; flex: 1; height: 6px; background: #F3F4F6; border-radius: 3px; overflow: hidden; }
       .breakdown-layout { flex-direction: row; align-items: flex-start; }
       .breakdown-list-wrap { flex: 1; min-width: 0; }
       .donut-wrap { width: 185px; flex-shrink: 0; }
+      .insight-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 640px) {
+      .browse-filters { grid-template-columns: 1fr 1fr 1fr; }
     }
     @media (min-width: 768px) {
       body { padding: 2.5rem 1.5rem; }
       .card { margin-bottom: 1.25rem; }
       .donut-wrap { width: 210px; }
     }
+
+    /* ── Corner menu dot ── */
+    .corner-btn {
+      position: fixed; top: 0.7rem; left: 0.7rem; z-index: 200;
+      width: 28px; height: 28px; border-radius: 6px;
+      background: transparent; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(111,114,133,0.22); font-size: 1.1rem; letter-spacing: 0.05em;
+      transition: color 0.2s, background 0.2s;
+      user-select: none; font-family: inherit;
+    }
+    .corner-btn:hover { color: rgba(79,70,229,0.35); background: rgba(79,70,229,0.06); }
+    .corner-btn.on    { color: rgba(16,185,129,0.45); }
+
+    /* ── Cache status bar ── */
+    .cache-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.38rem 0.75rem 0.38rem 1rem; margin-bottom: 1.25rem;
+      background: rgba(255,255,255,0.65); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      font-size: 0.78rem; font-weight: 600; color: #6B7280;
+    }
+    .cache-bar-left { display: flex; align-items: center; gap: 0.45rem; }
+    .cache-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; transition: background 0.3s; }
+    .cache-bar button {
+      padding: 0.25rem 0.65rem; border-radius: 100px;
+      background: rgba(79,70,229,0.07); color: var(--accent);
+      border: 1px solid rgba(79,70,229,0.15); cursor: pointer;
+      font-family: inherit; font-size: 0.73rem; font-weight: 700; transition: all 0.18s;
+    }
+    .cache-bar button:hover { background: var(--grad); color: #fff; border-color: transparent; }
+    .cache-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
 <body>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
+  <button id="corner-btn" class="corner-btn" onclick="_cornerClick()" aria-label="" title="">···</button>
 
   <div class="container">
     <nav>
@@ -200,8 +371,33 @@
       <a href="/expenses/charts/">Charts</a>
     </nav>
 
-    <h1>Expenses Dashboard</h1>
+    <!-- Cache status bar -->
+    <div class="cache-bar" id="cache-bar" style="display:none;">
+      <div class="cache-bar-left">
+        <div class="cache-dot" id="cache-dot" style="background:#D1D5DB;"></div>
+        <span id="cache-status">Loading…</span>
+      </div>
+      <button id="cache-refresh-btn" onclick="forceRefresh()">↺ Refresh</button>
+    </div>
 
+    <h1 id="page-title" style="cursor:default;user-select:none;">Expenses Dashboard<span id="unlock-badge" onclick="_lock(event)" title="Click to lock">🔓 unlocked</span></h1>
+
+    <!-- unlock modal -->
+    <div class="modal-overlay" id="unlock-modal" onclick="_modalBgClick(event)">
+      <div class="modal-box">
+        <div class="modal-title">Verification required</div>
+        <div class="modal-sub">Enter your access code to continue.</div>
+        <input class="modal-input" id="unlock-input" type="password" placeholder="Access code"
+               onkeydown="if(event.key==='Enter')_checkPw(); if(event.key==='Escape')_closeModal();" />
+        <div class="modal-error" id="unlock-error">Incorrect code. Try again.</div>
+        <div class="modal-actions">
+          <button class="modal-btn-cancel" onclick="_closeModal()">Cancel</button>
+          <button class="modal-btn-ok"     onclick="_checkPw()">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SECTION 1: SUMMARY ─────────────────────────────────── -->
     <div class="card">
       <div class="filters">
         <div>
@@ -223,30 +419,12 @@
             <option value="source">Source</option>
           </select>
         </div>
-        <div id="wrap-year" class="date-input">
-          <label for="year">Year</label>
-          <input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" />
-        </div>
-        <div id="wrap-month" class="date-input visible">
-          <label for="month">Month</label>
-          <input type="month" id="month" />
-        </div>
-        <div id="wrap-week" class="date-input">
-          <label for="week">Week</label>
-          <input type="week" id="week" />
-        </div>
-        <div id="wrap-day" class="date-input">
-          <label for="day">Day</label>
-          <input type="date" id="day" />
-        </div>
-        <div id="wrap-start" class="date-input">
-          <label for="start-date">Start Date</label>
-          <input type="date" id="start-date" />
-        </div>
-        <div id="wrap-end" class="date-input">
-          <label for="end-date">End Date</label>
-          <input type="date" id="end-date" />
-        </div>
+        <div id="wrap-year"  class="date-input"><label for="year">Year</label><input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" /></div>
+        <div id="wrap-month" class="date-input visible"><label for="month">Month</label><input type="month" id="month" /></div>
+        <div id="wrap-week"  class="date-input"><label for="week">Week</label><input type="week" id="week" /></div>
+        <div id="wrap-day"   class="date-input"><label for="day">Day</label><input type="date" id="day" /></div>
+        <div id="wrap-start" class="date-input"><label for="start-date">Start Date</label><input type="date" id="start-date" /></div>
+        <div id="wrap-end"   class="date-input"><label for="end-date">End Date</label><input type="date" id="end-date" /></div>
       </div>
 
       <div class="presets" id="wrap-presets">
@@ -257,16 +435,16 @@
         <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
       </div>
 
-      <button class="btn-primary" id="btn" onclick="fetchAll()">Fetch Summary</button>
+      <button class="btn-primary" id="btn-summary" onclick="fetchAll()">Apply Filters</button>
     </div>
 
-    <div id="loading" class="spinner" style="display:none;">
+    <div id="loading-summary" class="spinner" style="display:none;">
       <div class="spinner-ring"></div>
-      <span class="spinner-text">Fetching from Notion…</span>
+      <span class="spinner-text" id="loading-summary-text">Loading expenses…</span>
     </div>
-    <div id="error-box" class="error-box" style="display:none;"></div>
+    <div id="error-summary" class="error-box" style="display:none;"></div>
 
-    <div id="results">
+    <div id="results-summary" style="display:none;">
       <div class="card">
         <div class="period-badge" id="period-badge"></div>
         <div class="stat-row">
@@ -277,20 +455,14 @@
 
       <div class="card" id="trend-card">
         <h2>Expense Trend</h2>
-        <div class="chart-wrap">
-          <canvas id="trend-chart"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
       </div>
 
       <div class="card" id="breakdown-card" style="display:none;">
         <h2 id="breakdown-title"></h2>
         <div class="breakdown-layout">
-          <div class="breakdown-list-wrap">
-            <div id="breakdown-list"></div>
-          </div>
-          <div class="donut-wrap">
-            <canvas id="donut-chart"></canvas>
-          </div>
+          <div class="breakdown-list-wrap"><div id="breakdown-list"></div></div>
+          <div class="donut-wrap"><canvas id="donut-chart"></canvas></div>
         </div>
       </div>
 
@@ -298,8 +470,146 @@
         <h3>Summary Text</h3>
         <pre class="display-text" id="display-text"></pre>
       </div>
+
+      <!-- ─── SECTION 2: INSIGHTS (rendered alongside summary) ─── -->
+      <div class="section-heading"><span>🔍</span> Insights</div>
+
+      <div id="insights-body">
+        <!-- hero concentration bar -->
+        <div class="insight-hero" id="insight-hero">
+          <div>
+            <div class="insight-hero-label">Biggest category</div>
+            <div class="insight-hero-value" id="insight-top1-name">—</div>
+            <div class="insight-hero-sub" id="insight-top1-sub"></div>
+          </div>
+          <div style="text-align:right;">
+            <div class="insight-hero-label">Top 3 categories</div>
+            <div class="insight-hero-value" id="insight-top3-pct">—</div>
+            <div class="insight-hero-sub">of total spend</div>
+          </div>
+        </div>
+
+        <div class="insight-grid">
+          <!-- By Category -->
+          <div class="card" style="margin-bottom:0;">
+            <h2>By Category</h2>
+            <div class="rank-list" id="insight-categories"></div>
+          </div>
+          <!-- By Source -->
+          <div class="card" style="margin-bottom:0;">
+            <h2>By Source</h2>
+            <div class="rank-list" id="insight-sources"></div>
+          </div>
+        </div>
+
+        <!-- Biggest transactions -->
+        <div class="card" style="margin-top:1rem;">
+          <h2>Biggest Transactions</h2>
+          <div id="insight-top-entries"></div>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- ─── SECTION 3: BROWSE ────────────────────────────────────── -->
+    <div class="section-heading" style="margin-top:2rem;cursor:default;user-select:none;" onclick="_titleClick()"><span>📋</span> Browse Expenses</div>
+
+    <div class="card">
+      <div class="browse-filters">
+        <div>
+          <label for="b-period">Period</label>
+          <select id="b-period" onchange="onBPeriodChange()">
+            <option value="all">All Time</option>
+            <option value="yearly">Yearly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div id="b-wrap-month" class="date-input visible">
+          <label for="b-month">Month</label>
+          <input type="month" id="b-month" />
+        </div>
+        <div id="b-wrap-year" class="date-input">
+          <label for="b-year">Year</label>
+          <input type="number" id="b-year" min="2000" max="2099" placeholder="e.g. 2026" />
+        </div>
+        <div id="b-wrap-week" class="date-input">
+          <label for="b-week">Week</label>
+          <input type="week" id="b-week" />
+        </div>
+        <div id="b-wrap-day" class="date-input">
+          <label for="b-day">Day</label>
+          <input type="date" id="b-day" />
+        </div>
+        <div id="b-wrap-start" class="date-input">
+          <label for="b-start">Start Date</label>
+          <input type="date" id="b-start" />
+        </div>
+        <div id="b-wrap-end" class="date-input">
+          <label for="b-end">End Date</label>
+          <input type="date" id="b-end" />
+        </div>
+        <div>
+          <label for="b-search">Search name</label>
+          <input type="text" id="b-search" placeholder="e.g. Amazon…" />
+        </div>
+        <div>
+          <label for="b-category">Category</label>
+          <input type="text" id="b-category" placeholder="e.g. Food, Travel" />
+        </div>
+        <div>
+          <label for="b-source">Source</label>
+          <input type="text" id="b-source" placeholder="e.g. Credit Card" />
+        </div>
+        <div>
+          <label for="b-min">Min Amount</label>
+          <input type="number" id="b-min" placeholder="0" min="0" />
+        </div>
+        <div>
+          <label for="b-max">Max Amount</label>
+          <input type="number" id="b-max" placeholder="∞" min="0" />
+        </div>
+        <div>
+          <label for="b-sort">Sort By</label>
+          <select id="b-sort">
+            <option value="date_desc">Newest first</option>
+            <option value="date_asc">Oldest first</option>
+            <option value="amount_desc">Highest amount</option>
+            <option value="amount_asc">Lowest amount</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="presets" id="b-wrap-presets">
+        <button type="button" class="preset-btn" onclick="setBPreset('7d')">Last 7 days</button>
+        <button type="button" class="preset-btn" onclick="setBPreset('30d')">Last 30 days</button>
+        <button type="button" class="preset-btn" onclick="setBPreset('3m')">Last 3 months</button>
+        <button type="button" class="preset-btn" onclick="setBPreset('6m')">Last 6 months</button>
+        <button type="button" class="preset-btn" onclick="setBPreset('ytd')">Year to date</button>
+      </div>
+
+      <button class="btn-primary" id="btn-browse" onclick="fetchList(1)">Browse Expenses</button>
+    </div>
+
+    <div id="loading-browse" class="spinner" style="display:none;">
+      <div class="spinner-ring"></div>
+      <span class="spinner-text">Loading expenses…</span>
+    </div>
+    <div id="error-browse" class="error-box" style="display:none;"></div>
+
+    <div id="results-browse" style="display:none;">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+          <h2 style="margin-bottom:0;">Expenses</h2>
+          <span id="browse-count-badge" class="period-badge" style="margin-bottom:0;"></span>
+        </div>
+        <div id="browse-list"></div>
+        <div class="pagination" id="browse-pagination"></div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
 
 <script>
   const CHART_COLORS = [
@@ -307,26 +617,163 @@
     "#0891B2","#EC4899","#8B5CF6","#10B981","#F97316","#6366F1","#14B8A6",
   ];
 
-  let trendChart = null;
-  let donutChart = null;
+  let trendChart = null, donutChart = null;
 
+  /* ── Cache status ── */
+  let _cacheTs = null, _totalCachedRows = 0;
+
+  function _ageFmt(ts) {
+    const s = Math.floor(Date.now() / 1000 - ts);
+    if (s < 15)  return "just now";
+    if (s < 60)  return `${s}s ago`;
+    const m = Math.floor(s / 60);
+    if (m < 60)  return `${m} min ago`;
+    return `${Math.floor(m / 60)}h ago`;
+  }
+
+  function updateCacheBar(data) {
+    if (data.cache_ts) { _cacheTs = data.cache_ts; _totalCachedRows = data.total_rows || 0; }
+    if (!_cacheTs) return;
+    const bar = document.getElementById("cache-bar");
+    document.getElementById("cache-dot").style.background = "#10B981";
+    document.getElementById("cache-status").textContent =
+      `${_totalCachedRows} expenses loaded · ${data.from_cache ? "cached" : "fetched"} ${_ageFmt(_cacheTs)}`;
+    bar.style.display = "flex";
+  }
+
+  // Refresh the "X ago" label every 60 s without re-fetching
+  setInterval(() => {
+    if (_cacheTs) updateCacheBar({ cache_ts: _cacheTs, from_cache: true, total_rows: _totalCachedRows });
+  }, 60000);
+
+  /* ── Hidden categories (encoded) ── */
+  const _xc = ["UmVsYXRpb25zaGlw","RHJpbmtzIGFuZCBTbW9rZQ=="].map(atob);
+  const _pw  = "MjIwNzIwMDE=";  // access code (encoded)
+  let _showHidden = sessionStorage.getItem("exp_unlocked") === "1";
+  const _hid  = n  => !_showHidden && _xc.some(h => h.toLowerCase() === (n || "").toLowerCase());
+  const _fCat = arr => (arr || []).filter(item => !_hid(item.name));
+  const _fTag = arr => (arr || []).filter(c   => !_hid(c));
+
+  function _updateLockIcon() {
+    document.getElementById("corner-btn")?.classList.toggle("on", _showHidden);
+  }
+
+  /* ── 15-click corner button ── */
+  let _cic = 0, _cit = null;
+  function _cornerClick() {
+    _cic++;
+    clearTimeout(_cit);
+    _cit = setTimeout(() => { _cic = 0; }, 3000);
+    if (_cic >= 15) { _cic = 0; _showHidden ? _lock() : _openModal(); }
+  }
+
+  /* ── Data cache for re-render on toggle ── */
+  let _lastInsight = null, _lastBrowse = null, _lastChart = null;
+
+  /* ── 15-click secret (section heading area, kept as backup) ── */
+  let _cc = 0, _ct = null;
+  function _titleClick() {
+    _cc++;
+    clearTimeout(_ct);
+    _ct = setTimeout(() => { _cc = 0; }, 2000);
+    if (_cc >= 15) { _cc = 0; _showHidden ? _lock() : _openModal(); }
+  }
+  function _openModal() {
+    document.getElementById("unlock-modal").classList.add("open");
+    document.getElementById("unlock-input").value = "";
+    document.getElementById("unlock-error").style.display = "none";
+    setTimeout(() => document.getElementById("unlock-input").focus(), 60);
+  }
+  function _closeModal() {
+    document.getElementById("unlock-modal").classList.remove("open");
+  }
+  function _modalBgClick(e) {
+    if (e.target === document.getElementById("unlock-modal")) _closeModal();
+  }
+  function _checkPw() {
+    const val = document.getElementById("unlock-input").value;
+    if (btoa(val) === _pw) {
+      _showHidden = true;
+      sessionStorage.setItem("exp_unlocked", "1");
+      _closeModal();
+      document.getElementById("unlock-badge").classList.add("visible");
+      _updateLockIcon();
+      _rerender();
+    } else {
+      const inp = document.getElementById("unlock-input");
+      inp.classList.remove("shake");
+      void inp.offsetWidth;
+      inp.classList.add("shake");
+      document.getElementById("unlock-error").style.display = "block";
+      inp.value = "";
+      setTimeout(() => inp.classList.remove("shake"), 400);
+    }
+  }
+  function _lock(e) {
+    if (e) e.stopPropagation();
+    _showHidden = false;
+    sessionStorage.removeItem("exp_unlocked");
+    document.getElementById("unlock-badge").classList.remove("visible");
+    _updateLockIcon();
+    _rerender();
+    setTimeout(() => {
+      document.getElementById("insights-body")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  }
+
+  // Sync badge and icon with stored state on load
+  if (_showHidden) document.getElementById("unlock-badge").classList.add("visible");
+  _updateLockIcon();
+  function _rerender() {
+    if (_lastInsight || _lastChart) {
+      if (_lastInsight) renderInsights(_lastInsight);
+      if (_lastChart)   renderBreakdown(_lastChart);
+      document.getElementById("results-summary").style.display = "block";
+      setTimeout(() => {
+        document.getElementById("insights-body").scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    } else {
+      fetchAll();
+    }
+    if (_lastBrowse) {
+      renderBrowseList(_lastBrowse);
+      document.getElementById("results-browse").style.display = "block";
+    }
+  }
+
+  /* ── Init date inputs ── */
   const today = new Date();
-  document.getElementById("year").value       = today.getFullYear();
-  document.getElementById("month").value      = today.toISOString().slice(0, 7);
-  document.getElementById("week").value       = isoWeekString(today);
-  document.getElementById("day").value        = today.toISOString().slice(0, 10);
-  document.getElementById("end-date").value   = today.toISOString().slice(0, 10);
-  document.getElementById("start-date").value = monthsAgo(1).toISOString().slice(0, 10);
+  const todayStr  = today.toISOString().slice(0, 10);
+  const monthStr  = today.toISOString().slice(0, 7);
+  const weekStr   = isoWeekString(today);
+
+  document.getElementById("year").value        = today.getFullYear();
+  document.getElementById("month").value       = monthStr;
+  document.getElementById("week").value        = weekStr;
+  document.getElementById("day").value         = todayStr;
+  document.getElementById("end-date").value    = todayStr;
+  document.getElementById("start-date").value  = monthsAgo(1).toISOString().slice(0, 10);
+
+  document.getElementById("b-year").value      = today.getFullYear();
+  document.getElementById("b-month").value     = monthStr;
+  document.getElementById("b-week").value      = weekStr;
+  document.getElementById("b-day").value       = todayStr;
+  document.getElementById("b-end").value       = todayStr;
+  document.getElementById("b-start").value     = monthsAgo(1).toISOString().slice(0, 10);
 
   function isoWeekString(d) {
     const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-    const week = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
-    return `${tmp.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+    const ys = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+    const wk = Math.ceil((((tmp - ys) / 86400000) + 1) / 7);
+    return `${tmp.getUTCFullYear()}-W${String(wk).padStart(2, "0")}`;
   }
   function monthsAgo(n) { const d = new Date(); d.setMonth(d.getMonth() - n); return d; }
+  function fmt(n) {
+    return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
 
+  /* ── Summary period controls ── */
   function setPreset(key) {
     const end = new Date(), start = new Date();
     if (key === "7d")  start.setDate(start.getDate() - 6);
@@ -340,9 +787,9 @@
 
   function onPeriodChange() {
     const p = document.getElementById("period").value;
-    const map = { year: "yearly", month: "monthly", week: "weekly", day: "daily" };
-    Object.entries(map).forEach(([id, val]) => {
-      document.getElementById(`wrap-${id}`).className = "date-input" + (p === val ? " visible" : "");
+    ["year","month","week","day"].forEach(id => {
+      const map = { year:"yearly", month:"monthly", week:"weekly", day:"daily" };
+      document.getElementById(`wrap-${id}`).className = "date-input" + (p === map[id] ? " visible" : "");
     });
     ["start","end"].forEach(id => {
       document.getElementById(`wrap-${id}`).className = "date-input" + (p === "custom" ? " visible" : "");
@@ -350,7 +797,7 @@
     document.getElementById("wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
   }
 
-  function buildParams() {
+  function buildSummaryParams() {
     const period = document.getElementById("period").value;
     const groupBy = document.getElementById("group_by").value;
     const p = new URLSearchParams({ period });
@@ -366,10 +813,6 @@
     return p.toString();
   }
 
-  function fmt(n) {
-    return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
   function periodLabel(data) {
     if (data.period === "all")     return "All Time";
     if (data.period === "yearly")  return data.year;
@@ -380,19 +823,62 @@
     return data.period;
   }
 
+  /* ── Browse period controls ── */
+  function setBPreset(key) {
+    const end = new Date(), start = new Date();
+    if (key === "7d")  start.setDate(start.getDate() - 6);
+    if (key === "30d") start.setDate(start.getDate() - 29);
+    if (key === "3m")  start.setMonth(start.getMonth() - 3);
+    if (key === "6m")  start.setMonth(start.getMonth() - 6);
+    if (key === "ytd") start.setMonth(0, 1);
+    document.getElementById("b-start").value = start.toISOString().slice(0, 10);
+    document.getElementById("b-end").value   = end.toISOString().slice(0, 10);
+  }
+
+  function onBPeriodChange() {
+    const p = document.getElementById("b-period").value;
+    ["year","month","week","day"].forEach(id => {
+      const map = { year:"yearly", month:"monthly", week:"weekly", day:"daily" };
+      document.getElementById(`b-wrap-${id}`).className = "date-input" + (p === map[id] ? " visible" : "");
+    });
+    ["start","end"].forEach(id => {
+      document.getElementById(`b-wrap-${id}`).className = "date-input" + (p === "custom" ? " visible" : "");
+    });
+    document.getElementById("b-wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
+  }
+
+  function buildBrowseParams(page) {
+    const period = document.getElementById("b-period").value;
+    const p = new URLSearchParams({ period, page: String(page), page_size: "25" });
+    if (period === "yearly")  p.set("year",  document.getElementById("b-year").value);
+    if (period === "monthly") p.set("month", document.getElementById("b-month").value);
+    if (period === "weekly")  p.set("week",  document.getElementById("b-week").value);
+    if (period === "daily")   p.set("day",   document.getElementById("b-day").value);
+    if (period === "custom") {
+      p.set("start", document.getElementById("b-start").value);
+      p.set("end",   document.getElementById("b-end").value);
+    }
+    const search   = document.getElementById("b-search").value.trim();
+    const category = document.getElementById("b-category").value.trim();
+    const source   = document.getElementById("b-source").value.trim();
+    const minAmt   = document.getElementById("b-min").value.trim();
+    const maxAmt   = document.getElementById("b-max").value.trim();
+    const sort     = document.getElementById("b-sort").value;
+    if (search)   p.set("search", search);
+    if (category) p.set("category", category);
+    if (source)   p.set("source", source);
+    if (minAmt)   p.set("min_amount", minAmt);
+    if (maxAmt)   p.set("max_amount", maxAmt);
+    p.set("sort", sort);
+    return p.toString();
+  }
+
+  /* ── Charts ── */
   function renderTrendChart(labels, values) {
     if (trendChart) trendChart.destroy();
     trendChart = new Chart(document.getElementById("trend-chart").getContext("2d"), {
       type: "bar",
-      data: {
-        labels,
-        datasets: [{
-          data: values,
-          backgroundColor: "rgba(79,70,229,0.85)",
-          borderRadius: 8, borderSkipped: false,
-          hoverBackgroundColor: "#7C3AED",
-        }]
-      },
+      data: { labels, datasets: [{ data: values, backgroundColor: "rgba(79,70,229,0.85)", borderRadius: 8, borderSkipped: false, hoverBackgroundColor: "#7C3AED" }] },
       options: {
         responsive: true, maintainAspectRatio: true,
         aspectRatio: window.innerWidth < 480 ? 1.6 : 2.4,
@@ -401,9 +887,8 @@
           tooltip: { callbacks: { label: ctx => " " + fmt(ctx.parsed.y) }, cornerRadius: 10 }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter' }, maxRotation: 45 } },
-          y: { beginAtZero: true, grid: { color: "#F3F4F6" },
-               ticks: { font: { size: 11, family: 'Inter' }, callback: v => fmt(v) } }
+          x: { grid: { display: false }, ticks: { font: { size: 11, family: "Inter" }, maxRotation: 45 } },
+          y: { beginAtZero: true, grid: { color: "#F3F4F6" }, ticks: { font: { size: 11, family: "Inter" }, callback: v => fmt(v) } }
         }
       }
     });
@@ -413,73 +898,246 @@
     if (donutChart) donutChart.destroy();
     donutChart = new Chart(document.getElementById("donut-chart").getContext("2d"), {
       type: "doughnut",
-      data: {
-        labels,
-        datasets: [{ data: values, backgroundColor: CHART_COLORS.slice(0, labels.length), borderWidth: 3, borderColor: "#fff", hoverOffset: 8 }]
-      },
+      data: { labels, datasets: [{ data: values, backgroundColor: CHART_COLORS.slice(0, labels.length), borderWidth: 3, borderColor: "#fff", hoverOffset: 8 }] },
       options: {
         responsive: true, maintainAspectRatio: true,
         plugins: {
-          legend: { position: "bottom", labels: { boxWidth: 10, padding: 12, font: { size: 11, family: 'Inter' } } },
+          legend: { position: "bottom", labels: { boxWidth: 10, padding: 12, font: { size: 11, family: "Inter" } } },
           tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.parsed)}` }, cornerRadius: 10 }
         }
       }
     });
   }
 
-  async function fetchAll() {
-    const btn = document.getElementById("btn");
+  /* ── Render insights ── */
+  function renderRankList(containerId, items, maxVal) {
+    const el = document.getElementById(containerId);
+    if (!items.length) { el.innerHTML = '<p style="font-size:0.85rem;color:#9CA3AF;">No data</p>'; return; }
+    el.innerHTML = items.map((item, i) => `
+      <div class="rank-item">
+        <span class="rank-num">${i + 1}</span>
+        <div class="rank-body">
+          <div class="rank-name">${item.name}</div>
+          <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(item.total/maxVal*100).toFixed(1)}%"></div></div>
+        </div>
+        <div class="rank-right">
+          <div class="rank-amt">${fmt(item.total)}</div>
+          <div class="rank-pct">${item.pct}% · ${item.count} entries</div>
+        </div>
+      </div>`).join("");
+  }
+
+  function renderInsights(data) {
+    _lastInsight = data;
+    const visCats = _fCat(data.by_category);
+    const top1    = visCats[0];
+    const top3tot = visCats.slice(0, 3).reduce((s, c) => s + c.total, 0);
+    const top3pct = data.grand_total ? (top3tot / data.grand_total * 100).toFixed(1) : 0;
+
+    document.getElementById("insight-top1-name").textContent = top1?.name || "—";
+    document.getElementById("insight-top1-sub").textContent  = top1 ? `${top1.pct}% of total` : "";
+    document.getElementById("insight-top3-pct").textContent  = top3pct ? `${top3pct}%` : "—";
+
+    const maxCat = visCats[0]?.total || 1;
+    const maxSrc = data.by_source[0]?.total || 1;
+    renderRankList("insight-categories", visCats, maxCat);
+    renderRankList("insight-sources",    data.by_source.slice(0, 8), maxSrc);
+
+    const topEl = document.getElementById("insight-top-entries");
+    if (!data.top_entries.length) {
+      topEl.innerHTML = '<div class="empty-state">No entries found.</div>';
+      return;
+    }
+    topEl.innerHTML = data.top_entries.map(e => {
+      const cats = _fTag(e.categories).map(c => `<span class="tag tag-cat">${c}</span>`).join("");
+      const src  = e.source ? `<span class="tag tag-src">${e.source}</span>` : "";
+      return `
+        <div class="top-entry">
+          <div class="top-entry-left">
+            <div class="top-entry-title">${e.title}</div>
+            <div class="top-entry-meta">${e.date || ""}${cats}${src}</div>
+          </div>
+          <div class="top-entry-amt">${fmt(e.amount)}</div>
+        </div>`;
+    }).join("");
+  }
+
+  /* ── Breakdown re-render helper ── */
+  function renderBreakdown(chart) {
+    _lastChart = chart;
+    const breakdownCard = document.getElementById("breakdown-card");
+    if (!chart?.breakdown?.labels?.length) { breakdownCard.style.display = "none"; return; }
+    let bdLabels = chart.breakdown.labels;
+    let bdValues = chart.breakdown.values;
+    if (chart.group_by === "category") {
+      const pairs = bdLabels.map((l, i) => ({ l, v: bdValues[i] })).filter(p => !_hid(p.l));
+      bdLabels = pairs.map(p => p.l);
+      bdValues = pairs.map(p => p.v);
+    }
+    if (!bdLabels.length) { breakdownCard.style.display = "none"; return; }
+    const maxVal = Math.max(...bdValues);
+    document.getElementById("breakdown-title").textContent =
+      `By ${chart.group_by.charAt(0).toUpperCase() + chart.group_by.slice(1)}`;
+    document.getElementById("breakdown-list").innerHTML = bdLabels.map((label, i) => `
+      <div class="breakdown-item">
+        <span class="breakdown-name">${label}</span>
+        <div class="bar-wrap"><div class="bar" style="width:${(bdValues[i]/maxVal*100).toFixed(1)}%"></div></div>
+        <span class="breakdown-amount">${fmt(bdValues[i])}</span>
+      </div>`).join("");
+    renderDonutChart(bdLabels, bdValues);
+    breakdownCard.style.display = "block";
+  }
+
+  /* ── Render browse list ── */
+  let currentBrowsePage = 1;
+
+  function renderBrowseList(data) {
+    _lastBrowse = data;
+    currentBrowsePage = data.page;
+    const badge = document.getElementById("browse-count-badge");
+    badge.textContent = `${data.total_count} result${data.total_count !== 1 ? "s" : ""}`;
+
+    const list = document.getElementById("browse-list");
+    if (!data.entries.length) {
+      list.innerHTML = '<div class="empty-state">No expenses match your filters.</div>';
+      document.getElementById("browse-pagination").innerHTML = "";
+      return;
+    }
+
+    list.innerHTML = data.entries.map(e => {
+      const cats = _fTag(e.categories).map(c => `<span class="tag tag-cat">${c}</span>`).join("");
+      const src  = e.source ? `<span class="tag tag-src">${e.source}</span>` : "";
+      return `
+        <div class="expense-row">
+          <div>
+            <div class="expense-title">${e.title}</div>
+            <div class="expense-meta">${cats}${src}</div>
+          </div>
+          <div>
+            <div class="expense-amount">${fmt(e.amount)}</div>
+            <div class="expense-date">${e.date || ""}</div>
+          </div>
+        </div>`;
+    }).join("");
+
+    const pg = document.getElementById("browse-pagination");
+    const start = (data.page - 1) * data.page_size + 1;
+    const end   = Math.min(data.page * data.page_size, data.total_count);
+    pg.innerHTML = `
+      <span class="pagination-info">${start}–${end} of ${data.total_count}</span>
+      <div class="pagination-btns">
+        <button class="btn-ghost" onclick="fetchList(${data.page - 1})" ${data.page <= 1 ? "disabled" : ""}>← Prev</button>
+        <button class="btn-ghost" onclick="fetchList(${data.page + 1})" ${data.page >= data.total_pages ? "disabled" : ""}>Next →</button>
+      </div>`;
+  }
+
+  /* ── Fetch summary + insights ── */
+  async function fetchAll(force = false) {
+    const btn = document.getElementById("btn-summary");
     btn.disabled = true;
-    document.getElementById("loading").style.display = "flex";
-    document.getElementById("results").style.display = "none";
-    document.getElementById("error-box").style.display = "none";
+    document.getElementById("loading-summary").style.display = "flex";
+    document.getElementById("loading-summary-text").textContent =
+      force ? "Refreshing from Notion…" : "Loading expenses…";
+    document.getElementById("results-summary").style.display = "none";
+    document.getElementById("error-summary").style.display   = "none";
+
+    const base = buildSummaryParams() + (force ? "&force=1" : "");
+    const qsNoGroup = base.replace(/[&?]?group_by=[^&]*/g, "").replace(/^&/, "");
 
     try {
-      const res  = await fetch(`/expenses/chart/?${buildParams()}`);
-      const data = await res.json();
-      if (!res.ok) {
-        document.getElementById("error-box").textContent = data.error || "Something went wrong.";
-        document.getElementById("error-box").style.display = "block";
+      const [chartRes, insightRes] = await Promise.all([
+        fetch(`/expenses/chart/?${base}`),
+        fetch(`/expenses/insights/?${qsNoGroup}`),
+      ]);
+
+      const chart   = await chartRes.json();
+      const insight = await insightRes.json();
+
+      if (!chartRes.ok) {
+        showError("error-summary", chart.error || "Something went wrong.");
         return;
       }
 
-      document.getElementById("period-badge").textContent = periodLabel(data);
-      document.getElementById("grand-total").textContent  = fmt(data.grand_total);
-      document.getElementById("display-text").textContent = data.display || "";
+      updateCacheBar(chart);
 
-      if (data.trend && data.trend.labels.length) {
-        renderTrendChart(data.trend.labels, data.trend.values);
+      /* Summary */
+      document.getElementById("period-badge").textContent = periodLabel(chart);
+      document.getElementById("grand-total").textContent  = fmt(chart.grand_total);
+      document.getElementById("display-text").textContent = chart.display || "";
+
+      if (chart.trend?.labels?.length) {
+        renderTrendChart(chart.trend.labels, chart.trend.values);
         document.getElementById("trend-card").style.display = "block";
       } else {
         document.getElementById("trend-card").style.display = "none";
       }
 
-      const breakdownCard = document.getElementById("breakdown-card");
-      if (data.breakdown && data.breakdown.labels.length) {
-        const maxVal = Math.max(...data.breakdown.values);
-        document.getElementById("breakdown-title").textContent =
-          `By ${data.group_by.charAt(0).toUpperCase() + data.group_by.slice(1)}`;
-        document.getElementById("breakdown-list").innerHTML = data.breakdown.labels.map((label, i) => `
-          <div class="breakdown-item">
-            <span class="breakdown-name">${label}</span>
-            <div class="bar-wrap"><div class="bar" style="width:${(data.breakdown.values[i]/maxVal*100).toFixed(1)}%"></div></div>
-            <span class="breakdown-amount">${fmt(data.breakdown.values[i])}</span>
-          </div>`).join("");
-        renderDonutChart(data.breakdown.labels, data.breakdown.values);
-        breakdownCard.style.display = "block";
-      } else {
-        breakdownCard.style.display = "none";
+      renderBreakdown(chart);
+
+      /* Insights */
+      if (insightRes.ok) {
+        renderInsights(insight);
       }
 
-      document.getElementById("results").style.display = "block";
+      document.getElementById("results-summary").style.display = "block";
     } catch (e) {
-      document.getElementById("error-box").textContent = "Network error: " + e.message;
-      document.getElementById("error-box").style.display = "block";
+      showError("error-summary", "Network error: " + e.message);
     } finally {
-      document.getElementById("loading").style.display = "none";
+      document.getElementById("loading-summary").style.display = "none";
       btn.disabled = false;
     }
   }
+
+  /* ── Fetch browse list ── */
+  async function fetchList(page, force = false) {
+    const btn = document.getElementById("btn-browse");
+    btn.disabled = true;
+    document.getElementById("loading-browse").style.display  = "flex";
+    document.getElementById("results-browse").style.display  = "none";
+    document.getElementById("error-browse").style.display    = "none";
+
+    try {
+      const extra = force ? "&force=1" : "";
+      const res   = await fetch(`/expenses/list/?${buildBrowseParams(page)}${extra}`);
+      const data  = await res.json();
+      if (!res.ok) { showError("error-browse", data.error || "Something went wrong."); return; }
+      updateCacheBar(data);
+      renderBrowseList(data);
+      document.getElementById("results-browse").style.display = "block";
+      document.getElementById("results-browse").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      showError("error-browse", "Network error: " + e.message);
+    } finally {
+      document.getElementById("loading-browse").style.display = "none";
+      btn.disabled = false;
+    }
+  }
+
+  /* ── Force refresh from Notion ── */
+  async function forceRefresh() {
+    const btn = document.getElementById("cache-refresh-btn");
+    btn.disabled = true;
+    btn.textContent = "…";
+    try {
+      await fetchAll(true);
+      // If browse results are visible, refresh them too
+      if (document.getElementById("results-browse").style.display !== "none") {
+        await fetchList(currentBrowsePage, true);
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "↺ Refresh";
+    }
+  }
+
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.style.display = "block";
+  }
+
+  // Auto-fetch on page load with default filters
+  fetchAll();
 </script>
 </body>
 </html>

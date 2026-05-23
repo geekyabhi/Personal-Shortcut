@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -25,9 +27,10 @@
     .orb-1 { width: 450px; height: 450px; background: rgba(79,70,229,0.10); top: -120px; right: -80px; }
     .orb-2 { width: 350px; height: 350px; background: rgba(124,58,237,0.08); bottom: -100px; left: -80px; }
 
-    .container { max-width: 740px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
+    .container { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
     @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
 
+    /* ── Nav ── */
     nav {
       display: inline-flex; gap: 0.2rem; flex-wrap: wrap;
       background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
@@ -43,12 +46,14 @@
       background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
 
+    /* ── Cards ── */
     .card {
       background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
       padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
     }
 
+    /* ── Filters ── */
     .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
     label { display: block; font-size: 0.7rem; font-weight: 700; color: #9CA3AF; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
     select, input[type="month"], input[type="week"], input[type="date"], input[type="number"] {
@@ -70,16 +75,15 @@
     }
     .preset-btn:hover { background: var(--grad); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
 
-    button {
+    button.btn-load {
       margin-top: 1.1rem; width: 100%; padding: 0.85rem;
       background: var(--grad); color: #fff; border: none; border-radius: 100px;
       font-size: 0.97rem; font-weight: 700; font-family: inherit;
-      cursor: pointer; transition: all 0.25s ease;
-      box-shadow: 0 4px 15px rgba(79,70,229,0.35);
+      cursor: pointer; transition: all 0.25s ease; box-shadow: 0 4px 15px rgba(79,70,229,0.35);
     }
-    button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79,70,229,0.45); }
-    button:active { transform: translateY(0); }
-    button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+    button.btn-load:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79,70,229,0.45); }
+    button.btn-load:active { transform: translateY(0); }
+    button.btn-load:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
     h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; color: #374151; }
 
@@ -107,18 +111,317 @@
     .spinner-text { font-size: 0.85rem; color: #9CA3AF; font-weight: 500; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ══════════════════════════════════════════
+       GRAFANA PANEL
+    ══════════════════════════════════════════ */
+    .grafana-panel {
+      background: rgba(255,255,255,0.78); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
+      padding: 0; margin-bottom: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+
+    /* Fullscreen state */
+    .grafana-panel.fullscreen {
+      position: fixed; inset: 0; z-index: 900; border-radius: 0;
+      overflow-y: auto; padding: 0;
+    }
+    .fs-overlay {
+      display: none; position: fixed; inset: 0; z-index: 899;
+      background: rgba(10,10,20,0.55); backdrop-filter: blur(4px);
+    }
+    .fs-overlay.open { display: block; }
+
+    /* Panel header */
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.85rem 1.25rem; border-bottom: 1px solid #F3F4F6;
+      gap: 0.5rem; flex-wrap: wrap;
+    }
+    .panel-title { font-size: 0.92rem; font-weight: 800; color: #111827; letter-spacing: -0.01em; white-space: nowrap; }
+
+    .panel-controls { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+
+    /* Toggle group */
+    .tg { display: inline-flex; background: #F3F4F6; border-radius: 8px; padding: 2px; gap: 2px; }
+    .tb {
+      padding: 0.28rem 0.6rem; font-size: 0.72rem; font-weight: 700;
+      border: none; border-radius: 6px; background: transparent;
+      color: #6B7280; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap;
+    }
+    .tb.active { background: #fff; color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .tb:hover:not(.active) { color: #374151; }
+
+    /* Icon buttons */
+    .icon-btn {
+      padding: 0.3rem 0.55rem; font-size: 0.8rem; font-weight: 700;
+      border: 1.5px solid #E5E7EB; border-radius: 8px; background: #fff;
+      color: #6B7280; cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .icon-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,70,229,0.04); }
+    .icon-btn.danger:hover { border-color: #EF4444; color: #EF4444; background: rgba(239,68,68,0.04); }
+
+    /* Threshold input */
+    .threshold-input {
+      width: 108px; padding: 0.27rem 0.5rem; font-size: 0.72rem; font-weight: 600;
+      border: 1.5px solid #E5E7EB; border-radius: 6px; font-family: inherit;
+      background: #fff; color: #111827; outline: none; transition: border-color 0.15s;
+    }
+    .threshold-input:focus { border-color: #EF4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+    .threshold-input::placeholder { color: #D1D5DB; font-weight: 500; }
+
+    /* Threshold stat coloring */
+    .stat-cell.over   { background: rgba(239,68,68,0.07); }
+    .stat-cell.near   { background: rgba(245,158,11,0.07); }
+    .stat-cell.under  { background: rgba(5,150,105,0.07); }
+    .stat-val.over    { color: #DC2626 !important; -webkit-text-fill-color: #DC2626 !important; }
+    .stat-val.near    { color: #D97706 !important; -webkit-text-fill-color: #D97706 !important; }
+    .stat-val.under   { color: #059669 !important; -webkit-text-fill-color: #059669 !important; }
+
+    /* Stats row */
+    .stats-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .stat-cell {
+      padding: 0.75rem 1.25rem; border-right: 1px solid #F3F4F6; border-bottom: 1px solid #F3F4F6;
+    }
+    .stat-cell:nth-child(2n) { border-right: none; }
+    .stat-cell:nth-last-child(-n+2) { border-bottom: none; }
+    .stat-lbl { font-size: 0.65rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.2rem; }
+    .stat-val { font-size: 1.05rem; font-weight: 800; color: #111827; letter-spacing: -0.02em; }
+    .stat-sub { font-size: 0.7rem; color: #9CA3AF; font-weight: 500; margin-top: 1px; }
+    .stat-val.grad { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* Chart area */
+    .panel-chart-wrap { padding: 1rem 1.25rem 0.5rem; position: relative; }
+    .zoom-hint {
+      text-align: center; font-size: 0.68rem; color: #C4C9D4; font-weight: 500;
+      padding: 0.3rem 0 0.6rem; letter-spacing: 0.02em;
+    }
+
+    /* ── Time range brush ── */
+    .brush-section {
+      border-top: 1px solid #F3F4F6;
+      padding: 0.6rem 1.25rem 0.65rem;
+    }
+    .brush-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;
+    }
+    .brush-label {
+      font-size: 0.65rem; font-weight: 700; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.07em;
+    }
+    .brush-wrap {
+      position: relative; height: 52px; border-radius: 6px; overflow: hidden;
+    }
+    .brush-wrap canvas {
+      position: absolute; inset: 0; width: 100% !important; height: 100% !important;
+    }
+    .brush-overlay {
+      position: absolute; inset: 0; cursor: crosshair; z-index: 2;
+    }
+    .brush-sel {
+      position: absolute; top: 0; bottom: 0; pointer-events: none; z-index: 3;
+      background: rgba(79,70,229,0.17); border: 1.5px solid rgba(79,70,229,0.5);
+      border-radius: 3px; display: none;
+    }
+
+    /* ── Legend table ── */
+    .legend-table-wrap {
+      overflow-x: auto; padding: 0 1.25rem 1rem;
+      border-top: 1px solid #F3F4F6;
+    }
+    .legend-table {
+      width: 100%; border-collapse: collapse; font-size: 0.78rem; font-family: inherit;
+    }
+    .legend-table th {
+      font-size: 0.62rem; font-weight: 700; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 0.5rem 0.45rem 0.3rem; text-align: right; white-space: nowrap;
+    }
+    .legend-table th:nth-child(2) { text-align: left; padding-left: 0; }
+    .legend-table th:first-child  { width: 18px; }
+    .legend-table td {
+      padding: 0.35rem 0.45rem; text-align: right;
+      border-bottom: 1px solid #F9FAFB; font-weight: 600; color: #374151; white-space: nowrap;
+    }
+    .legend-table td:nth-child(2) { text-align: left; padding-left: 0; }
+    .legend-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+    .legend-name   { font-weight: 700; color: #111827; }
+    .legend-pct    { font-size: 0.67rem; font-weight: 700; opacity: 0.7; margin-left: 0.25em; }
+    .legend-row    { cursor: pointer; transition: background 0.1s; }
+    .legend-row:hover  { background: rgba(79,70,229,0.04); }
+    .legend-row.active { background: rgba(79,70,229,0.08); }
+    .legend-row.dimmed td,
+    .legend-row.dimmed .legend-name { color: #C9D0D8 !important; }
+
     @media (min-width: 480px) {
       body { padding: 1.75rem 1.25rem; }
       .card { padding: 1.5rem; border-radius: 22px; }
       .filters { grid-template-columns: 1fr 1fr; }
+      .stats-row { grid-template-columns: repeat(4, 1fr); }
+      .stat-cell { border-bottom: none !important; }
+      .stat-cell:last-child { border-right: none; }
+      .stat-cell:nth-child(2n) { border-right: 1px solid #F3F4F6; }
+      .stat-cell:last-child { border-right: none !important; }
     }
     @media (min-width: 600px) { .charts-grid { grid-template-columns: 1fr 1fr; } }
-    @media (min-width: 768px) { body { padding: 2.5rem 1.5rem; } .card { margin-bottom: 1.25rem; } }
+    @media (min-width: 768px) {
+      body { padding: 2.5rem 1.5rem; }
+      .card { margin-bottom: 1.25rem; }
+      .grafana-panel { margin-bottom: 1.25rem; }
+    }
+    @media (min-width: 900px) {
+      .grafana-panel.fullscreen .panel-chart-wrap canvas { max-height: 65vh; }
+    }
+
+    /* ── Corner menu dot ── */
+    .corner-btn {
+      position: fixed; top: 0.7rem; left: 0.7rem; z-index: 200;
+      width: 28px; height: 28px; border-radius: 6px;
+      background: transparent; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(111,114,133,0.22); font-size: 1.1rem; letter-spacing: 0.05em;
+      transition: color 0.2s, background 0.2s;
+      user-select: none; font-family: inherit;
+    }
+    .corner-btn:hover { color: rgba(79,70,229,0.35); background: rgba(79,70,229,0.06); }
+    .corner-btn.on    { color: rgba(16,185,129,0.45); }
+
+    /* ── Unlock modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(17,24,39,0.45); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 20px; padding: 1.75rem 1.5rem;
+      width: min(360px, 90vw); box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: fadeUp 0.2s ease both;
+    }
+    .modal-title  { font-size: 1rem; font-weight: 800; color: #111827; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .modal-sub    { font-size: 0.8rem; color: #9CA3AF; margin-bottom: 1.1rem; }
+    .modal-input  {
+      width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid #E5E7EB; border-radius: 12px;
+      font-size: 0.95rem; font-family: inherit; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s; background: #F9FAFB; color: #111827;
+    }
+    .modal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+    .modal-input.shake { animation: shake 0.35s ease; }
+    .modal-error  { font-size: 0.78rem; color: #EF4444; font-weight: 600; margin-top: 0.4rem; display: none; }
+    .modal-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .modal-btn-cancel {
+      flex: 1; padding: 0.7rem; border-radius: 100px; border: 1.5px solid #E5E7EB;
+      background: #fff; color: #6B7280; font-size: 0.9rem; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: all 0.2s;
+    }
+    .modal-btn-cancel:hover { border-color: #D1D5DB; background: #F9FAFB; }
+    .modal-btn-ok {
+      flex: 2; padding: 0.7rem; border-radius: 100px; border: none;
+      background: var(--grad); color: #fff; font-size: 0.9rem; font-weight: 700;
+      font-family: inherit; cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(79,70,229,0.3);
+    }
+    .modal-btn-ok:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,0.4); }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60%  { transform: translateX(-6px); }
+      40%,80%  { transform: translateX(6px); }
+    }
+
+    /* ── Stats mini grid ── */
+    .stats-mini-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1rem;
+    }
+    .stat-mini {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 16px;
+      padding: 0.85rem 1rem; box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    }
+    .stat-mini-lbl {
+      font-size: 0.62rem; font-weight: 700; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.3rem;
+    }
+    .stat-mini-val {
+      font-size: 1.1rem; font-weight: 900; color: #111827; letter-spacing: -0.03em;
+    }
+    .stat-mini-val.grad { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-mini-sub {
+      font-size: 0.68rem; color: #9CA3AF; font-weight: 500; margin-top: 2px;
+    }
+    @media (min-width: 480px) { .stats-mini-grid { grid-template-columns: repeat(4, 1fr); } }
+
+    /* ── Period comparison card ── */
+    .cmp-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+    }
+    .cmp-period { flex: 1; }
+    .cmp-period-lbl { font-size: 0.65rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.25rem; }
+    .cmp-period-val { font-size: 1.05rem; font-weight: 800; color: #111827; letter-spacing: -0.02em; }
+    .cmp-arrow { font-size: 1.3rem; color: #D1D5DB; flex-shrink: 0; }
+    .cmp-delta {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      margin-top: 0.6rem; padding: 0.22rem 0.6rem; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 700;
+    }
+    .cmp-delta.up   { background: rgba(239,68,68,0.1);  color: #DC2626; }
+    .cmp-delta.down { background: rgba(5,150,105,0.1);  color: #059669; }
+    .cmp-delta.flat { background: rgba(107,114,128,0.1); color: #6B7280; }
+    .cmp-no-prev { font-size: 0.8rem; color: #D1D5DB; font-style: italic; margin-top: 0.5rem; }
+    #comparison-card { min-height: 110px; }
+    .cmp-loading { font-size: 0.8rem; color: #C4C9D4; }
+
+    /* ── Spend heatmap ── */
+    #heatmap-card h2 { margin-bottom: 0.5rem; }
+    .heatmap-months { display: flex; gap: 0.35rem; overflow-x: auto; padding-bottom: 0.25rem; }
+    .heatmap-month { flex-shrink: 0; }
+    .heatmap-month-lbl { font-size: 0.65rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+    .heatmap-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .hm-cell {
+      width: 13px; height: 13px; border-radius: 3px;
+      background: #F3F4F6; cursor: default; transition: transform 0.1s;
+      position: relative;
+    }
+    .hm-cell:hover { transform: scale(1.3); z-index: 10; }
+    .hm-cell[title]:hover::after {
+      content: attr(title); position: absolute; bottom: calc(100% + 4px); left: 50%;
+      transform: translateX(-50%); white-space: nowrap;
+      background: rgba(17,24,39,0.85); color: #fff; font-size: 0.65rem; font-weight: 600;
+      padding: 2px 6px; border-radius: 5px; pointer-events: none; z-index: 20;
+    }
+    .hm-cell.empty { background: transparent; cursor: default; }
+    .heatmap-legend { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.6rem; font-size: 0.67rem; color: #9CA3AF; font-weight: 600; }
+    .heatmap-legend-swatch { display: flex; gap: 2px; align-items: center; }
+    .heatmap-legend-swatch span { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+    /* ── Cache status bar ── */
+    .cache-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.38rem 0.75rem 0.38rem 1rem; margin-bottom: 1.25rem;
+      background: rgba(255,255,255,0.65); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      font-size: 0.78rem; font-weight: 600; color: #6B7280;
+    }
+    .cache-bar-left { display: flex; align-items: center; gap: 0.45rem; }
+    .cache-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; transition: background 0.3s; }
+    .cache-bar button {
+      padding: 0.25rem 0.65rem; border-radius: 100px;
+      background: rgba(79,70,229,0.07); color: var(--accent);
+      border: 1px solid rgba(79,70,229,0.15); cursor: pointer;
+      font-family: inherit; font-size: 0.73rem; font-weight: 700; transition: all 0.18s;
+    }
+    .cache-bar button:hover { background: var(--grad); color: #fff; border-color: transparent; }
+    .cache-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
 <body>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
+  <button id="corner-btn" class="corner-btn" onclick="_cornerClick()" aria-label="" title="">···</button>
+  <div class="fs-overlay" id="fs-overlay" onclick="setFullscreen(false)"></div>
 
   <div class="container">
     <nav>
@@ -127,8 +430,33 @@
       <a href="/expenses/charts/" class="active">Charts</a>
     </nav>
 
+    <!-- Unlock modal -->
+    <div class="modal-overlay" id="unlock-modal" onclick="_modalBgClick(event)">
+      <div class="modal-box">
+        <div class="modal-title">Verification required</div>
+        <div class="modal-sub">Enter your access code to continue.</div>
+        <input class="modal-input" id="unlock-input" type="password" placeholder="Access code"
+               onkeydown="if(event.key==='Enter')_checkPw(); if(event.key==='Escape')_closeModal();" />
+        <div class="modal-error" id="unlock-error">Incorrect code. Try again.</div>
+        <div class="modal-actions">
+          <button class="modal-btn-cancel" onclick="_closeModal()">Cancel</button>
+          <button class="modal-btn-ok"     onclick="_checkPw()">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cache status bar -->
+    <div class="cache-bar" id="cache-bar" style="display:none;">
+      <div class="cache-bar-left">
+        <div class="cache-dot" id="cache-dot" style="background:#D1D5DB;"></div>
+        <span id="cache-status">Loading…</span>
+      </div>
+      <button id="cache-refresh-btn" onclick="forceRefresh()">↺ Refresh</button>
+    </div>
+
     <h1>Expense Charts</h1>
 
+    <!-- Filter card -->
     <div class="card">
       <div class="filters">
         <div>
@@ -143,21 +471,20 @@
           </select>
         </div>
         <div>
-          <label for="group_by">Group By</label>
+          <label for="group_by">Breakdown</label>
           <select id="group_by">
             <option value="">None</option>
             <option value="category">Category</option>
             <option value="source">Source</option>
           </select>
         </div>
-        <div id="wrap-year" class="date-input"><label for="year">Year</label><input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" /></div>
+        <div id="wrap-year"  class="date-input"><label for="year">Year</label><input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" /></div>
         <div id="wrap-month" class="date-input visible"><label for="month">Month</label><input type="month" id="month" /></div>
-        <div id="wrap-week" class="date-input"><label for="week">Week</label><input type="week" id="week" /></div>
-        <div id="wrap-day" class="date-input"><label for="day">Day</label><input type="date" id="day" /></div>
-        <div id="wrap-start" class="date-input"><label for="start-date">Start Date</label><input type="date" id="start-date" /></div>
-        <div id="wrap-end" class="date-input"><label for="end-date">End Date</label><input type="date" id="end-date" /></div>
+        <div id="wrap-week"  class="date-input"><label for="week">Week</label><input type="week" id="week" /></div>
+        <div id="wrap-day"   class="date-input"><label for="day">Day</label><input type="date" id="day" /></div>
+        <div id="wrap-start" class="date-input"><label for="start-date">Start</label><input type="date" id="start-date" /></div>
+        <div id="wrap-end"   class="date-input"><label for="end-date">End</label><input type="date" id="end-date" /></div>
       </div>
-
       <div class="presets" id="wrap-presets">
         <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
         <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
@@ -165,8 +492,7 @@
         <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
         <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
       </div>
-
-      <button id="btn" onclick="loadCharts()">Load Charts</button>
+      <button id="btn" class="btn-load" onclick="loadCharts()">Apply Filters</button>
     </div>
 
     <div id="loading" class="spinner" style="display:none;">
@@ -176,38 +502,329 @@
     <div id="error-box" class="error-box" style="display:none;"></div>
 
     <div id="results">
+      <!-- Summary header -->
       <div class="card">
         <div class="period-badge" id="period-badge"></div><br/>
         <span class="total-label">Grand Total &nbsp;</span>
         <span class="grand-total" id="grand-total"></span>
       </div>
 
+      <!-- Stats mini grid -->
+      <div class="stats-mini-grid" id="stats-mini-grid">
+        <div class="stat-mini">
+          <div class="stat-mini-lbl">Total</div>
+          <div class="stat-mini-val grad" id="smc-total">—</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-lbl">Avg / Period</div>
+          <div class="stat-mini-val" id="smc-avg">—</div>
+          <div class="stat-mini-sub" id="smc-avg-sub"></div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-lbl">Peak Period</div>
+          <div class="stat-mini-val" id="smc-peak">—</div>
+          <div class="stat-mini-sub" id="smc-peak-lbl"></div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-lbl">Transactions</div>
+          <div class="stat-mini-val" id="smc-txn">—</div>
+        </div>
+      </div>
+
+      <!-- Standard charts -->
       <div class="card" id="line-card">
         <h2>Spending Over Time</h2>
         <div class="chart-wrap"><canvas id="line-chart"></canvas></div>
       </div>
 
+      <!-- Spend heatmap -->
+      <div class="card" id="heatmap-card" style="display:none;">
+        <h2>Daily Spend Heatmap</h2>
+        <div class="heatmap-months" id="heatmap-months"></div>
+        <div class="heatmap-legend">
+          Less
+          <div class="heatmap-legend-swatch">
+            <span style="background:#F3F4F6;"></span>
+            <span style="background:#C7D2FE;"></span>
+            <span style="background:#818CF8;"></span>
+            <span style="background:#4F46E5;"></span>
+            <span style="background:#3730A3;"></span>
+          </div>
+          More
+        </div>
+      </div>
+
       <div class="charts-grid">
-        <div class="card" id="trend-card">
-          <h2>Expense by Period</h2>
-          <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+        <div class="card" id="comparison-card">
+          <h2>Period Comparison</h2>
+          <div id="comparison-content"><span class="cmp-loading">Loading…</span></div>
         </div>
         <div class="card" id="donut-card" style="display:none;">
           <h2 id="donut-title">Breakdown</h2>
           <div class="chart-wrap"><canvas id="donut-chart"></canvas></div>
         </div>
       </div>
-    </div>
-  </div>
+
+      <!-- ══ Grafana-like Category Panel ══ -->
+      <div class="grafana-panel" id="cat-panel">
+
+        <!-- Header + toolbar -->
+        <div class="panel-header">
+          <span class="panel-title">📊 Spend by Category</span>
+          <div class="panel-controls">
+
+            <!-- Chart type -->
+            <div class="tg" title="Chart type">
+              <button class="tb active" data-group="type" data-val="area"  onclick="setCatState('type','area')">Area</button>
+              <button class="tb"        data-group="type" data-val="bar"   onclick="setCatState('type','bar')">Bar</button>
+              <button class="tb"        data-group="type" data-val="lines" onclick="setCatState('type','lines')">Lines</button>
+            </div>
+
+            <!-- Stack -->
+            <div class="tg" id="tg-stack" title="Stacking">
+              <button class="tb active" data-group="stack" data-val="1" onclick="setCatState('stack',true)">Stacked</button>
+              <button class="tb"        data-group="stack" data-val="0" onclick="setCatState('stack',false)">Split</button>
+            </div>
+
+            <!-- Aggregation -->
+            <div class="tg" title="Aggregation">
+              <button class="tb active" data-group="agg" data-val="0" onclick="setCatState('agg',false)">Sum</button>
+              <button class="tb"        data-group="agg" data-val="1" onclick="setCatState('agg',true)">Cumul.</button>
+            </div>
+
+            <!-- Top N -->
+            <div class="tg" title="Show top N categories">
+              <button class="tb active" data-group="topn" data-val="0"  onclick="setCatState('topn',0)">All</button>
+              <button class="tb"        data-group="topn" data-val="5"  onclick="setCatState('topn',5)">Top 5</button>
+              <button class="tb"        data-group="topn" data-val="10" onclick="setCatState('topn',10)">Top 10</button>
+            </div>
+
+            <!-- Threshold -->
+            <input type="number" id="threshold-input" class="threshold-input"
+              placeholder="₹ Budget/period" min="0" step="500"
+              oninput="setCatThreshold(this.value)" title="Budget threshold line">
+
+            <!-- Actions -->
+            <button class="icon-btn" onclick="resetZoom()" title="Reset zoom">⟳ Reset</button>
+            <button class="icon-btn" id="fs-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="stats-row" id="cat-stats">
+          <div class="stat-cell">
+            <div class="stat-lbl">Total</div>
+            <div class="stat-val grad" id="st-total">—</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-lbl">Avg / Period</div>
+            <div class="stat-val" id="st-avg">—</div>
+            <div class="stat-sub" id="st-avg-sub"></div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-lbl">Peak Period</div>
+            <div class="stat-val" id="st-peak">—</div>
+            <div class="stat-sub" id="st-peak-lbl"></div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-lbl">Categories</div>
+            <div class="stat-val" id="st-cats">—</div>
+            <div class="stat-sub" id="st-cats-sub"></div>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="panel-chart-wrap">
+          <canvas id="cat-chart"></canvas>
+          <div class="zoom-hint">Scroll / pinch to zoom · Drag to pan · Double-click to reset</div>
+        </div>
+
+        <!-- Time range brush -->
+        <div class="brush-section" id="brush-section">
+          <div class="brush-header">
+            <span class="brush-label">Time Range — drag to zoom</span>
+            <button class="icon-btn" style="font-size:0.7rem;padding:0.22rem 0.55rem;" onclick="resetBrush()" title="Clear selection">✕ Reset</button>
+          </div>
+          <div class="brush-wrap">
+            <canvas id="brush-canvas"></canvas>
+            <div class="brush-overlay" id="brush-overlay"></div>
+            <div class="brush-sel" id="brush-sel"></div>
+          </div>
+        </div>
+
+        <!-- Legend table -->
+        <div class="legend-table-wrap">
+          <table class="legend-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Category</th>
+                <th>Total</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th>Avg</th>
+                <th>Last</th>
+              </tr>
+            </thead>
+            <tbody id="legend-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- /grafana panel -->
+
+    </div><!-- /results -->
+  </div><!-- /container -->
 
 <script>
   const COLORS = [
     "#4F46E5","#7C3AED","#059669","#F59E0B","#EF4444",
     "#0891B2","#EC4899","#8B5CF6","#10B981","#F97316","#6366F1","#14B8A6",
+    "#B45309","#DC2626","#0284C7","#16A34A","#9333EA","#D97706","#0EA5E9","#65A30D",
   ];
 
-  let lineChart = null, trendChart = null, donutChart = null;
+  function hexToRgba(hex, a) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
 
+  /* ── Chart instances ── */
+  let lineChart = null, donutChart = null, catChart = null, brushChart = null;
+
+  /* ── Cache status ── */
+  let _cacheTs = null, _totalCachedRows = 0;
+
+  function _ageFmt(ts) {
+    const s = Math.floor(Date.now() / 1000 - ts);
+    if (s < 15)  return "just now";
+    if (s < 60)  return `${s}s ago`;
+    const m = Math.floor(s / 60);
+    if (m < 60)  return `${m} min ago`;
+    return `${Math.floor(m / 60)}h ago`;
+  }
+
+  function updateCacheBar(data) {
+    if (data.cache_ts) { _cacheTs = data.cache_ts; _totalCachedRows = data.total_rows || 0; }
+    if (!_cacheTs) return;
+    document.getElementById("cache-dot").style.background = "#10B981";
+    document.getElementById("cache-status").textContent =
+      `${_totalCachedRows} expenses loaded · ${data.from_cache ? "cached" : "fetched"} ${_ageFmt(_cacheTs)}`;
+    document.getElementById("cache-bar").style.display = "flex";
+  }
+
+  setInterval(() => {
+    if (_cacheTs) updateCacheBar({ cache_ts: _cacheTs, from_cache: true, total_rows: _totalCachedRows });
+  }, 60000);
+
+  /* ── Hidden categories (encoded) ── */
+  const _xc = ["UmVsYXRpb25zaGlw","RHJpbmtzIGFuZCBTbW9rZQ=="].map(atob);
+  const _pw  = "MjIwNzIwMDE=";
+  let _showHidden = sessionStorage.getItem("exp_unlocked") === "1";
+  const _hid = n => !_showHidden && _xc.some(h => h.toLowerCase() === (n || "").toLowerCase());
+
+  function _updateLockIcon() {
+    document.getElementById("corner-btn")?.classList.toggle("on", _showHidden);
+  }
+
+  /* ── 15-click corner button ── */
+  let _cic = 0, _cit = null;
+  function _cornerClick() {
+    _cic++;
+    clearTimeout(_cit);
+    _cit = setTimeout(() => { _cic = 0; }, 3000);
+    if (_cic >= 15) { _cic = 0; _showHidden ? _lock() : _openModal(); }
+  }
+  function _openModal() {
+    document.getElementById("unlock-modal").classList.add("open");
+    document.getElementById("unlock-input").value = "";
+    document.getElementById("unlock-error").style.display = "none";
+    setTimeout(() => document.getElementById("unlock-input").focus(), 60);
+  }
+  function _closeModal() { document.getElementById("unlock-modal").classList.remove("open"); }
+  function _modalBgClick(e) {
+    if (e.target === document.getElementById("unlock-modal")) _closeModal();
+  }
+  function _checkPw() {
+    const val = document.getElementById("unlock-input").value;
+    if (btoa(val) === _pw) {
+      _showHidden = true;
+      sessionStorage.setItem("exp_unlocked", "1");
+      _closeModal();
+      _updateLockIcon();
+      _rerenderCharts();
+    } else {
+      const inp = document.getElementById("unlock-input");
+      inp.classList.remove("shake"); void inp.offsetWidth; inp.classList.add("shake");
+      document.getElementById("unlock-error").style.display = "block";
+      inp.value = "";
+      setTimeout(() => inp.classList.remove("shake"), 400);
+    }
+  }
+  function _lock() {
+    _showHidden = false;
+    sessionStorage.removeItem("exp_unlocked");
+    _updateLockIcon();
+    _rerenderCharts();
+  }
+
+  /* ── Cached last API response (for re-render on lock/unlock) ── */
+  let _lastChartRes = null;
+
+  function _rerenderCharts() {
+    if (!_lastChartRes) return;
+
+    // Re-render donut with updated filter
+    const donutCard = document.getElementById("donut-card");
+    if (_lastChartRes.breakdown?.labels?.length) {
+      let bdLabels = _lastChartRes.breakdown.labels;
+      let bdValues = _lastChartRes.breakdown.values;
+      if (_lastChartRes.group_by === "category") {
+        const pairs = bdLabels.map((l, i) => ({ l, v: bdValues[i] })).filter(p => !_hid(p.l));
+        bdLabels = pairs.map(p => p.l);
+        bdValues = pairs.map(p => p.v);
+      }
+      if (bdLabels.length) {
+        document.getElementById("donut-title").textContent =
+          `By ${_lastChartRes.group_by.charAt(0).toUpperCase() + _lastChartRes.group_by.slice(1)}`;
+        renderDonutChart(bdLabels, bdValues);
+        donutCard.style.display = "block";
+      } else {
+        donutCard.style.display = "none";
+      }
+    }
+
+    // Re-render category panel with updated filter
+    if (catDataCache) {
+      pinnedIdx = -1;
+      const visibleCats = { ...catDataCache, by_category: catDataCache.by_category.filter(c => !_hid(c.name)) };
+      updateStats(visibleCats);
+      renderCatChart(getProcessedData(catDataCache));
+      document.getElementById("cat-panel").style.display = visibleCats.by_category.length ? "block" : "none";
+    }
+  }
+
+  // Sync icon with stored state on load
+  _updateLockIcon();
+
+  /* ── Category panel state ── */
+  let catDataCache  = null;
+  let catColors     = [];
+  let pinnedIdx     = -1;
+  let catChartType  = 'area';   // 'area' | 'bar' | 'lines'
+  let catStacked    = true;
+  let catTopN       = 0;        // 0 = all
+  let catCumulative = false;
+  let catThreshold  = 0;
+  let isFullscreen  = false;
+
+  /* ── Crosshair sync state ── */
+  let _crosshairIdx = -1;
+
+  /* ── Brush state ── */
+  let _brushDragging = false;
+  let _brushStartPx  = 0;
+  let _brushEndPx    = 0;
+
+  /* ── Date init ── */
   const today = new Date();
   document.getElementById("year").value       = today.getFullYear();
   document.getElementById("month").value      = today.toISOString().slice(0, 7);
@@ -215,6 +832,35 @@
   document.getElementById("day").value        = today.toISOString().slice(0, 10);
   document.getElementById("end-date").value   = today.toISOString().slice(0, 10);
   document.getElementById("start-date").value = monthsAgo(1).toISOString().slice(0, 10);
+
+  /* ── URL state ── */
+  function pushState() {
+    const p = new URLSearchParams(buildParams());
+    const t = document.getElementById("threshold-input").value;
+    if (t) p.set("threshold", t);
+    history.replaceState(null, "", "?" + p.toString());
+  }
+  (function restoreState() {
+    const p = new URLSearchParams(location.search);
+    if (p.has("period")) {
+      const period = p.get("period");
+      document.getElementById("period").value   = period;
+      document.getElementById("group_by").value = p.get("group_by") || "";
+      onPeriodChange();
+      if (p.has("year"))      document.getElementById("year").value       = p.get("year");
+      if (p.has("month"))     document.getElementById("month").value      = p.get("month");
+      if (p.has("week"))      document.getElementById("week").value       = p.get("week");
+      if (p.has("day"))       document.getElementById("day").value        = p.get("day");
+      if (p.has("start"))     document.getElementById("start-date").value = p.get("start");
+      if (p.has("end"))       document.getElementById("end-date").value   = p.get("end");
+      if (p.has("threshold")) {
+        const t = p.get("threshold");
+        document.getElementById("threshold-input").value = t;
+        catThreshold = parseFloat(t) || 0;
+      }
+    }
+    loadCharts();  // always auto-load on page open
+  })();
 
   function isoWeekString(d) {
     const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -224,7 +870,15 @@
     return `${tmp.getUTCFullYear()}-W${String(wk).padStart(2, "0")}`;
   }
   function monthsAgo(n) { const d = new Date(); d.setMonth(d.getMonth() - n); return d; }
+  function fmt(n)  { return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function fmtK(n) {
+    if (n >= 1e7) return "₹" + (n/1e7).toFixed(1) + "Cr";
+    if (n >= 1e5) return "₹" + (n/1e5).toFixed(1) + "L";
+    if (n >= 1e3) return "₹" + (n/1e3).toFixed(1) + "K";
+    return "₹" + n.toFixed(0);
+  }
 
+  /* ── Filter / period controls ── */
   function setPreset(key) {
     const end = new Date(), start = new Date();
     if (key === "7d")  start.setDate(start.getDate() - 6);
@@ -235,10 +889,9 @@
     document.getElementById("start-date").value = start.toISOString().slice(0, 10);
     document.getElementById("end-date").value   = end.toISOString().slice(0, 10);
   }
-
   function onPeriodChange() {
     const p = document.getElementById("period").value;
-    const map = { year: "yearly", month: "monthly", week: "weekly", day: "daily" };
+    const map = { year:"yearly", month:"monthly", week:"weekly", day:"daily" };
     Object.entries(map).forEach(([id, val]) => {
       document.getElementById(`wrap-${id}`).className = "date-input" + (p === val ? " visible" : "");
     });
@@ -247,7 +900,6 @@
     });
     document.getElementById("wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
   }
-
   function buildParams() {
     const period = document.getElementById("period").value;
     const groupBy = document.getElementById("group_by").value;
@@ -257,12 +909,9 @@
     if (period === "monthly") p.set("month", document.getElementById("month").value);
     if (period === "weekly")  p.set("week",  document.getElementById("week").value);
     if (period === "daily")   p.set("day",   document.getElementById("day").value);
-    if (period === "custom") { p.set("start", document.getElementById("start-date").value); p.set("end", document.getElementById("end-date").value); }
+    if (period === "custom")  { p.set("start", document.getElementById("start-date").value); p.set("end", document.getElementById("end-date").value); }
     return p.toString();
   }
-
-  function fmt(n) { return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-
   function periodLabel(data) {
     if (data.period === "all")     return "All Time";
     if (data.period === "yearly")  return data.year;
@@ -273,12 +922,55 @@
     return data.period;
   }
 
-  const chartOpts = (ar) => ({
+  /* ── Threshold ── */
+  function setCatThreshold(v) {
+    catThreshold = parseFloat(v) || 0;
+    if (catDataCache) { updateStats(catDataCache); refreshCatChart(); }
+  }
+
+  /* ── Crosshair plugins ── */
+  const _syncPlugin = {
+    id: 'syncCrosshair',
+    beforeEvent(chart, args) {
+      const evt = args.event;
+      if (evt.type === 'mousemove') {
+        const pts = chart.getElementsAtEventForMode(evt.native, 'index', { intersect: false }, false);
+        const newLbl = pts.length ? chart.data.labels[pts[0].index] : null;
+        const newIdx = newLbl && lineChart ? lineChart.data.labels.indexOf(newLbl) : -1;
+        if (newIdx !== _crosshairIdx) { _crosshairIdx = newIdx; if (lineChart) lineChart.update('none'); }
+      } else if (evt.type === 'mouseout') {
+        _crosshairIdx = -1; if (lineChart) lineChart.update('none');
+      }
+    }
+  };
+  const _drawPlugin = {
+    id: 'drawCrosshair',
+    afterDraw(chart) {
+      if (_crosshairIdx < 0) return;
+      const meta = chart.getDatasetMeta(0);
+      const pt   = meta?.data[_crosshairIdx];
+      if (!pt) return;
+      const { top, bottom } = chart.scales.y;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(pt.x, top);
+      ctx.lineTo(pt.x, bottom);
+      ctx.strokeStyle = 'rgba(79,70,229,0.38)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+
+  /* ── Standard charts ── */
+  const baseOpts = (ar) => ({
     responsive: true, maintainAspectRatio: true, aspectRatio: ar,
     plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => " " + fmt(c.parsed.y) }, cornerRadius: 10 } },
     scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 10, family:'Inter' }, maxRotation: 45 } },
-      y: { beginAtZero: true, grid: { color: "#F3F4F6" }, ticks: { font: { size: 10, family:'Inter' }, callback: v => fmt(v) } }
+      x: { grid: { display: false }, ticks: { font: { size: 10, family:"Inter" }, maxRotation: 45 } },
+      y: { beginAtZero: true, grid: { color: "#F3F4F6" }, ticks: { font: { size: 10, family:"Inter" }, callback: v => fmt(v) } }
     }
   });
 
@@ -286,18 +978,188 @@
     if (lineChart) lineChart.destroy();
     lineChart = new Chart(document.getElementById("line-chart").getContext("2d"), {
       type: "line",
-      data: { labels, datasets: [{ data: values, borderColor: "#4F46E5", backgroundColor: "rgba(79,70,229,0.08)", fill: true, tension: 0.4, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: "#4F46E5", pointBorderColor: "#fff", pointBorderWidth: 2 }] },
-      options: chartOpts(window.innerWidth < 480 ? 1.4 : 2.8)
+      data: { labels, datasets: [{ data: values, borderColor: "#4F46E5", borderWidth: 1.5, backgroundColor: "rgba(79,70,229,0.06)", fill: true, tension: 0.4, pointRadius: 2.5, pointHoverRadius: 5, pointBackgroundColor: "#4F46E5", pointBorderColor: "#fff", pointBorderWidth: 1.5 }] },
+      options: baseOpts(window.innerWidth < 480 ? 1.4 : 2.8),
+      plugins: [_drawPlugin],
     });
   }
+  /* ── Stats mini cards ── */
+  function renderStatsCards(data) {
+    const vals = (data.trend?.values || []).filter(v => v > 0);
+    const avg  = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
+    const maxV = data.trend?.values?.length ? Math.max(...data.trend.values) : 0;
+    const maxI = data.trend?.values?.indexOf(maxV) ?? -1;
+    const peakLbl = maxI >= 0 ? (data.trend.labels[maxI] || "—") : "—";
 
-  function renderTrendChart(labels, values) {
-    if (trendChart) trendChart.destroy();
-    trendChart = new Chart(document.getElementById("trend-chart").getContext("2d"), {
-      type: "bar",
-      data: { labels, datasets: [{ data: values, backgroundColor: "rgba(79,70,229,0.85)", borderRadius: 8, borderSkipped: false, hoverBackgroundColor: "#7C3AED" }] },
-      options: { ...chartOpts(window.innerWidth < 600 ? 1.5 : 1.8) }
-    });
+    document.getElementById("smc-total").textContent   = "₹" + fmt(data.grand_total);
+    document.getElementById("smc-avg").textContent     = fmtK(avg);
+    document.getElementById("smc-avg-sub").textContent = vals.length ? `across ${vals.length} period${vals.length !== 1 ? "s" : ""}` : "";
+    document.getElementById("smc-peak").textContent    = fmtK(maxV);
+    document.getElementById("smc-peak-lbl").textContent = peakLbl;
+    document.getElementById("smc-txn").textContent     = (data.entry_count ?? "—").toLocaleString();
+  }
+
+  /* ── Period comparison ── */
+  function _prevPeriodQS(data) {
+    const p = data.period;
+    if (p === "all") return null;
+
+    if (p === "yearly") {
+      const y = parseInt(data.year || new Date().getFullYear()) - 1;
+      return `period=yearly&year=${y}`;
+    }
+    if (p === "monthly") {
+      const [yr, mo] = (data.month || new Date().toISOString().slice(0, 7)).split("-").map(Number);
+      const prev = new Date(yr, mo - 2, 1);
+      return `period=monthly&month=${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`;
+    }
+    if (p === "weekly") {
+      const s = new Date(data.week_start);
+      s.setDate(s.getDate() - 7);
+      const e = new Date(data.week_end);
+      e.setDate(e.getDate() - 7);
+      return `period=custom&start=${s.toISOString().slice(0,10)}&end=${e.toISOString().slice(0,10)}`;
+    }
+    if (p === "daily") {
+      const d = new Date(data.date);
+      d.setDate(d.getDate() - 1);
+      return `period=daily&day=${d.toISOString().slice(0, 10)}`;
+    }
+    if (p === "custom") {
+      const s = new Date(data.start), e = new Date(data.end);
+      const delta = Math.round((e - s) / 86400000) + 1;
+      const ps = new Date(s); ps.setDate(ps.getDate() - delta);
+      const pe = new Date(e); pe.setDate(pe.getDate() - delta);
+      return `period=custom&start=${ps.toISOString().slice(0,10)}&end=${pe.toISOString().slice(0,10)}`;
+    }
+    return null;
+  }
+
+  async function loadComparison(data) {
+    const el = document.getElementById("comparison-content");
+    el.innerHTML = '<span class="cmp-loading">Loading…</span>';
+
+    const prevQS = _prevPeriodQS(data);
+    if (!prevQS) {
+      el.innerHTML = '<div class="cmp-no-prev">No previous period to compare.</div>';
+      return;
+    }
+
+    let prevData;
+    try {
+      const r = await fetch(`/expenses/chart/?${prevQS}`);
+      prevData = await r.json();
+      if (!r.ok) throw new Error(prevData.error || "Error");
+    } catch { el.innerHTML = '<div class="cmp-no-prev">Could not load previous period.</div>'; return; }
+
+    const cur  = data.grand_total;
+    const prev = prevData.grand_total;
+    const pct  = prev > 0 ? ((cur - prev) / prev * 100) : null;
+    const cls  = pct === null ? "flat" : pct > 0 ? "up" : pct < 0 ? "down" : "flat";
+    const arrow = pct === null ? "" : pct > 0 ? "▲" : pct < 0 ? "▼" : "—";
+    const pctTxt = pct !== null ? `${arrow} ${Math.abs(pct).toFixed(1)}%` : "—";
+    const curLbl  = periodLabel(data);
+    const prevLbl = periodLabel(prevData);
+
+    el.innerHTML = `
+      <div class="cmp-row">
+        <div class="cmp-period">
+          <div class="cmp-period-lbl">Previous · ${prevLbl}</div>
+          <div class="cmp-period-val">₹${fmt(prev)}</div>
+        </div>
+        <div class="cmp-arrow">→</div>
+        <div class="cmp-period">
+          <div class="cmp-period-lbl">Current · ${curLbl}</div>
+          <div class="cmp-period-val">₹${fmt(cur)}</div>
+        </div>
+      </div>
+      <div class="cmp-delta ${cls}">${pctTxt}</div>`;
+  }
+
+  /* ── Spend heatmap ── */
+  const HM_COLORS = ["#F3F4F6", "#C7D2FE", "#818CF8", "#4F46E5", "#3730A3"];
+
+  function _hmColor(v, max) {
+    if (!v || !max) return HM_COLORS[0];
+    const ratio = v / max;
+    if (ratio < 0.15) return HM_COLORS[1];
+    if (ratio < 0.35) return HM_COLORS[2];
+    if (ratio < 0.65) return HM_COLORS[3];
+    return HM_COLORS[4];
+  }
+
+  function renderHeatmap(daily, rangeStart, rangeEnd) {
+    const container = document.getElementById("heatmap-months");
+    container.innerHTML = "";
+    if (!rangeStart || !rangeEnd) {
+      document.getElementById("heatmap-card").style.display = "none";
+      return;
+    }
+
+    const start = new Date(rangeStart + "T00:00:00");
+    const end   = new Date(rangeEnd   + "T00:00:00");
+    const diffDays = Math.round((end - start) / 86400000) + 1;
+
+    // Only show heatmap for ranges <= 366 days (daily data useful up to a year)
+    if (diffDays > 366) {
+      document.getElementById("heatmap-card").style.display = "none";
+      return;
+    }
+
+    const maxVal = daily && Object.values(daily).length ? Math.max(...Object.values(daily)) : 0;
+
+    // Group by month for display
+    const months = {};
+    for (let i = 0; i < diffDays; i++) {
+      const d = new Date(start); d.setDate(d.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      const mKey = iso.slice(0, 7);
+      if (!months[mKey]) months[mKey] = [];
+      months[mKey].push({ iso, dow: d.getDay(), val: daily?.[iso] || 0 });
+    }
+
+    for (const [mKey, days] of Object.entries(months)) {
+      const [yr, mo] = mKey.split("-").map(Number);
+      const mLbl = new Date(yr, mo - 1, 1).toLocaleString("en", { month: "short", year: "numeric" });
+
+      const div = document.createElement("div");
+      div.className = "heatmap-month";
+      div.innerHTML = `<div class="heatmap-month-lbl">${mLbl}</div>`;
+
+      const grid = document.createElement("div");
+      grid.className = "heatmap-grid";
+
+      // Pad first row to correct day-of-week
+      const firstDow = days[0].dow; // 0=Sun
+      for (let p = 0; p < firstDow; p++) {
+        const ph = document.createElement("div");
+        ph.className = "hm-cell empty";
+        grid.appendChild(ph);
+      }
+
+      for (const { iso, val } of days) {
+        const cell = document.createElement("div");
+        cell.className = "hm-cell";
+        cell.style.background = val > 0 ? _hmColor(val, maxVal) : "#F3F4F6";
+        if (val > 0) {
+          cell.title = `${iso} · ₹${fmt(val)}`;
+        }
+        grid.appendChild(cell);
+      }
+
+      div.appendChild(grid);
+      container.appendChild(div);
+    }
+
+    document.getElementById("heatmap-card").style.display = "block";
+  }
+
+  async function loadHeatmap(qs) {
+    try {
+      const r = await fetch(`/expenses/heatmap/?${qs}`);
+      const d = await r.json();
+      if (r.ok) renderHeatmap(d.daily, d.range_start, d.range_end);
+    } catch { /* heatmap is non-critical */ }
   }
 
   function renderDonutChart(labels, values) {
@@ -305,35 +1167,414 @@
     donutChart = new Chart(document.getElementById("donut-chart").getContext("2d"), {
       type: "doughnut",
       data: { labels, datasets: [{ data: values, backgroundColor: COLORS.slice(0, labels.length), borderWidth: 3, borderColor: "#fff", hoverOffset: 8 }] },
-      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, padding: 12, font: { size: 11, family:'Inter' } } }, tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.parsed)}` }, cornerRadius: 10 } } }
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, padding: 12, font: { size: 11, family:"Inter" } } }, tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.parsed)}` }, cornerRadius: 10 } } }
     });
   }
 
-  async function loadCharts() {
+  /* ══════════════════════════════════════════
+     CATEGORY PANEL LOGIC
+  ══════════════════════════════════════════ */
+
+  /* ── State change ── */
+  function setCatState(key, val) {
+    if (key === 'type')  catChartType  = val;
+    if (key === 'stack') catStacked    = val;
+    if (key === 'agg')   catCumulative = val;
+    if (key === 'topn')  catTopN       = Number(val);
+    document.querySelectorAll(`[data-group="${key}"]`).forEach(btn => {
+      btn.classList.toggle('active', String(btn.dataset.val) === String(val === true ? '1' : val === false ? '0' : val));
+    });
+    // hide stack toggle for lines (doesn't make sense)
+    document.getElementById('tg-stack').style.opacity = catChartType === 'lines' ? '0.35' : '1';
+    pinnedIdx = -1;
+    if (catDataCache) refreshCatChart();
+  }
+
+  /* ── Data transforms ── */
+  function getProcessedData(raw) {
+    let cats = raw.by_category.filter(c => !_hid(c.name)).slice(0, catTopN > 0 ? catTopN : undefined);
+    if (catCumulative) {
+      cats = cats.map(cat => ({
+        ...cat,
+        values: cat.values.reduce((acc, v) => {
+          acc.push(Math.round(((acc[acc.length - 1] || 0) + v) * 100) / 100);
+          return acc;
+        }, []),
+      }));
+    }
+    return { ...raw, by_category: cats };
+  }
+
+  /* ── Stats ── */
+  function updateStats(raw) {
+    const all = raw.by_category;
+    const total = all.reduce((s, c) => s + c.total, 0);
+    const overall = raw.overall;
+    const nonZero = overall.filter(v => v > 0);
+    const avg     = nonZero.length ? total / nonZero.length : 0;
+    const maxVal  = Math.max(...overall, 0);
+    const maxIdx  = overall.indexOf(maxVal);
+    const peakLbl = raw.labels[maxIdx] || "—";
+    const activeCats = all.filter(c => c.total > 0).length;
+    const topCat = all[0]?.name || "—";
+
+    document.getElementById("st-total").textContent    = fmt(total);
+    document.getElementById("st-avg").textContent      = fmtK(avg);
+    document.getElementById("st-avg-sub").textContent  = `across ${nonZero.length} period${nonZero.length !== 1 ? "s" : ""}`;
+    document.getElementById("st-peak").textContent     = fmtK(maxVal);
+    document.getElementById("st-peak-lbl").textContent = peakLbl;
+    document.getElementById("st-cats").textContent     = activeCats;
+    document.getElementById("st-cats-sub").textContent = `top: ${topCat}`;
+
+    // Threshold coloring — compare peak period against budget
+    const peakCell  = document.getElementById("st-peak").closest(".stat-cell");
+    const peakVal   = document.getElementById("st-peak");
+    const avgCell   = document.getElementById("st-avg").closest(".stat-cell");
+    const avgVal    = document.getElementById("st-avg");
+    [peakCell, peakVal, avgCell, avgVal].forEach(el => el.classList.remove("over","near","under"));
+    if (catThreshold > 0) {
+      const pkCls = maxVal > catThreshold ? "over" : maxVal > catThreshold * 0.8 ? "near" : "under";
+      const avgCls = avg  > catThreshold ? "over" : avg  > catThreshold * 0.8 ? "near" : "under";
+      peakCell.classList.add(pkCls); peakVal.classList.add(pkCls);
+      avgCell.classList.add(avgCls); avgVal.classList.add(avgCls);
+    }
+  }
+
+  /* ── Render category chart ── */
+  function refreshCatChart() {
+    if (!catDataCache) return;
+    renderCatChart(getProcessedData(catDataCache));
+  }
+
+  function renderCatChart(data) {
+    if (catChart) catChart.destroy();
+
+    catColors = data.by_category.map((_, i) => COLORS[i % COLORS.length]);
+    const isBar   = catChartType === 'bar';
+    const isLines = catChartType === 'lines';
+    const stacked = catStacked && !isLines;
+
+    const datasets = data.by_category.map((cat, i) => ({
+      label:            cat.name,
+      data:             cat.values,
+      backgroundColor:  hexToRgba(catColors[i], isLines ? 0.08 : isBar ? 0.80 : 0.58),
+      borderColor:      catColors[i],
+      borderWidth:      isLines ? 1.5 : 1,
+      fill:             isLines ? false : true,
+      tension:          isBar ? 0 : 0.35,
+      pointRadius:      isLines ? 2 : 0,
+      pointHoverRadius: 5,
+      pointBackgroundColor: catColors[i],
+      pointBorderColor: "#fff",
+      pointBorderWidth: 1.5,
+      borderRadius:     isBar ? 4 : 0,
+      borderSkipped:    false,
+    }));
+
+    const aspect = isFullscreen
+      ? (window.innerWidth < 600 ? 1.6 : 2.8)
+      : (window.innerWidth < 480 ? 1.4 : 2.4);
+
+    if (catThreshold > 0) {
+      datasets.push({
+        label: `Budget (${fmtK(catThreshold)})`,
+        data: Array(data.labels.length).fill(catThreshold),
+        type: 'line',
+        borderColor: 'rgba(239,68,68,0.75)',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        backgroundColor: 'transparent',
+        fill: false, tension: 0,
+        pointRadius: 0, pointHoverRadius: 0,
+        order: 999,
+      });
+    }
+
+    catChart = new Chart(document.getElementById("cat-chart").getContext("2d"), {
+      type: isBar ? "bar" : "line",
+      data: { labels: data.labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: true, aspectRatio: aspect,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            cornerRadius: 10,
+            callbacks: {
+              label:  ctx => ctx.dataset.label?.startsWith('Budget') ? null : ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`,
+              footer: items => {
+                const sum = items.filter(i => !i.dataset.label?.startsWith('Budget')).reduce((s, i) => s + i.parsed.y, 0);
+                return `  Total: ${fmt(sum)}`;
+              },
+            }
+          },
+          zoom: {
+            zoom: {
+              wheel:  { enabled: true, speed: 0.08 },
+              pinch:  { enabled: true },
+              mode:   "x",
+            },
+            pan: {
+              enabled: true,
+              mode:    "x",
+            },
+            limits: { x: { min: "original", max: "original" } },
+          },
+        },
+        scales: {
+          x: {
+            stacked: isBar ? stacked : false,
+            grid:    { display: false },
+            ticks:   { font: { size: 10, family: "Inter" }, maxRotation: 45 },
+          },
+          y: {
+            stacked:    stacked,
+            beginAtZero: true,
+            grid:  { color: "#F3F4F6" },
+            ticks: { font: { size: 10, family: "Inter" }, callback: v => fmtK(v) },
+          },
+        },
+      },
+      plugins: [_syncPlugin],
+    });
+
+    renderLegendTable(data);
+    initBrush(data.labels, data.overall);
+  }
+
+  /* ── Legend table ── */
+  function renderLegendTable(data) {
+    const grand = data.by_category.reduce((s, c) => s + c.total, 0) || 1;
+    document.getElementById("legend-tbody").innerHTML = data.by_category.map((cat, i) => {
+      const color = catColors[i];
+      const nonZ  = cat.values.filter(v => v > 0);
+      const min   = nonZ.length ? Math.min(...nonZ) : 0;
+      const max   = nonZ.length ? Math.max(...nonZ) : 0;
+      const avg   = nonZ.length ? cat.total / nonZ.length : 0;
+      const last  = cat.values.length ? cat.values[cat.values.length - 1] : 0;
+      const pct   = (cat.total / grand * 100).toFixed(1);
+      return `<tr class="legend-row" id="lrow-${i}"
+                onmouseenter="hoverCat(${i})" onmouseleave="unHoverCat()"
+                onclick="pinCat(${i})">
+          <td><span class="legend-swatch" style="background:${color}"></span></td>
+          <td><span class="legend-name">${cat.name}</span><span class="legend-pct" style="color:${color}">${pct}%</span></td>
+          <td>${fmtK(cat.total)}</td>
+          <td>${fmtK(min)}</td>
+          <td>${fmtK(max)}</td>
+          <td>${fmtK(avg)}</td>
+          <td>${fmtK(last)}</td>
+        </tr>`;
+    }).join("");
+  }
+
+  /* ── Time range brush ── */
+  function initBrush(labels, overallValues) {
+    const canvas = document.getElementById("brush-canvas");
+    if (brushChart) { brushChart.destroy(); brushChart = null; }
+
+    brushChart = new Chart(canvas.getContext("2d"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          data: overallValues,
+          borderColor: "rgba(79,70,229,0.55)",
+          borderWidth: 1,
+          backgroundColor: "rgba(79,70,229,0.12)",
+          fill: true, tension: 0.35, pointRadius: 0,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend:  { display: false },
+          tooltip: { enabled: false },
+          zoom: { zoom: { wheel: { enabled: false }, pinch: { enabled: false } }, pan: { enabled: false } },
+        },
+        scales: {
+          x: { display: false },
+          y: { display: false, beginAtZero: true },
+        },
+      }
+    });
+
+    const overlay = document.getElementById("brush-overlay");
+    overlay.onmousedown  = e => { _brushDragging = true; _brushStartPx = _bPx(e); _brushEndPx = _brushStartPx; _brushDraw(_brushStartPx, _brushEndPx); };
+    overlay.onmousemove  = e => { if (!_brushDragging) return; _brushEndPx = _bPx(e); _brushDraw(_brushStartPx, _brushEndPx); };
+    overlay.onmouseup    = () => { if (!_brushDragging) return; _brushDragging = false; _brushApply(); };
+    overlay.onmouseleave = () => { if (!_brushDragging) return; _brushDragging = false; _brushApply(); };
+    overlay.ontouchstart = e => { e.preventDefault(); _brushDragging = true; _brushStartPx = _bPx(e.touches[0]); _brushEndPx = _brushStartPx; };
+    overlay.ontouchmove  = e => { e.preventDefault(); if (!_brushDragging) return; _brushEndPx = _bPx(e.touches[0]); _brushDraw(_brushStartPx, _brushEndPx); };
+    overlay.ontouchend   = e => { e.preventDefault(); if (!_brushDragging) return; _brushDragging = false; _brushApply(); };
+  }
+
+  function _bPx(e) {
+    const rect = document.getElementById("brush-canvas").getBoundingClientRect();
+    return Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+  }
+  function _brushDraw(x1, x2) {
+    const sel = document.getElementById("brush-sel");
+    const left = Math.min(x1, x2), w = Math.abs(x2 - x1);
+    if (w < 3) { sel.style.display = "none"; return; }
+    sel.style.display = "block";
+    sel.style.left  = left + "px";
+    sel.style.width = w + "px";
+  }
+  function _brushApply() {
+    const w = Math.abs(_brushEndPx - _brushStartPx);
+    if (w < 8 || !catChart || !catDataCache) return;
+    const cw = document.getElementById("brush-canvas").getBoundingClientRect().width;
+    const n  = catDataCache.labels.length;
+    if (n < 2 || cw < 1) return;
+    const x1 = Math.min(_brushStartPx, _brushEndPx);
+    const x2 = Math.max(_brushStartPx, _brushEndPx);
+    const i1 = Math.round((x1 / cw) * (n - 1));
+    const i2 = Math.round((x2 / cw) * (n - 1));
+    if (i2 > i1) catChart.zoomScale("x", { min: i1, max: i2 }, "none");
+  }
+  function resetBrush() {
+    document.getElementById("brush-sel").style.display = "none";
+    _brushStartPx = _brushEndPx = 0;
+    if (catChart) catChart.resetZoom();
+  }
+
+  /* ── Hover / pin ── */
+  function _applyHL(focusIdx) {
+    if (!catChart) return;
+    catChart.data.datasets.forEach((ds, i) => {
+      const f = focusIdx === -1 || i === focusIdx;
+      const isBar   = catChartType === 'bar';
+      const isLines = catChartType === 'lines';
+      ds.backgroundColor = hexToRgba(catColors[i], f ? (isLines ? 0.12 : isBar ? 0.88 : 0.72) : 0.05);
+      ds.borderColor     = hexToRgba(catColors[i], f ? 1 : 0.12);
+      ds.borderWidth     = f ? (isLines ? 2.5 : 2) : 1;
+      ds.order           = f ? 0 : i + 1;
+    });
+    catChart.update("none");
+    document.querySelectorAll(".legend-row").forEach((row, i) => {
+      row.classList.toggle("dimmed", focusIdx !== -1 && i !== focusIdx);
+    });
+  }
+  function hoverCat(i)  { if (pinnedIdx !== -1) return; _applyHL(i); }
+  function unHoverCat() { if (pinnedIdx !== -1) return; _applyHL(-1); }
+  function pinCat(i) {
+    pinnedIdx = pinnedIdx === i ? -1 : i;
+    document.querySelectorAll(".legend-row").forEach((row, j) => row.classList.toggle("active", j === pinnedIdx));
+    _applyHL(pinnedIdx);
+  }
+
+  /* ── Zoom / brush reset ── */
+  function resetZoom() { resetBrush(); }
+
+  /* ── Fullscreen ── */
+  let _fsPrev = null;  // { parent, nextSibling } — saved position for restoration
+
+  function toggleFullscreen() { setFullscreen(!isFullscreen); }
+
+  function setFullscreen(on) {
+    isFullscreen = on;
+    const panel   = document.getElementById("cat-panel");
+    const overlay = document.getElementById("fs-overlay");
+    const btn     = document.getElementById("fs-btn");
+
+    if (on) {
+      // Save current DOM position, then move panel to <body> so position:fixed works
+      _fsPrev = { parent: panel.parentNode, next: panel.nextSibling };
+      document.body.appendChild(panel);
+    } else {
+      // Restore to original position inside #results
+      if (_fsPrev) {
+        _fsPrev.parent.insertBefore(panel, _fsPrev.next);
+        _fsPrev = null;
+      }
+    }
+
+    panel.classList.toggle("fullscreen", on);
+    overlay.classList.toggle("open", on);
+    btn.textContent = on ? "✕" : "⛶";
+    btn.title       = on ? "Exit fullscreen (Esc)" : "Fullscreen";
+    document.body.style.overflow = on ? "hidden" : "";
+
+    setTimeout(() => { if (catChart) { catChart.destroy(); refreshCatChart(); } }, 60);
+  }
+
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && isFullscreen) setFullscreen(false); });
+
+  /* ══════════════════════════════════════════
+     MAIN LOAD
+  ══════════════════════════════════════════ */
+  async function loadCharts(force = false) {
     const btn = document.getElementById("btn");
     btn.disabled = true;
     document.getElementById("loading").style.display = "flex";
+    document.getElementById("loading").querySelector(".spinner-text").textContent =
+      force ? "Refreshing from Notion…" : "Loading expenses…";
     document.getElementById("results").style.display = "none";
     document.getElementById("error-box").style.display = "none";
 
+    const qs    = buildParams() + (force ? "&force=1" : "");
+    const qsCat = qs.replace(/[&?]?group_by=[^&]*/g, "").replace(/^&/, "");
+
     try {
-      const res  = await fetch(`/expenses/chart/?${buildParams()}`);
-      const data = await res.json();
-      if (!res.ok) { document.getElementById("error-box").textContent = data.error || "Something went wrong."; document.getElementById("error-box").style.display = "block"; return; }
+      const [chartRes, catRes] = await Promise.all([
+        fetch(`/expenses/chart/?${qs}`),
+        fetch(`/expenses/category-timeseries/?${qsCat}`),
+      ]);
+
+      const data    = await chartRes.json();
+      const catData = await catRes.json();
+
+      if (!chartRes.ok) {
+        document.getElementById("error-box").textContent = data.error || "Something went wrong.";
+        document.getElementById("error-box").style.display = "block";
+        return;
+      }
+
+      updateCacheBar(data);
+      _lastChartRes = data;
 
       document.getElementById("period-badge").textContent = periodLabel(data);
       document.getElementById("grand-total").textContent  = fmt(data.grand_total);
+
+      renderStatsCards(data);
       renderLineChart(data.trend.labels, data.trend.values);
-      renderTrendChart(data.trend.labels, data.trend.values);
+
+      loadComparison(data);
+      loadHeatmap(qsCat);
 
       const donutCard = document.getElementById("donut-card");
-      if (data.breakdown && data.breakdown.labels.length) {
-        document.getElementById("donut-title").textContent = `By ${data.group_by.charAt(0).toUpperCase() + data.group_by.slice(1)}`;
-        renderDonutChart(data.breakdown.labels, data.breakdown.values);
-        donutCard.style.display = "block";
-      } else { donutCard.style.display = "none"; }
+      if (data.breakdown?.labels?.length) {
+        let bdLabels = data.breakdown.labels;
+        let bdValues = data.breakdown.values;
+        if (data.group_by === "category") {
+          const pairs = bdLabels.map((l, i) => ({ l, v: bdValues[i] })).filter(p => !_hid(p.l));
+          bdLabels = pairs.map(p => p.l);
+          bdValues = pairs.map(p => p.v);
+        }
+        if (bdLabels.length) {
+          document.getElementById("donut-title").textContent = `By ${data.group_by.charAt(0).toUpperCase() + data.group_by.slice(1)}`;
+          renderDonutChart(bdLabels, bdValues);
+          donutCard.style.display = "block";
+        } else {
+          donutCard.style.display = "none";
+        }
+      } else {
+        donutCard.style.display = "none";
+      }
+
+      if (catRes.ok && catData.by_category?.length) {
+        catDataCache = catData;
+        pinnedIdx    = -1;
+        const visibleCats = { ...catData, by_category: catData.by_category.filter(c => !_hid(c.name)) };
+        updateStats(visibleCats);
+        renderCatChart(getProcessedData(catData));
+        document.getElementById("cat-panel").style.display = visibleCats.by_category.length ? "block" : "none";
+      } else {
+        document.getElementById("cat-panel").style.display = "none";
+      }
 
       document.getElementById("results").style.display = "block";
+      pushState();
     } catch (e) {
       document.getElementById("error-box").textContent = "Network error: " + e.message;
       document.getElementById("error-box").style.display = "block";
@@ -341,6 +1582,16 @@
       document.getElementById("loading").style.display = "none";
       btn.disabled = false;
     }
+  }
+
+  /* ── Force refresh from Notion ── */
+  async function forceRefresh() {
+    const btn = document.getElementById("cache-refresh-btn");
+    btn.disabled = true;
+    btn.textContent = "…";
+    await loadCharts(true).catch(() => {});
+    btn.disabled = false;
+    btn.textContent = "↺ Refresh";
   }
 </script>
 </body>
