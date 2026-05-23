@@ -27,7 +27,7 @@
     .orb-1 { width: 450px; height: 450px; background: rgba(79,70,229,0.10); top: -120px; right: -80px; }
     .orb-2 { width: 350px; height: 350px; background: rgba(124,58,237,0.08); bottom: -100px; left: -80px; }
 
-    .container { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
+    .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
     @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
 
     /* ── Nav ── */
@@ -418,8 +418,8 @@
         left: calc(-50vw + 50%);
         width: 100vw;
         border-radius: 0;
-        padding-left: max(2rem, calc(50vw - 380px));
-        padding-right: max(2rem, calc(50vw - 380px));
+        padding-left: max(2rem, calc(50vw - 700px));
+        padding-right: max(2rem, calc(50vw - 700px));
       }
     }
 
@@ -1320,7 +1320,7 @@
         if (val !== null) cell.style.background = _hmColor(val, maxVal);
         if (val !== null && val > 0) {
           const label = iso + " · ₹" + fmt(val);
-          cell.addEventListener("mouseenter", () => { tip.textContent = label; tip.style.display = "block"; });
+          cell.addEventListener("mouseenter", (e) => { tip.textContent = label; tip.style.display = "block"; tip.style.left = (e.clientX + 12) + "px"; tip.style.top = (e.clientY - 36) + "px"; });
           cell.addEventListener("mousemove",  e  => { tip.style.left = (e.clientX + 10) + "px"; tip.style.top = (e.clientY - 30) + "px"; });
           cell.addEventListener("mouseleave", () => { tip.style.display = "none"; });
         }
