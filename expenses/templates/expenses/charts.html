@@ -373,28 +373,52 @@
     #comparison-card { min-height: 110px; }
     .cmp-loading { font-size: 0.8rem; color: #C4C9D4; }
 
-    /* ── Spend heatmap ── */
-    #heatmap-card h2 { margin-bottom: 0.5rem; }
-    .heatmap-months { display: flex; gap: 0.35rem; overflow-x: auto; padding-bottom: 0.25rem; }
-    .heatmap-month { flex-shrink: 0; }
-    .heatmap-month-lbl { font-size: 0.65rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
-    .heatmap-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    /* ── Spend heatmap (GitHub-style) ── */
+    #heatmap-card h2 { margin-bottom: 0.75rem; }
+    .hm-wrap { overflow-x: auto; padding-bottom: 0.25rem; -webkit-overflow-scrolling: touch; }
+    .hm-inner { display: inline-flex; flex-direction: column; min-width: 100%; }
+    .hm-months-row {
+      position: relative; height: 16px;
+      margin-left: 28px; /* align with week grid */
+      margin-bottom: 3px; flex-shrink: 0;
+    }
+    .hm-month-lbl {
+      position: absolute; top: 0;
+      font-size: 0.62rem; font-weight: 700; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+    }
+    .hm-body { display: flex; gap: 4px; align-items: flex-start; }
+    .hm-day-labels {
+      display: flex; flex-direction: column; gap: 3px;
+      width: 24px; flex-shrink: 0; padding-top: 1px;
+    }
+    .hm-day-labels span {
+      height: 11px; font-size: 0.58rem; font-weight: 600; color: #9CA3AF;
+      display: flex; align-items: center; white-space: nowrap; user-select: none;
+    }
+    .hm-weeks { display: flex; gap: 3px; }
+    .hm-week { display: flex; flex-direction: column; gap: 3px; }
     .hm-cell {
-      width: 13px; height: 13px; border-radius: 3px;
-      background: #F3F4F6; cursor: default; transition: transform 0.1s;
-      position: relative;
+      width: 11px; height: 11px; border-radius: 2px;
+      background: #EBEDF0; cursor: default; flex-shrink: 0;
+      transition: opacity 0.1s, transform 0.1s;
     }
-    .hm-cell:hover { transform: scale(1.3); z-index: 10; }
-    .hm-cell[title]:hover::after {
-      content: attr(title); position: absolute; bottom: calc(100% + 4px); left: 50%;
-      transform: translateX(-50%); white-space: nowrap;
-      background: rgba(17,24,39,0.85); color: #fff; font-size: 0.65rem; font-weight: 600;
-      padding: 2px 6px; border-radius: 5px; pointer-events: none; z-index: 20;
+    .hm-cell:hover { transform: scale(1.4); z-index: 10; opacity: 0.85; }
+    .hm-cell.oor { background: transparent !important; pointer-events: none; }
+    .hm-legend {
+      display: flex; align-items: center; gap: 5px;
+      margin-top: 0.6rem; font-size: 0.63rem; color: #9CA3AF; font-weight: 600;
     }
-    .hm-cell.empty { background: transparent; cursor: default; }
-    .heatmap-legend { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.6rem; font-size: 0.67rem; color: #9CA3AF; font-weight: 600; }
-    .heatmap-legend-swatch { display: flex; gap: 2px; align-items: center; }
-    .heatmap-legend-swatch span { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+    .hm-legend-swatches { display: flex; gap: 3px; }
+    .hm-legend-swatches span { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+    /* Floating tooltip */
+    .hm-tip {
+      position: fixed; z-index: 9999; pointer-events: none; display: none;
+      background: rgba(17,24,39,0.88); color: #fff;
+      font-size: 0.68rem; font-weight: 600; font-family: inherit;
+      padding: 3px 8px 4px; border-radius: 6px; white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    }
 
     /* ── Cache status bar ── */
     .cache-bar {
@@ -537,14 +561,16 @@
         <div class="chart-wrap"><canvas id="line-chart"></canvas></div>
       </div>
 
-      <!-- Spend heatmap -->
+      <!-- Spend heatmap (GitHub style) -->
       <div class="card" id="heatmap-card" style="display:none;">
-        <h2>Daily Spend Heatmap</h2>
-        <div class="heatmap-months" id="heatmap-months"></div>
-        <div class="heatmap-legend">
+        <h2>Daily Spend</h2>
+        <div class="hm-wrap">
+          <div class="hm-inner" id="hm-inner"></div>
+        </div>
+        <div class="hm-legend">
           Less
-          <div class="heatmap-legend-swatch">
-            <span style="background:#F3F4F6;"></span>
+          <div class="hm-legend-swatches">
+            <span style="background:#EBEDF0;"></span>
             <span style="background:#C7D2FE;"></span>
             <span style="background:#818CF8;"></span>
             <span style="background:#4F46E5;"></span>
@@ -553,6 +579,7 @@
           More
         </div>
       </div>
+      <div class="hm-tip" id="hm-tip"></div>
 
       <div class="charts-grid">
         <div class="card" id="comparison-card">
@@ -1076,21 +1103,20 @@
       <div class="cmp-delta ${cls}">${pctTxt}</div>`;
   }
 
-  /* ── Spend heatmap ── */
-  const HM_COLORS = ["#F3F4F6", "#C7D2FE", "#818CF8", "#4F46E5", "#3730A3"];
+  /* ── Spend heatmap (GitHub-style) ── */
+  const HM_COLORS = ["#EBEDF0", "#C7D2FE", "#818CF8", "#4F46E5", "#3730A3"];
+  const CELL_SIZE = 11, CELL_GAP = 3, COL_W = CELL_SIZE + CELL_GAP; // 14px per week col
+  const DAY_LABELS_W = 28; // left gutter width
 
   function _hmColor(v, max) {
     if (!v || !max) return HM_COLORS[0];
-    const ratio = v / max;
-    if (ratio < 0.15) return HM_COLORS[1];
-    if (ratio < 0.35) return HM_COLORS[2];
-    if (ratio < 0.65) return HM_COLORS[3];
-    return HM_COLORS[4];
+    const r = v / max;
+    return r < 0.15 ? HM_COLORS[1] : r < 0.40 ? HM_COLORS[2] : r < 0.70 ? HM_COLORS[3] : HM_COLORS[4];
   }
 
   function renderHeatmap(daily, rangeStart, rangeEnd) {
-    const container = document.getElementById("heatmap-months");
-    container.innerHTML = "";
+    const inner = document.getElementById("hm-inner");
+    inner.innerHTML = "";
     if (!rangeStart || !rangeEnd) {
       document.getElementById("heatmap-card").style.display = "none";
       return;
@@ -1100,56 +1126,92 @@
     const end   = new Date(rangeEnd   + "T00:00:00");
     const diffDays = Math.round((end - start) / 86400000) + 1;
 
-    // Only show heatmap for ranges <= 366 days (daily data useful up to a year)
-    if (diffDays > 366) {
+    if (diffDays > 370) {
       document.getElementById("heatmap-card").style.display = "none";
       return;
     }
 
-    const maxVal = daily && Object.values(daily).length ? Math.max(...Object.values(daily)) : 0;
+    const maxVal = daily ? Math.max(0, ...Object.values(daily)) : 0;
 
-    // Group by month for display
-    const months = {};
-    for (let i = 0; i < diffDays; i++) {
-      const d = new Date(start); d.setDate(d.getDate() + i);
+    // Extend grid to full weeks (Sun–Sat)
+    const gridStart = new Date(start); gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+    const gridEnd   = new Date(end);   gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
+    const gridDays  = Math.round((gridEnd - gridStart) / 86400000) + 1;
+    const numWeeks  = gridDays / 7;
+
+    // Build flat cell list
+    const cells = [];
+    for (let i = 0; i < gridDays; i++) {
+      const d = new Date(gridStart); d.setDate(d.getDate() + i);
       const iso = d.toISOString().slice(0, 10);
-      const mKey = iso.slice(0, 7);
-      if (!months[mKey]) months[mKey] = [];
-      months[mKey].push({ iso, dow: d.getDay(), val: daily?.[iso] || 0 });
+      const inRange = d >= start && d <= end;
+      cells.push({ iso, val: inRange ? (daily?.[iso] || 0) : null, hasSpend: inRange && !!daily?.[iso] });
     }
 
-    for (const [mKey, days] of Object.entries(months)) {
-      const [yr, mo] = mKey.split("-").map(Number);
-      const mLbl = new Date(yr, mo - 1, 1).toLocaleString("en", { month: "short", year: "numeric" });
-
-      const div = document.createElement("div");
-      div.className = "heatmap-month";
-      div.innerHTML = `<div class="heatmap-month-lbl">${mLbl}</div>`;
-
-      const grid = document.createElement("div");
-      grid.className = "heatmap-grid";
-
-      // Pad first row to correct day-of-week
-      const firstDow = days[0].dow; // 0=Sun
-      for (let p = 0; p < firstDow; p++) {
-        const ph = document.createElement("div");
-        ph.className = "hm-cell empty";
-        grid.appendChild(ph);
+    // ── Month labels row ──
+    const monthsRow = document.createElement("div");
+    monthsRow.className = "hm-months-row";
+    monthsRow.style.width = (numWeeks * COL_W - CELL_GAP + DAY_LABELS_W + 4) + "px";
+    let lastMonth = null;
+    for (let w = 0; w < numWeeks; w++) {
+      const firstInRange = cells.slice(w * 7, w * 7 + 7).find(c => c.val !== null);
+      if (!firstInRange) continue;
+      const m = firstInRange.iso.slice(0, 7);
+      if (m !== lastMonth) {
+        lastMonth = m;
+        const lbl = document.createElement("span");
+        lbl.className = "hm-month-lbl";
+        lbl.textContent = new Date(m + "-01T00:00:00").toLocaleString("en", { month: "short" });
+        lbl.style.left = (w * COL_W) + "px";
+        monthsRow.appendChild(lbl);
       }
+    }
 
-      for (const { iso, val } of days) {
+    // ── Body: day labels + week columns ──
+    const body = document.createElement("div");
+    body.className = "hm-body";
+
+    // Day labels (Sun=0..Sat=6); show Mon, Wed, Fri
+    const dayLabels = document.createElement("div");
+    dayLabels.className = "hm-day-labels";
+    ["", "Mon", "", "Wed", "", "Fri", ""].forEach(txt => {
+      const s = document.createElement("span"); s.textContent = txt; dayLabels.appendChild(s);
+    });
+
+    // Week columns
+    const weeksDiv = document.createElement("div");
+    weeksDiv.className = "hm-weeks";
+
+    const tip = document.getElementById("hm-tip");
+
+    for (let w = 0; w < numWeeks; w++) {
+      const col = document.createElement("div");
+      col.className = "hm-week";
+      for (let d = 0; d < 7; d++) {
+        const { iso, val, hasSpend } = cells[w * 7 + d];
         const cell = document.createElement("div");
-        cell.className = "hm-cell";
-        cell.style.background = val > 0 ? _hmColor(val, maxVal) : "#F3F4F6";
-        if (val > 0) {
-          cell.title = `${iso} · ₹${fmt(val)}`;
-        }
-        grid.appendChild(cell);
-      }
+        cell.className = "hm-cell" + (val === null ? " oor" : "");
+        if (val !== null) cell.style.background = _hmColor(val, maxVal);
 
-      div.appendChild(grid);
-      container.appendChild(div);
+        if (val !== null && val > 0) {
+          const label = iso + " · ₹" + fmt(val);
+          cell.addEventListener("mouseenter", () => { tip.textContent = label; tip.style.display = "block"; });
+          cell.addEventListener("mousemove",  e  => {
+            tip.style.left = (e.clientX + 10) + "px";
+            tip.style.top  = (e.clientY - 30) + "px";
+          });
+          cell.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+        }
+
+        col.appendChild(cell);
+      }
+      weeksDiv.appendChild(col);
     }
+
+    body.appendChild(dayLabels);
+    body.appendChild(weeksDiv);
+    inner.appendChild(monthsRow);
+    inner.appendChild(body);
 
     document.getElementById("heatmap-card").style.display = "block";
   }
@@ -1159,7 +1221,8 @@
       const r = await fetch(`/expenses/heatmap/?${qs}`);
       const d = await r.json();
       if (r.ok) renderHeatmap(d.daily, d.range_start, d.range_end);
-    } catch { /* heatmap is non-critical */ }
+      else document.getElementById("heatmap-card").style.display = "none";
+    } catch { document.getElementById("heatmap-card").style.display = "none"; }
   }
 
   function renderDonutChart(labels, values) {
