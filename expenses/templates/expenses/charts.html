@@ -1126,7 +1126,7 @@
     const end   = new Date(rangeEnd   + "T00:00:00");
     const diffDays = Math.round((end - start) / 86400000) + 1;
 
-    if (diffDays > 370) {
+    if (diffDays < 14 || diffDays > 370) {
       document.getElementById("heatmap-card").style.display = "none";
       return;
     }
