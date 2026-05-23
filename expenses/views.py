@@ -1013,6 +1013,12 @@ class ExpensesHeatmapView(View):
             amount = (row.get("properties", {}).get("Amount") or {}).get("number") or 0.0
             daily[d_str] = round(daily.get(d_str, 0.0) + amount, 2)
 
+        # For period=all, derive actual date range from the data itself
+        if range_start is None and daily:
+            dates = sorted(daily.keys())
+            range_start = date.fromisoformat(dates[0])
+            range_end   = date.fromisoformat(dates[-1])
+
         return JsonResponse({
             "daily": daily,
             "range_start": range_start.isoformat() if range_start else None,
