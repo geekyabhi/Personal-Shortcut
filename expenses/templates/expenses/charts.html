@@ -683,7 +683,6 @@
           More
         </div>
       </div>
-      <div class="hm-tip" id="hm-tip"></div>
 
       <div class="charts-grid">
         <div class="card" id="comparison-card">
@@ -1329,22 +1328,21 @@
       weeksDiv.appendChild(col);
     }
 
-    // Event delegation on the grid container
-    weeksDiv.addEventListener("mouseover", (e) => {
-      const cell = e.target.closest(".hm-cell");
-      if (!cell) return; // gap between cells — keep existing tooltip visible
-      if (!cell.dataset.tip) { tip.style.display = "none"; return; }
-      tip.textContent = cell.dataset.tip;
-      tip.style.display = "block";
-      tip.style.left = (e.clientX + 16) + "px";
-      tip.style.top  = (e.clientY - 36) + "px";
-    });
-    weeksDiv.addEventListener("mousemove", (e) => {
-      if (tip.style.display === "none") return;
-      tip.style.left = (e.clientX + 16) + "px";
-      tip.style.top  = (e.clientY - 36) + "px";
-    });
-    weeksDiv.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+    // Document-level mousemove: most reliable — no hit-area or bubbling issues
+    if (window._hmTipListener) document.removeEventListener("mousemove", window._hmTipListener);
+    window._hmTipListener = (e) => {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const cell = el?.closest?.(".hm-cell");
+      if (cell && cell.dataset.tip) {
+        tip.textContent = cell.dataset.tip;
+        tip.style.display = "block";
+        tip.style.left = (e.clientX + 16) + "px";
+        tip.style.top  = (e.clientY - 36) + "px";
+      } else {
+        tip.style.display = "none";
+      }
+    };
+    document.addEventListener("mousemove", window._hmTipListener);
 
     body.appendChild(dayLabels);
     body.appendChild(weeksDiv);
@@ -1808,5 +1806,6 @@
     };
   })();
 </script>
+<div id="hm-tip" class="hm-tip"></div>
 </body>
 </html>
