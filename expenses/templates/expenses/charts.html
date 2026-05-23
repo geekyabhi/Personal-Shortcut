@@ -1244,13 +1244,14 @@
     const monthsRow = document.createElement("div");
     monthsRow.className = "hm-months-row";
     monthsRow.style.width = (numWeeks * COL_W - CELL_GAP + DAY_LABELS_W + 4) + "px";
-    let lastMonth = null;
+    let lastMonth = null, lastLabelW = -4;
     for (let w = 0; w < numWeeks; w++) {
       const firstInRange = cells.slice(w * 7, w * 7 + 7).find(c => c.val !== null);
       if (!firstInRange) continue;
       const m = firstInRange.iso.slice(0, 7);
-      if (m !== lastMonth) {
+      if (m !== lastMonth && w - lastLabelW >= 4) {
         lastMonth = m;
+        lastLabelW = w;
         const lbl = document.createElement("span");
         lbl.className = "hm-month-lbl";
         lbl.textContent = new Date(m + "-01T00:00:00").toLocaleString("en", { month: "short" });
