@@ -111,9 +111,43 @@
     @media (min-width: 600px) {
       .grid { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* ── Theme toggle button ── */
+    .theme-btn {
+      position: fixed; top: 0.75rem; right: 0.75rem; z-index: 300;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(255,255,255,0.82); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.88);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+      cursor: pointer; font-size: 0.95rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .theme-btn:hover { transform: scale(1.12); box-shadow: 0 4px 18px rgba(0,0,0,0.16); }
+    [data-theme="dark"] .theme-btn {
+      background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.40);
+    }
+
+    /* ── Dark mode ── */
+    [data-theme="dark"] body { background: #0F0F14; color: #F9FAFB; }
+    [data-theme="dark"] .badge { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); color: #9CA3AF; }
+    [data-theme="dark"] .subtitle { color: #9CA3AF; }
+    [data-theme="dark"] .footer { color: #6B7280; }
+    [data-theme="dark"] .tile { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); color: #F9FAFB; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+    [data-theme="dark"] .tile-name { color: #F9FAFB; }
+    [data-theme="dark"] .tile-desc { color: #9CA3AF; }
+    [data-theme="dark"] .tile-expenses .tile-icon-wrap { background: rgba(79,70,229,0.18); }
+    [data-theme="dark"] .tile-habits .tile-icon-wrap   { background: rgba(5,150,105,0.18); }
+    [data-theme="dark"] .tile-todos .tile-icon-wrap    { background: rgba(2,132,199,0.18); }
   </style>
+  <script>
+    (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
+  </script>
 </head>
 <body>
+  <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
   <div class="orb orb-3"></div>
@@ -146,5 +180,19 @@
 
     <p class="footer">Powered by Notion &middot; Built with Django</p>
   </div>
+<script>
+  /* ── Theme toggle ── */
+  (function() {
+    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+    window._toggleTheme = function() {
+      const dark = !isDark();
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
+      if (btn) btn.textContent = dark ? '🌙' : '☀️';
+    };
+  })();
+</script>
 </body>
 </html>

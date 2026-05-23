@@ -144,9 +144,52 @@
       .habit-bar-wrap { display: block; }
     }
     @media (min-width: 768px) { body { padding: 2.5rem 1.5rem; } .card { margin-bottom: 1.25rem; } }
+
+    /* ── Theme toggle button ── */
+    .theme-btn {
+      position: fixed; top: 0.75rem; right: 0.75rem; z-index: 300;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(255,255,255,0.82); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.88);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+      cursor: pointer; font-size: 0.95rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .theme-btn:hover { transform: scale(1.12); box-shadow: 0 4px 18px rgba(0,0,0,0.16); }
+    [data-theme="dark"] .theme-btn {
+      background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.40);
+    }
+
+    /* ── Dark mode ── */
+    [data-theme="dark"] body { background: #0A100D; color: #F9FAFB; }
+    [data-theme="dark"] .card {
+      background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.30);
+    }
+    [data-theme="dark"] nav { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] nav a { color: #9CA3AF; }
+    [data-theme="dark"] nav a:not(.active):hover { background: rgba(255,255,255,0.07); color: #E5E7EB; }
+    [data-theme="dark"] h2 { color: #E5E7EB; }
+    [data-theme="dark"] label { color: #6B7280; }
+    [data-theme="dark"] select,
+    [data-theme="dark"] input[type="month"],
+    [data-theme="dark"] input[type="week"],
+    [data-theme="dark"] input[type="date"],
+    [data-theme="dark"] input[type="number"],
+    [data-theme="dark"] input[type="text"] {
+      background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
+    }
+    [data-theme="dark"] .error-box { background: rgba(239,68,68,0.10); }
   </style>
+  <script>
+    (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
+  </script>
 </head>
 <body>
+  <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
 
@@ -349,6 +392,19 @@
       btn.disabled = false;
     }
   }
+
+  /* ── Theme toggle ── */
+  (function() {
+    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+    window._toggleTheme = function() {
+      const dark = !isDark();
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
+      if (btn) btn.textContent = dark ? '🌙' : '☀️';
+    };
+  })();
 </script>
 </body>
 </html>
