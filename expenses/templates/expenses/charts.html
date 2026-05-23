@@ -1297,7 +1297,7 @@
             cell.className = "hm-cell";
             const val = daily?.[iso] || 0;
             cell.style.background = _hmColor(val, maxVal);
-            if (val > 0) cell.dataset.tip = iso + "  ₹" + fmt(val);
+            cell.dataset.tip = val > 0 ? iso + "  ₹" + fmt(val) : iso + "  No expense";
           }
           col.appendChild(cell);
         }
