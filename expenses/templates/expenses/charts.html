@@ -1235,39 +1235,11 @@
     }
 
     const maxVal = daily ? Math.max(0, ...Object.values(daily)) : 0;
+    const INTER_MONTH_PX = 6;
 
-    // Extend grid to full weeks (Sun–Sat)
-    const gridStart = new Date(start); gridStart.setDate(gridStart.getDate() - gridStart.getDay());
-    const gridEnd   = new Date(end);   gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
-    const gridDays  = Math.round((gridEnd - gridStart) / 86400000) + 1;
-    const numWeeks  = gridDays / 7;
-
-    // Build flat cell list
-    const cells = [];
-    for (let i = 0; i < gridDays; i++) {
-      const d = new Date(gridStart); d.setDate(d.getDate() + i);
-      const iso = d.toISOString().slice(0, 10);
-      const inRange = d >= start && d <= end;
-      cells.push({ iso, val: inRange ? (daily?.[iso] || 0) : null, hasSpend: inRange && !!daily?.[iso] });
-    }
-
-    const INTER_MONTH_PX = 6; // extra gap before first week of each new month
-
-    // Pre-count month boundaries to size the months row correctly
-    let _curM = null, _numBoundaries = 0;
-    for (let w = 0; w < numWeeks; w++) {
-      const fr = cells.slice(w * 7, w * 7 + 7).find(c => c.val !== null);
-      const wm = fr?.iso.slice(0, 7) || null;
-      if (wm && wm !== _curM) { if (_curM !== null) _numBoundaries++; _curM = wm; }
-    }
-    const totalExtra = _numBoundaries * INTER_MONTH_PX;
-
-    // ── Month labels row ──
     const monthsRow = document.createElement("div");
     monthsRow.className = "hm-months-row";
-    monthsRow.style.width = (numWeeks * COL_W - CELL_GAP + totalExtra + DAY_LABELS_W + 4) + "px";
 
-    // ── Body: day labels + week columns ──
     const body = document.createElement("div");
     body.className = "hm-body";
 
@@ -1279,54 +1251,73 @@
 
     const weeksDiv = document.createElement("div");
     weeksDiv.className = "hm-weeks";
-
     const tip = document.getElementById("hm-tip");
 
-    // Single pass: build week columns + month labels together
-    let curMonth = null, cumMargin = 0, lastLabelPx = -40, lastLabelYear = null;
+    // Render month by month so each month gets its true calendar shape
+    // (padding days from adjacent months become transparent oor cells)
+    let cumWidth = 0; // px position for label left, tracks grid width
+    let lastLabelYear = null;
+    let curY = start.getFullYear(), curM = start.getMonth();
+    const endY = end.getFullYear(), endM = end.getMonth();
 
-    for (let w = 0; w < numWeeks; w++) {
-      const firstInRange = cells.slice(w * 7, w * 7 + 7).find(c => c.val !== null);
-      const wm = firstInRange?.iso.slice(0, 7) || null;
+    while (curY < endY || (curY === endY && curM <= endM)) {
+      const mFirst = new Date(curY, curM, 1);
+      const mLast  = new Date(curY, curM + 1, 0);
 
-      const col = document.createElement("div");
-      col.className = "hm-week";
+      // Full-week grid for this month (Sun–Sat)
+      const gStart = new Date(mFirst); gStart.setDate(gStart.getDate() - gStart.getDay());
+      const gEnd   = new Date(mLast);  gEnd.setDate(gEnd.getDate() + (6 - gEnd.getDay()));
+      const numW   = Math.round((gEnd - gStart) / 86400000) / 7;
 
-      if (wm && wm !== curMonth) {
-        if (curMonth !== null) {
-          col.style.marginLeft = INTER_MONTH_PX + "px";
-          cumMargin += INTER_MONTH_PX;
+      // Month label at current cumWidth
+      const yr = curY;
+      const showYear = yr !== lastLabelYear;
+      lastLabelYear = yr;
+      const lbl = document.createElement("span");
+      lbl.className = "hm-month-lbl";
+      lbl.textContent = showYear
+        ? mFirst.toLocaleString("en", { month: "short" }) + " '" + String(yr).slice(2)
+        : mFirst.toLocaleString("en", { month: "short" });
+      lbl.style.left = cumWidth + "px";
+      monthsRow.appendChild(lbl);
+
+      // Week columns for this month
+      for (let w = 0; w < numW; w++) {
+        const col = document.createElement("div");
+        col.className = "hm-week";
+        for (let d = 0; d < 7; d++) {
+          const day = new Date(gStart); day.setDate(day.getDate() + w * 7 + d);
+          const iso = day.toISOString().slice(0, 10);
+          const inMonth = day >= mFirst && day <= mLast;
+          const inRange = day >= start && day <= end;
+          const cell = document.createElement("div");
+          if (!inMonth || !inRange) {
+            cell.className = "hm-cell oor";
+          } else {
+            cell.className = "hm-cell";
+            const val = daily?.[iso] || 0;
+            cell.style.background = _hmColor(val, maxVal);
+            if (val > 0) cell.dataset.tip = iso + "  ₹" + fmt(val);
+          }
+          col.appendChild(cell);
         }
-        curMonth = wm;
-
-        // Month label — include year when year changes
-        const labelPx = w * COL_W + cumMargin;
-        if (labelPx - lastLabelPx >= 38) {
-          lastLabelPx = labelPx;
-          const d = new Date(wm + "-01T00:00:00");
-          const yr = d.getFullYear();
-          const showYear = yr !== lastLabelYear;
-          lastLabelYear = yr;
-          const lbl = document.createElement("span");
-          lbl.className = "hm-month-lbl";
-          lbl.textContent = showYear
-            ? d.toLocaleString("en", { month: "short" }) + " '" + String(yr).slice(2)
-            : d.toLocaleString("en", { month: "short" });
-          lbl.style.left = labelPx + "px";
-          monthsRow.appendChild(lbl);
-        }
+        weeksDiv.appendChild(col);
+        cumWidth += COL_W;
       }
 
-      for (let d = 0; d < 7; d++) {
-        const { iso, val } = cells[w * 7 + d];
-        const cell = document.createElement("div");
-        cell.className = "hm-cell" + (val === null ? " oor" : "");
-        if (val !== null) cell.style.background = _hmColor(val, maxVal);
-        if (val !== null && val > 0) cell.dataset.tip = iso + "  ₹" + fmt(val);
-        col.appendChild(cell);
+      // Gap between months (not after the last one)
+      const isLast = curY === endY && curM === endM;
+      if (!isLast) {
+        const gap = document.createElement("div");
+        gap.style.cssText = `width:${INTER_MONTH_PX}px;flex-shrink:0;`;
+        weeksDiv.appendChild(gap);
+        cumWidth += INTER_MONTH_PX;
       }
-      weeksDiv.appendChild(col);
+
+      curM++; if (curM > 11) { curM = 0; curY++; }
     }
+
+    monthsRow.style.width = (cumWidth + 4) + "px";
 
     // Document-level mousemove: most reliable — no hit-area or bubbling issues
     if (window._hmTipListener) document.removeEventListener("mousemove", window._hmTipListener);
