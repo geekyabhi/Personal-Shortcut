@@ -403,7 +403,7 @@
       background: #EBEDF0; cursor: default; flex-shrink: 0;
       transition: opacity 0.1s, transform 0.1s;
     }
-    .hm-cell:hover { transform: scale(1.4); z-index: 10; opacity: 0.85; }
+    .hm-cell:hover { box-shadow: 0 0 0 2px rgba(255,255,255,0.85); z-index: 10; }
     .hm-cell.oor { background: transparent !important; pointer-events: none; }
     .hm-legend {
       display: flex; align-items: center; gap: 5px;
@@ -1329,23 +1329,22 @@
       weeksDiv.appendChild(col);
     }
 
-    // Event delegation — one listener on the grid avoids transform hit-area issues
+    // Event delegation on the grid container
     weeksDiv.addEventListener("mouseover", (e) => {
       const cell = e.target.closest(".hm-cell");
-      if (!cell || !cell.dataset.tip) { tip.style.display = "none"; return; }
+      if (!cell) return; // gap between cells — keep existing tooltip visible
+      if (!cell.dataset.tip) { tip.style.display = "none"; return; }
       tip.textContent = cell.dataset.tip;
       tip.style.display = "block";
-      tip.style.left = (e.clientX + 14) + "px";
-      tip.style.top  = (e.clientY - 38) + "px";
+      tip.style.left = (e.clientX + 16) + "px";
+      tip.style.top  = (e.clientY - 36) + "px";
     });
     weeksDiv.addEventListener("mousemove", (e) => {
       if (tip.style.display === "none") return;
-      tip.style.left = (e.clientX + 14) + "px";
-      tip.style.top  = (e.clientY - 38) + "px";
+      tip.style.left = (e.clientX + 16) + "px";
+      tip.style.top  = (e.clientY - 36) + "px";
     });
-    weeksDiv.addEventListener("mouseout", (e) => {
-      if (!e.relatedTarget || !e.relatedTarget.closest(".hm-weeks")) tip.style.display = "none";
-    });
+    weeksDiv.addEventListener("mouseleave", () => { tip.style.display = "none"; });
 
     body.appendChild(dayLabels);
     body.appendChild(weeksDiv);
