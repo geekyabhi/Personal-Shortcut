@@ -620,57 +620,6 @@
       </div>
     </div>
 
-    <!-- Expense add/edit modal -->
-    <div class="ef-overlay" id="ef-overlay" onclick="_efBgClick(event)">
-      <div class="ef-box">
-        <div class="ef-title" id="ef-title">Add Expense</div>
-        <div class="ef-fields">
-          <div class="ef-field">
-            <label for="ef-name">Name</label>
-            <input type="text" id="ef-name" placeholder="e.g. Groceries" autocomplete="off" />
-          </div>
-          <div class="ef-field" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-            <div class="ef-field">
-              <label for="ef-amount">Amount (₹)</label>
-              <input type="number" id="ef-amount" placeholder="0.00" min="0" step="0.01" />
-            </div>
-            <div class="ef-field">
-              <label for="ef-date">Date</label>
-              <input type="date" id="ef-date" />
-            </div>
-          </div>
-          <div class="ef-field">
-            <label>Categories</label>
-            <div class="ef-pills" id="ef-cats"></div>
-          </div>
-          <div class="ef-field">
-            <label for="ef-source">Source</label>
-            <select id="ef-source">
-              <option value="">— None —</option>
-            </select>
-          </div>
-        </div>
-        <div class="ef-error" id="ef-error"></div>
-        <div class="ef-actions">
-          <button class="ef-btn-cancel" onclick="_efClose()">Cancel</button>
-          <button class="ef-btn-save" id="ef-save-btn" onclick="_efSave()">Save</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Delete confirm modal -->
-    <div class="del-overlay" id="del-overlay" onclick="_delBgClick(event)">
-      <div class="del-box">
-        <div class="del-icon">🗑️</div>
-        <div class="del-heading">Delete Expense?</div>
-        <div class="del-sub">You're about to delete <strong id="del-name"></strong>.<br>This will archive it in Notion and cannot be undone.</div>
-        <div class="del-actions">
-          <button class="del-btn-cancel" onclick="_delClose()">Cancel</button>
-          <button class="del-btn-confirm" id="del-confirm-btn" onclick="_delConfirm()">Delete</button>
-        </div>
-      </div>
-    </div>
-
     <!-- ─── SECTION 1: SUMMARY ─────────────────────────────────── -->
     <div class="card">
       <div class="filters">
@@ -1625,5 +1574,53 @@
     };
   })();
 </script>
+
+<!-- Modals as direct children of body so position:fixed is always viewport-relative -->
+<div class="ef-overlay" id="ef-overlay" onclick="_efBgClick(event)">
+  <div class="ef-box">
+    <div class="ef-title" id="ef-title">Add Expense</div>
+    <div class="ef-fields">
+      <div class="ef-field">
+        <label for="ef-name">Name</label>
+        <input type="text" id="ef-name" placeholder="e.g. Groceries" autocomplete="off" />
+      </div>
+      <div class="ef-field" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <div class="ef-field">
+          <label for="ef-amount">Amount (₹)</label>
+          <input type="number" id="ef-amount" placeholder="0.00" min="0" step="0.01" />
+        </div>
+        <div class="ef-field">
+          <label for="ef-date">Date</label>
+          <input type="date" id="ef-date" />
+        </div>
+      </div>
+      <div class="ef-field">
+        <label>Categories</label>
+        <div class="ef-pills" id="ef-cats"></div>
+      </div>
+      <div class="ef-field">
+        <label for="ef-source">Source</label>
+        <select id="ef-source"><option value="">— None —</option></select>
+      </div>
+    </div>
+    <div class="ef-error" id="ef-error"></div>
+    <div class="ef-actions">
+      <button class="ef-btn-cancel" onclick="_efClose()">Cancel</button>
+      <button class="ef-btn-save" id="ef-save-btn" onclick="_efSave()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="del-overlay" id="del-overlay" onclick="_delBgClick(event)">
+  <div class="del-box">
+    <div class="del-icon">🗑️</div>
+    <div class="del-heading">Delete Expense?</div>
+    <div class="del-sub">You're about to delete <strong id="del-name"></strong>.<br>This will archive it in Notion and cannot be undone.</div>
+    <div class="del-actions">
+      <button class="del-btn-cancel" onclick="_delClose()">Cancel</button>
+      <button class="del-btn-confirm" id="del-confirm-btn" onclick="_delConfirm()">Delete</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
