@@ -511,6 +511,7 @@
       font-family: inherit; transition: color 0.15s, background 0.15s;
     }
     .expense-edit-btn:hover { color: #4F46E5; background: #EEF2FF; }
+    .expense-del-btn:hover  { color: #EF4444 !important; background: #FEF2F2 !important; }
     [data-theme="dark"] .ef-box { background: #1B1B28; }
     [data-theme="dark"] .ef-title { color: #F9FAFB; }
     [data-theme="dark"] .ef-field label { color: #6B7280; }
@@ -524,6 +525,7 @@
     [data-theme="dark"] .ef-btn-cancel:hover { background: rgba(255,255,255,0.06); }
     [data-theme="dark"] .expense-edit-btn { color: #6B7280; }
     [data-theme="dark"] .expense-edit-btn:hover { color: #818CF8; background: rgba(99,102,241,0.15); }
+    [data-theme="dark"] .expense-del-btn:hover  { color: #F87171 !important; background: rgba(239,68,68,0.12) !important; }
   </style>
   <script>
     (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
@@ -886,12 +888,35 @@
   /* ── Data cache for re-render on toggle ── */
   let _lastInsight = null, _lastBrowse = null, _lastChart = null;
 
-  // Edit button delegation on browse list
-  document.getElementById("browse-list").addEventListener("click", e => {
-    const btn = e.target.closest(".expense-edit-btn");
-    if (!btn || !_lastBrowse) return;
-    const entry = (_lastBrowse.entries || []).find(x => x.page_id === btn.dataset.entryId);
-    if (entry) _efOpen(entry);
+  // Edit / Delete button delegation on browse list
+  document.getElementById("browse-list").addEventListener("click", async e => {
+    // Edit
+    const editBtn = e.target.closest(".expense-edit-btn:not(.expense-del-btn)");
+    if (editBtn && _lastBrowse) {
+      const entry = (_lastBrowse.entries || []).find(x => x.page_id === editBtn.dataset.entryId);
+      if (entry) _efOpen(entry);
+      return;
+    }
+    // Delete
+    const delBtn = e.target.closest(".expense-del-btn");
+    if (!delBtn) return;
+    const title = delBtn.dataset.delTitle || "this expense";
+    if (!confirm(`Delete "${title}"?\n\nThis will archive it in Notion.`)) return;
+    delBtn.disabled = true; delBtn.textContent = "…";
+    try {
+      const res = await fetch(`/expenses/${delBtn.dataset.delId}/delete/`, {
+        method: "DELETE",
+        headers: { "X-CSRFToken": _getCsrf() },
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || "Delete failed."); return; }
+      await fetchList(currentBrowsePage, true);
+      await fetchAll(true);
+    } catch (err) {
+      alert("Network error: " + err.message);
+    } finally {
+      delBtn.disabled = false; delBtn.textContent = "Delete";
+    }
   });
 
   /* ── 15-click secret (section heading area, kept as backup) ── */
@@ -1240,7 +1265,10 @@
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;">
             <div class="expense-amount">${fmt(e.amount)}</div>
             <div class="expense-date">${e.date || ""}</div>
-            <button class="expense-edit-btn" data-entry-id="${e.page_id}">Edit</button>
+            <div style="display:flex;gap:0.3rem;">
+              <button class="expense-edit-btn" data-entry-id="${e.page_id}">Edit</button>
+              <button class="expense-edit-btn expense-del-btn" data-del-id="${e.page_id}" data-del-title="${e.title.replace(/"/g,'&quot;')}">Delete</button>
+            </div>
           </div>
         </div>`;
     }).join("");

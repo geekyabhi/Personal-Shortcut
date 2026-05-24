@@ -1,8 +1,8 @@
 from django.urls import path
 from .views import (
     ChartsView, DashboardView, ExpensesChartView, ExpensesCategoryTimeseriesView,
-    ExpensesCreateView, ExpensesHeatmapView, ExpensesInsightsView, ExpensesListView,
-    ExpensesSummaryView, ExpensesTimeseriesView, ExpensesUpdateView,
+    ExpensesCreateView, ExpensesDeleteView, ExpensesHeatmapView, ExpensesInsightsView,
+    ExpensesListView, ExpensesSummaryView, ExpensesTimeseriesView, ExpensesUpdateView,
 )
 
 urlpatterns = [
@@ -17,4 +17,5 @@ urlpatterns = [
     path("list/", ExpensesListView.as_view(), name="expenses-list"),
     path("create/", ExpensesCreateView.as_view(), name="expenses-create"),
     path("<str:page_id>/update/", ExpensesUpdateView.as_view(), name="expenses-update"),
+    path("<str:page_id>/delete/", ExpensesDeleteView.as_view(), name="expenses-delete"),
 ]

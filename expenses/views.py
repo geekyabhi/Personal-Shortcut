@@ -1158,6 +1158,27 @@ class ExpensesUpdateView(View):
         return JsonResponse({"ok": True})
 
 
+class ExpensesDeleteView(View):
+    def delete(self, request, page_id):
+        token = os.environ.get("NOTION_TOKEN")
+        if not token:
+            return JsonResponse({"error": "NOTION_TOKEN must be set"}, status=500)
+        try:
+            resp = requests.patch(
+                f"https://api.notion.com/v1/pages/{page_id}",
+                headers=_notion_headers(token),
+                json={"archived": True},
+                timeout=15,
+            )
+            resp.raise_for_status()
+        except requests.HTTPError as exc:
+            return JsonResponse({"error": f"Notion API error: {exc}", "detail": exc.response.text if exc.response else ""}, status=502)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Network error: {exc}"}, status=502)
+        _rows_cache["ts"] = 0.0
+        return JsonResponse({"ok": True})
+
+
 class DashboardView(View):
     def get(self, request):
         return render(request, "expenses/dashboard.html")
