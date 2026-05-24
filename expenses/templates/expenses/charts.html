@@ -24,8 +24,8 @@
       min-height: 100vh; padding: 1.25rem 0.75rem; position: relative;
     }
     .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
-    .orb-1 { width: 450px; height: 450px; background: rgba(79,70,229,0.10); top: -120px; right: -80px; }
-    .orb-2 { width: 350px; height: 350px; background: rgba(124,58,237,0.08); bottom: -100px; left: -80px; }
+    .orb-1 { width: 450px; height: 450px; background: rgba(79,70,229,0.10); top: -120px; right: -80px; animation: _float 9s ease-in-out infinite; }
+    .orb-2 { width: 350px; height: 350px; background: rgba(124,58,237,0.08); bottom: -100px; left: -80px; animation: _float 11s ease-in-out infinite 2s; }
 
     .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
     @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
@@ -36,6 +36,7 @@
       background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
       padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); margin-bottom: 2rem;
+      animation: _fadeIn 0.5s ease both;
     }
     nav a { padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280; }
     nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
@@ -44,6 +45,7 @@
     h1 {
       font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 900; letter-spacing: -0.03em; margin-bottom: 1.5rem;
       background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      animation: _fadeUp 0.55s 0.1s ease both;
     }
 
     /* ── Cards ── */
@@ -51,6 +53,7 @@
       background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
       padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      animation: _fadeUp 0.5s ease both; animation-play-state: paused;
     }
 
     /* ── Filters ── */
@@ -539,6 +542,12 @@
     [data-theme="dark"] .modal-btn-cancel { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #9CA3AF; }
     [data-theme="dark"] .preset-btn { background: rgba(79,70,229,0.12); border-color: rgba(79,70,229,0.22); }
     [data-theme="dark"] .hm-tip { /* already dark by design */ }
+
+    /* ── Animations ── */
+    @keyframes _fadeUp   { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes _fadeIn   { from{opacity:0} to{opacity:1} }
+    @keyframes _float    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}}
   </style>
   <script>
     (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
@@ -1798,5 +1807,20 @@
   })();
 </script>
 <div id="hm-tip" class="hm-tip"></div>
+<script>
+(function(){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.style.animationPlayState='running'; io.unobserve(e.target); }
+    });
+  },{threshold:0.06});
+  var delay = 0;
+  document.querySelectorAll('.card, .stats-mini-grid').forEach(function(el){
+    el.style.animationDelay = delay + 'ms';
+    delay = Math.min(delay + 90, 450);
+    io.observe(el);
+  });
+})();
+</script>
 </body>
 </html>

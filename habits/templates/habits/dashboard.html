@@ -22,8 +22,8 @@
       min-height: 100vh; padding: 1.25rem 0.75rem; position: relative;
     }
     .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
-    .orb-1 { width: 450px; height: 450px; background: rgba(5,150,105,0.10); top: -120px; right: -80px; }
-    .orb-2 { width: 350px; height: 350px; background: rgba(8,145,178,0.08); bottom: -100px; left: -80px; }
+    .orb-1 { width: 450px; height: 450px; background: rgba(5,150,105,0.10); top: -120px; right: -80px; animation: _float 9s ease-in-out infinite; }
+    .orb-2 { width: 350px; height: 350px; background: rgba(8,145,178,0.08); bottom: -100px; left: -80px; animation: _float 11s ease-in-out infinite 2s; }
 
     .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
     @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
@@ -33,6 +33,7 @@
       background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
       padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); margin-bottom: 2rem;
+      animation: _fadeIn 0.4s ease both;
     }
     nav a { padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280; }
     nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(5,150,105,0.35); }
@@ -41,13 +42,21 @@
     h1 {
       font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 900; letter-spacing: -0.03em; margin-bottom: 1.5rem;
       background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      animation: _fadeUp 0.5s 0.1s ease both;
     }
 
     .card {
       background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
       padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      animation: _fadeUp 0.5s ease both; animation-play-state: paused;
     }
+    .card:nth-child(1){animation-delay:0.05s}
+    .card:nth-child(2){animation-delay:0.15s}
+    .card:nth-child(3){animation-delay:0.25s}
+    .card:nth-child(4){animation-delay:0.35s}
+    .card:nth-child(5){animation-delay:0.45s}
+    .card:nth-child(6){animation-delay:0.55s}
 
     .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
     label { display: block; font-size: 0.7rem; font-weight: 700; color: #9CA3AF; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -78,7 +87,8 @@
       box-shadow: 0 4px 15px rgba(5,150,105,0.35);
     }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(5,150,105,0.45); }
-    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:active { transform: translateY(0) scale(0.97); }
+    button:active, .btn-ghost:active { transform: scale(0.97); }
     .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
     .btn-secondary {
@@ -183,6 +193,14 @@
       background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
     }
     [data-theme="dark"] .error-box { background: rgba(239,68,68,0.10); }
+
+    /* ── Animations ── */
+    @keyframes _fadeUp  { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes _fadeIn  { from { opacity:0; } to { opacity:1; } }
+    @keyframes _scaleIn { from { opacity:0; transform:scale(0.93); } to { opacity:1; transform:scale(1); } }
+    @keyframes _slideLeft { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes _float   { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}}
   </style>
   <script>
     (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
@@ -405,6 +423,16 @@
       if (btn) btn.textContent = dark ? '🌙' : '☀️';
     };
   })();
+</script>
+<script>
+(function(){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.style.animationPlayState='running'; io.unobserve(e.target); }
+    });
+  },{threshold:0.08});
+  document.querySelectorAll('.card').forEach(function(el){ io.observe(el); });
+})();
 </script>
 </body>
 </html>

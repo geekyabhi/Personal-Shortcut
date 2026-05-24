@@ -25,9 +25,9 @@
       position: fixed; border-radius: 50%;
       filter: blur(90px); z-index: 0; pointer-events: none;
     }
-    .orb-1 { width: 500px; height: 500px; background: rgba(99,102,241,0.13); top: -150px; right: -100px; }
-    .orb-2 { width: 450px; height: 450px; background: rgba(5,150,105,0.10); bottom: -150px; left: -100px; }
-    .orb-3 { width: 300px; height: 300px; background: rgba(139,92,246,0.08); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .orb-1 { width: 500px; height: 500px; background: rgba(99,102,241,0.13); top: -150px; right: -100px; animation: _float 9s ease-in-out infinite; }
+    .orb-2 { width: 450px; height: 450px; background: rgba(5,150,105,0.10); bottom: -150px; left: -100px; animation: _float 11s ease-in-out infinite 2s; }
+    .orb-3 { width: 300px; height: 300px; background: rgba(139,92,246,0.08); top: 50%; left: 50%; transform: translate(-50%,-50%); animation: _float 13s ease-in-out infinite 4s; }
 
     .container { position: relative; z-index: 1; text-align: center; width: 100%; max-width: 1400px; }
 
@@ -40,6 +40,7 @@
       letter-spacing: 0.04em; text-transform: uppercase;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       margin-bottom: 1.5rem;
+      animation: _fadeIn 0.5s ease both;
     }
     .badge-dot { width: 6px; height: 6px; background: #10B981; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.2)} }
@@ -49,10 +50,12 @@
       font-weight: 900; letter-spacing: -0.03em; margin-bottom: 0.75rem;
       background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 40%, #7C3AED 70%, #059669 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      animation: _fadeUp 0.6s 0.18s ease both;
     }
 
     .subtitle {
       font-size: 1.05rem; color: #6B7280; margin-bottom: 3rem; font-weight: 500;
+      animation: _fadeUp 0.55s 0.32s ease both;
     }
 
     .grid {
@@ -106,11 +109,20 @@
     .tile-todos    .tile-arrow { background: linear-gradient(135deg, #0284C7, #6366F1); color: white; }
     .tile:hover .tile-arrow { transform: translateX(3px); }
 
-    .footer { margin-top: 3rem; font-size: 0.78rem; color: #9CA3AF; font-weight: 500; }
+    .anim-card { animation: _fadeUp 0.55s ease both; animation-play-state: paused; }
+
+    .footer { margin-top: 3rem; font-size: 0.78rem; color: #9CA3AF; font-weight: 500; animation: _fadeIn 0.5s 0.85s ease both; }
 
     @media (min-width: 600px) {
       .grid { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* ── Animations ── */
+    @keyframes _fadeUp  { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes _fadeIn  { from { opacity:0; } to { opacity:1; } }
+    @keyframes _scaleIn { from { opacity:0; transform:scale(0.93); } to { opacity:1; transform:scale(1); } }
+    @keyframes _float   { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}}
 
     /* ── Theme toggle button ── */
     .theme-btn {
@@ -125,6 +137,7 @@
       font-family: inherit;
     }
     .theme-btn:hover { transform: scale(1.12); box-shadow: 0 4px 18px rgba(0,0,0,0.16); }
+    .theme-btn:active { transform: scale(0.9); }
     [data-theme="dark"] .theme-btn {
       background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10);
       box-shadow: 0 2px 12px rgba(0,0,0,0.40);
@@ -158,19 +171,19 @@
     <p class="subtitle">Your data, beautifully organised.</p>
 
     <div class="grid">
-      <a class="tile tile-expenses" href="/expenses/">
+      <a class="tile tile-expenses anim-card" href="/expenses/" style="animation-delay:0.45s">
         <div class="tile-icon-wrap">💰</div>
         <span class="tile-name">Expenses</span>
         <span class="tile-desc">Track and visualise your spending with charts and breakdowns</span>
         <span class="tile-arrow">→</span>
       </a>
-      <a class="tile tile-habits" href="/habits/">
+      <a class="tile tile-habits anim-card" href="/habits/" style="animation-delay:0.55s">
         <div class="tile-icon-wrap">✅</div>
         <span class="tile-name">Habits</span>
         <span class="tile-desc">Daily habit streaks, scores and completion heatmaps</span>
         <span class="tile-arrow">→</span>
       </a>
-      <a class="tile tile-todos" href="/todos/">
+      <a class="tile tile-todos anim-card" href="/todos/" style="animation-delay:0.65s">
         <div class="tile-icon-wrap">🎯</div>
         <span class="tile-name">Jira Todos</span>
         <span class="tile-desc">Create and track Jira issues from your TODO project</span>
@@ -192,6 +205,16 @@
       localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
       if (btn) btn.textContent = dark ? '🌙' : '☀️';
     };
+  })();
+
+  // Scroll-triggered entrance
+  (function(){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.style.animationPlayState='running'; io.unobserve(e.target); }
+      });
+    },{threshold:0.08});
+    document.querySelectorAll('.anim-card').forEach(function(el){ io.observe(el); });
   })();
 </script>
 </body>

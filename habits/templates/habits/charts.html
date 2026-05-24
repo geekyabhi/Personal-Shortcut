@@ -32,8 +32,8 @@
       position: fixed; border-radius: 50%;
       filter: blur(90px); z-index: 0; pointer-events: none;
     }
-    .orb-1 { width: 480px; height: 480px; background: rgba(5,150,105,0.12); top: -160px; right: -100px; }
-    .orb-2 { width: 420px; height: 420px; background: rgba(8,145,178,0.09); bottom: -160px; left: -100px; }
+    .orb-1 { width: 480px; height: 480px; background: rgba(5,150,105,0.12); top: -160px; right: -100px; animation: _float 9s ease-in-out infinite; }
+    .orb-2 { width: 420px; height: 420px; background: rgba(8,145,178,0.09); bottom: -160px; left: -100px; animation: _float 11s ease-in-out infinite 2s; }
 
     .container { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; }
 
@@ -44,6 +44,7 @@
       border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
       padding: 0.35rem; width: fit-content;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      animation: _fadeIn 0.4s ease both;
     }
     nav a {
       padding: 0.4rem 1rem; border-radius: 100px; font-size: 0.85rem;
@@ -58,6 +59,7 @@
       letter-spacing: -0.03em; margin-bottom: 1.75rem;
       background: var(--grad);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      animation: _fadeUp 0.5s 0.1s ease both;
     }
 
     /* Cards */
@@ -68,7 +70,14 @@
       border-radius: 20px; padding: 1.5rem;
       margin-bottom: 1.25rem;
       box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      animation: _fadeUp 0.5s ease both; animation-play-state: paused;
     }
+    .card:nth-child(1){animation-delay:0.05s}
+    .card:nth-child(2){animation-delay:0.15s}
+    .card:nth-child(3){animation-delay:0.25s}
+    .card:nth-child(4){animation-delay:0.35s}
+    .card:nth-child(5){animation-delay:0.45s}
+    .card:nth-child(6){animation-delay:0.55s}
 
     h2 {
       font-size: 1rem; font-weight: 700; margin-bottom: 1rem;
@@ -125,7 +134,9 @@
       -webkit-tap-highlight-color: transparent;
     }
     .btn-load:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(5,150,105,0.4); }
+    .btn-load:active { transform: scale(0.97); }
     .btn-load:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+    button:active, .btn-primary:active, .btn-ghost:active { transform: scale(0.97); }
 
     /* Spinner */
     .spinner-wrap { display: none; text-align: center; padding: 1.5rem 0; }
@@ -241,6 +252,14 @@
       background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
     }
     [data-theme="dark"] .error-box { background: rgba(239,68,68,0.10); }
+
+    /* ── Animations ── */
+    @keyframes _fadeUp  { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes _fadeIn  { from { opacity:0; } to { opacity:1; } }
+    @keyframes _scaleIn { from { opacity:0; transform:scale(0.93); } to { opacity:1; transform:scale(1); } }
+    @keyframes _slideLeft { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes _float   { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}}
   </style>
   <script>
     (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
@@ -593,6 +612,16 @@
       if (btn) btn.textContent = dark ? '🌙' : '☀️';
     };
   })();
+</script>
+<script>
+(function(){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.style.animationPlayState='running'; io.unobserve(e.target); }
+    });
+  },{threshold:0.08});
+  document.querySelectorAll('.card').forEach(function(el){ io.observe(el); });
+})();
 </script>
 </body>
 </html>
