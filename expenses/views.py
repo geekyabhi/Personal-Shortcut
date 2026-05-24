@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import time
@@ -764,12 +765,46 @@ def _row_to_entry(row):
         src = srcs[0] if srcs else ""
     date_val = ((props.get("Date") or {}).get("date") or {}).get("start", "")[:10]
     return {
+        "page_id": row.get("id", ""),
         "title": _extract_title(props),
         "amount": round(amount, 2),
         "date": date_val,
         "categories": cats,
         "source": src,
     }
+
+
+def _detect_title_prop(rows):
+    """Return the name of the title-type property from the first available row."""
+    for row in rows:
+        for key, val in row.get("properties", {}).items():
+            if isinstance(val, dict) and val.get("type") == "title":
+                return key
+    return "Name"
+
+
+def _detect_source_type(rows):
+    """Return 'select' or 'multi_select' based on how Source is stored."""
+    for row in rows:
+        src = (row.get("properties") or {}).get("Source") or {}
+        t = src.get("type")
+        if t in ("select", "multi_select"):
+            return t
+    return "select"
+
+
+def _build_page_properties(name, amount, date_str, categories, source, title_prop, source_type):
+    props = {
+        title_prop: {"title": [{"text": {"content": name}}]},
+        "Amount": {"number": float(amount)},
+        "Date": {"date": {"start": date_str}},
+        "Category": {"multi_select": [{"name": c} for c in categories]},
+    }
+    if source_type == "multi_select":
+        props["Source"] = {"multi_select": [{"name": source}] if source else []}
+    else:
+        props["Source"] = {"select": {"name": source} if source else None}
+    return props
 
 
 class ExpensesInsightsView(View):
@@ -1026,6 +1061,101 @@ class ExpensesHeatmapView(View):
             "cache_ts":    cache_ts,
             "from_cache":  from_cache,
         })
+
+
+class ExpensesCreateView(View):
+    def post(self, request):
+        token = os.environ.get("NOTION_TOKEN")
+        db_id = os.environ.get("NOTION_EXPENSES_DB_ID")
+        if not token or not db_id:
+            return JsonResponse({"error": "NOTION_TOKEN and NOTION_EXPENSES_DB_ID must be set"}, status=500)
+
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        name       = (data.get("name") or "").strip()
+        amount     = data.get("amount")
+        date_str   = (data.get("date") or "").strip()
+        categories = [c for c in (data.get("categories") or []) if c]
+        source     = (data.get("source") or "").strip()
+
+        if not name:
+            return JsonResponse({"error": "Name is required"}, status=400)
+        if amount is None:
+            return JsonResponse({"error": "Amount is required"}, status=400)
+        if not date_str:
+            return JsonResponse({"error": "Date is required"}, status=400)
+
+        cached_rows = _rows_cache.get("rows") or []
+        title_prop  = _detect_title_prop(cached_rows)
+        source_type = _detect_source_type(cached_rows)
+
+        properties = _build_page_properties(name, amount, date_str, categories, source, title_prop, source_type)
+
+        try:
+            resp = requests.post(
+                "https://api.notion.com/v1/pages",
+                headers=_notion_headers(token),
+                json={"parent": {"database_id": db_id}, "properties": properties},
+                timeout=15,
+            )
+            resp.raise_for_status()
+        except requests.HTTPError as exc:
+            return JsonResponse({"error": f"Notion API error: {exc}", "detail": exc.response.text if exc.response else ""}, status=502)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Network error: {exc}"}, status=502)
+
+        _rows_cache["ts"] = 0.0  # bust cache
+        return JsonResponse({"ok": True, "page_id": resp.json().get("id")}, status=201)
+
+
+class ExpensesUpdateView(View):
+    def patch(self, request, page_id):
+        token = os.environ.get("NOTION_TOKEN")
+        if not token:
+            return JsonResponse({"error": "NOTION_TOKEN must be set"}, status=500)
+
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        name       = (data.get("name") or "").strip()
+        amount     = data.get("amount")
+        date_str   = (data.get("date") or "").strip()
+        categories = [c for c in (data.get("categories") or []) if c]
+        source     = (data.get("source") or "").strip()
+
+        if not name:
+            return JsonResponse({"error": "Name is required"}, status=400)
+        if amount is None:
+            return JsonResponse({"error": "Amount is required"}, status=400)
+        if not date_str:
+            return JsonResponse({"error": "Date is required"}, status=400)
+
+        cached_rows = _rows_cache.get("rows") or []
+        title_prop  = _detect_title_prop(cached_rows)
+        source_type = _detect_source_type(cached_rows)
+
+        properties = _build_page_properties(name, amount, date_str, categories, source, title_prop, source_type)
+
+        try:
+            resp = requests.patch(
+                f"https://api.notion.com/v1/pages/{page_id}",
+                headers=_notion_headers(token),
+                json={"properties": properties},
+                timeout=15,
+            )
+            resp.raise_for_status()
+        except requests.HTTPError as exc:
+            return JsonResponse({"error": f"Notion API error: {exc}", "detail": exc.response.text if exc.response else ""}, status=502)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Network error: {exc}"}, status=502)
+
+        _rows_cache["ts"] = 0.0  # bust cache
+        return JsonResponse({"ok": True})
 
 
 class DashboardView(View):
