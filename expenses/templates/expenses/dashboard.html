@@ -506,12 +506,14 @@
     .ef-btn-save:disabled { opacity: 0.55; cursor: not-allowed; }
     .ef-error { font-size: 0.78rem; color: #EF4444; margin-top: 0.5rem; display: none; }
     .expense-edit-btn {
-      background: none; border: none; cursor: pointer; color: #9CA3AF;
-      font-size: 0.8rem; padding: 0.15rem 0.4rem; border-radius: 6px;
-      font-family: inherit; transition: color 0.15s, background 0.15s;
+      cursor: pointer; font-size: 0.72rem; font-weight: 600;
+      padding: 0.2rem 0.55rem; border-radius: 6px; font-family: inherit;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+      background: transparent; border: 1.5px solid #E5E7EB; color: #6B7280;
     }
-    .expense-edit-btn:hover { color: #4F46E5; background: #EEF2FF; }
-    .expense-del-btn:hover  { color: #EF4444 !important; background: #FEF2F2 !important; }
+    .expense-edit-btn:hover { color: #4F46E5; background: #EEF2FF; border-color: #C7D2FE; }
+    .expense-del-btn        { border-color: #FECACA !important; color: #EF4444 !important; }
+    .expense-del-btn:hover  { background: #FEF2F2 !important; border-color: #FCA5A5 !important; }
     [data-theme="dark"] .ef-box { background: #1B1B28; }
     [data-theme="dark"] .ef-title { color: #F9FAFB; }
     [data-theme="dark"] .ef-field label { color: #6B7280; }
@@ -523,9 +525,10 @@
     [data-theme="dark"] .ef-pill.on { background: rgba(99,102,241,0.18); border-color: #6366F1; color: #818CF8; }
     [data-theme="dark"] .ef-btn-cancel { border-color: rgba(255,255,255,0.12); color: #9CA3AF; }
     [data-theme="dark"] .ef-btn-cancel:hover { background: rgba(255,255,255,0.06); }
-    [data-theme="dark"] .expense-edit-btn { color: #6B7280; }
-    [data-theme="dark"] .expense-edit-btn:hover { color: #818CF8; background: rgba(99,102,241,0.15); }
-    [data-theme="dark"] .expense-del-btn:hover  { color: #F87171 !important; background: rgba(239,68,68,0.12) !important; }
+    [data-theme="dark"] .expense-edit-btn { color: #6B7280; border-color: rgba(255,255,255,0.12); }
+    [data-theme="dark"] .expense-edit-btn:hover { color: #818CF8; background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.35); }
+    [data-theme="dark"] .expense-del-btn        { border-color: rgba(239,68,68,0.35) !important; color: #F87171 !important; }
+    [data-theme="dark"] .expense-del-btn:hover  { background: rgba(239,68,68,0.12) !important; }
   </style>
   <script>
     (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
@@ -724,7 +727,7 @@
     <!-- ─── SECTION 3: BROWSE ────────────────────────────────────── -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2rem;">
       <div class="section-heading" style="margin-top:0;cursor:default;user-select:none;" onclick="_titleClick()"><span>📋</span> Browse Expenses</div>
-      <button class="ef-btn-save" style="flex:none;padding:0.45rem 1rem;font-size:0.82rem;" onclick="_efOpen(null)">+ Add Expense</button>
+      <button class="btn-primary" onclick="_efOpen(null)" style="padding:0.45rem 1.1rem;font-size:0.85rem;">+ Add Expense</button>
     </div>
 
     <div class="card">
@@ -1528,6 +1531,7 @@
 
   // Auto-fetch on page load with default filters
   fetchAll();
+  fetchList(1);
 
   /* ── Theme toggle ── */
   (function() {
