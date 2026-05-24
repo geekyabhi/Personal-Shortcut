@@ -662,11 +662,15 @@
         </div>
         <div>
           <label for="b-category">Category</label>
-          <input type="text" id="b-category" placeholder="e.g. Food, Travel" />
+          <select id="b-category">
+            <option value="">All Categories</option>
+          </select>
         </div>
         <div>
           <label for="b-source">Source</label>
-          <input type="text" id="b-source" placeholder="e.g. Credit Card" />
+          <select id="b-source">
+            <option value="">All Sources</option>
+          </select>
         </div>
         <div>
           <label for="b-min">Min Amount</label>
@@ -1241,6 +1245,23 @@
     el.textContent = msg;
     el.style.display = "block";
   }
+
+  // Populate category/source dropdowns from all-time data
+  (async function populateFilterDropdowns() {
+    try {
+      const res  = await fetch("/expenses/insights/?period=all");
+      if (!res.ok) return;
+      const data = await res.json();
+      const catSel = document.getElementById("b-category");
+      const srcSel = document.getElementById("b-source");
+      (data.by_category || []).forEach(c => {
+        const o = document.createElement("option"); o.value = c.name; o.textContent = c.name; catSel.appendChild(o);
+      });
+      (data.by_source || []).forEach(s => {
+        const o = document.createElement("option"); o.value = s.name; o.textContent = s.name; srcSel.appendChild(o);
+      });
+    } catch {}
+  })();
 
   // Auto-fetch on page load with default filters
   fetchAll();
