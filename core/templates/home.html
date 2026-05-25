@@ -136,7 +136,7 @@
     .right-panel {
       flex: 1; overflow-y: auto;
       padding: 2.5rem 2.5rem 2.5rem 2.5rem;
-      display: flex; flex-direction: column; gap: 1rem;
+      display: flex; flex-direction: column; gap: 1.1rem;
     }
     .right-panel::-webkit-scrollbar { width: 4px; }
     .right-panel::-webkit-scrollbar-track { background: transparent; }
@@ -152,13 +152,14 @@
     .tile {
       background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
-      padding: 1.35rem 1.5rem;
+      padding: 1.75rem 1.75rem;
       text-decoration: none; color: #111827;
       box-shadow: 0 2px 16px rgba(0,0,0,0.06);
       transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-      display: flex; align-items: center; gap: 1.1rem;
+      display: flex; align-items: center; gap: 1.25rem;
       position: relative; overflow: hidden;
       animation: _fadeUp 0.5s ease both; animation-play-state: paused;
+      flex-shrink: 0;
     }
     .tile::after {
       content: ''; position: absolute; inset: 0; opacity: 0;
@@ -173,8 +174,8 @@
     .tile:hover::after { opacity: 1; }
 
     .tile-icon-wrap {
-      width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+      width: 56px; height: 56px; border-radius: 16px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 1.65rem;
     }
     .tile-expenses .tile-icon-wrap { background: linear-gradient(135deg, #EEF2FF, #E0E7FF); }
     .tile-habits   .tile-icon-wrap { background: linear-gradient(135deg, #ECFDF5, #D1FAE5); }
@@ -183,8 +184,8 @@
     .tile-blogs    .tile-icon-wrap { background: linear-gradient(135deg, #F5F3FF, #EEF2FF); }
 
     .tile-text { flex: 1; min-width: 0; text-align: left; }
-    .tile-name { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.2rem; }
-    .tile-desc { font-size: 0.8rem; color: #9CA3AF; line-height: 1.45; font-weight: 400; }
+    .tile-name { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.3rem; }
+    .tile-desc { font-size: 0.82rem; color: #9CA3AF; line-height: 1.5; font-weight: 400; }
 
     .tile-arrow {
       width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
