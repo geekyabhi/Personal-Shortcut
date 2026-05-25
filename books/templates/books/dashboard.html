@@ -42,6 +42,16 @@
     nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(5,150,105,0.35); }
     nav a:not(.active):hover { background: rgba(5,150,105,0.07); color: var(--accent); }
 
+    /* Drive link */
+    .drive-link {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.15rem 0.55rem; border-radius: 100px; font-size: 0.68rem; font-weight: 600;
+      background: rgba(8,145,178,0.10); color: #0891B2;
+      border: 1px solid rgba(8,145,178,0.20); text-decoration: none;
+      transition: all 0.18s; white-space: nowrap;
+    }
+    .drive-link:hover { background: linear-gradient(135deg,#059669,#0891B2); color:#fff; border-color:transparent; }
+
     h1 {
       font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 900; letter-spacing: -0.03em;
       margin-bottom: 1.5rem; background: var(--grad);
@@ -327,6 +337,7 @@
     <nav>
       <a href="/">← Home</a>
       <a href="/books/" class="active">📚 Books</a>
+      <a href="/books/charts/">📊 Charts</a>
     </nav>
 
     <h1>📚 My Reading List</h1>
@@ -462,12 +473,22 @@
     list.innerHTML = slice.map(b => {
       const authors = b.author.slice(0,2).join(', ') + (b.author.length > 2 ? ' +' + (b.author.length-2) : '');
       const genres  = b.genre.slice(0,3);
+      const driveLinks = [...(b.soft_copy||[]), ...(b.key_points||[])].filter(f => f.url);
+      const driveHtml = driveLinks.length
+        ? driveLinks.map(f => {
+            const isGdrive = f.url.includes('drive.google') || f.url.includes('docs.google');
+            const icon = isGdrive ? '🔗' : '📄';
+            const label = isGdrive ? 'Drive' : f.name.split('.').pop().toUpperCase();
+            return `<a class="drive-link" href="${f.url}" target="_blank" rel="noopener">${icon} ${label}</a>`;
+          }).join('')
+        : '';
       return `<div class="book-row">
         <div class="book-icon">${_bookIcon(b.genre)}</div>
         <div class="book-info">
           <div class="book-name" title="${b.name.replace(/"/g,'&quot;')}">${b.name || '—'}</div>
           <div class="book-meta">${authors || 'Unknown author'}</div>
           ${genres.length ? '<div class="genre-tags" style="margin-top:0.35rem;">' + genres.map(g=>`<span class="genre-tag">${g}</span>`).join('') + '</div>' : ''}
+          ${driveHtml ? `<div style="margin-top:0.4rem;display:flex;gap:0.35rem;flex-wrap:wrap;">${driveHtml}</div>` : ''}
         </div>
         <div class="book-right"><span class="${_statusClass(b.status)}">${b.status || 'Unknown'}</span></div>
       </div>`;

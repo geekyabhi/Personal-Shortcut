@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Books — Charts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:   #059669;
+      --accent-2: #0891B2;
+      --grad:     linear-gradient(135deg, #059669, #0891B2);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F5F4FA; color: #111827;
+      min-height: 100vh; padding: 1.25rem 0.75rem; position: relative;
+    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
+    .orb-1 { width: 450px; height: 450px; background: rgba(5,150,105,0.10); top: -120px; right: -80px; animation: _float 9s ease-in-out infinite; }
+    .orb-2 { width: 350px; height: 350px; background: rgba(8,145,178,0.08); bottom: -100px; left: -80px; animation: _float 11s ease-in-out infinite 2s; }
+
+    .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
+
+    nav {
+      display: inline-flex; gap: 0.2rem; flex-wrap: wrap;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+      margin-bottom: 2rem; animation: _fadeIn 0.5s ease both;
+    }
+    nav a {
+      padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem;
+      font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280;
+    }
+    nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(5,150,105,0.35); }
+    nav a:not(.active):hover { background: rgba(5,150,105,0.07); color: var(--accent); }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 900; letter-spacing: -0.03em;
+      margin-bottom: 1.5rem; background: var(--grad);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      animation: _fadeUp 0.55s 0.1s ease both;
+    }
+
+    .section-heading {
+      font-size: 1rem; font-weight: 800; color: #374151; margin: 1.75rem 0 0.75rem;
+      letter-spacing: -0.02em; display: flex; align-items: center; gap: 0.5rem;
+      animation: _slideLeft 0.45s ease both; animation-play-state: paused;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
+      padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      animation: _fadeUp 0.5s ease both; animation-play-state: paused;
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
+
+    /* Stats row */
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; margin-bottom: 1.5rem; }
+    .stat-card {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 16px;
+      padding: 1rem 1.25rem; box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+      animation: _fadeUp 0.5s ease both; animation-play-state: paused;
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,0.10); }
+    .stat-label { font-size: 0.7rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; }
+    .stat-value { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.04em; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-sub   { font-size: 0.75rem; color: #6B7280; font-weight: 500; margin-top: 0.1rem; }
+
+    /* Period selector */
+    .period-tabs {
+      display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem;
+    }
+    .period-tab {
+      padding: 0.35rem 0.9rem; border-radius: 100px; font-size: 0.8rem; font-weight: 600;
+      background: rgba(5,150,105,0.07); color: var(--accent);
+      border: 1px solid rgba(5,150,105,0.18);
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
+    }
+    .period-tab.active, .period-tab:hover { background: var(--grad); color: #fff; border-color: transparent; }
+    .period-tab:active { transform: scale(0.97); }
+
+    /* Chart canvases */
+    .chart-wrap-tall { position: relative; height: 320px; }
+    .chart-wrap      { position: relative; height: 260px; }
+    .chart-grid-2 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+
+    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; color: #374151; }
+
+    /* Theme toggle */
+    .theme-btn {
+      position: fixed; top: 0.75rem; right: 0.75rem; z-index: 300;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(255,255,255,0.82); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.88); box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+      cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s, box-shadow 0.2s; font-family: inherit;
+    }
+    .theme-btn:hover { transform: scale(1.12); }
+    .theme-btn:active { transform: scale(0.9); }
+
+    /* Cache bar */
+    .cache-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(5,150,105,0.06); border: 1px solid rgba(5,150,105,0.12);
+      border-radius: 12px; padding: 0.6rem 1rem; margin-bottom: 1.5rem; gap: 0.75rem;
+    }
+    .cache-bar span { font-size: 0.78rem; color: #6B7280; font-weight: 500; }
+    .cache-bar button {
+      padding: 0.3rem 0.85rem; font-size: 0.75rem; font-weight: 600;
+      background: rgba(5,150,105,0.1); color: var(--accent);
+      border: 1px solid rgba(5,150,105,0.2); border-radius: 100px;
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
+    }
+    .cache-bar button:hover { background: var(--grad); color: #fff; border-color: transparent; }
+    .cache-bar button:active { transform: scale(0.97); }
+
+    /* Responsive */
+    @media (min-width: 640px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+      .chart-grid-2 { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Keyframes */
+    @keyframes _fadeUp   { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+    @keyframes _fadeIn   { from { opacity:0; } to { opacity:1; } }
+    @keyframes _slideLeft{ from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:none; } }
+    @keyframes _float    { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
+    @media (prefers-reduced-motion:reduce){ *, *::before, *::after { animation-duration:0.01ms!important; transition-duration:0.01ms!important; } }
+
+    /* Dark mode */
+    [data-theme="dark"] body { background: #0F0F14; color: #F9FAFB; }
+    [data-theme="dark"] .card, [data-theme="dark"] .stat-card {
+      background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.30);
+    }
+    [data-theme="dark"] .card:hover, [data-theme="dark"] .stat-card:hover { box-shadow: 0 20px 60px rgba(0,0,0,0.50); }
+    [data-theme="dark"] nav { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] .section-heading { color: #E5E7EB; }
+    [data-theme="dark"] .stat-label { color: #6B7280; }
+    [data-theme="dark"] h2 { color: #E5E7EB; }
+    [data-theme="dark"] .cache-bar { background: rgba(5,150,105,0.08); border-color: rgba(5,150,105,0.15); }
+    [data-theme="dark"] .theme-btn { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); }
+  </style>
+  <script>
+    (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
+  </script>
+</head>
+<body>
+  <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="container">
+    <nav>
+      <a href="/">← Home</a>
+      <a href="/books/">📚 Books</a>
+      <a href="/books/charts/" class="active">📊 Charts</a>
+    </nav>
+
+    <h1>📊 Reading Analytics</h1>
+
+    <div class="cache-bar">
+      <span id="cache-info">Loading…</span>
+      <button onclick="reload()">↺ Refresh</button>
+    </div>
+
+    <!-- Key stats -->
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Books</div><div class="stat-value" id="s-total">—</div></div>
+      <div class="stat-card"><div class="stat-label">Finished</div><div class="stat-value" id="s-finished">—</div></div>
+      <div class="stat-card"><div class="stat-label">This Year</div><div class="stat-value" id="s-this-year">—</div><div class="stat-sub" id="s-this-year-sub"></div></div>
+      <div class="stat-card"><div class="stat-label">Currently Reading</div><div class="stat-value" id="s-reading">—</div></div>
+    </div>
+
+    <!-- Books read over time -->
+    <div class="section-heading"><span>📅</span> Books Read Over Time</div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+        <h2 style="margin:0;">Finished books timeline</h2>
+        <div class="period-tabs">
+          <button class="period-tab" onclick="switchPeriod('monthly')">Monthly</button>
+          <button class="period-tab active" onclick="switchPeriod('yearly')">Yearly</button>
+        </div>
+      </div>
+      <div class="chart-wrap-tall"><canvas id="chart-timeline"></canvas></div>
+    </div>
+
+    <!-- Status + Genre row -->
+    <div class="section-heading"><span>🔍</span> Breakdown</div>
+    <div class="chart-grid-2">
+      <div class="card">
+        <h2>Status distribution</h2>
+        <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Top genres</h2>
+        <div class="chart-wrap"><canvas id="chart-genres"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Top authors -->
+    <div class="section-heading"><span>✍️</span> Top Authors</div>
+    <div class="card">
+      <h2>Most books by author</h2>
+      <div class="chart-wrap"><canvas id="chart-authors"></canvas></div>
+    </div>
+
+    <!-- Added to library per year -->
+    <div class="section-heading"><span>📥</span> Library Growth</div>
+    <div class="card">
+      <h2>Books added per year</h2>
+      <div class="chart-wrap"><canvas id="chart-added"></canvas></div>
+    </div>
+  </div>
+
+<script>
+  /* ── Theme toggle ── */
+  (function(){
+    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+    window._toggleTheme = function(){
+      const dark = !isDark();
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
+      if (btn) btn.textContent = dark ? '🌙' : '☀️';
+      if (_chartData) buildAll(_chartData);
+    };
+  })();
+
+  const STATUS_COLORS = {
+    Reading:      'rgba(5,150,105,0.80)',
+    Finished:     'rgba(99,102,241,0.80)',
+    'To Read':    'rgba(245,158,11,0.80)',
+    Queued:       'rgba(8,145,178,0.80)',
+    Blocked:      'rgba(239,68,68,0.80)',
+    Unorganized:  'rgba(156,163,175,0.70)',
+  };
+
+  let _charts = {};
+  let _chartData = null;
+  let _period = 'yearly';
+
+  function _dc() {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+      color:     dark ? '#9CA3AF' : '#6B7280',
+      gridColor: dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+    };
+  }
+
+  function _destroy(id) { if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; } }
+
+  function switchPeriod(p) {
+    _period = p;
+    document.querySelectorAll('.period-tab').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === p));
+    if (_chartData) buildTimeline(_chartData);
+  }
+
+  /* ── Build charts ── */
+  function buildTimeline(d) {
+    _destroy('timeline');
+    const { color, gridColor } = _dc();
+
+    let labels, data, label;
+    if (_period === 'yearly') {
+      const yr = d.finished_by_year;
+      labels = Object.keys(yr);
+      data   = Object.values(yr);
+      label  = 'Books finished';
+    } else {
+      labels = Object.keys(d.monthly_finished);
+      data   = Object.values(d.monthly_finished);
+      label  = 'Books finished';
+    }
+
+    _charts.timeline = new Chart(document.getElementById('chart-timeline'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label,
+          data,
+          backgroundColor: 'rgba(5,150,105,0.75)',
+          borderColor: '#059669',
+          borderWidth: 1.5,
+          borderRadius: 7,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} book${ctx.parsed.y !== 1 ? 's' : ''} finished` } }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color, font: { family:'Inter', size:11 } } },
+          y: { grid: { color: gridColor }, ticks: { color, font: { family:'Inter', size:11 }, stepSize: 1 }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function buildAll(d) {
+    const { color, gridColor } = _dc();
+
+    buildTimeline(d);
+
+    // Status donut
+    _destroy('status');
+    const sLabels = Object.keys(d.status_counts);
+    _charts.status = new Chart(document.getElementById('chart-status'), {
+      type: 'doughnut',
+      data: {
+        labels: sLabels,
+        datasets: [{
+          data: sLabels.map(k => d.status_counts[k]),
+          backgroundColor: sLabels.map(k => STATUS_COLORS[k] || STATUS_COLORS.Unorganized),
+          borderWidth: 2, borderColor: 'transparent', hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '65%',
+        plugins: {
+          legend: { position: 'bottom', labels: { color, font: { family:'Inter', size:11, weight:'600' }, padding:12, boxWidth:12, borderRadius:6 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} books` } }
+        }
+      }
+    });
+
+    // Genre horizontal bar
+    _destroy('genres');
+    const genres = d.top_genres.slice(0, 15);
+    _charts.genres = new Chart(document.getElementById('chart-genres'), {
+      type: 'bar',
+      data: {
+        labels: genres.map(g => g[0]),
+        datasets: [{
+          data: genres.map(g => g[1]),
+          backgroundColor: genres.map((_, i) => `hsla(${160+i*12},60%,${45+i*1.5}%,0.8)`),
+          borderRadius: 6, borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x} books` } } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color, font: { family:'Inter', size:11 } }, beginAtZero: true },
+          y: { grid: { display: false }, ticks: { color, font: { family:'Inter', size:10, weight:'600' } } }
+        }
+      }
+    });
+
+    // Top authors horizontal bar
+    _destroy('authors');
+    const authors = d.top_authors;
+    _charts.authors = new Chart(document.getElementById('chart-authors'), {
+      type: 'bar',
+      data: {
+        labels: authors.map(a => a[0]),
+        datasets: [{
+          data: authors.map(a => a[1]),
+          backgroundColor: authors.map((_, i) => `hsla(${200+i*15},65%,${48+i}%,0.8)`),
+          borderRadius: 6, borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x} books` } } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color, font: { family:'Inter', size:11 } }, beginAtZero: true },
+          y: { grid: { display: false }, ticks: { color, font: { family:'Inter', size:10, weight:'600' } } }
+        }
+      }
+    });
+
+    // Added per year bar
+    _destroy('added');
+    const addYears = Object.keys(d.added_by_year);
+    _charts.added = new Chart(document.getElementById('chart-added'), {
+      type: 'bar',
+      data: {
+        labels: addYears,
+        datasets: [{
+          label: 'Books added',
+          data: Object.values(d.added_by_year),
+          backgroundColor: 'rgba(8,145,178,0.75)',
+          borderColor: '#0891B2',
+          borderWidth: 1.5,
+          borderRadius: 7, borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} books added` } }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color, font: { family:'Inter', size:11 } } },
+          y: { grid: { color: gridColor }, ticks: { color, font: { family:'Inter', size:11 }, stepSize: 1 }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function loadData() {
+    document.getElementById('cache-info').textContent = 'Loading…';
+    fetch('/books/charts/data/')
+      .then(r => r.json())
+      .then(d => {
+        _chartData = d;
+
+        // Stats
+        document.getElementById('s-total').textContent    = d.total;
+        document.getElementById('s-finished').textContent = d.status_counts['Finished'] || 0;
+        document.getElementById('s-reading').textContent  = d.status_counts['Reading']  || 0;
+        const thisYear = new Date().getFullYear().toString();
+        const ty = d.finished_by_year[thisYear] || 0;
+        document.getElementById('s-this-year').textContent = ty;
+        document.getElementById('s-this-year-sub').textContent = ty === 1 ? 'book finished' : 'books finished';
+
+        document.getElementById('cache-info').textContent =
+          `${d.total} books · ${d.status_counts['Finished'] || 0} finished`;
+
+        buildAll(d);
+      });
+  }
+
+  function reload() {
+    fetch('/books/cache/bust/', {method:'POST'}).then(() => loadData());
+  }
+
+  /* ── Scroll animations ── */
+  (function(){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.style.animationPlayState='running'; io.unobserve(e.target); } });
+    },{threshold:0.06});
+    var delay = 0;
+    document.querySelectorAll('.card, .stat-card, .section-heading').forEach(function(el){
+      el.style.animationDelay = delay + 'ms'; delay = Math.min(delay+80,400); io.observe(el);
+    });
+  })();
+
+  loadData();
+</script>
+</body>
+</html>

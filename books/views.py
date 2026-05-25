@@ -1,6 +1,7 @@
 import json
 import os
 import time
+from collections import defaultdict
 
 import requests
 from django.http import JsonResponse
@@ -47,18 +48,28 @@ def _fetch_all_books():
     return rows
 
 
+def _extract_files(props, key):
+    items = props.get(key, {}).get("files", [])
+    result = []
+    for f in items:
+        name = f.get("name", key)
+        if f.get("type") == "external":
+            result.append({"name": name, "url": f["external"]["url"], "hosted": False})
+        elif f.get("type") == "file":
+            result.append({"name": name, "url": f["file"]["url"], "hosted": True})
+    return result
+
+
 def _row_to_book(row):
     props = row.get("properties", {})
 
     def title(key):
-        items = props.get(key, {}).get("title", [])
-        return "".join(t.get("plain_text", "") for t in items).strip()
+        return "".join(t.get("plain_text", "") for t in props.get(key, {}).get("title", [])).strip()
 
     def rich(key):
-        items = props.get(key, {}).get("rich_text", [])
-        return "".join(t.get("plain_text", "") for t in items).strip()
+        return "".join(t.get("plain_text", "") for t in props.get(key, {}).get("rich_text", [])).strip()
 
-    def select(key):
+    def sel(key):
         s = props.get(key, {}).get("select")
         return s["name"] if s else ""
 
@@ -68,11 +79,15 @@ def _row_to_book(row):
     return {
         "page_id": row.get("id", ""),
         "name": title("Book Name"),
-        "status": select("Status"),
+        "status": sel("Status"),
         "genre": multi("Genre"),
         "author": multi("Author"),
         "summary": rich("Summary"),
-        "summary_status": select("Summary Status"),
+        "summary_status": sel("Summary Status"),
+        "soft_copy": _extract_files(props, "Soft Copy"),
+        "key_points": _extract_files(props, "Key Points"),
+        "created_time": row.get("created_time", ""),
+        "last_edited_time": row.get("last_edited_time", ""),
     }
 
 
@@ -82,6 +97,11 @@ STATUS_ORDER = ["Reading", "To Read", "Queued", "Finished", "Blocked", "Unorgani
 class BooksDashboardView(View):
     def get(self, request):
         return render(request, "books/dashboard.html")
+
+
+class BooksChartsView(View):
+    def get(self, request):
+        return render(request, "books/charts.html")
 
 
 class BooksListView(View):
@@ -103,7 +123,10 @@ class BooksListView(View):
         if search:
             books = [b for b in books if search in b["name"].lower()]
 
-        books.sort(key=lambda b: (STATUS_ORDER.index(b["status"]) if b["status"] in STATUS_ORDER else 99, b["name"].lower()))
+        books.sort(key=lambda b: (
+            STATUS_ORDER.index(b["status"]) if b["status"] in STATUS_ORDER else 99,
+            b["name"].lower(),
+        ))
 
         return JsonResponse({"books": books, "total": len(books)})
 
@@ -116,8 +139,7 @@ class BooksStatsView(View):
         status_counts = {}
         genre_counts = {}
         author_counts = {}
-        all_genres = set()
-        all_authors = set()
+        all_genres, all_authors = set(), set()
 
         for b in books:
             s = b["status"] or "Unknown"
@@ -140,6 +162,67 @@ class BooksStatsView(View):
             "top_authors": top_authors,
             "all_genres": sorted(all_genres),
             "all_authors": sorted(all_authors),
+        })
+
+
+class BooksChartsDataView(View):
+    def get(self, request):
+        rows = _fetch_all_books()
+        books = [_row_to_book(r) for r in rows]
+
+        status_counts = {}
+        genre_counts = {}
+        author_counts = {}
+        finished_by_year = defaultdict(int)
+        finished_by_month = defaultdict(int)   # "YYYY-MM"
+        added_by_year = defaultdict(int)
+
+        for b in books:
+            s = b["status"] or "Unknown"
+            status_counts[s] = status_counts.get(s, 0) + 1
+
+            for g in b["genre"]:
+                genre_counts[g] = genre_counts.get(g, 0) + 1
+            for a in b["author"]:
+                author_counts[a] = author_counts.get(a, 0) + 1
+
+            # Books added to DB by year
+            if b["created_time"]:
+                yr = b["created_time"][:4]
+                added_by_year[yr] += 1
+
+            # Finished books — use last_edited_time as proxy for finish date
+            if b["status"] == "Finished" and b["last_edited_time"]:
+                yr = b["last_edited_time"][:4]
+                ym = b["last_edited_time"][:7]
+                finished_by_year[yr] += 1
+                finished_by_month[ym] += 1
+
+        # Fill missing months for last 24 months
+        import datetime
+        today = datetime.date.today()
+        all_months = []
+        for i in range(23, -1, -1):
+            m = today.month - i
+            y = today.year
+            while m <= 0:
+                m += 12
+                y -= 1
+            all_months.append(f"{y}-{m:02d}")
+
+        monthly_finished = {m: finished_by_month.get(m, 0) for m in all_months}
+
+        top_genres = sorted(genre_counts.items(), key=lambda x: -x[1])[:15]
+        top_authors = sorted(author_counts.items(), key=lambda x: -x[1])[:10]
+
+        return JsonResponse({
+            "total": len(books),
+            "status_counts": status_counts,
+            "top_genres": top_genres,
+            "top_authors": top_authors,
+            "finished_by_year": dict(sorted(finished_by_year.items())),
+            "monthly_finished": monthly_finished,
+            "added_by_year": dict(sorted(added_by_year.items())),
         })
 
 
