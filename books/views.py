@@ -280,6 +280,22 @@ class BooksCreateView(View):
         return JsonResponse({"ok": True, "page_id": resp.json().get("id", "")})
 
 
+def _get_drive_service():
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+    from googleapiclient.discovery import build
+
+    creds = Credentials(
+        token=None,
+        refresh_token=GOOGLE_REFRESH_TOKEN,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+    )
+    creds.refresh(Request())
+    return build("drive", "v3", credentials=creds, cache_discovery=False)
+
+
 class BooksDriveFilesView(View):
     def get(self, request):
         if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN]):
@@ -290,24 +306,11 @@ class BooksDriveFilesView(View):
             return JsonResponse({"configured": True, "files": _drive_cache["files"]})
 
         try:
-            from google.oauth2.credentials import Credentials
-            from google.auth.transport.requests import Request
-            from googleapiclient.discovery import build
-        except ImportError:
-            return JsonResponse({"configured": False, "files": [], "error": "google-api-python-client not installed"})
+            service = _get_drive_service()
+        except Exception as e:
+            return JsonResponse({"configured": False, "files": [], "error": str(e)})
 
-        creds = Credentials(
-            token=None,
-            refresh_token=GOOGLE_REFRESH_TOKEN,
-            token_uri="https://oauth2.googleapis.com/token",
-            client_id=GOOGLE_CLIENT_ID,
-            client_secret=GOOGLE_CLIENT_SECRET,
-        )
-        creds.refresh(Request())
-
-        service = build("drive", "v3", credentials=creds, cache_discovery=False)
         files, page_token = [], None
-
         while True:
             resp = service.files().list(
                 q="(mimeType='application/pdf' or mimeType='application/vnd.google-apps.document') and trashed=false",
@@ -333,6 +336,48 @@ class BooksDriveFilesView(View):
         _drive_cache["ts"] = now
 
         return JsonResponse({"configured": True, "files": files})
+
+
+class BooksDriveUploadView(View):
+    def post(self, request):
+        if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN]):
+            return JsonResponse({"error": "Google Drive not configured"}, status=400)
+
+        upload = request.FILES.get("file")
+        if not upload:
+            return JsonResponse({"error": "No file provided"}, status=400)
+
+        # 50 MB limit
+        if upload.size > 50 * 1024 * 1024:
+            return JsonResponse({"error": "File too large (max 50 MB)"}, status=400)
+
+        try:
+            import io
+            from googleapiclient.http import MediaIoBaseUpload
+
+            service = _get_drive_service()
+            media = MediaIoBaseUpload(
+                io.BytesIO(upload.read()),
+                mimetype=upload.content_type or "application/octet-stream",
+                resumable=False,
+            )
+            drive_file = service.files().create(
+                body={"name": upload.name},
+                media_body=media,
+                fields="id, name, webViewLink",
+            ).execute()
+
+            # Bust Drive file list cache so new file appears in picker
+            _drive_cache["ts"] = 0.0
+
+            return JsonResponse({
+                "ok": True,
+                "name": drive_file.get("name", upload.name),
+                "url": drive_file.get("webViewLink", ""),
+                "id": drive_file.get("id", ""),
+            })
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=502)
 
 
 class BooksCacheView(View):

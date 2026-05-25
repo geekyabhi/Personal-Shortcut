@@ -260,9 +260,34 @@
       border: 1px solid rgba(5,150,105,0.20);
     }
     .drive-empty { padding: 0.9rem; text-align: center; color: #9CA3AF; font-size: 0.83rem; }
+
+    /* Upload button */
+    .drive-upload-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.55rem; }
+    .drive-upload-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.4rem 0.9rem; border-radius: 100px; font-size: 0.78rem; font-weight: 600;
+      background: rgba(8,145,178,0.08); color: #0891B2;
+      border: 1.5px solid rgba(8,145,178,0.20);
+      cursor: pointer; font-family: inherit; transition: all 0.2s; white-space: nowrap;
+    }
+    .drive-upload-btn:hover { background: linear-gradient(135deg,#059669,#0891B2); color:#fff; border-color:transparent; }
+    .drive-upload-btn:active { transform: scale(0.97); }
+    .drive-upload-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .drive-upload-progress {
+      flex: 1; height: 6px; border-radius: 100px; background: #E5E7EB;
+      overflow: hidden; display: none;
+    }
+    .drive-upload-progress-bar {
+      height: 100%; border-radius: 100px;
+      background: linear-gradient(90deg, #059669, #0891B2);
+      width: 0%; transition: width 0.3s ease;
+    }
+    .drive-upload-status { font-size: 0.75rem; color: #6B7280; font-weight: 500; }
+
     [data-theme="dark"] .drive-dropdown { background: #1E1E2C; border-color: rgba(255,255,255,0.10); }
     [data-theme="dark"] .drive-opt:hover { background: rgba(5,150,105,0.12); }
     [data-theme="dark"] .drive-opt-name { color: #F9FAFB; }
+    [data-theme="dark"] .drive-upload-progress { background: rgba(255,255,255,0.10); }
 
     .ab-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
     .ab-actions button { flex: 1; padding: 0.8rem; border-radius: 100px; font-size: 0.93rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.2s; border: none; }
@@ -373,6 +398,15 @@
           <div id="drive-selected-badge" style="display:none;"></div>
         </div>
         <input type="hidden" id="ab-drive-url">
+        <!-- Upload to Drive -->
+        <div class="drive-upload-row">
+          <input type="file" id="ab-drive-file" accept=".pdf,.doc,.docx" style="display:none" onchange="_driveUpload()">
+          <button type="button" class="drive-upload-btn" id="drive-upload-btn" onclick="document.getElementById('ab-drive-file').click()">
+            ⬆ Upload PDF to Drive
+          </button>
+          <div class="drive-upload-progress" id="drive-upload-progress"><div class="drive-upload-progress-bar" id="drive-upload-bar"></div></div>
+          <span class="drive-upload-status" id="drive-upload-status"></span>
+        </div>
       </div>
       <div class="ab-field">
         <label>Summary (optional)</label>
@@ -742,6 +776,61 @@
     badge.style.display = 'block';
   }
 
+  function _driveUpload() {
+    const fileInput = document.getElementById('ab-drive-file');
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const btn      = document.getElementById('drive-upload-btn');
+    const progress = document.getElementById('drive-upload-progress');
+    const bar      = document.getElementById('drive-upload-bar');
+    const status   = document.getElementById('drive-upload-status');
+
+    btn.disabled = true;
+    progress.style.display = 'block';
+    status.textContent = 'Uploading…';
+    bar.style.width = '15%';
+
+    const form = new FormData();
+    form.append('file', file);
+
+    // Simulate progress while waiting (XHR doesn't expose upload progress for small files)
+    let pct = 15;
+    const ticker = setInterval(() => { pct = Math.min(pct + 8, 85); bar.style.width = pct + '%'; }, 300);
+
+    fetch('/books/drive/upload/', { method: 'POST', body: form })
+      .then(r => r.json())
+      .then(data => {
+        clearInterval(ticker);
+        if (data.error) {
+          bar.style.width = '0%';
+          status.textContent = '✕ ' + data.error;
+          status.style.color = '#DC2626';
+          return;
+        }
+        bar.style.width = '100%';
+        status.textContent = '✓ Uploaded';
+        status.style.color = '#059669';
+        // Auto-select the uploaded file in the picker
+        document.getElementById('ab-drive-url').value = data.url;
+        document.getElementById('ab-drive-search').value = data.name;
+        document.getElementById('drive-clear').classList.add('visible');
+        document.getElementById('drive-dropdown').classList.remove('open');
+        const badge = document.getElementById('drive-selected-badge');
+        badge.innerHTML = `<span class="drive-selected-badge">🔗 ${data.name}</span>`;
+        badge.style.display = 'block';
+        // Refresh Drive file list cache
+        _driveLoaded = false; _driveFiles = null;
+        setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0%'; status.textContent = ''; }, 2000);
+      })
+      .catch(() => {
+        clearInterval(ticker);
+        status.textContent = '✕ Upload failed';
+        status.style.color = '#DC2626';
+      })
+      .finally(() => { btn.disabled = false; fileInput.value = ''; });
+  }
+
   function _driveClear() {
     document.getElementById('ab-drive-url').value = '';
     document.getElementById('ab-drive-search').value = '';
@@ -772,6 +861,9 @@
     document.getElementById('drive-clear').classList.remove('visible');
     document.getElementById('drive-selected-badge').style.display = 'none';
     document.getElementById('drive-dropdown').classList.remove('open');
+    document.getElementById('drive-upload-progress').style.display = 'none';
+    document.getElementById('drive-upload-bar').style.width = '0%';
+    document.getElementById('drive-upload-status').textContent = '';
     document.getElementById('ab-overlay').classList.add('open');
     setTimeout(() => document.getElementById('ab-name').focus(), 50);
     _driveLoadFiles();

@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     BooksCacheView, BooksChartsDataView, BooksChartsView,
     BooksCreateView, BooksDashboardView, BooksDriveFilesView,
-    BooksListView, BooksStatsView,
+    BooksDriveUploadView, BooksListView, BooksStatsView,
 )
 
 urlpatterns = [
@@ -13,5 +13,6 @@ urlpatterns = [
     path("stats/", BooksStatsView.as_view(), name="books-stats"),
     path("create/", BooksCreateView.as_view(), name="books-create"),
     path("drive/files/", BooksDriveFilesView.as_view(), name="books-drive-files"),
+    path("drive/upload/", BooksDriveUploadView.as_view(), name="books-drive-upload"),
     path("cache/bust/", BooksCacheView.as_view(), name="books-cache-bust"),
 ]
