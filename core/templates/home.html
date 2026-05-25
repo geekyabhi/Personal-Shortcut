@@ -113,9 +113,11 @@
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
     .clock-ms {
-      font-size: clamp(1.1rem, 2.5vw, 2rem); font-weight: 400;
-      color: #D1D5DB; font-variant-numeric: tabular-nums; line-height: 1;
-      align-self: flex-end; padding-bottom: 0.3em; letter-spacing: -0.02em;
+      font-size: clamp(1.1rem, 2.5vw, 2rem); font-weight: 700;
+      font-variant-numeric: tabular-nums; line-height: 1;
+      align-self: flex-end; padding-bottom: 0.3em; letter-spacing: -0.04em;
+      background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 45%, #7C3AED 80%, #059669 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
     .clock-date {
       font-size: clamp(0.95rem, 2vw, 1.2rem); font-weight: 500;
@@ -285,7 +287,7 @@
 
     <!-- ── RIGHT: scrollable sections ── -->
     <div class="right-panel">
-      <div class="right-heading">Sections</div>
+      <div class="right-heading">Your Space</div>
 
       <a class="tile tile-expenses" href="/expenses/" style="animation-delay:0.3s">
         <div class="tile-icon-wrap">💰</div>
