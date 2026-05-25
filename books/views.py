@@ -389,6 +389,74 @@ class BooksDriveUploadView(View):
             return JsonResponse({"error": str(e)}, status=502)
 
 
+class BooksUpdateView(View):
+    def patch(self, request, page_id):
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        properties = {}
+
+        if "name" in body:
+            name = body["name"].strip()
+            if not name:
+                return JsonResponse({"error": "Book name required"}, status=400)
+            properties["Book Name"] = {"title": [{"text": {"content": name}}]}
+
+        if "status" in body:
+            properties["Status"] = {"select": {"name": body["status"]}}
+
+        if "authors" in body:
+            properties["Author"] = {"multi_select": [{"name": a} for a in body["authors"]]}
+
+        if "genres" in body:
+            properties["Genre"] = {"multi_select": [{"name": g} for g in body["genres"]]}
+
+        if "summary" in body:
+            properties["Summary"] = {"rich_text": [{"text": {"content": body["summary"]}}]}
+
+        if "drive_url" in body:
+            if body["drive_url"].strip():
+                properties["Soft Copy"] = {
+                    "files": [{"type": "external", "name": "Google Drive", "external": {"url": body["drive_url"].strip()}}]
+                }
+            else:
+                properties["Soft Copy"] = {"files": []}
+
+        if not properties:
+            return JsonResponse({"error": "No fields to update"}, status=400)
+
+        resp = requests.patch(
+            f"https://api.notion.com/v1/pages/{page_id}",
+            headers=_headers(),
+            json={"properties": properties},
+            timeout=15,
+        )
+
+        if resp.status_code not in (200, 201):
+            return JsonResponse({"error": resp.text}, status=502)
+
+        _books_cache["ts"] = 0.0
+        return JsonResponse({"ok": True})
+
+
+class BooksDeleteView(View):
+    def post(self, request, page_id):
+        resp = requests.patch(
+            f"https://api.notion.com/v1/pages/{page_id}",
+            headers=_headers(),
+            json={"archived": True},
+            timeout=15,
+        )
+
+        if resp.status_code not in (200, 201):
+            return JsonResponse({"error": resp.text}, status=502)
+
+        _books_cache["ts"] = 0.0
+        return JsonResponse({"ok": True})
+
+
 class BooksCacheView(View):
     def post(self, request):
         _books_cache["ts"] = 0.0
