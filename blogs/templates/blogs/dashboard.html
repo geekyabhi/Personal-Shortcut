@@ -99,6 +99,43 @@
     .sort-label { font-size: 0.72rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
     .sort-row select { width: auto; padding: 0.32rem 2rem 0.32rem 0.8rem; font-size: 0.82rem; border-radius: 100px; }
 
+    /* View-toggle */
+    .view-toggle { display: flex; gap: 0.2rem; margin-left: auto; }
+    .view-btn { width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid rgba(124,58,237,0.20); background: rgba(124,58,237,0.06); color: #6B7280; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; transition: all 0.18s; font-family: inherit; }
+    .view-btn:hover { background: rgba(124,58,237,0.12); color: var(--accent); }
+    .view-btn.active { background: var(--grad); color: #fff; border-color: transparent; }
+    .view-btn:active { transform: scale(0.92); }
+
+    /* Grid view */
+    .blog-list.grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px,1fr)); gap: 1rem; flex-direction: unset; }
+    .blog-card { background: rgba(255,255,255,0.82); border: 1px solid rgba(255,255,255,0.9); border-radius: 18px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06); display: flex; flex-direction: column; transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease; }
+    .blog-card:hover { transform: translateY(-6px); box-shadow: 0 22px 54px rgba(0,0,0,0.14); }
+    .blog-card-stripe { height: 5px; background: var(--sg, linear-gradient(135deg,#9CA3AF,#D1D5DB)); }
+    .blog-card-body { flex: 1; padding: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .blog-card-top { display: flex; align-items: flex-start; justify-content: space-between; }
+    .blog-card-icon { font-size: 1.45rem; line-height: 1; }
+    .blog-card-topic { font-size: 0.87rem; font-weight: 700; color: #111827; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .blog-card-link { margin-top: auto; padding-top: 0.35rem; }
+    .blog-card-footer { padding: 0.55rem 0.9rem; border-top: 1px solid rgba(0,0,0,0.06); display: flex; justify-content: flex-end; gap: 0.35rem; }
+    [data-theme="dark"] .blog-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] .blog-card:hover { box-shadow: 0 22px 60px rgba(0,0,0,0.5); }
+    [data-theme="dark"] .blog-card-topic { color: #F9FAFB; }
+    [data-theme="dark"] .blog-card-footer { border-top-color: rgba(255,255,255,0.07); }
+
+    /* Compact view */
+    .blog-list.compact-view { gap: 0; }
+    .blog-compact { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.75rem; border-bottom: 1px solid rgba(0,0,0,0.05); transition: background 0.15s; }
+    .blog-compact:last-child { border-bottom: none; }
+    .blog-compact:hover { background: rgba(255,255,255,0.7); }
+    .bc-icon { font-size: 0.85rem; width: 20px; text-align: center; flex-shrink: 0; }
+    .bc-topic { flex: 1; font-size: 0.86rem; font-weight: 600; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .bc-link { display: inline-flex; align-items: center; font-size: 0.78rem; color: #7C3AED; text-decoration: none; flex-shrink: 0; padding: 0.1rem 0.35rem; border-radius: 6px; background: rgba(124,58,237,0.08); transition: background 0.15s; }
+    .bc-link:hover { background: rgba(124,58,237,0.18); }
+    .bc-acts { display: flex; gap: 0.2rem; flex-shrink: 0; }
+    [data-theme="dark"] .blog-compact { border-bottom-color: rgba(255,255,255,0.06); }
+    [data-theme="dark"] .blog-compact:hover { background: rgba(255,255,255,0.05); }
+    [data-theme="dark"] .bc-topic { color: #F9FAFB; }
+
     /* Blog list */
     .blog-list { display: flex; flex-direction: column; gap: 0.55rem; }
     .blog-row { display: flex; align-items: center; gap: 0.85rem; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 13px; padding: 0.8rem 1rem; transition: all 0.2s ease; animation: _fadeUp 0.3s ease both; }
@@ -327,6 +364,11 @@
               <option value="name-desc">Name Z→A</option>
               <option value="recent">Recently Added</option>
             </select>
+            <div class="view-toggle">
+              <button class="view-btn" data-view="list"    onclick="_setView('list')"    title="List">☰</button>
+              <button class="view-btn" data-view="grid"    onclick="_setView('grid')"    title="Grid">⊞</button>
+              <button class="view-btn" data-view="compact" onclick="_setView('compact')" title="Compact">≡</button>
+            </div>
           </div>
           <div class="card" style="padding:0.75rem;">
             <div id="read-list" class="blog-list"><div class="empty">Loading…</div></div>
@@ -383,6 +425,11 @@
               <option value="name-desc">Name Z→A</option>
               <option value="recent">Recently Added</option>
             </select>
+            <div class="view-toggle">
+              <button class="view-btn" data-view="list"    onclick="_setView('list')"    title="List">☰</button>
+              <button class="view-btn" data-view="grid"    onclick="_setView('grid')"    title="Grid">⊞</button>
+              <button class="view-btn" data-view="compact" onclick="_setView('compact')" title="Compact">≡</button>
+            </div>
           </div>
           <div class="card" style="padding:0.75rem;">
             <div id="write-list" class="blog-list"><div class="empty">Loading…</div></div>
@@ -408,12 +455,32 @@
   })();
 
   const PAGE_SIZE = 40;
+  let _viewMode = localStorage.getItem('ps_blogs_view') || 'list';
   let _rRaw = [], _rBooks = [], _rPage = 1, _rDebTimer = null, _rSort = 'status', _rLinkFilter = false;
   let _wRaw = [], _wBooks = [], _wPage = 1, _wDebTimer = null, _wSort = 'status';
-  let _rEditId = null, _wEditId = null, _delCtx = null; // {type, page_id, name}
+  let _rEditId = null, _wEditId = null, _delCtx = null;
 
   const READ_ORDER  = {Reading:0,'To Read':1,Read:2};
   const WRITE_ORDER = {Draft:0,'To Write':1,Written:2,Published:3};
+
+  const STATUS_GRAD_READ = {
+    Reading:  'linear-gradient(135deg,#059669,#0891B2)',
+    'To Read':'linear-gradient(135deg,#F59E0B,#EF4444)',
+    Read:     'linear-gradient(135deg,#7C3AED,#6366F1)',
+  };
+  const STATUS_GRAD_WRITE = {
+    'To Write': 'linear-gradient(135deg,#F59E0B,#EF4444)',
+    Draft:      'linear-gradient(135deg,#0891B2,#6366F1)',
+    Written:    'linear-gradient(135deg,#4F46E5,#7C3AED)',
+    Published:  'linear-gradient(135deg,#059669,#0891B2)',
+  };
+
+  function _setView(mode) {
+    _viewMode = mode;
+    localStorage.setItem('ps_blogs_view', mode);
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === mode));
+    _rRender(); _wRender();
+  }
 
   function _statusClass(s, type) {
     if (type === 'read') {
@@ -455,29 +522,72 @@
     return s;
   }
 
+  function _rRenderList(b) {
+    const urlHtml = b.url ? `<a class="blog-url-btn" href="${b.url}" target="_blank" rel="noopener">🔗 Open</a>` : '';
+    return `<div class="blog-row">
+      <div class="blog-icon">📖</div>
+      <div class="blog-info">
+        <div class="blog-topic" title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</div>
+        ${urlHtml}
+      </div>
+      <div class="blog-right">
+        <span class="${_statusClass(b.status,'read')}">${b.status||'?'}</span>
+        <div class="blog-actions">
+          <button class="btn-icon btn-edit" onclick="_rEdit('${b.page_id}')" title="Edit">✏</button>
+          <button class="btn-icon btn-delete" onclick="_dOpen('read','${b.page_id}','${b.topic.replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  function _rRenderCard(b) {
+    const sg = STATUS_GRAD_READ[b.status] || 'linear-gradient(135deg,#9CA3AF,#D1D5DB)';
+    const urlHtml = b.url ? `<a class="bc-link" href="${b.url}" target="_blank" rel="noopener">🔗 Open</a>` : '';
+    return `<div class="blog-card">
+      <div class="blog-card-stripe" style="--sg:${sg}"></div>
+      <div class="blog-card-body">
+        <div class="blog-card-top">
+          <span class="blog-card-icon">📖</span>
+          <span class="${_statusClass(b.status,'read')}">${b.status||'?'}</span>
+        </div>
+        <div class="blog-card-topic">${b.topic||'—'}</div>
+        <div class="blog-card-link">${urlHtml}</div>
+      </div>
+      <div class="blog-card-footer">
+        <button class="btn-icon btn-edit" onclick="_rEdit('${b.page_id}')" title="Edit">✏</button>
+        <button class="btn-icon btn-delete" onclick="_dOpen('read','${b.page_id}','${b.topic.replace(/'/g,"\\'")}')">🗑</button>
+      </div>
+    </div>`;
+  }
+  function _rRenderCompact(b) {
+    const urlHtml = b.url ? `<a class="bc-link" href="${b.url}" target="_blank" rel="noopener">🔗</a>` : '';
+    return `<div class="blog-compact">
+      <span class="bc-icon">📖</span>
+      <span class="bc-topic" title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</span>
+      <span class="${_statusClass(b.status,'read')}">${b.status||'?'}</span>
+      ${urlHtml}
+      <div class="bc-acts">
+        <button class="btn-icon btn-edit" onclick="_rEdit('${b.page_id}')" title="Edit">✏</button>
+        <button class="btn-icon btn-delete" onclick="_dOpen('read','${b.page_id}','${b.topic.replace(/'/g,"\\'")}')">🗑</button>
+      </div>
+    </div>`;
+  }
+
   function _rRender() {
     const list = document.getElementById('read-list');
     const pag  = document.getElementById('r-pagination');
     if (!_rBooks.length) { list.innerHTML='<div class="empty">No entries found.</div>'; pag.innerHTML=''; return; }
     const total = Math.ceil(_rBooks.length / PAGE_SIZE);
     const slice = _rBooks.slice((_rPage-1)*PAGE_SIZE, _rPage*PAGE_SIZE);
-    list.innerHTML = slice.map(b => {
-      const urlHtml = b.url ? `<a class="blog-url-btn" href="${b.url}" target="_blank" rel="noopener">🔗 Open</a>` : '';
-      return `<div class="blog-row">
-        <div class="blog-icon">📖</div>
-        <div class="blog-info">
-          <div class="blog-topic" title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</div>
-          ${urlHtml}
-        </div>
-        <div class="blog-right">
-          <span class="${_statusClass(b.status,'read')}">${b.status||'?'}</span>
-          <div class="blog-actions">
-            <button class="btn-icon btn-edit" onclick="_rEdit('${b.page_id}')" title="Edit">✏</button>
-            <button class="btn-icon btn-delete" onclick="_dOpen('read','${b.page_id}','${b.topic.replace(/'/g,"\\'")}')">🗑</button>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
+    if (_viewMode === 'grid') {
+      list.className = 'blog-list grid-view';
+      list.innerHTML = slice.map(_rRenderCard).join('');
+    } else if (_viewMode === 'compact') {
+      list.className = 'blog-list compact-view';
+      list.innerHTML = slice.map(_rRenderCompact).join('');
+    } else {
+      list.className = 'blog-list';
+      list.innerHTML = slice.map(_rRenderList).join('');
+    }
     if (total <= 1) { pag.innerHTML=''; return; }
     let h='';
     if (_rPage>1) h+=`<button class="page-btn" onclick="_rGoPage(${_rPage-1})">‹</button>`;
@@ -561,37 +671,80 @@
     return s;
   }
 
-  function _wRender() {
-    const list=document.getElementById('write-list');
-    const pag=document.getElementById('w-pagination');
-    if(!_wBooks.length){list.innerHTML='<div class="empty">No entries found.</div>';pag.innerHTML='';return;}
-    const total=Math.ceil(_wBooks.length/PAGE_SIZE);
-    const slice=_wBooks.slice((_wPage-1)*PAGE_SIZE,_wPage*PAGE_SIZE);
-    list.innerHTML=slice.map(b=>{
-      const urlHtml=b.url?`<a class="blog-url-btn" href="${b.url}" target="_blank" rel="noopener">🔗 Published</a>`:'';
-      return `<div class="blog-row">
-        <div class="blog-icon">✍️</div>
-        <div class="blog-info">
-          <div class="blog-topic" title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</div>
-          ${urlHtml}
+  function _wRenderList(b) {
+    const urlHtml = b.url ? `<a class="blog-url-btn" href="${b.url}" target="_blank" rel="noopener">🔗 Published</a>` : '';
+    return `<div class="blog-row">
+      <div class="blog-icon">✍️</div>
+      <div class="blog-info">
+        <div class="blog-topic" title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</div>
+        ${urlHtml}
+      </div>
+      <div class="blog-right">
+        <span class="${_statusClass(b.status,'write')}">${b.status||'?'}</span>
+        <div class="blog-actions">
+          <button class="btn-icon btn-edit" onclick="_wEdit('${b.page_id}')" title="Edit">✏</button>
+          <button class="btn-icon btn-delete" onclick="_dOpen('write','${b.page_id}','${b.topic.replace(/'/g,"\\'")}')">🗑</button>
         </div>
-        <div class="blog-right">
+      </div>
+    </div>`;
+  }
+  function _wRenderCard(b) {
+    const sg = STATUS_GRAD_WRITE[b.status] || 'linear-gradient(135deg,#9CA3AF,#D1D5DB)';
+    const urlHtml = b.url ? `<a class="bc-link" href="${b.url}" target="_blank" rel="noopener">🔗 Published</a>` : '';
+    return `<div class="blog-card">
+      <div class="blog-card-stripe" style="--sg:${sg}"></div>
+      <div class="blog-card-body">
+        <div class="blog-card-top">
+          <span class="blog-card-icon">✍️</span>
           <span class="${_statusClass(b.status,'write')}">${b.status||'?'}</span>
-          <div class="blog-actions">
-            <button class="btn-icon btn-edit" onclick="_wEdit('${b.page_id}')" title="Edit">✏</button>
-            <button class="btn-icon btn-delete" onclick="_dOpen('write','${b.page_id}','${b.topic.replace(/'/g,"\\'")}')">🗑</button>
-          </div>
         </div>
-      </div>`;
-    }).join('');
-    if(total<=1){pag.innerHTML='';return;}
+        <div class="blog-card-topic">${b.topic||'—'}</div>
+        <div class="blog-card-link">${urlHtml}</div>
+      </div>
+      <div class="blog-card-footer">
+        <button class="btn-icon btn-edit" onclick="_wEdit('${b.page_id}')" title="Edit">✏</button>
+        <button class="btn-icon btn-delete" onclick="_dOpen('write','${b.page_id}','${b.topic.replace(/'/g,"\\'")}')">🗑</button>
+      </div>
+    </div>`;
+  }
+  function _wRenderCompact(b) {
+    const urlHtml = b.url ? `<a class="bc-link" href="${b.url}" target="_blank" rel="noopener">🔗</a>` : '';
+    return `<div class="blog-compact">
+      <span class="bc-icon">✍️</span>
+      <span class="bc-topic" title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</span>
+      <span class="${_statusClass(b.status,'write')}">${b.status||'?'}</span>
+      ${urlHtml}
+      <div class="bc-acts">
+        <button class="btn-icon btn-edit" onclick="_wEdit('${b.page_id}')" title="Edit">✏</button>
+        <button class="btn-icon btn-delete" onclick="_dOpen('write','${b.page_id}','${b.topic.replace(/'/g,"\\'")}')">🗑</button>
+      </div>
+    </div>`;
+  }
+
+  function _wRender() {
+    const list = document.getElementById('write-list');
+    const pag  = document.getElementById('w-pagination');
+    if (!_wBooks.length) { list.innerHTML='<div class="empty">No entries found.</div>'; pag.innerHTML=''; return; }
+    const total = Math.ceil(_wBooks.length / PAGE_SIZE);
+    const slice = _wBooks.slice((_wPage-1)*PAGE_SIZE, _wPage*PAGE_SIZE);
+    if (_viewMode === 'grid') {
+      list.className = 'blog-list grid-view';
+      list.innerHTML = slice.map(_wRenderCard).join('');
+    } else if (_viewMode === 'compact') {
+      list.className = 'blog-list compact-view';
+      list.innerHTML = slice.map(_wRenderCompact).join('');
+    } else {
+      list.className = 'blog-list';
+      list.innerHTML = slice.map(_wRenderList).join('');
+    }
+    if (total <= 1) { pag.innerHTML=''; return; }
     let h='';
-    if(_wPage>1) h+=`<button class="page-btn" onclick="_wGoPage(${_wPage-1})">‹</button>`;
-    for(let i=Math.max(1,_wPage-2);i<=Math.min(total,_wPage+2);i++) h+=`<button class="page-btn${i===_wPage?' active':''}" onclick="_wGoPage(${i})">${i}</button>`;
-    if(_wPage<total) h+=`<button class="page-btn" onclick="_wGoPage(${_wPage+1})">›</button>`;
+    if (_wPage>1) h+=`<button class="page-btn" onclick="_wGoPage(${_wPage-1})">‹</button>`;
+    for (let i=Math.max(1,_wPage-2);i<=Math.min(total,_wPage+2);i++) h+=`<button class="page-btn${i===_wPage?' active':''}" onclick="_wGoPage(${i})">${i}</button>`;
+    if (_wPage<total) h+=`<button class="page-btn" onclick="_wGoPage(${_wPage+1})">›</button>`;
     pag.innerHTML=h;
   }
-  function _wGoPage(p){_wPage=p;_wRender();}
+  function _wGoPage(p) { _wPage=p; _wRender(); }
 
   function _wApply() {
     const status=document.getElementById('w-status-filter').value;
@@ -696,6 +849,7 @@
   })();
 
   /* ── Init ── */
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === _viewMode));
   loadStats();
   _rApply();
   _wApply();
