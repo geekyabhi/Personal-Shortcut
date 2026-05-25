@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — Personal Shortcut</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F5F4FA;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+      position: relative; overflow: hidden;
+    }
+
+    .orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(90px); z-index: 0; pointer-events: none;
+    }
+    .orb-1 { width: 500px; height: 500px; background: rgba(99,102,241,0.13); top: -150px; right: -100px; animation: _float 9s ease-in-out infinite; }
+    .orb-2 { width: 450px; height: 450px; background: rgba(5,150,105,0.10); bottom: -150px; left: -100px; animation: _float 11s ease-in-out infinite 2s; }
+    .orb-3 { width: 300px; height: 300px; background: rgba(139,92,246,0.08); top: 50%; left: 50%; transform: translate(-50%,-50%); animation: _float 13s ease-in-out infinite 4s; }
+
+    .card {
+      position: relative; z-index: 1;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.92);
+      border-radius: 28px;
+      padding: 2.5rem 2.25rem;
+      width: 100%; max-width: 400px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+      text-align: center;
+      animation: _fadeUp 0.55s ease both;
+    }
+
+    .logo {
+      font-size: 2.8rem;
+      margin-bottom: 0.5rem;
+      animation: _fadeUp 0.5s 0.1s ease both;
+    }
+
+    h1 {
+      font-size: 1.55rem; font-weight: 900; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 40%, #7C3AED 70%, #059669 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.35rem;
+      animation: _fadeUp 0.5s 0.18s ease both;
+    }
+
+    .subtitle {
+      font-size: 0.88rem; color: #6B7280; font-weight: 500; margin-bottom: 2rem;
+      animation: _fadeUp 0.5s 0.26s ease both;
+    }
+
+    .divider {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      animation: _fadeUp 0.5s 0.32s ease both;
+    }
+    .divider-line { flex: 1; height: 1px; background: rgba(0,0,0,0.08); }
+    .divider-text { font-size: 0.72rem; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .google-btn-wrap {
+      display: flex; justify-content: center;
+      animation: _fadeUp 0.5s 0.38s ease both;
+    }
+
+    .error-msg {
+      display: none;
+      background: rgba(220,38,38,0.08);
+      border: 1px solid rgba(220,38,38,0.20);
+      border-radius: 10px;
+      padding: 0.65rem 1rem;
+      font-size: 0.82rem; font-weight: 600; color: #DC2626;
+      margin-top: 1rem;
+    }
+
+    .footer {
+      margin-top: 2rem;
+      font-size: 0.72rem; color: #9CA3AF; font-weight: 500;
+      animation: _fadeIn 0.5s 0.55s ease both;
+    }
+
+    @keyframes _fadeUp  { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+    @keyframes _fadeIn  { from { opacity:0; } to { opacity:1; } }
+    @keyframes _float   { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
+    @media (prefers-reduced-motion:reduce){ *, *::before, *::after { animation-duration:0.01ms!important; } }
+
+    /* Dark mode */
+    [data-theme="dark"] body { background: #0F0F14; }
+    [data-theme="dark"] .card { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); box-shadow: 0 8px 40px rgba(0,0,0,0.40); }
+    [data-theme="dark"] .subtitle { color: #9CA3AF; }
+    [data-theme="dark"] .footer { color: #6B7280; }
+    [data-theme="dark"] .divider-line { background: rgba(255,255,255,0.08); }
+  </style>
+  <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="card">
+    <div class="logo">⚡</div>
+    <h1>Personal Shortcut</h1>
+    <p class="subtitle">Sign in to access your dashboard</p>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span class="divider-text">Continue with</span>
+      <div class="divider-line"></div>
+    </div>
+
+    <div class="google-btn-wrap" id="google-btn"></div>
+    <p class="error-msg" id="err-msg"></p>
+
+    <p class="footer">Only authorised accounts can sign in.</p>
+  </div>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    function handleCredentialResponse(response) {
+      const errEl = document.getElementById('err-msg');
+      errEl.style.display = 'none';
+
+      fetch('/auth/callback/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential }),
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) {
+          window.location.href = '/';
+        } else {
+          errEl.textContent = d.error || 'Sign-in failed. Try again.';
+          errEl.style.display = 'block';
+        }
+      })
+      .catch(() => {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.style.display = 'block';
+      });
+    }
+
+    window.onload = function() {
+      google.accounts.id.initialize({
+        client_id: '{{ client_id }}',
+        callback: handleCredentialResponse,
+        auto_select: true,
+      });
+      google.accounts.id.renderButton(
+        document.getElementById('google-btn'),
+        { theme: 'outline', size: 'large', shape: 'pill', text: 'signin_with', width: 280 }
+      );
+      google.accounts.id.prompt();
+    };
+  </script>
+</body>
+</html>

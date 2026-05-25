@@ -130,9 +130,12 @@
     @keyframes _float   { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
     @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}}
 
-    /* ── Theme toggle button ── */
-    .theme-btn {
+    /* ── Top-right controls ── */
+    .top-bar {
       position: fixed; top: 0.75rem; right: 0.75rem; z-index: 300;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .theme-btn {
       width: 34px; height: 34px; border-radius: 50%;
       background: rgba(255,255,255,0.82); backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,0.88);
@@ -144,9 +147,34 @@
     }
     .theme-btn:hover { transform: scale(1.12); box-shadow: 0 4px 18px rgba(0,0,0,0.16); }
     .theme-btn:active { transform: scale(0.9); }
+
+    .user-chip {
+      display: flex; align-items: center; gap: 0.45rem;
+      background: rgba(255,255,255,0.82); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.88);
+      border-radius: 100px; padding: 0.25rem 0.75rem 0.25rem 0.3rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      font-size: 0.78rem; font-weight: 600; color: #374151;
+      text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .user-chip:hover { transform: scale(1.03); box-shadow: 0 4px 18px rgba(0,0,0,0.13); }
+    .user-chip img {
+      width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
+    }
+    .user-chip-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: linear-gradient(135deg, #4F46E5, #7C3AED);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 800; color: #fff;
+    }
+
     [data-theme="dark"] .theme-btn {
       background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10);
       box-shadow: 0 2px 12px rgba(0,0,0,0.40);
+    }
+    [data-theme="dark"] .user-chip {
+      background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10);
+      color: #E5E7EB;
     }
 
     /* ── Dark mode ── */
@@ -168,7 +196,20 @@
   </script>
 </head>
 <body>
-  <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
+  <div class="top-bar">
+    {% if user.picture %}
+    <a class="user-chip" href="/auth/logout/" title="Sign out">
+      <img src="{{ user.picture }}" alt="{{ user.name }}">
+      {{ user.name|truncatechars:14 }}
+    </a>
+    {% else %}
+    <a class="user-chip" href="/auth/logout/" title="Sign out">
+      <div class="user-chip-avatar">{{ user.name|first|upper }}</div>
+      {{ user.name|truncatechars:14 }}
+    </a>
+    {% endif %}
+    <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
+  </div>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
   <div class="orb orb-3"></div>
