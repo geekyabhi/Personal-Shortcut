@@ -224,6 +224,46 @@
     }
     .pill.selected { background: var(--grad); color: #fff; border-color: transparent; }
 
+    /* Drive file picker */
+    .drive-picker { position: relative; }
+    .drive-search-wrap { position: relative; }
+    .drive-search-wrap input { padding-right: 2.2rem; }
+    .drive-clear {
+      position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: #9CA3AF; font-size: 1rem;
+      display: none; padding: 0; line-height: 1;
+    }
+    .drive-clear.visible { display: block; }
+    .drive-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 600;
+      background: #fff; border: 1.5px solid #E5E7EB; border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12); max-height: 220px; overflow-y: auto;
+      display: none;
+    }
+    .drive-dropdown.open { display: block; }
+    .drive-opt {
+      display: flex; align-items: center; gap: 0.55rem;
+      padding: 0.6rem 0.9rem; cursor: pointer; font-size: 0.87rem;
+      font-weight: 500; transition: background 0.15s; border-radius: 0;
+    }
+    .drive-opt:first-child { border-radius: 12px 12px 0 0; }
+    .drive-opt:last-child  { border-radius: 0 0 12px 12px; }
+    .drive-opt:only-child  { border-radius: 12px; }
+    .drive-opt:hover { background: rgba(5,150,105,0.07); }
+    .drive-opt.selected { background: rgba(5,150,105,0.12); font-weight: 700; }
+    .drive-opt-icon { font-size: 1rem; flex-shrink: 0; }
+    .drive-opt-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .drive-selected-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.4rem;
+      padding: 0.25rem 0.7rem; border-radius: 100px; font-size: 0.75rem; font-weight: 600;
+      background: rgba(5,150,105,0.10); color: var(--accent);
+      border: 1px solid rgba(5,150,105,0.20);
+    }
+    .drive-empty { padding: 0.9rem; text-align: center; color: #9CA3AF; font-size: 0.83rem; }
+    [data-theme="dark"] .drive-dropdown { background: #1E1E2C; border-color: rgba(255,255,255,0.10); }
+    [data-theme="dark"] .drive-opt:hover { background: rgba(5,150,105,0.12); }
+    [data-theme="dark"] .drive-opt-name { color: #F9FAFB; }
+
     .ab-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
     .ab-actions button { flex: 1; padding: 0.8rem; border-radius: 100px; font-size: 0.93rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.2s; border: none; }
     .ab-save { background: var(--grad); color: #fff; box-shadow: 0 4px 15px rgba(5,150,105,0.35); }
@@ -322,8 +362,17 @@
         <div class="pill-grid" id="ab-genre-pills"></div>
       </div>
       <div class="ab-field">
-        <label>Google Drive Link (optional)</label>
-        <input type="text" id="ab-drive" placeholder="https://drive.google.com/…">
+        <label>Google Drive File (optional)</label>
+        <div class="drive-picker" id="drive-picker">
+          <div class="drive-search-wrap">
+            <input type="text" id="ab-drive-search" placeholder="Search your Drive files…" autocomplete="off"
+              oninput="_driveFilter()" onfocus="_driveOpen()" onkeydown="_driveKey(event)">
+            <button class="drive-clear" id="drive-clear" onclick="_driveClear()" title="Clear">✕</button>
+          </div>
+          <div class="drive-dropdown" id="drive-dropdown"></div>
+          <div id="drive-selected-badge" style="display:none;"></div>
+        </div>
+        <input type="hidden" id="ab-drive-url">
       </div>
       <div class="ab-field">
         <label>Summary (optional)</label>
@@ -617,17 +666,115 @@
       });
   }
 
+  /* ── Drive file picker ── */
+  let _driveFiles = null, _driveLoaded = false, _driveHighlight = -1;
+
+  function _driveLoadFiles() {
+    if (_driveLoaded) return;
+    _driveLoaded = true;
+    const dd = document.getElementById('drive-dropdown');
+    dd.innerHTML = '<div class="drive-empty">Loading Drive files…</div>';
+    dd.classList.add('open');
+    fetch('/books/drive/files/')
+      .then(r => r.json())
+      .then(d => {
+        if (!d.configured) {
+          _driveFiles = null;
+          dd.innerHTML = '<div class="drive-empty">Drive not connected.<br><small>Run <code>python manage.py authorize_google</code></small></div>';
+          return;
+        }
+        _driveFiles = d.files;
+        _driveRenderList(d.files);
+      })
+      .catch(() => { dd.innerHTML = '<div class="drive-empty">Could not load Drive files.</div>'; });
+  }
+
+  function _driveRenderList(files) {
+    const dd = document.getElementById('drive-dropdown');
+    if (!files.length) { dd.innerHTML = '<div class="drive-empty">No PDF or Doc files found.</div>'; return; }
+    dd.innerHTML = files.map((f, i) =>
+      `<div class="drive-opt" data-idx="${i}" data-url="${f.url}" data-name="${f.name.replace(/"/g,'&quot;')}" onclick="_driveSelect(${i})">
+        <span class="drive-opt-icon">${f.type === 'pdf' ? '📄' : '📝'}</span>
+        <span class="drive-opt-name">${f.name}</span>
+      </div>`
+    ).join('');
+  }
+
+  function _driveFilter() {
+    const q = document.getElementById('ab-drive-search').value.toLowerCase();
+    document.getElementById('drive-clear').classList.toggle('visible', q.length > 0);
+    if (!_driveFiles) return;
+    const filtered = q ? _driveFiles.filter(f => f.name.toLowerCase().includes(q)) : _driveFiles;
+    _driveHighlight = -1;
+    document.getElementById('drive-dropdown').classList.add('open');
+    _driveRenderList(filtered);
+  }
+
+  function _driveOpen() {
+    _driveLoadFiles();
+    if (_driveFiles) {
+      _driveRenderList(_driveFiles);
+      document.getElementById('drive-dropdown').classList.add('open');
+    }
+  }
+
+  function _driveKey(e) {
+    const dd = document.getElementById('drive-dropdown');
+    const opts = dd.querySelectorAll('.drive-opt');
+    if (e.key === 'ArrowDown') { e.preventDefault(); _driveHighlight = Math.min(_driveHighlight+1, opts.length-1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); _driveHighlight = Math.max(_driveHighlight-1, 0); }
+    else if (e.key === 'Enter' && _driveHighlight >= 0) { e.preventDefault(); opts[_driveHighlight]?.click(); return; }
+    else if (e.key === 'Escape') { dd.classList.remove('open'); return; }
+    opts.forEach((o,i) => o.classList.toggle('selected', i === _driveHighlight));
+    if (_driveHighlight >= 0) opts[_driveHighlight]?.scrollIntoView({block:'nearest'});
+  }
+
+  function _driveSelect(idx) {
+    const f = (_driveFiles || [])[idx] || document.querySelector(`.drive-opt[data-idx="${idx}"]`)?.dataset;
+    const url  = f?.url  || document.querySelector(`.drive-opt[data-idx="${idx}"]`)?.dataset.url || '';
+    const name = f?.name || document.querySelector(`.drive-opt[data-idx="${idx}"]`)?.dataset.name || '';
+    document.getElementById('ab-drive-url').value = url;
+    document.getElementById('ab-drive-search').value = name;
+    document.getElementById('drive-clear').classList.add('visible');
+    document.getElementById('drive-dropdown').classList.remove('open');
+    const badge = document.getElementById('drive-selected-badge');
+    badge.innerHTML = `<span class="drive-selected-badge">🔗 ${name}</span>`;
+    badge.style.display = 'block';
+  }
+
+  function _driveClear() {
+    document.getElementById('ab-drive-url').value = '';
+    document.getElementById('ab-drive-search').value = '';
+    document.getElementById('drive-clear').classList.remove('visible');
+    document.getElementById('drive-selected-badge').style.display = 'none';
+    document.getElementById('drive-dropdown').classList.remove('open');
+    if (_driveFiles) _driveRenderList(_driveFiles);
+    document.getElementById('ab-drive-search').focus();
+  }
+
+  // Close dropdown on outside click
+  document.addEventListener('click', e => {
+    if (!document.getElementById('drive-picker')?.contains(e.target))
+      document.getElementById('drive-dropdown')?.classList.remove('open');
+  });
+
   /* ── Add Book Modal ── */
   function _abOpen() {
     document.getElementById('ab-name').value = '';
     document.getElementById('ab-status').value = 'To Read';
     document.getElementById('ab-author').value = '';
-    document.getElementById('ab-drive').value = '';
     document.getElementById('ab-summary').value = '';
     document.getElementById('ab-error').style.display = 'none';
     document.querySelectorAll('#ab-genre-pills .pill').forEach(p => p.classList.remove('selected'));
+    // Reset Drive picker
+    document.getElementById('ab-drive-url').value = '';
+    document.getElementById('ab-drive-search').value = '';
+    document.getElementById('drive-clear').classList.remove('visible');
+    document.getElementById('drive-selected-badge').style.display = 'none';
+    document.getElementById('drive-dropdown').classList.remove('open');
     document.getElementById('ab-overlay').classList.add('open');
     setTimeout(() => document.getElementById('ab-name').focus(), 50);
+    _driveLoadFiles();
   }
 
   function _abClose(e) {
@@ -639,7 +786,7 @@
     const name      = document.getElementById('ab-name').value.trim();
     const status    = document.getElementById('ab-status').value;
     const author    = document.getElementById('ab-author').value;
-    const drive_url = document.getElementById('ab-drive').value.trim();
+    const drive_url = document.getElementById('ab-drive-url').value.trim();
     const summary   = document.getElementById('ab-summary').value.trim();
     const genres    = [...document.querySelectorAll('#ab-genre-pills .pill.selected')].map(p => p.textContent);
     const errEl   = document.getElementById('ab-error');

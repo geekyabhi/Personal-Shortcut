@@ -8,6 +8,13 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
 
+GOOGLE_CLIENT_ID     = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REFRESH_TOKEN = os.environ.get("GOOGLE_REFRESH_TOKEN", "")
+
+_drive_cache: dict = {"files": None, "ts": 0.0}
+DRIVE_CACHE_TTL = 300
+
 
 NOTION_VERSION = "2022-06-28"
 BOOKS_DB_ID = os.environ.get("NOTION_BOOKS_DB_ID", "752ac6b0-8422-42dc-9439-b60a411f3c3d")
@@ -271,6 +278,61 @@ class BooksCreateView(View):
 
         _books_cache["ts"] = 0.0
         return JsonResponse({"ok": True, "page_id": resp.json().get("id", "")})
+
+
+class BooksDriveFilesView(View):
+    def get(self, request):
+        if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN]):
+            return JsonResponse({"configured": False, "files": []})
+
+        now = time.time()
+        if _drive_cache["files"] is not None and now - _drive_cache["ts"] < DRIVE_CACHE_TTL:
+            return JsonResponse({"configured": True, "files": _drive_cache["files"]})
+
+        try:
+            from google.oauth2.credentials import Credentials
+            from google.auth.transport.requests import Request
+            from googleapiclient.discovery import build
+        except ImportError:
+            return JsonResponse({"configured": False, "files": [], "error": "google-api-python-client not installed"})
+
+        creds = Credentials(
+            token=None,
+            refresh_token=GOOGLE_REFRESH_TOKEN,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=GOOGLE_CLIENT_ID,
+            client_secret=GOOGLE_CLIENT_SECRET,
+        )
+        creds.refresh(Request())
+
+        service = build("drive", "v3", credentials=creds, cache_discovery=False)
+        files, page_token = [], None
+
+        while True:
+            resp = service.files().list(
+                q="(mimeType='application/pdf' or mimeType='application/vnd.google-apps.document') and trashed=false",
+                fields="nextPageToken, files(id, name, webViewLink, mimeType)",
+                pageSize=100,
+                pageToken=page_token,
+            ).execute()
+
+            for f in resp.get("files", []):
+                files.append({
+                    "id": f["id"],
+                    "name": f.get("name", "Untitled"),
+                    "url": f.get("webViewLink", ""),
+                    "type": "pdf" if f["mimeType"] == "application/pdf" else "doc",
+                })
+
+            page_token = resp.get("nextPageToken")
+            if not page_token:
+                break
+
+        files.sort(key=lambda f: f["name"].lower())
+        _drive_cache["files"] = files
+        _drive_cache["ts"] = now
+
+        return JsonResponse({"configured": True, "files": files})
 
 
 class BooksCacheView(View):

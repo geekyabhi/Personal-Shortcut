@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (
     BooksCacheView, BooksChartsDataView, BooksChartsView,
-    BooksCreateView, BooksDashboardView, BooksListView, BooksStatsView,
+    BooksCreateView, BooksDashboardView, BooksDriveFilesView,
+    BooksListView, BooksStatsView,
 )
 
 urlpatterns = [
@@ -11,5 +12,6 @@ urlpatterns = [
     path("list/", BooksListView.as_view(), name="books-list"),
     path("stats/", BooksStatsView.as_view(), name="books-stats"),
     path("create/", BooksCreateView.as_view(), name="books-create"),
+    path("drive/files/", BooksDriveFilesView.as_view(), name="books-drive-files"),
     path("cache/bust/", BooksCacheView.as_view(), name="books-cache-bust"),
 ]
