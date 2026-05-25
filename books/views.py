@@ -8,9 +8,12 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
 
-GOOGLE_CLIENT_ID     = os.environ.get("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REFRESH_TOKEN = os.environ.get("GOOGLE_REFRESH_TOKEN", "")
+def _google_creds():
+    return (
+        os.environ.get("GOOGLE_CLIENT_ID", ""),
+        os.environ.get("GOOGLE_CLIENT_SECRET", ""),
+        os.environ.get("GOOGLE_REFRESH_TOKEN", ""),
+    )
 
 _drive_cache: dict = {"files": None, "ts": 0.0}
 DRIVE_CACHE_TTL = 300
@@ -285,12 +288,13 @@ def _get_drive_service():
     from google.auth.transport.requests import Request
     from googleapiclient.discovery import build
 
+    client_id, client_secret, refresh_token = _google_creds()
     creds = Credentials(
         token=None,
-        refresh_token=GOOGLE_REFRESH_TOKEN,
+        refresh_token=refresh_token,
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=GOOGLE_CLIENT_ID,
-        client_secret=GOOGLE_CLIENT_SECRET,
+        client_id=client_id,
+        client_secret=client_secret,
     )
     creds.refresh(Request())
     return build("drive", "v3", credentials=creds, cache_discovery=False)
@@ -298,7 +302,7 @@ def _get_drive_service():
 
 class BooksDriveFilesView(View):
     def get(self, request):
-        if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN]):
+        if not all(_google_creds()):
             return JsonResponse({"configured": False, "files": []})
 
         now = time.time()
@@ -340,7 +344,7 @@ class BooksDriveFilesView(View):
 
 class BooksDriveUploadView(View):
     def post(self, request):
-        if not all([GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN]):
+        if not all(_google_creds()):
             return JsonResponse({"error": "Google Drive not configured"}, status=400)
 
         upload = request.FILES.get("file")
