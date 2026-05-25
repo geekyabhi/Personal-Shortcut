@@ -12,12 +12,11 @@
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: #F5F4FA;
-      min-height: 100vh;
+      height: 100vh; overflow: hidden;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 2rem 1rem;
+      align-items: center; justify-content: flex-start;
+      padding: 1.5rem 1rem;
       position: relative;
-      overflow-x: hidden;
     }
 
     /* Ambient orbs */
@@ -29,7 +28,11 @@
     .orb-2 { width: 450px; height: 450px; background: rgba(5,150,105,0.10); bottom: -150px; left: -100px; animation: _float 11s ease-in-out infinite 2s; }
     .orb-3 { width: 300px; height: 300px; background: rgba(139,92,246,0.08); top: 50%; left: 50%; transform: translate(-50%,-50%); animation: _float 13s ease-in-out infinite 4s; }
 
-    .container { position: relative; z-index: 1; text-align: center; width: 100%; max-width: 1400px; }
+    .container {
+      position: relative; z-index: 1; text-align: center;
+      width: 100%; max-width: 1400px;
+      flex: 1; display: flex; flex-direction: column; min-height: 0;
+    }
 
     .badge {
       display: inline-flex; align-items: center; gap: 0.4rem;
@@ -54,7 +57,7 @@
     }
 
     .subtitle {
-      font-size: 1.05rem; color: #6B7280; margin-bottom: 3rem; font-weight: 500;
+      font-size: 1.05rem; color: #6B7280; margin-bottom: 1.25rem; font-weight: 500;
       animation: _fadeUp 0.55s 0.32s ease both;
     }
 
@@ -121,18 +124,23 @@
 
     /* ── Two-column main layout ── */
     .main-layout {
+      flex: 1; min-height: 0;
       display: grid;
       grid-template-columns: 1fr;
       gap: 1.25rem;
       width: 100%;
-      margin-bottom: 2.5rem;
+      overflow: hidden;
     }
     @media (min-width: 860px) {
       .main-layout { grid-template-columns: 280px 1fr; align-items: stretch; }
     }
+    .tiles-panel { overflow-y: auto; min-height: 0; padding-right: 2px; }
+    .tiles-panel::-webkit-scrollbar { width: 4px; }
+    .tiles-panel::-webkit-scrollbar-track { background: transparent; }
+    .tiles-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
 
     /* ── Clock panel ── */
-    .clock-card {
+    .clock-card { overflow-y: auto; }
       background: rgba(255,255,255,0.72);
       backdrop-filter: blur(18px);
       border: 1px solid rgba(255,255,255,0.92);
@@ -293,6 +301,7 @@
       </div>
 
       <!-- Right: app tiles -->
+      <div class="tiles-panel">
       <div class="grid">
         <a class="tile tile-expenses anim-card" href="/expenses/" style="animation-delay:0.45s">
           <div class="tile-icon-wrap">💰</div>
@@ -324,6 +333,7 @@
           <span class="tile-desc">Track articles to read and blog ideas to write from Notion</span>
           <span class="tile-arrow">→</span>
         </a>
+      </div>
       </div>
     </div>
 
