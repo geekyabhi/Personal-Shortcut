@@ -6,6 +6,7 @@
   <title>Books</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -43,8 +44,7 @@
 
     h1 {
       font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 900; letter-spacing: -0.03em;
-      margin-bottom: 1.5rem;
-      background: var(--grad);
+      margin-bottom: 1.5rem; background: var(--grad);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
       animation: _fadeUp 0.55s 0.1s ease both;
     }
@@ -65,9 +65,7 @@
     .card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
 
     /* Stats row */
-    .stats-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem;
-    }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; }
     .stat-card {
       background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.9); border-radius: 16px;
@@ -78,7 +76,10 @@
     .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,0.10); }
     .stat-label { font-size: 0.7rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; }
     .stat-value { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.04em; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .stat-sub { font-size: 0.75rem; color: #6B7280; font-weight: 500; margin-top: 0.1rem; }
+
+    /* Charts row */
+    .charts-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .chart-wrap { position: relative; height: 260px; }
 
     /* Filters */
     .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
@@ -101,35 +102,36 @@
     .btn-primary:active { transform: scale(0.97); }
     .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
+    .btn-ghost {
+      padding: 0.4rem 1rem; font-size: 0.82rem; font-weight: 600;
+      background: rgba(5,150,105,0.07); color: var(--accent);
+      border: 1px solid rgba(5,150,105,0.18); border-radius: 100px;
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
+    }
+    .btn-ghost:hover { background: var(--grad); color: #fff; border-color: transparent; }
+    .btn-ghost:active { transform: scale(0.97); }
+
     /* Book list */
     .book-list { display: flex; flex-direction: column; gap: 0.65rem; }
-
     .book-row {
       display: flex; align-items: flex-start; gap: 0.9rem;
       background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85);
-      border-radius: 14px; padding: 0.9rem 1rem;
-      transition: all 0.2s ease;
+      border-radius: 14px; padding: 0.9rem 1rem; transition: all 0.2s ease;
       animation: _fadeUp 0.3s ease both;
     }
     .book-row:hover { background: rgba(255,255,255,0.9); box-shadow: 0 4px 16px rgba(0,0,0,0.07); transform: translateX(3px); }
-
     .book-icon {
       width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
       background: var(--grad-soft); display: flex; align-items: center;
       justify-content: center; font-size: 1.1rem;
     }
-
     .book-info { flex: 1; min-width: 0; }
     .book-name { font-size: 0.95rem; font-weight: 700; color: #111827; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .book-meta { font-size: 0.78rem; color: #6B7280; font-weight: 500; }
-
     .book-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; flex-shrink: 0; }
 
     /* Status badges */
-    .badge {
-      display: inline-block; padding: 0.2rem 0.65rem; border-radius: 100px;
-      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap;
-    }
+    .badge { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 100px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
     .badge-reading  { background: rgba(5,150,105,0.12); color: #059669; }
     .badge-finished { background: rgba(99,102,241,0.12); color: #4F46E5; }
     .badge-to-read  { background: rgba(245,158,11,0.12); color: #D97706; }
@@ -138,10 +140,7 @@
     .badge-default  { background: rgba(156,163,175,0.15); color: #6B7280; }
 
     .genre-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-    .genre-tag {
-      padding: 0.1rem 0.5rem; border-radius: 100px; font-size: 0.65rem; font-weight: 600;
-      background: rgba(5,150,105,0.08); color: #059669;
-    }
+    .genre-tag { padding: 0.1rem 0.5rem; border-radius: 100px; font-size: 0.65rem; font-weight: 600; background: rgba(5,150,105,0.08); color: #059669; }
 
     /* Pagination */
     .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
@@ -158,9 +157,10 @@
     .cache-bar {
       display: flex; align-items: center; justify-content: space-between;
       background: rgba(5,150,105,0.06); border: 1px solid rgba(5,150,105,0.12);
-      border-radius: 12px; padding: 0.6rem 1rem; margin-bottom: 1rem; gap: 0.75rem;
+      border-radius: 12px; padding: 0.6rem 1rem; margin-bottom: 1rem; gap: 0.75rem; flex-wrap: wrap;
     }
     .cache-bar span { font-size: 0.78rem; color: #6B7280; font-weight: 500; }
+    .cache-bar-actions { display: flex; gap: 0.5rem; }
     .cache-bar button {
       padding: 0.3rem 0.85rem; font-size: 0.75rem; font-weight: 600;
       background: rgba(5,150,105,0.1); color: var(--accent);
@@ -169,9 +169,59 @@
     }
     .cache-bar button:hover { background: var(--grad); color: #fff; border-color: transparent; }
     .cache-bar button:active { transform: scale(0.97); }
+    .btn-add {
+      background: var(--grad) !important; color: #fff !important;
+      border-color: transparent !important; font-weight: 700 !important;
+      box-shadow: 0 4px 12px rgba(5,150,105,0.30);
+    }
+    .btn-add:hover { box-shadow: 0 6px 18px rgba(5,150,105,0.45) !important; }
 
-    /* Empty / loading */
     .empty { text-align: center; padding: 2.5rem 1rem; color: #9CA3AF; font-size: 0.9rem; font-weight: 500; }
+
+    /* ── Add Book Modal ── */
+    .ab-overlay {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 1rem;
+    }
+    .ab-overlay.open { display: flex; }
+    .ab-modal {
+      background: #fff; border-radius: 24px; padding: 1.75rem;
+      width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.20);
+      animation: _modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes _modalPop { from { opacity:0; transform:scale(0.88) translateY(20px); } to { opacity:1; transform:none; } }
+    .ab-modal h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 1.25rem; letter-spacing: -0.02em; }
+    .ab-field { margin-bottom: 0.9rem; }
+    .ab-field label { font-size: 0.7rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem; }
+    .ab-field input, .ab-field select, .ab-field textarea {
+      width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid #E5E7EB; border-radius: 12px;
+      font-size: 0.93rem; font-family: inherit; background: #fff; color: #111827;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s; resize: vertical;
+    }
+    .ab-field input:focus, .ab-field select:focus, .ab-field textarea:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5,150,105,0.12);
+    }
+
+    /* Genre pills in modal */
+    .pill-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 160px; overflow-y: auto; padding: 0.5rem; border: 1.5px solid #E5E7EB; border-radius: 12px; }
+    .pill {
+      padding: 0.25rem 0.75rem; border-radius: 100px; font-size: 0.75rem; font-weight: 600;
+      background: rgba(5,150,105,0.07); color: var(--accent);
+      border: 1.5px solid rgba(5,150,105,0.15);
+      cursor: pointer; transition: all 0.15s; user-select: none;
+    }
+    .pill.selected { background: var(--grad); color: #fff; border-color: transparent; }
+
+    .ab-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+    .ab-actions button { flex: 1; padding: 0.8rem; border-radius: 100px; font-size: 0.93rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.2s; border: none; }
+    .ab-save { background: var(--grad); color: #fff; box-shadow: 0 4px 15px rgba(5,150,105,0.35); }
+    .ab-save:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(5,150,105,0.45); }
+    .ab-save:active { transform: scale(0.97); }
+    .ab-cancel { background: rgba(156,163,175,0.15); color: #6B7280; }
+    .ab-cancel:hover { background: rgba(156,163,175,0.25); }
+    .ab-cancel:active { transform: scale(0.97); }
 
     /* ── Theme toggle ── */
     .theme-btn {
@@ -189,6 +239,7 @@
     @media (min-width: 640px) {
       .stats-grid { grid-template-columns: repeat(4, 1fr); }
       .filters { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (min-width: 1024px) {
       .layout { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; }
@@ -218,6 +269,10 @@
     [data-theme="dark"] .stat-label { color: #6B7280; }
     [data-theme="dark"] .cache-bar { background: rgba(5,150,105,0.08); border-color: rgba(5,150,105,0.15); }
     [data-theme="dark"] .theme-btn { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); }
+    [data-theme="dark"] .ab-modal { background: #1A1A24; color: #F9FAFB; }
+    [data-theme="dark"] .ab-field input, [data-theme="dark"] .ab-field select, [data-theme="dark"] .ab-field textarea { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.10); color: #F9FAFB; }
+    [data-theme="dark"] .pill-grid { border-color: rgba(255,255,255,0.10); }
+    [data-theme="dark"] .ab-cancel { background: rgba(255,255,255,0.08); color: #9CA3AF; }
   </style>
   <script>
     (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
@@ -227,6 +282,46 @@
   <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
+
+  <!-- Add Book Modal (outside container so position:fixed works) -->
+  <div class="ab-overlay" id="ab-overlay" onclick="_abClose(event)">
+    <div class="ab-modal" onclick="event.stopPropagation()">
+      <h2>📚 Add New Book</h2>
+      <div class="ab-field">
+        <label>Book Title *</label>
+        <input type="text" id="ab-name" placeholder="e.g. Atomic Habits">
+      </div>
+      <div class="ab-field">
+        <label>Status</label>
+        <select id="ab-status">
+          <option>To Read</option>
+          <option>Queued</option>
+          <option>Reading</option>
+          <option>Finished</option>
+          <option>Blocked</option>
+        </select>
+      </div>
+      <div class="ab-field">
+        <label>Author</label>
+        <select id="ab-author">
+          <option value="">— Select author —</option>
+        </select>
+      </div>
+      <div class="ab-field">
+        <label>Genre (pick any)</label>
+        <div class="pill-grid" id="ab-genre-pills"></div>
+      </div>
+      <div class="ab-field">
+        <label>Summary (optional)</label>
+        <textarea id="ab-summary" rows="3" placeholder="Brief notes…"></textarea>
+      </div>
+      <p id="ab-error" style="color:#DC2626;font-size:0.82rem;margin-top:0.5rem;display:none;"></p>
+      <div class="ab-actions">
+        <button class="ab-cancel" onclick="_abClose()">Cancel</button>
+        <button class="ab-save" onclick="_abSave()">Save Book</button>
+      </div>
+    </div>
+  </div>
 
   <div class="container">
     <nav>
@@ -242,6 +337,13 @@
       <div class="stat-card"><div class="stat-label">Reading</div><div class="stat-value" id="s-reading">—</div></div>
       <div class="stat-card"><div class="stat-label">Finished</div><div class="stat-value" id="s-finished">—</div></div>
       <div class="stat-card"><div class="stat-label">To Read</div><div class="stat-value" id="s-toread">—</div></div>
+    </div>
+
+    <!-- Charts -->
+    <div class="section-heading"><span>📊</span> Overview</div>
+    <div class="charts-grid">
+      <div class="card"><canvas id="chart-status" class="chart-wrap"></canvas></div>
+      <div class="card"><canvas id="chart-genres" class="chart-wrap"></canvas></div>
     </div>
 
     <div class="layout" style="margin-top:1.5rem;">
@@ -274,7 +376,9 @@
             </div>
             <div>
               <label>Author</label>
-              <input type="text" id="f-author" placeholder="Author name…" oninput="_debounce()">
+              <select id="f-author" onchange="applyFilters()">
+                <option value="">All Authors</option>
+              </select>
             </div>
           </div>
           <button class="btn-primary" onclick="applyFilters()">Apply</button>
@@ -285,7 +389,10 @@
       <div>
         <div class="cache-bar">
           <span id="cache-info">Loading…</span>
-          <button onclick="bustCache()">↺ Refresh</button>
+          <div class="cache-bar-actions">
+            <button class="btn-add" onclick="_abOpen()">+ Add Book</button>
+            <button onclick="bustCache()">↺ Refresh</button>
+          </div>
         </div>
         <div class="card" style="padding:0.75rem;">
           <div id="book-list" class="book-list">
@@ -312,9 +419,18 @@
   })();
 
   const PAGE_SIZE = 30;
-  let _books = [];
-  let _page = 1;
-  let _debTimer = null;
+  let _books = [], _page = 1, _debTimer = null;
+  let _allGenres = [], _allAuthors = [];
+  let _chartStatus = null, _chartGenres = null;
+
+  const STATUS_COLORS = {
+    Reading:      { bg: 'rgba(5,150,105,0.8)',   border: '#059669' },
+    Finished:     { bg: 'rgba(99,102,241,0.8)',  border: '#4F46E5' },
+    'To Read':    { bg: 'rgba(245,158,11,0.8)',  border: '#D97706' },
+    Queued:       { bg: 'rgba(8,145,178,0.8)',   border: '#0891B2' },
+    Blocked:      { bg: 'rgba(239,68,68,0.8)',   border: '#DC2626' },
+    Unorganized:  { bg: 'rgba(156,163,175,0.7)', border: '#9CA3AF' },
+  };
 
   function _statusClass(s) {
     const map = { Reading:'reading', Finished:'finished', 'To Read':'to-read', Queued:'queued', Blocked:'blocked' };
@@ -322,50 +438,45 @@
   }
 
   function _bookIcon(genres) {
-    if (genres.includes('Trading') || genres.includes('Fundamental Trading') || genres.includes('Technical Trading')) return '📈';
-    if (genres.includes('Tech') || genres.includes('System Design')) return '💻';
-    if (genres.includes('Sanatan Dharma') || genres.includes('Peace')) return '🕉️';
-    if (genres.includes('Psychology') || genres.includes('Mind')) return '🧠';
-    if (genres.includes('Money') || genres.includes('Business')) return '💰';
-    if (genres.includes('Habits') || genres.includes('Productivity')) return '⚡';
+    if (genres.some(g => ['Trading','Fundamental Trading','Technical Trading','Mindset Trading'].includes(g))) return '📈';
+    if (genres.some(g => ['Tech','System Design'].includes(g))) return '💻';
+    if (genres.some(g => ['Sanatan Dharma','Peace','Happiness'].includes(g))) return '🕉️';
+    if (genres.some(g => ['Psychology','Mind','Thinking'].includes(g))) return '🧠';
+    if (genres.some(g => ['Money','Business'].includes(g))) return '💰';
+    if (genres.some(g => ['Habits','Productivity'].includes(g))) return '⚡';
+    if (genres.some(g => ['Masculine','Sex'].includes(g))) return '🔱';
+    if (genres.some(g => ['Leadership','Personality'].includes(g))) return '👑';
+    if (genres.includes('Self Help')) return '🌱';
     return '📖';
   }
 
+  /* ── Render book list ── */
   function renderBooks() {
     const list = document.getElementById('book-list');
     const pag  = document.getElementById('pagination');
-
-    if (!_books.length) {
-      list.innerHTML = '<div class="empty">No books found.</div>';
-      pag.innerHTML = '';
-      return;
-    }
+    if (!_books.length) { list.innerHTML = '<div class="empty">No books found.</div>'; pag.innerHTML = ''; return; }
 
     const totalPages = Math.ceil(_books.length / PAGE_SIZE);
     const slice = _books.slice((_page - 1) * PAGE_SIZE, _page * PAGE_SIZE);
 
     list.innerHTML = slice.map(b => {
-      const authors = b.author.slice(0, 2).join(', ') + (b.author.length > 2 ? ' +' + (b.author.length - 2) : '');
-      const genres  = b.genre.slice(0, 3);
-      return `
-        <div class="book-row">
-          <div class="book-icon">${_bookIcon(b.genre)}</div>
-          <div class="book-info">
-            <div class="book-name" title="${b.name}">${b.name || '—'}</div>
-            <div class="book-meta">${authors || 'Unknown author'}</div>
-            ${genres.length ? '<div class="genre-tags" style="margin-top:0.35rem;">' + genres.map(g => `<span class="genre-tag">${g}</span>`).join('') + '</div>' : ''}
-          </div>
-          <div class="book-right">
-            <span class="${_statusClass(b.status)}">${b.status || 'Unknown'}</span>
-          </div>
-        </div>`;
+      const authors = b.author.slice(0,2).join(', ') + (b.author.length > 2 ? ' +' + (b.author.length-2) : '');
+      const genres  = b.genre.slice(0,3);
+      return `<div class="book-row">
+        <div class="book-icon">${_bookIcon(b.genre)}</div>
+        <div class="book-info">
+          <div class="book-name" title="${b.name.replace(/"/g,'&quot;')}">${b.name || '—'}</div>
+          <div class="book-meta">${authors || 'Unknown author'}</div>
+          ${genres.length ? '<div class="genre-tags" style="margin-top:0.35rem;">' + genres.map(g=>`<span class="genre-tag">${g}</span>`).join('') + '</div>' : ''}
+        </div>
+        <div class="book-right"><span class="${_statusClass(b.status)}">${b.status || 'Unknown'}</span></div>
+      </div>`;
     }).join('');
 
-    // Pagination
     if (totalPages <= 1) { pag.innerHTML = ''; return; }
     let html = '';
     if (_page > 1) html += `<button class="page-btn" onclick="goPage(${_page-1})">‹ Prev</button>`;
-    for (let i = Math.max(1,_page-2); i <= Math.min(totalPages,_page+2); i++)
+    for (let i=Math.max(1,_page-2); i<=Math.min(totalPages,_page+2); i++)
       html += `<button class="page-btn${i===_page?' active':''}" onclick="goPage(${i})">${i}</button>`;
     if (_page < totalPages) html += `<button class="page-btn" onclick="goPage(${_page+1})">Next ›</button>`;
     pag.innerHTML = html;
@@ -373,77 +484,175 @@
 
   function goPage(p) { _page = p; renderBooks(); window.scrollTo({top:0,behavior:'smooth'}); }
 
+  /* ── Filters ── */
   function applyFilters() {
     const status = document.getElementById('f-status').value;
     const genre  = document.getElementById('f-genre').value;
     const author = document.getElementById('f-author').value;
     const q      = document.getElementById('f-search').value;
-
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (genre)  params.set('genre', genre);
     if (author) params.set('author', author);
     if (q)      params.set('q', q);
-
     document.getElementById('cache-info').textContent = 'Loading…';
-
     fetch('/books/list/?' + params)
       .then(r => r.json())
       .then(data => {
-        _books = data.books;
-        _page  = 1;
-        renderBooks();
+        _books = data.books; _page = 1; renderBooks();
         document.getElementById('cache-info').textContent = data.total + ' books';
       });
   }
 
-  function _debounce() {
-    clearTimeout(_debTimer);
-    _debTimer = setTimeout(applyFilters, 320);
-  }
+  function _debounce() { clearTimeout(_debTimer); _debTimer = setTimeout(applyFilters, 320); }
 
   function bustCache() {
-    fetch('/books/cache/bust/', {method:'POST', headers:{'X-CSRFToken':''}})
-      .then(() => {
-        document.getElementById('cache-info').textContent = 'Refreshing…';
-        applyFilters();
-        loadStats();
-      });
+    fetch('/books/cache/bust/', {method:'POST'})
+      .then(() => { document.getElementById('cache-info').textContent = 'Refreshing…'; applyFilters(); loadStats(); });
   }
 
+  /* ── Charts ── */
+  function _chartDefaults() {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return { color: dark ? '#9CA3AF' : '#6B7280', gridColor: dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' };
+  }
+
+  function buildCharts(d) {
+    const { color, gridColor } = _chartDefaults();
+
+    // Status donut
+    const statusLabels = Object.keys(d.status_counts);
+    const statusData   = statusLabels.map(k => d.status_counts[k]);
+    const statusBg     = statusLabels.map(k => (STATUS_COLORS[k] || STATUS_COLORS.Unorganized).bg);
+    if (_chartStatus) _chartStatus.destroy();
+    _chartStatus = new Chart(document.getElementById('chart-status'), {
+      type: 'doughnut',
+      data: { labels: statusLabels, datasets: [{ data: statusData, backgroundColor: statusBg, borderWidth: 2, borderColor: 'transparent', hoverOffset: 8 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '65%',
+        plugins: {
+          legend: { position: 'bottom', labels: { color, font: { family:'Inter', size:11, weight:'600' }, padding:12, boxWidth:12, borderRadius:6 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} books` } }
+        }
+      }
+    });
+
+    // Genre bar (top 15)
+    const genres = d.top_genres.slice(0,15);
+    const gLabels = genres.map(g => g[0]);
+    const gData   = genres.map(g => g[1]);
+    const gBg = gLabels.map((_,i) => `hsla(${160 + i*12},60%,${45+i*1.5}%,0.8)`);
+    if (_chartGenres) _chartGenres.destroy();
+    _chartGenres = new Chart(document.getElementById('chart-genres'), {
+      type: 'bar',
+      data: { labels: gLabels, datasets: [{ label: 'Books', data: gData, backgroundColor: gBg, borderRadius: 6, borderSkipped: false }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x} books` } } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color, font: { family:'Inter', size:11 } }, beginAtZero: true },
+          y: { grid: { display: false }, ticks: { color, font: { family:'Inter', size:10, weight:'600' } } }
+        }
+      }
+    });
+  }
+
+  /* ── Stats ── */
   function loadStats() {
     fetch('/books/stats/')
       .then(r => r.json())
       .then(d => {
-        document.getElementById('s-total').textContent   = d.total;
-        document.getElementById('s-reading').textContent = d.status_counts['Reading'] || 0;
-        document.getElementById('s-finished').textContent= d.status_counts['Finished'] || 0;
-        document.getElementById('s-toread').textContent  = (d.status_counts['To Read'] || 0) + (d.status_counts['Queued'] || 0);
+        document.getElementById('s-total').textContent    = d.total;
+        document.getElementById('s-reading').textContent  = d.status_counts['Reading'] || 0;
+        document.getElementById('s-finished').textContent = d.status_counts['Finished'] || 0;
+        document.getElementById('s-toread').textContent   = (d.status_counts['To Read']||0) + (d.status_counts['Queued']||0);
 
-        // Populate genre dropdown
+        _allGenres  = d.all_genres;
+        _allAuthors = d.all_authors;
+
+        // Genre dropdown
         const gSel = document.getElementById('f-genre');
-        const cur = gSel.value;
-        gSel.innerHTML = '<option value="">All Genres</option>' +
-          d.all_genres.map(g => `<option${g===cur?' selected':''}>${g}</option>`).join('');
+        const curG = gSel.value;
+        gSel.innerHTML = '<option value="">All Genres</option>' + d.all_genres.map(g=>`<option${g===curG?' selected':''}>${g}</option>`).join('');
+
+        // Author dropdown
+        const aSel = document.getElementById('f-author');
+        const curA = aSel.value;
+        aSel.innerHTML = '<option value="">All Authors</option>' + d.all_authors.map(a=>`<option${a===curA?' selected':''}>${a}</option>`).join('');
+
+        // Modal author dropdown
+        const maSel = document.getElementById('ab-author');
+        maSel.innerHTML = '<option value="">— Select author —</option>' + d.all_authors.map(a=>`<option>${a}</option>`).join('');
+
+        // Modal genre pills
+        const pillGrid = document.getElementById('ab-genre-pills');
+        pillGrid.innerHTML = d.all_genres.map(g=>`<span class="pill" onclick="this.classList.toggle('selected')">${g}</span>`).join('');
+
+        buildCharts(d);
       });
   }
 
-  // Scroll-triggered animations
+  /* ── Add Book Modal ── */
+  function _abOpen() {
+    document.getElementById('ab-name').value = '';
+    document.getElementById('ab-status').value = 'To Read';
+    document.getElementById('ab-author').value = '';
+    document.getElementById('ab-summary').value = '';
+    document.getElementById('ab-error').style.display = 'none';
+    document.querySelectorAll('#ab-genre-pills .pill').forEach(p => p.classList.remove('selected'));
+    document.getElementById('ab-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('ab-name').focus(), 50);
+  }
+
+  function _abClose(e) {
+    if (!e || e.target === document.getElementById('ab-overlay'))
+      document.getElementById('ab-overlay').classList.remove('open');
+  }
+
+  function _abSave() {
+    const name    = document.getElementById('ab-name').value.trim();
+    const status  = document.getElementById('ab-status').value;
+    const author  = document.getElementById('ab-author').value;
+    const summary = document.getElementById('ab-summary').value.trim();
+    const genres  = [...document.querySelectorAll('#ab-genre-pills .pill.selected')].map(p => p.textContent);
+    const errEl   = document.getElementById('ab-error');
+
+    if (!name) { errEl.textContent = 'Book title is required.'; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+
+    const saveBtn = document.querySelector('.ab-save');
+    saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+
+    fetch('/books/create/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, status, authors: author ? [author] : [], genres, summary })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+      document.getElementById('ab-overlay').classList.remove('open');
+      applyFilters();
+      loadStats();
+    })
+    .finally(() => { saveBtn.disabled = false; saveBtn.textContent = 'Save Book'; });
+  }
+
+  /* ── Keyboard shortcut ── */
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') _abClose({target:document.getElementById('ab-overlay')}); });
+
+  /* ── Scroll-triggered animations ── */
   (function(){
     var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(e){
-        if(e.isIntersecting){ e.target.style.animationPlayState='running'; io.unobserve(e.target); }
-      });
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.style.animationPlayState='running'; io.unobserve(e.target); } });
     },{threshold:0.06});
     var delay = 0;
     document.querySelectorAll('.card, .stat-card, .section-heading').forEach(function(el){
-      el.style.animationDelay = delay + 'ms';
-      delay = Math.min(delay + 80, 400);
-      io.observe(el);
+      el.style.animationDelay = delay + 'ms'; delay = Math.min(delay+80,400); io.observe(el);
     });
   })();
 
-  // Init
+  /* ── Init ── */
   loadStats();
   applyFilters();
 </script>

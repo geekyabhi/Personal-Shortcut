@@ -1,3 +1,4 @@
+import json
 import os
 import time
 
@@ -90,7 +91,7 @@ class BooksListView(View):
 
         status_filter = request.GET.get("status", "")
         genre_filter = request.GET.get("genre", "")
-        author_filter = request.GET.get("author", "").lower()
+        author_filter = request.GET.get("author", "")
         search = request.GET.get("q", "").lower()
 
         if status_filter:
@@ -98,7 +99,7 @@ class BooksListView(View):
         if genre_filter:
             books = [b for b in books if genre_filter in b["genre"]]
         if author_filter:
-            books = [b for b in books if any(author_filter in a.lower() for a in b["author"])]
+            books = [b for b in books if author_filter in b["author"]]
         if search:
             books = [b for b in books if search in b["name"].lower()]
 
@@ -114,6 +115,7 @@ class BooksStatsView(View):
 
         status_counts = {}
         genre_counts = {}
+        author_counts = {}
         all_genres = set()
         all_authors = set()
 
@@ -124,15 +126,62 @@ class BooksStatsView(View):
                 genre_counts[g] = genre_counts.get(g, 0) + 1
                 all_genres.add(g)
             for a in b["author"]:
+                author_counts[a] = author_counts.get(a, 0) + 1
                 all_authors.add(a)
+
+        top_genres = sorted(genre_counts.items(), key=lambda x: -x[1])[:15]
+        top_authors = sorted(author_counts.items(), key=lambda x: -x[1])[:10]
 
         return JsonResponse({
             "total": len(books),
             "status_counts": status_counts,
             "genre_counts": genre_counts,
+            "top_genres": top_genres,
+            "top_authors": top_authors,
             "all_genres": sorted(all_genres),
             "all_authors": sorted(all_authors),
         })
+
+
+class BooksCreateView(View):
+    def post(self, request):
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        name = body.get("name", "").strip()
+        if not name:
+            return JsonResponse({"error": "Book name is required"}, status=400)
+
+        status = body.get("status", "To Read")
+        authors = body.get("authors", [])
+        genres = body.get("genres", [])
+        summary = body.get("summary", "").strip()
+
+        properties = {
+            "Book Name": {"title": [{"text": {"content": name}}]},
+            "Status": {"select": {"name": status}},
+        }
+        if authors:
+            properties["Author"] = {"multi_select": [{"name": a} for a in authors]}
+        if genres:
+            properties["Genre"] = {"multi_select": [{"name": g} for g in genres]}
+        if summary:
+            properties["Summary"] = {"rich_text": [{"text": {"content": summary}}]}
+
+        resp = requests.post(
+            "https://api.notion.com/v1/pages",
+            headers=_headers(),
+            json={"parent": {"database_id": BOOKS_DB_ID}, "properties": properties},
+            timeout=15,
+        )
+
+        if resp.status_code not in (200, 201):
+            return JsonResponse({"error": resp.text}, status=502)
+
+        _books_cache["ts"] = 0.0
+        return JsonResponse({"ok": True, "page_id": resp.json().get("id", "")})
 
 
 class BooksCacheView(View):
