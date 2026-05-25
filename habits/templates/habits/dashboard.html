@@ -50,7 +50,9 @@
       border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
       padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
       animation: _fadeUp 0.5s ease both; animation-play-state: paused;
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;
     }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
     .card:nth-child(1){animation-delay:0.05s}
     .card:nth-child(2){animation-delay:0.15s}
     .card:nth-child(3){animation-delay:0.25s}
@@ -179,6 +181,7 @@
       background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07);
       box-shadow: 0 4px 24px rgba(0,0,0,0.30);
     }
+    [data-theme="dark"] .card:hover { box-shadow: 0 20px 60px rgba(0,0,0,0.50); }
     [data-theme="dark"] nav { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
     [data-theme="dark"] nav a { color: #9CA3AF; }
     [data-theme="dark"] nav a:not(.active):hover { background: rgba(255,255,255,0.07); color: #E5E7EB; }
