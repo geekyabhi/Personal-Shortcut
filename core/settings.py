@@ -27,7 +27,8 @@ SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
 
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")       # Drive (Desktop app)
+GOOGLE_WEB_CLIENT_ID = os.environ.get("GOOGLE_WEB_CLIENT_ID", "")  # Sign In With Google (Web app)
 ALLOWED_EMAIL = os.environ.get("ALLOWED_EMAIL", "abhi0strike@gmail.com")
 
 TEMPLATES = [

@@ -10,7 +10,7 @@ from django.shortcuts import redirect, render
 def login_view(request):
     if request.session.get("user_email"):
         return redirect("/")
-    return render(request, "login.html", {"client_id": settings.GOOGLE_CLIENT_ID})
+    return render(request, "login.html", {"client_id": settings.GOOGLE_WEB_CLIENT_ID})
 
 
 def auth_callback(request):
