@@ -365,8 +365,13 @@ class BooksDriveUploadView(View):
                 mimetype=upload.content_type or "application/octet-stream",
                 resumable=False,
             )
+            file_meta = {"name": upload.name}
+            folder_id = os.environ.get("GOOGLE_DRIVE_UPLOAD_FOLDER_ID", "").strip()
+            if folder_id:
+                file_meta["parents"] = [folder_id]
+
             drive_file = service.files().create(
-                body={"name": upload.name},
+                body=file_meta,
                 media_body=media,
                 fields="id, name, webViewLink",
             ).execute()
