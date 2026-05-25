@@ -9,227 +9,45 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body { height: 100%; overflow: hidden; }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #F5F4FA;
-      height: 100vh; overflow: hidden;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-start;
-      padding: 1.5rem 1rem;
-      position: relative;
+      background: #F5F4FA; color: #111827;
     }
 
     /* Ambient orbs */
-    .orb {
-      position: fixed; border-radius: 50%;
-      filter: blur(90px); z-index: 0; pointer-events: none;
-    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
     .orb-1 { width: 500px; height: 500px; background: rgba(99,102,241,0.13); top: -150px; right: -100px; animation: _float 9s ease-in-out infinite; }
     .orb-2 { width: 450px; height: 450px; background: rgba(5,150,105,0.10); bottom: -150px; left: -100px; animation: _float 11s ease-in-out infinite 2s; }
     .orb-3 { width: 300px; height: 300px; background: rgba(139,92,246,0.08); top: 50%; left: 50%; transform: translate(-50%,-50%); animation: _float 13s ease-in-out infinite 4s; }
 
-    .container {
-      position: relative; z-index: 1; text-align: center;
-      width: 100%; max-width: 1400px;
-      flex: 1; display: flex; flex-direction: column; min-height: 0;
-    }
-
-    .badge {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      background: rgba(255,255,255,0.7); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.9);
-      border-radius: 100px; padding: 0.35rem 1rem;
-      font-size: 0.78rem; font-weight: 600; color: #6B7280;
-      letter-spacing: 0.04em; text-transform: uppercase;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      margin-bottom: 1.5rem;
-      animation: _fadeIn 0.5s ease both;
-    }
-    .badge-dot { width: 6px; height: 6px; background: #10B981; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
-    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.2)} }
-
-    h1 {
-      font-size: clamp(2.2rem, 7vw, 3.5rem);
-      font-weight: 900; letter-spacing: -0.03em; margin-bottom: 0.75rem;
-      background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 40%, #7C3AED 70%, #059669 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      animation: _fadeUp 0.6s 0.18s ease both;
-    }
-
-    .subtitle {
-      font-size: 1.05rem; color: #6B7280; margin-bottom: 1.25rem; font-weight: 500;
-      animation: _fadeUp 0.55s 0.32s ease both;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1.1rem; width: 100%; align-content: start;
-    }
-
-    .tile {
-      background: rgba(255,255,255,0.75);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.9);
-      border-radius: 24px; padding: 2rem 1.75rem;
-      text-decoration: none; color: #111827;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-      transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
-      display: flex; flex-direction: column; gap: 0.85rem;
-      position: relative; overflow: hidden; text-align: left;
-    }
-    .tile::after {
-      content: '';
-      position: absolute; inset: 0; opacity: 0;
-      transition: opacity 0.3s ease;
-      border-radius: 24px;
-    }
-    .tile-expenses::after { background: linear-gradient(135deg, rgba(79,70,229,0.05), rgba(124,58,237,0.05)); }
-    .tile-habits::after  { background: linear-gradient(135deg, rgba(5,150,105,0.05), rgba(8,145,178,0.05)); }
-    .tile-todos::after   { background: linear-gradient(135deg, rgba(2,132,199,0.05), rgba(99,102,241,0.05)); }
-    .tile-books::after   { background: linear-gradient(135deg, rgba(245,158,11,0.05), rgba(239,68,68,0.05)); }
-    .tile-blogs::after   { background: linear-gradient(135deg, rgba(124,58,237,0.05), rgba(99,102,241,0.05)); }
-    .tile:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 20px 60px rgba(0,0,0,0.13); }
-    .tile:hover::after { opacity: 1; }
-
-    .tile-icon-wrap {
-      width: 52px; height: 52px; border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.6rem;
-    }
-    .tile-expenses .tile-icon-wrap { background: linear-gradient(135deg, #EEF2FF, #E0E7FF); }
-    .tile-habits   .tile-icon-wrap { background: linear-gradient(135deg, #ECFDF5, #D1FAE5); }
-    .tile-todos    .tile-icon-wrap { background: linear-gradient(135deg, #E0F2FE, #EEF2FF); }
-    .tile-books    .tile-icon-wrap { background: linear-gradient(135deg, #FFFBEB, #FEF3C7); }
-    .tile-blogs    .tile-icon-wrap { background: linear-gradient(135deg, #F5F3FF, #EEF2FF); }
-
-    .tile-name { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
-    .tile-desc { font-size: 0.85rem; color: #6B7280; line-height: 1.5; font-weight: 500; }
-
-    .tile-arrow {
-      margin-top: auto; display: inline-flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px; border-radius: 50%;
-      font-size: 1rem; transition: transform 0.2s ease;
-    }
-    .tile-expenses .tile-arrow { background: linear-gradient(135deg, #4F46E5, #7C3AED); color: white; }
-    .tile-habits   .tile-arrow { background: linear-gradient(135deg, #059669, #0891B2); color: white; }
-    .tile-todos    .tile-arrow { background: linear-gradient(135deg, #0284C7, #6366F1); color: white; }
-    .tile-books    .tile-arrow { background: linear-gradient(135deg, #F59E0B, #EF4444); color: white; }
-    .tile-blogs    .tile-arrow { background: linear-gradient(135deg, #7C3AED, #6366F1); color: white; }
-    .tile:hover .tile-arrow { transform: translateX(3px); }
-
-    .anim-card { animation: _fadeUp 0.55s ease both; animation-play-state: paused; }
-
-    .footer { margin-top: 3rem; font-size: 0.78rem; color: #9CA3AF; font-weight: 500; animation: _fadeIn 0.5s 0.85s ease both; }
-
-    /* ── Two-column main layout ── */
-    .main-layout {
-      flex: 1; min-height: 0;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1.25rem;
-      width: 100%;
-      overflow: hidden;
-    }
-    @media (min-width: 860px) {
-      .main-layout { grid-template-columns: 280px 1fr; align-items: stretch; }
-    }
-    .tiles-panel { overflow-y: auto; min-height: 0; padding-right: 2px; }
-    .tiles-panel::-webkit-scrollbar { width: 4px; }
-    .tiles-panel::-webkit-scrollbar-track { background: transparent; }
-    .tiles-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
-
-    /* ── Clock panel ── */
-    .clock-card { overflow-y: auto; }
-      background: rgba(255,255,255,0.72);
-      backdrop-filter: blur(18px);
-      border: 1px solid rgba(255,255,255,0.92);
-      border-radius: 28px;
-      padding: 2rem 1.75rem;
-      box-shadow: 0 4px 28px rgba(0,0,0,0.07);
-      display: flex; flex-direction: column;
-      align-items: flex-start; justify-content: center;
-      gap: 0.75rem; position: relative; overflow: hidden;
-      animation: _fadeUp 0.55s 0.38s ease both;
-      min-height: 200px;
-    }
-    .clock-card::after {
-      content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
-      background: linear-gradient(180deg, #4F46E5, #7C3AED, #059669);
-    }
-    .clock-day {
-      font-size: 0.65rem; font-weight: 600; color: #9CA3AF;
-      text-transform: uppercase; letter-spacing: 0.14em;
-    }
-    .clock-time-row {
-      display: flex; align-items: baseline; gap: 0.1rem;
-      font-variant-numeric: tabular-nums;
-    }
-    .clock-hms {
-      font-size: clamp(2.4rem, 6vw, 3.6rem);
-      font-weight: 700; letter-spacing: -0.04em; line-height: 1;
-      background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 45%, #7C3AED 75%, #059669 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    }
-    .clock-ms {
-      font-size: clamp(0.9rem, 2vw, 1.3rem);
-      font-weight: 400; letter-spacing: -0.01em; color: #C4CAD4;
-      font-variant-numeric: tabular-nums; line-height: 1;
-      align-self: flex-end; padding-bottom: 0.25em;
-    }
-    .clock-date {
-      font-size: 1rem; font-weight: 500; color: #374151; letter-spacing: -0.01em;
-    }
-    .clock-divider {
-      width: 32px; height: 2px; border-radius: 2px;
-      background: linear-gradient(90deg, #4F46E5, #059669); opacity: 0.35;
-    }
-    [data-theme="dark"] .clock-card {
-      background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07);
-      box-shadow: 0 4px 28px rgba(0,0,0,0.30);
-    }
-    [data-theme="dark"] .clock-ms   { color: #2D3348; }
-    [data-theme="dark"] .clock-date { color: #9CA3AF; }
-    [data-theme="dark"] .clock-day  { color: #4B5563; }
-
-    /* ── Animations ── */
-    @keyframes _fadeUp  { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes _fadeIn  { from { opacity:0; } to { opacity:1; } }
-    @keyframes _scaleIn { from { opacity:0; transform:scale(0.93); } to { opacity:1; transform:scale(1); } }
-    @keyframes _float   { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
-    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}}
-
     /* ── Top-right controls ── */
     .top-bar {
-      position: fixed; top: 0.75rem; right: 0.75rem; z-index: 300;
+      position: fixed; top: 1rem; right: 1rem; z-index: 300;
       display: flex; align-items: center; gap: 0.5rem;
     }
     .theme-btn {
       width: 34px; height: 34px; border-radius: 50%;
       background: rgba(255,255,255,0.82); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.88);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
-      cursor: pointer; font-size: 0.95rem; line-height: 1;
+      border: 1px solid rgba(255,255,255,0.88); box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+      cursor: pointer; font-size: 0.95rem;
       display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s, box-shadow 0.2s;
-      font-family: inherit;
+      transition: transform 0.2s, box-shadow 0.2s; font-family: inherit;
     }
     .theme-btn:hover { transform: scale(1.12); box-shadow: 0 4px 18px rgba(0,0,0,0.16); }
     .theme-btn:active { transform: scale(0.9); }
-
     .user-chip {
       display: flex; align-items: center; gap: 0.45rem;
       background: rgba(255,255,255,0.82); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.88);
-      border-radius: 100px; padding: 0.25rem 0.75rem 0.25rem 0.3rem;
+      border: 1px solid rgba(255,255,255,0.88); border-radius: 100px;
+      padding: 0.25rem 0.75rem 0.25rem 0.3rem;
       box-shadow: 0 2px 12px rgba(0,0,0,0.08);
       font-size: 0.78rem; font-weight: 600; color: #374151;
       text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;
     }
     .user-chip:hover { transform: scale(1.03); box-shadow: 0 4px 18px rgba(0,0,0,0.13); }
-    .user-chip img {
-      width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
-    }
+    .user-chip img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
     .user-chip-avatar {
       width: 24px; height: 24px; border-radius: 50%;
       background: linear-gradient(135deg, #4F46E5, #7C3AED);
@@ -237,34 +55,195 @@
       font-size: 0.7rem; font-weight: 800; color: #fff;
     }
 
-    [data-theme="dark"] .theme-btn {
-      background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.40);
+    /* ── Dashboard split ── */
+    .dashboard {
+      display: flex; height: 100vh; width: 100%;
+      position: relative; z-index: 1;
     }
-    [data-theme="dark"] .user-chip {
-      background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10);
-      color: #E5E7EB;
+
+    /* ── LEFT PANEL ── */
+    .left-panel {
+      width: 50%; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      padding: 2.5rem 3rem;
+      border-right: 1px solid rgba(0,0,0,0.06);
+      position: relative; overflow: hidden;
     }
+
+    .brand { margin-bottom: auto; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(255,255,255,0.7); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.35rem 1rem; font-size: 0.72rem; font-weight: 600; color: #6B7280;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 1.1rem;
+      animation: _fadeIn 0.5s ease both;
+    }
+    .badge-dot { width: 6px; height: 6px; background: #10B981; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 800; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 40%, #7C3AED 70%, #059669 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.5rem; animation: _fadeUp 0.6s 0.15s ease both;
+    }
+    .subtitle {
+      font-size: 0.95rem; color: #9CA3AF; font-weight: 400;
+      animation: _fadeUp 0.55s 0.28s ease both;
+    }
+
+    /* ── CLOCK ── */
+    .clock-wrap {
+      flex: 1; display: flex; flex-direction: column;
+      justify-content: center; gap: 0.6rem;
+      animation: _fadeUp 0.6s 0.4s ease both;
+    }
+    .clock-day {
+      font-size: 0.65rem; font-weight: 600; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.16em;
+    }
+    .clock-time-row {
+      display: flex; align-items: baseline; gap: 0.1rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .clock-hms {
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      font-weight: 700; letter-spacing: -0.05em; line-height: 1;
+      background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 45%, #7C3AED 80%, #059669 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .clock-ms {
+      font-size: clamp(1.1rem, 2.5vw, 2rem); font-weight: 400;
+      color: #D1D5DB; font-variant-numeric: tabular-nums; line-height: 1;
+      align-self: flex-end; padding-bottom: 0.3em; letter-spacing: -0.02em;
+    }
+    .clock-date {
+      font-size: clamp(0.95rem, 2vw, 1.2rem); font-weight: 500;
+      color: #374151; letter-spacing: -0.01em;
+    }
+    .clock-accent {
+      width: 40px; height: 3px; border-radius: 2px;
+      background: linear-gradient(90deg, #4F46E5, #059669);
+      margin-top: 0.25rem; opacity: 0.5;
+    }
+
+    .left-footer {
+      font-size: 0.72rem; color: #C4CAD4; font-weight: 400;
+      animation: _fadeIn 0.5s 0.8s ease both;
+    }
+
+    /* ── RIGHT PANEL ── */
+    .right-panel {
+      flex: 1; overflow-y: auto;
+      padding: 2.5rem 2.5rem 2.5rem 2.5rem;
+      display: flex; flex-direction: column; gap: 1rem;
+    }
+    .right-panel::-webkit-scrollbar { width: 4px; }
+    .right-panel::-webkit-scrollbar-track { background: transparent; }
+    .right-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.10); border-radius: 4px; }
+
+    .right-heading {
+      font-size: 0.65rem; font-weight: 600; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      margin-bottom: 0.25rem;
+    }
+
+    /* ── Tiles ── */
+    .tile {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
+      padding: 1.35rem 1.5rem;
+      text-decoration: none; color: #111827;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      display: flex; align-items: center; gap: 1.1rem;
+      position: relative; overflow: hidden;
+      animation: _fadeUp 0.5s ease both; animation-play-state: paused;
+    }
+    .tile::after {
+      content: ''; position: absolute; inset: 0; opacity: 0;
+      transition: opacity 0.25s ease; border-radius: 20px;
+    }
+    .tile-expenses::after { background: linear-gradient(135deg, rgba(79,70,229,0.05), rgba(124,58,237,0.05)); }
+    .tile-habits::after   { background: linear-gradient(135deg, rgba(5,150,105,0.05), rgba(8,145,178,0.05)); }
+    .tile-todos::after    { background: linear-gradient(135deg, rgba(2,132,199,0.05), rgba(99,102,241,0.05)); }
+    .tile-books::after    { background: linear-gradient(135deg, rgba(245,158,11,0.05), rgba(239,68,68,0.05)); }
+    .tile-blogs::after    { background: linear-gradient(135deg, rgba(124,58,237,0.05), rgba(99,102,241,0.05)); }
+    .tile:hover { transform: translateX(6px); box-shadow: 0 8px 32px rgba(0,0,0,0.11); }
+    .tile:hover::after { opacity: 1; }
+
+    .tile-icon-wrap {
+      width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+    }
+    .tile-expenses .tile-icon-wrap { background: linear-gradient(135deg, #EEF2FF, #E0E7FF); }
+    .tile-habits   .tile-icon-wrap { background: linear-gradient(135deg, #ECFDF5, #D1FAE5); }
+    .tile-todos    .tile-icon-wrap { background: linear-gradient(135deg, #E0F2FE, #EEF2FF); }
+    .tile-books    .tile-icon-wrap { background: linear-gradient(135deg, #FFFBEB, #FEF3C7); }
+    .tile-blogs    .tile-icon-wrap { background: linear-gradient(135deg, #F5F3FF, #EEF2FF); }
+
+    .tile-text { flex: 1; min-width: 0; text-align: left; }
+    .tile-name { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.2rem; }
+    .tile-desc { font-size: 0.8rem; color: #9CA3AF; line-height: 1.45; font-weight: 400; }
+
+    .tile-arrow {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; transition: transform 0.2s ease;
+    }
+    .tile-expenses .tile-arrow { background: linear-gradient(135deg, #4F46E5, #7C3AED); color: #fff; }
+    .tile-habits   .tile-arrow { background: linear-gradient(135deg, #059669, #0891B2); color: #fff; }
+    .tile-todos    .tile-arrow { background: linear-gradient(135deg, #0284C7, #6366F1); color: #fff; }
+    .tile-books    .tile-arrow { background: linear-gradient(135deg, #F59E0B, #EF4444); color: #fff; }
+    .tile-blogs    .tile-arrow { background: linear-gradient(135deg, #7C3AED, #6366F1); color: #fff; }
+    .tile:hover .tile-arrow { transform: translateX(3px); }
+
+    /* ── Responsive: stack on small screens ── */
+    @media (max-width: 768px) {
+      html, body { overflow: auto; height: auto; }
+      .dashboard { flex-direction: column; height: auto; }
+      .left-panel { width: 100%; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 2rem 1.5rem; }
+      .clock-wrap { flex: none; padding: 2rem 0 1rem; }
+      .right-panel { padding: 1.5rem; }
+    }
+
+    /* ── Keyframes ── */
+    @keyframes _fadeUp  { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+    @keyframes _fadeIn  { from { opacity:0; } to { opacity:1; } }
+    @keyframes _float   { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
+    @keyframes pulse    { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.2)} }
+    @media (prefers-reduced-motion:reduce){ *, *::before, *::after { animation-duration:0.01ms!important; transition-duration:0.01ms!important; } }
 
     /* ── Dark mode ── */
     [data-theme="dark"] body { background: #0F0F14; color: #F9FAFB; }
+    [data-theme="dark"] .left-panel { border-right-color: rgba(255,255,255,0.06); }
     [data-theme="dark"] .badge { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); color: #9CA3AF; }
-    [data-theme="dark"] .subtitle { color: #9CA3AF; }
-    [data-theme="dark"] .footer { color: #6B7280; }
-    [data-theme="dark"] .tile { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); color: #F9FAFB; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+    [data-theme="dark"] .subtitle { color: #6B7280; }
+    [data-theme="dark"] .clock-date { color: #9CA3AF; }
+    [data-theme="dark"] .clock-ms { color: #2D3348; }
+    [data-theme="dark"] .left-footer { color: #374151; }
+    [data-theme="dark"] .right-heading { color: #4B5563; }
+    [data-theme="dark"] .tile { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); color: #F9FAFB; box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
+    [data-theme="dark"] .tile:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
     [data-theme="dark"] .tile-name { color: #F9FAFB; }
-    [data-theme="dark"] .tile-desc { color: #9CA3AF; }
+    [data-theme="dark"] .tile-desc { color: #6B7280; }
     [data-theme="dark"] .tile-expenses .tile-icon-wrap { background: rgba(79,70,229,0.18); }
-    [data-theme="dark"] .tile-habits .tile-icon-wrap   { background: rgba(5,150,105,0.18); }
-    [data-theme="dark"] .tile-todos .tile-icon-wrap    { background: rgba(2,132,199,0.18); }
-    [data-theme="dark"] .tile-books .tile-icon-wrap    { background: rgba(245,158,11,0.18); }
-    [data-theme="dark"] .tile-blogs .tile-icon-wrap   { background: rgba(124,58,237,0.18); }
+    [data-theme="dark"] .tile-habits   .tile-icon-wrap { background: rgba(5,150,105,0.18); }
+    [data-theme="dark"] .tile-todos    .tile-icon-wrap { background: rgba(2,132,199,0.18); }
+    [data-theme="dark"] .tile-books    .tile-icon-wrap { background: rgba(245,158,11,0.18); }
+    [data-theme="dark"] .tile-blogs    .tile-icon-wrap { background: rgba(124,58,237,0.18); }
+    [data-theme="dark"] .theme-btn { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); }
+    [data-theme="dark"] .user-chip { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); color: #E5E7EB; }
   </style>
-  <script>
-    (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
-  </script>
+  <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
 </head>
 <body>
+  <!-- Background orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- Top-right controls -->
   <div class="top-bar">
     {% if user.picture %}
     <a class="user-chip" href="/auth/logout/" title="Sign out">
@@ -279,73 +258,89 @@
     {% endif %}
     <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
   </div>
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
 
-  <div class="container">
-    <div class="badge"><span class="badge-dot"></span>Personal Dashboard</div>
-    <h1>Personal Shortcut</h1>
-    <p class="subtitle">Your data, beautifully organised.</p>
+  <div class="dashboard">
 
-    <div class="main-layout">
-      <!-- Left: clock -->
-      <div class="clock-card">
+    <!-- ── LEFT: branding + clock ── -->
+    <div class="left-panel">
+      <div class="brand">
+        <div class="badge"><span class="badge-dot"></span>Personal Dashboard</div>
+        <h1>Personal Shortcut</h1>
+        <p class="subtitle">Your data, beautifully organised.</p>
+      </div>
+
+      <div class="clock-wrap">
         <div class="clock-day" id="clock-day">Monday</div>
-        <div class="clock-divider"></div>
         <div class="clock-time-row">
           <span class="clock-hms" id="clock-hms">00:00:00</span>
-          <span class="clock-ms" id="clock-ms">.000</span>
+          <span class="clock-ms"  id="clock-ms">.000</span>
         </div>
+        <div class="clock-accent"></div>
         <div class="clock-date" id="clock-date">January 1, 2000</div>
       </div>
 
-      <!-- Right: app tiles -->
-      <div class="tiles-panel">
-      <div class="grid">
-        <a class="tile tile-expenses anim-card" href="/expenses/" style="animation-delay:0.45s">
-          <div class="tile-icon-wrap">💰</div>
-          <span class="tile-name">Expenses</span>
-          <span class="tile-desc">Track and visualise your spending with charts and breakdowns</span>
-          <span class="tile-arrow">→</span>
-        </a>
-        <a class="tile tile-habits anim-card" href="/habits/" style="animation-delay:0.55s">
-          <div class="tile-icon-wrap">✅</div>
-          <span class="tile-name">Habits</span>
-          <span class="tile-desc">Daily habit streaks, scores and completion heatmaps</span>
-          <span class="tile-arrow">→</span>
-        </a>
-        <a class="tile tile-todos anim-card" href="/todos/" style="animation-delay:0.65s">
-          <div class="tile-icon-wrap">🎯</div>
-          <span class="tile-name">Jira Todos</span>
-          <span class="tile-desc">Create and track Jira issues from your TODO project</span>
-          <span class="tile-arrow">→</span>
-        </a>
-        <a class="tile tile-books anim-card" href="/books/" style="animation-delay:0.75s">
-          <div class="tile-icon-wrap">📚</div>
-          <span class="tile-name">Books</span>
-          <span class="tile-desc">Track your reading list, progress and notes from Notion</span>
-          <span class="tile-arrow">→</span>
-        </a>
-        <a class="tile tile-blogs anim-card" href="/blogs/" style="animation-delay:0.85s">
-          <div class="tile-icon-wrap">📝</div>
-          <span class="tile-name">Blogs</span>
-          <span class="tile-desc">Track articles to read and blog ideas to write from Notion</span>
-          <span class="tile-arrow">→</span>
-        </a>
-      </div>
-      </div>
+      <div class="left-footer">Powered by Notion &middot; Built with Django</div>
     </div>
 
-    <p class="footer">Powered by Notion &middot; Built with Django</p>
+    <!-- ── RIGHT: scrollable sections ── -->
+    <div class="right-panel">
+      <div class="right-heading">Sections</div>
+
+      <a class="tile tile-expenses" href="/expenses/" style="animation-delay:0.3s">
+        <div class="tile-icon-wrap">💰</div>
+        <div class="tile-text">
+          <div class="tile-name">Expenses</div>
+          <div class="tile-desc">Track and visualise your spending with charts and breakdowns</div>
+        </div>
+        <div class="tile-arrow">→</div>
+      </a>
+
+      <a class="tile tile-habits" href="/habits/" style="animation-delay:0.38s">
+        <div class="tile-icon-wrap">✅</div>
+        <div class="tile-text">
+          <div class="tile-name">Habits</div>
+          <div class="tile-desc">Daily habit streaks, scores and completion heatmaps</div>
+        </div>
+        <div class="tile-arrow">→</div>
+      </a>
+
+      <a class="tile tile-todos" href="/todos/" style="animation-delay:0.46s">
+        <div class="tile-icon-wrap">🎯</div>
+        <div class="tile-text">
+          <div class="tile-name">Jira Todos</div>
+          <div class="tile-desc">Create and track Jira issues from your TODO project</div>
+        </div>
+        <div class="tile-arrow">→</div>
+      </a>
+
+      <a class="tile tile-books" href="/books/" style="animation-delay:0.54s">
+        <div class="tile-icon-wrap">📚</div>
+        <div class="tile-text">
+          <div class="tile-name">Books</div>
+          <div class="tile-desc">Track your reading list, progress and notes from Notion</div>
+        </div>
+        <div class="tile-arrow">→</div>
+      </a>
+
+      <a class="tile tile-blogs" href="/blogs/" style="animation-delay:0.62s">
+        <div class="tile-icon-wrap">📝</div>
+        <div class="tile-text">
+          <div class="tile-name">Blogs</div>
+          <div class="tile-desc">Track articles to read and blog ideas to write from Notion</div>
+        </div>
+        <div class="tile-arrow">→</div>
+      </a>
+    </div>
+
   </div>
+
 <script>
-  /* ── Theme toggle ── */
-  (function() {
+  /* ── Theme ── */
+  (function(){
     const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
     const btn = document.getElementById('theme-btn');
     if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
-    window._toggleTheme = function() {
+    window._toggleTheme = function(){
       const dark = !isDark();
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
       localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
@@ -353,17 +348,17 @@
     };
   })();
 
-  // Scroll-triggered entrance
+  /* ── Tile entrance animations ── */
   (function(){
     var io = new IntersectionObserver(function(entries){
       entries.forEach(function(e){
         if(e.isIntersecting){ e.target.style.animationPlayState='running'; io.unobserve(e.target); }
       });
     },{threshold:0.08});
-    document.querySelectorAll('.anim-card').forEach(function(el){ io.observe(el); });
+    document.querySelectorAll('.tile').forEach(function(el){ io.observe(el); });
   })();
 
-  // Live clock with milliseconds
+  /* ── Live clock ── */
   (function(){
     const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -372,18 +367,13 @@
     const elDay  = document.getElementById('clock-day');
     const elDate = document.getElementById('clock-date');
     let lastSec  = -1;
-
-    function tick() {
+    function tick(){
       const now = new Date();
-      const ms  = now.getMilliseconds();
-      elMs.textContent = '.' + String(ms).padStart(3, '0');
+      elMs.textContent = '.' + String(now.getMilliseconds()).padStart(3,'0');
       const sec = now.getSeconds();
-      if (sec !== lastSec) {
+      if(sec !== lastSec){
         lastSec = sec;
-        const hh = String(now.getHours()).padStart(2, '0');
-        const mm = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(sec).padStart(2, '0');
-        elHms.textContent  = hh + ':' + mm + ':' + ss;
+        elHms.textContent  = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
         elDay.textContent  = DAYS[now.getDay()];
         elDate.textContent = MONTHS[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
       }
