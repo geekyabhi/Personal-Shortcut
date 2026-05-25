@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blogs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:    #7C3AED;
+      --accent-2:  #6366F1;
+      --grad:      linear-gradient(135deg, #7C3AED, #6366F1);
+      --grad-soft: linear-gradient(135deg, #F5F3FF, #EEF2FF);
+      --read-grad:  linear-gradient(135deg, #7C3AED, #6366F1);
+      --write-grad: linear-gradient(135deg, #0891B2, #6366F1);
+    }
+
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #F5F4FA; color: #111827; min-height: 100vh; padding: 1.25rem 0.75rem; position: relative; }
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
+    .orb-1 { width: 450px; height: 450px; background: rgba(124,58,237,0.10); top: -120px; right: -80px; animation: _float 9s ease-in-out infinite; }
+    .orb-2 { width: 350px; height: 350px; background: rgba(99,102,241,0.08); bottom: -100px; left: -80px; animation: _float 11s ease-in-out infinite 2s; }
+
+    .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
+
+    nav {
+      display: inline-flex; gap: 0.2rem; flex-wrap: wrap;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+      margin-bottom: 2rem; animation: _fadeIn 0.5s ease both;
+    }
+    nav a { padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280; }
+    nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(124,58,237,0.35); }
+    nav a:not(.active):hover { background: rgba(124,58,237,0.07); color: var(--accent); }
+
+    h1 { font-size: clamp(1.5rem,5vw,2rem); font-weight: 900; letter-spacing: -0.03em; margin-bottom: 1.5rem; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: _fadeUp 0.55s 0.1s ease both; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.85rem; margin-bottom: 1.75rem; }
+    .stat-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.9); border-radius: 16px; padding: 1rem 1.25rem; box-shadow: 0 4px 18px rgba(0,0,0,0.05); animation: _fadeUp 0.5s ease both; animation-play-state: paused; transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease; }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,0.10); }
+    .stat-label { font-size: 0.7rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; }
+    .stat-value { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.04em; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-value.write-grad { background: var(--write-grad); -webkit-background-clip: text; background-clip: text; }
+
+    /* Tabs */
+    .tab-bar { display: flex; gap: 0.3rem; background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 0.3rem; width: fit-content; margin-bottom: 1.25rem; }
+    .tab-btn { padding: 0.5rem 1.4rem; border-radius: 100px; font-size: 0.87rem; font-weight: 700; border: none; cursor: pointer; font-family: inherit; transition: all 0.22s; color: #6B7280; background: transparent; }
+    .tab-btn.active-read  { background: var(--read-grad);  color: #fff; box-shadow: 0 4px 14px rgba(124,58,237,0.35); }
+    .tab-btn.active-write { background: var(--write-grad); color: #fff; box-shadow: 0 4px 14px rgba(8,145,178,0.35); }
+    .tab-btn:not(.active-read):not(.active-write):hover { background: rgba(124,58,237,0.07); color: var(--accent); }
+
+    /* Layout */
+    .layout { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+    @media (min-width:1024px) { .layout { grid-template-columns: 260px 1fr; align-items: start; } }
+
+    /* Card */
+    .card { background: rgba(255,255,255,0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.9); border-radius: 20px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06); animation: _fadeUp 0.5s ease both; animation-play-state: paused; transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease; }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(0,0,0,0.10); }
+
+    label { display: block; font-size: 0.7rem; font-weight: 700; color: #9CA3AF; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    select, input[type="text"] { width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid #E5E7EB; border-radius: 12px; font-size: 0.93rem; font-family: inherit; background: rgba(255,255,255,0.9); color: #111827; appearance: none; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    select:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }
+
+    .section-heading { font-size: 1rem; font-weight: 800; color: #374151; margin: 1.25rem 0 0.75rem; letter-spacing: -0.02em; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Filter card */
+    .filter-fields { display: flex; flex-direction: column; gap: 0.8rem; }
+
+    /* Chip row */
+    .chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
+    .chip { padding: 0.22rem 0.7rem; border-radius: 100px; font-size: 0.72rem; font-weight: 600; border: 1.5px solid rgba(124,58,237,0.18); background: rgba(124,58,237,0.06); color: #6B7280; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .chip:hover { background: rgba(124,58,237,0.12); color: var(--accent); }
+    .chip.active { background: var(--grad); color: #fff; border-color: transparent; }
+    .chip:active { transform: scale(0.96); }
+
+    /* Btn primary */
+    .btn-primary { margin-top: 1rem; width: 100%; padding: 0.8rem; background: var(--grad); color: #fff; border: none; border-radius: 100px; font-size: 0.97rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 4px 15px rgba(124,58,237,0.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(124,58,237,0.45); }
+    .btn-primary:active { transform: scale(0.97); }
+
+    /* Cache / action bar */
+    .action-bar { display: flex; align-items: center; justify-content: space-between; background: rgba(124,58,237,0.05); border: 1px solid rgba(124,58,237,0.12); border-radius: 12px; padding: 0.6rem 1rem; margin-bottom: 0.75rem; gap: 0.75rem; flex-wrap: wrap; }
+    .action-bar span { font-size: 0.78rem; color: #6B7280; font-weight: 500; }
+    .action-bar-btns { display: flex; gap: 0.5rem; }
+    .ab-bar-btn { padding: 0.3rem 0.85rem; font-size: 0.75rem; font-weight: 600; background: rgba(124,58,237,0.08); color: var(--accent); border: 1px solid rgba(124,58,237,0.2); border-radius: 100px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .ab-bar-btn:hover { background: var(--grad); color: #fff; border-color: transparent; }
+    .ab-bar-btn:active { transform: scale(0.97); }
+    .btn-add { background: var(--grad) !important; color: #fff !important; border-color: transparent !important; font-weight: 700 !important; box-shadow: 0 4px 12px rgba(124,58,237,0.30); }
+    .btn-add:hover { box-shadow: 0 6px 18px rgba(124,58,237,0.45) !important; }
+    .btn-add-write { background: var(--write-grad) !important; box-shadow: 0 4px 12px rgba(8,145,178,0.30) !important; }
+    .btn-add-write:hover { box-shadow: 0 6px 18px rgba(8,145,178,0.45) !important; }
+
+    /* Sort row */
+    .sort-row { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.65rem; flex-wrap: wrap; }
+    .sort-label { font-size: 0.72rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+    .sort-row select { width: auto; padding: 0.32rem 2rem 0.32rem 0.8rem; font-size: 0.82rem; border-radius: 100px; }
+
+    /* Blog list */
+    .blog-list { display: flex; flex-direction: column; gap: 0.55rem; }
+    .blog-row { display: flex; align-items: center; gap: 0.85rem; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 13px; padding: 0.8rem 1rem; transition: all 0.2s ease; animation: _fadeUp 0.3s ease both; }
+    .blog-row:hover { background: rgba(255,255,255,0.9); box-shadow: 0 4px 16px rgba(0,0,0,0.07); transform: translateX(3px); }
+    .blog-icon { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; background: var(--grad-soft); display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .blog-info { flex: 1; min-width: 0; }
+    .blog-topic { font-size: 0.9rem; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .blog-url-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.55rem; border-radius: 100px; font-size: 0.68rem; font-weight: 600; background: rgba(124,58,237,0.09); color: #7C3AED; border: 1px solid rgba(124,58,237,0.20); text-decoration: none; transition: all 0.18s; white-space: nowrap; margin-top: 0.25rem; }
+    .blog-url-btn:hover { background: var(--grad); color: #fff; border-color: transparent; }
+    .blog-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; flex-shrink: 0; }
+    .blog-actions { display: flex; gap: 0.25rem; }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 0.18rem 0.6rem; border-radius: 100px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
+    .badge-reading   { background: rgba(5,150,105,0.12);   color: #059669; }
+    .badge-to-read   { background: rgba(245,158,11,0.12);  color: #D97706; }
+    .badge-read      { background: rgba(124,58,237,0.12);  color: #7C3AED; }
+    .badge-to-write  { background: rgba(245,158,11,0.12);  color: #D97706; }
+    .badge-draft     { background: rgba(8,145,178,0.12);   color: #0891B2; }
+    .badge-written   { background: rgba(99,102,241,0.12);  color: #4F46E5; }
+    .badge-published { background: rgba(5,150,105,0.12);   color: #059669; }
+    .badge-default   { background: rgba(156,163,175,0.15); color: #6B7280; }
+
+    /* Icon buttons */
+    .btn-icon { width: 26px; height: 26px; border-radius: 7px; border: none; cursor: pointer; font-size: 0.78rem; display: flex; align-items: center; justify-content: center; transition: all 0.18s; font-family: inherit; }
+    .btn-edit   { background: rgba(124,58,237,0.08); color: #7C3AED; }
+    .btn-edit:hover  { background: rgba(124,58,237,0.18); transform: scale(1.08); }
+    .btn-delete { background: rgba(239,68,68,0.08);  color: #DC2626; }
+    .btn-delete:hover { background: rgba(239,68,68,0.18); transform: scale(1.08); }
+    .btn-icon:active { transform: scale(0.92) !important; }
+
+    /* Pagination */
+    .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+    .page-btn { padding: 0.4rem 0.9rem; border-radius: 100px; font-size: 0.82rem; font-weight: 600; background: rgba(124,58,237,0.07); color: var(--accent); border: 1px solid rgba(124,58,237,0.18); cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .page-btn:hover, .page-btn.active { background: var(--grad); color: #fff; border-color: transparent; }
+    .page-btn:active { transform: scale(0.97); }
+
+    .empty { text-align: center; padding: 2.5rem 1rem; color: #9CA3AF; font-size: 0.9rem; font-weight: 500; }
+
+    /* ── Modals ── */
+    .overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 1rem; }
+    .overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 24px; padding: 1.75rem; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.20); animation: _modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+    @keyframes _modalPop { from { opacity:0; transform:scale(0.88) translateY(20px); } to { opacity:1; transform:none; } }
+    .modal h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 1.25rem; letter-spacing: -0.02em; }
+    .m-field { margin-bottom: 0.85rem; }
+    .m-field label { font-size: 0.7rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem; }
+    .m-field input, .m-field select, .m-field textarea { width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid #E5E7EB; border-radius: 12px; font-size: 0.93rem; font-family: inherit; background: #fff; color: #111827; outline: none; transition: border-color 0.2s, box-shadow 0.2s; resize: vertical; }
+    .m-field input:focus, .m-field select:focus, .m-field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }
+    .m-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+    .m-actions button { flex: 1; padding: 0.8rem; border-radius: 100px; font-size: 0.93rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.2s; border: none; }
+    .m-save { background: var(--grad); color: #fff; box-shadow: 0 4px 15px rgba(124,58,237,0.35); }
+    .m-save:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(124,58,237,0.45); }
+    .m-save:active { transform: scale(0.97); }
+    .m-cancel { background: rgba(156,163,175,0.15); color: #6B7280; }
+    .m-cancel:hover { background: rgba(156,163,175,0.25); }
+    .m-cancel:active { transform: scale(0.97); }
+    .m-error { color: #DC2626; font-size: 0.82rem; margin-top: 0.5rem; display: none; }
+    .m-del-save { background: linear-gradient(135deg,#DC2626,#B91C1C) !important; box-shadow: 0 4px 15px rgba(220,38,38,0.35) !important; }
+
+    /* Theme button */
+    .theme-btn { position: fixed; top: 0.75rem; right: 0.75rem; z-index: 300; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.82); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.88); box-shadow: 0 2px 12px rgba(0,0,0,0.10); cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; transition: transform 0.2s, box-shadow 0.2s; font-family: inherit; }
+    .theme-btn:hover { transform: scale(1.12); box-shadow: 0 4px 18px rgba(0,0,0,0.16); }
+    .theme-btn:active { transform: scale(0.9); }
+
+    /* Responsive */
+    @media (min-width:640px) { .stats-grid { grid-template-columns: repeat(4,1fr); } }
+
+    /* Keyframes */
+    @keyframes _fadeUp   { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+    @keyframes _fadeIn   { from { opacity:0; } to { opacity:1; } }
+    @keyframes _float    { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
+    @media (prefers-reduced-motion:reduce){ *, *::before, *::after { animation-duration:0.01ms!important; transition-duration:0.01ms!important; } }
+
+    /* Dark mode */
+    [data-theme="dark"] body { background: #0F0F14; color: #F9FAFB; }
+    [data-theme="dark"] .card, [data-theme="dark"] .stat-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); box-shadow: 0 4px 24px rgba(0,0,0,0.30); }
+    [data-theme="dark"] .card:hover, [data-theme="dark"] .stat-card:hover { box-shadow: 0 20px 60px rgba(0,0,0,0.50); }
+    [data-theme="dark"] nav, [data-theme="dark"] .tab-bar { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] select, [data-theme="dark"] input[type="text"] { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.10); color: #F9FAFB; }
+    [data-theme="dark"] .blog-row { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .blog-row:hover { background: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .blog-topic { color: #F9FAFB; }
+    [data-theme="dark"] .section-heading { color: #E5E7EB; }
+    [data-theme="dark"] .action-bar { background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.15); }
+    [data-theme="dark"] .theme-btn { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); }
+    [data-theme="dark"] .modal { background: #1A1A24; color: #F9FAFB; }
+    [data-theme="dark"] .m-field input, [data-theme="dark"] .m-field select, [data-theme="dark"] .m-field textarea { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.10); color: #F9FAFB; }
+    [data-theme="dark"] .m-cancel { background: rgba(255,255,255,0.08); color: #9CA3AF; }
+    [data-theme="dark"] .btn-edit { background: rgba(124,58,237,0.14); }
+    [data-theme="dark"] .btn-delete { background: rgba(239,68,68,0.14); }
+    [data-theme="dark"] .chip { border-color: rgba(124,58,237,0.25); color: #9CA3AF; }
+  </style>
+  <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
+</head>
+<body>
+  <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Read Blog Modal -->
+  <div class="overlay" id="read-overlay" onclick="_rClose(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h2 id="read-modal-title">📖 Add Read Blog</h2>
+      <div class="m-field"><label>Topic / Title *</label><input type="text" id="r-topic" placeholder="e.g. How Transformers Work"></div>
+      <div class="m-field">
+        <label>Status</label>
+        <select id="r-status">
+          <option>To Read</option>
+          <option>Reading</option>
+          <option>Read</option>
+        </select>
+      </div>
+      <div class="m-field"><label>URL / Link</label><input type="text" id="r-url" placeholder="https://…"></div>
+      <p class="m-error" id="r-error"></p>
+      <div class="m-actions">
+        <button class="m-cancel" onclick="_rClose()">Cancel</button>
+        <button class="m-save" id="r-save-btn" onclick="_rSave()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Write Blog Modal -->
+  <div class="overlay" id="write-overlay" onclick="_wClose(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h2 id="write-modal-title">✍️ Add Write Topic</h2>
+      <div class="m-field"><label>Topic / Idea *</label><input type="text" id="w-topic" placeholder="e.g. Web Security Basics"></div>
+      <div class="m-field">
+        <label>Status</label>
+        <select id="w-status">
+          <option>To Write</option>
+          <option>Draft</option>
+          <option>Written</option>
+          <option>Published</option>
+        </select>
+      </div>
+      <div class="m-field"><label>Published URL (optional)</label><input type="text" id="w-url" placeholder="https://…"></div>
+      <p class="m-error" id="w-error"></p>
+      <div class="m-actions">
+        <button class="m-cancel" onclick="_wClose()">Cancel</button>
+        <button class="m-save" id="w-save-btn" onclick="_wSave()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="overlay" id="del-overlay" onclick="_dClose(event)">
+    <div class="modal" style="max-width:360px;" onclick="event.stopPropagation()">
+      <h2 style="color:#DC2626;">🗑 Remove Entry?</h2>
+      <p style="color:#6B7280;font-size:0.9rem;line-height:1.5;margin-bottom:1.25rem;">
+        Remove <strong id="del-name" style="color:#111827;"></strong>?
+        <br><small style="opacity:0.7;">This archives it in Notion.</small>
+      </p>
+      <div class="m-actions">
+        <button class="m-cancel" onclick="_dClose()">Cancel</button>
+        <button class="m-save m-del-save" id="del-btn" onclick="_dDo()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <nav>
+      <a href="/">← Home</a>
+      <a href="/blogs/" class="active">📝 Blogs</a>
+    </nav>
+
+    <h1>📝 Blog Tracker</h1>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-label">To Read</div><div class="stat-value" id="s-to-read">—</div></div>
+      <div class="stat-card"><div class="stat-label">Read</div><div class="stat-value" id="s-read">—</div></div>
+      <div class="stat-card"><div class="stat-label">To Write</div><div class="stat-value write-grad" id="s-to-write">—</div></div>
+      <div class="stat-card"><div class="stat-label">Published</div><div class="stat-value write-grad" id="s-published">—</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active-read"  id="tab-read"  onclick="_switchTab('read')">📖 Read Blogs</button>
+      <button class="tab-btn"              id="tab-write" onclick="_switchTab('write')">✍️ Write Blogs</button>
+    </div>
+
+    <!-- READ TAB -->
+    <div id="panel-read">
+      <div class="layout">
+        <div>
+          <div class="card" style="margin-bottom:0;">
+            <div class="section-heading" style="margin-top:0;">🔍 Filter</div>
+            <div class="filter-fields">
+              <div><label>Search</label><input type="text" id="r-search" placeholder="Topic…" oninput="_rDebounce()"></div>
+              <div>
+                <label>Status</label>
+                <select id="r-status-filter" onchange="_rApply()">
+                  <option value="">All Statuses</option>
+                  <option>Reading</option>
+                  <option>To Read</option>
+                  <option>Read</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:0.9rem;">
+              <label>Quick Filter</label>
+              <div class="chip-row">
+                <button class="chip" data-status="Reading" onclick="_rChip('Reading')">📖 Reading</button>
+                <button class="chip" data-status="To Read" onclick="_rChip('To Read')">📋 To Read</button>
+                <button class="chip" data-status="Read"    onclick="_rChip('Read')">✅ Read</button>
+                <button class="chip chip-has-link" onclick="_rLinkToggle()">🔗 Has Link</button>
+              </div>
+            </div>
+            <button class="btn-primary" onclick="_rApply()">Apply</button>
+          </div>
+        </div>
+        <div>
+          <div class="action-bar">
+            <span id="r-cache-info">Loading…</span>
+            <div class="action-bar-btns">
+              <button class="ab-bar-btn btn-add" onclick="_rOpen()">+ Add Blog</button>
+              <button class="ab-bar-btn" onclick="_bustCache()">↺ Refresh</button>
+            </div>
+          </div>
+          <div class="sort-row">
+            <span class="sort-label">Sort:</span>
+            <select id="r-sort" onchange="_rSortChange()">
+              <option value="status">Status</option>
+              <option value="name-asc">Name A→Z</option>
+              <option value="name-desc">Name Z→A</option>
+              <option value="recent">Recently Added</option>
+            </select>
+          </div>
+          <div class="card" style="padding:0.75rem;">
+            <div id="read-list" class="blog-list"><div class="empty">Loading…</div></div>
+            <div class="pagination" id="r-pagination"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WRITE TAB -->
+    <div id="panel-write" style="display:none;">
+      <div class="layout">
+        <div>
+          <div class="card" style="margin-bottom:0;">
+            <div class="section-heading" style="margin-top:0;">🔍 Filter</div>
+            <div class="filter-fields">
+              <div><label>Search</label><input type="text" id="w-search" placeholder="Topic…" oninput="_wDebounce()"></div>
+              <div>
+                <label>Status</label>
+                <select id="w-status-filter" onchange="_wApply()">
+                  <option value="">All Statuses</option>
+                  <option>To Write</option>
+                  <option>Draft</option>
+                  <option>Written</option>
+                  <option>Published</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:0.9rem;">
+              <label>Quick Filter</label>
+              <div class="chip-row">
+                <button class="chip" data-wstatus="To Write"  onclick="_wChip('To Write')">📋 To Write</button>
+                <button class="chip" data-wstatus="Draft"     onclick="_wChip('Draft')">📝 Draft</button>
+                <button class="chip" data-wstatus="Written"   onclick="_wChip('Written')">✍ Written</button>
+                <button class="chip" data-wstatus="Published" onclick="_wChip('Published')">🚀 Published</button>
+              </div>
+            </div>
+            <button class="btn-primary" onclick="_wApply()">Apply</button>
+          </div>
+        </div>
+        <div>
+          <div class="action-bar">
+            <span id="w-cache-info">Loading…</span>
+            <div class="action-bar-btns">
+              <button class="ab-bar-btn btn-add btn-add-write" onclick="_wOpen()">+ Add Topic</button>
+              <button class="ab-bar-btn" onclick="_bustCache()">↺ Refresh</button>
+            </div>
+          </div>
+          <div class="sort-row">
+            <span class="sort-label">Sort:</span>
+            <select id="w-sort" onchange="_wSortChange()">
+              <option value="status">Status</option>
+              <option value="name-asc">Name A→Z</option>
+              <option value="name-desc">Name Z→A</option>
+              <option value="recent">Recently Added</option>
+            </select>
+          </div>
+          <div class="card" style="padding:0.75rem;">
+            <div id="write-list" class="blog-list"><div class="empty">Loading…</div></div>
+            <div class="pagination" id="w-pagination"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* ── Theme ── */
+  (function(){
+    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+    window._toggleTheme = function(){
+      const dark = !isDark();
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
+      if (btn) btn.textContent = dark ? '🌙' : '☀️';
+    };
+  })();
+
+  const PAGE_SIZE = 40;
+  let _rRaw = [], _rBooks = [], _rPage = 1, _rDebTimer = null, _rSort = 'status', _rLinkFilter = false;
+  let _wRaw = [], _wBooks = [], _wPage = 1, _wDebTimer = null, _wSort = 'status';
+  let _rEditId = null, _wEditId = null, _delCtx = null; // {type, page_id, name}
+
+  const READ_ORDER  = {Reading:0,'To Read':1,Read:2};
+  const WRITE_ORDER = {Draft:0,'To Write':1,Written:2,Published:3};
+
+  function _statusClass(s, type) {
+    if (type === 'read') {
+      const m = {Reading:'reading','To Read':'to-read',Read:'read'};
+      return 'badge badge-' + (m[s] || 'default');
+    }
+    const m = {'To Write':'to-write',Draft:'draft',Written:'written',Published:'published'};
+    return 'badge badge-' + (m[s] || 'default');
+  }
+
+  /* ── Tab switch ── */
+  let _activeTab = 'read';
+  function _switchTab(t) {
+    _activeTab = t;
+    document.getElementById('panel-read').style.display  = t === 'read'  ? '' : 'none';
+    document.getElementById('panel-write').style.display = t === 'write' ? '' : 'none';
+    document.getElementById('tab-read').className  = 'tab-btn' + (t === 'read'  ? ' active-read'  : '');
+    document.getElementById('tab-write').className = 'tab-btn' + (t === 'write' ? ' active-write' : '');
+  }
+
+  /* ── Stats ── */
+  function loadStats() {
+    fetch('/blogs/stats/').then(r=>r.json()).then(d => {
+      document.getElementById('s-to-read').textContent   = d.read_status['To Read']  || 0;
+      document.getElementById('s-read').textContent      = d.read_status['Read']     || 0;
+      document.getElementById('s-to-write').textContent  = d.write_status['To Write']|| 0;
+      document.getElementById('s-published').textContent = d.write_status['Published']||0;
+    });
+  }
+
+  /* ══════════════ READ BLOGS ══════════════ */
+
+  function _rSort_(blogs) {
+    const s = [...blogs];
+    if (_rSort === 'status')     s.sort((a,b) => ((READ_ORDER[a.status]??99)-(READ_ORDER[b.status]??99)) || a.topic.localeCompare(b.topic));
+    else if (_rSort === 'name-asc')  s.sort((a,b) => a.topic.localeCompare(b.topic));
+    else if (_rSort === 'name-desc') s.sort((a,b) => b.topic.localeCompare(a.topic));
+    else if (_rSort === 'recent')    s.sort((a,b) => (b.created_time||'').localeCompare(a.created_time||''));
+    return s;
+  }
+
+  function _rRender() {
+    const list = document.getElementById('read-list');
+    const pag  = document.getElementById('r-pagination');
+    if (!_rBooks.length) { list.innerHTML='<div class="empty">No entries found.</div>'; pag.innerHTML=''; return; }
+    const total = Math.ceil(_rBooks.length / PAGE_SIZE);
+    const slice = _rBooks.slice((_rPage-1)*PAGE_SIZE, _rPage*PAGE_SIZE);
+    list.innerHTML = slice.map(b => {
+      const urlHtml = b.url ? `<a class="blog-url-btn" href="${b.url}" target="_blank" rel="noopener">🔗 Open</a>` : '';
+      return `<div class="blog-row">
+        <div class="blog-icon">📖</div>
+        <div class="blog-info">
+          <div class="blog-topic" title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</div>
+          ${urlHtml}
+        </div>
+        <div class="blog-right">
+          <span class="${_statusClass(b.status,'read')}">${b.status||'?'}</span>
+          <div class="blog-actions">
+            <button class="btn-icon btn-edit" onclick="_rEdit('${b.page_id}')" title="Edit">✏</button>
+            <button class="btn-icon btn-delete" onclick="_dOpen('read','${b.page_id}','${b.topic.replace(/'/g,"\\'")}')">🗑</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    if (total <= 1) { pag.innerHTML=''; return; }
+    let h='';
+    if (_rPage>1) h+=`<button class="page-btn" onclick="_rGoPage(${_rPage-1})">‹</button>`;
+    for (let i=Math.max(1,_rPage-2);i<=Math.min(total,_rPage+2);i++) h+=`<button class="page-btn${i===_rPage?' active':''}" onclick="_rGoPage(${i})">${i}</button>`;
+    if (_rPage<total) h+=`<button class="page-btn" onclick="_rGoPage(${_rPage+1})">›</button>`;
+    pag.innerHTML=h;
+  }
+  function _rGoPage(p) { _rPage=p; _rRender(); }
+
+  function _rApply() {
+    const status = document.getElementById('r-status-filter').value;
+    const q = document.getElementById('r-search').value;
+    _rSyncChips();
+    document.getElementById('r-cache-info').textContent = 'Loading…';
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (q) params.set('q', q);
+    fetch('/blogs/read/list/?' + params).then(r=>r.json()).then(d => {
+      _rRaw = d.blogs;
+      _rBooks = _rSort_(_rRaw.filter(b => !_rLinkFilter || b.url));
+      _rPage=1; _rRender();
+      document.getElementById('r-cache-info').textContent = d.total + ' blogs';
+    });
+  }
+  function _rDebounce() { clearTimeout(_rDebTimer); _rDebTimer = setTimeout(_rApply, 300); }
+  function _rSortChange() { _rSort = document.getElementById('r-sort').value; _rBooks = _rSort_(_rRaw.filter(b=>!_rLinkFilter||b.url)); _rPage=1; _rRender(); }
+  function _rChip(s) { const el=document.getElementById('r-status-filter'); el.value = el.value===s?'':s; _rSyncChips(); _rApply(); }
+  function _rLinkToggle() { _rLinkFilter=!_rLinkFilter; document.querySelector('.chip-has-link').classList.toggle('active',_rLinkFilter); _rBooks=_rSort_(_rRaw.filter(b=>!_rLinkFilter||b.url)); _rPage=1; _rRender(); }
+  function _rSyncChips() { const cur=document.getElementById('r-status-filter').value; document.querySelectorAll('.chip[data-status]').forEach(c=>c.classList.toggle('active',c.dataset.status===cur)); }
+
+  /* Read modal */
+  function _rOpen() {
+    _rEditId=null;
+    document.getElementById('read-modal-title').textContent='📖 Add Read Blog';
+    document.getElementById('r-save-btn').textContent='Save';
+    document.getElementById('r-topic').value='';
+    document.getElementById('r-status').value='To Read';
+    document.getElementById('r-url').value='';
+    document.getElementById('r-error').style.display='none';
+    document.getElementById('read-overlay').classList.add('open');
+    setTimeout(()=>document.getElementById('r-topic').focus(),50);
+  }
+  function _rEdit(pid) {
+    const b = _rRaw.find(x=>x.page_id===pid); if(!b) return;
+    _rEditId=pid;
+    document.getElementById('read-modal-title').textContent='✏️ Edit Blog';
+    document.getElementById('r-save-btn').textContent='Save Changes';
+    document.getElementById('r-topic').value=b.topic;
+    document.getElementById('r-status').value=b.status||'To Read';
+    document.getElementById('r-url').value=b.url||'';
+    document.getElementById('r-error').style.display='none';
+    document.getElementById('read-overlay').classList.add('open');
+    setTimeout(()=>document.getElementById('r-topic').focus(),50);
+  }
+  function _rClose(e) { if(!e||e.target===document.getElementById('read-overlay')) document.getElementById('read-overlay').classList.remove('open'); }
+  function _rSave() {
+    const topic=document.getElementById('r-topic').value.trim();
+    const errEl=document.getElementById('r-error');
+    if(!topic){errEl.textContent='Topic is required.';errEl.style.display='block';return;}
+    errEl.style.display='none';
+    const btn=document.getElementById('r-save-btn');
+    btn.disabled=true; btn.textContent='Saving…';
+    const isEdit=!!_rEditId;
+    const payload={topic, status:document.getElementById('r-status').value, url:document.getElementById('r-url').value.trim()};
+    fetch(isEdit?`/blogs/read/${_rEditId}/update/`:'/blogs/read/create/',{method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(r=>r.json()).then(d=>{
+        if(d.error){errEl.textContent=d.error;errEl.style.display='block';return;}
+        document.getElementById('read-overlay').classList.remove('open');
+        _rApply(); loadStats();
+      }).finally(()=>{btn.disabled=false;btn.textContent=isEdit?'Save Changes':'Save';});
+  }
+
+  /* ══════════════ WRITE BLOGS ══════════════ */
+
+  function _wSort_(blogs) {
+    const s=[...blogs];
+    if (_wSort==='status')     s.sort((a,b)=>((WRITE_ORDER[a.status]??99)-(WRITE_ORDER[b.status]??99))||a.topic.localeCompare(b.topic));
+    else if (_wSort==='name-asc')  s.sort((a,b)=>a.topic.localeCompare(b.topic));
+    else if (_wSort==='name-desc') s.sort((a,b)=>b.topic.localeCompare(a.topic));
+    else if (_wSort==='recent')    s.sort((a,b)=>(b.created_time||'').localeCompare(a.created_time||''));
+    return s;
+  }
+
+  function _wRender() {
+    const list=document.getElementById('write-list');
+    const pag=document.getElementById('w-pagination');
+    if(!_wBooks.length){list.innerHTML='<div class="empty">No entries found.</div>';pag.innerHTML='';return;}
+    const total=Math.ceil(_wBooks.length/PAGE_SIZE);
+    const slice=_wBooks.slice((_wPage-1)*PAGE_SIZE,_wPage*PAGE_SIZE);
+    list.innerHTML=slice.map(b=>{
+      const urlHtml=b.url?`<a class="blog-url-btn" href="${b.url}" target="_blank" rel="noopener">🔗 Published</a>`:'';
+      return `<div class="blog-row">
+        <div class="blog-icon">✍️</div>
+        <div class="blog-info">
+          <div class="blog-topic" title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</div>
+          ${urlHtml}
+        </div>
+        <div class="blog-right">
+          <span class="${_statusClass(b.status,'write')}">${b.status||'?'}</span>
+          <div class="blog-actions">
+            <button class="btn-icon btn-edit" onclick="_wEdit('${b.page_id}')" title="Edit">✏</button>
+            <button class="btn-icon btn-delete" onclick="_dOpen('write','${b.page_id}','${b.topic.replace(/'/g,"\\'")}')">🗑</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    if(total<=1){pag.innerHTML='';return;}
+    let h='';
+    if(_wPage>1) h+=`<button class="page-btn" onclick="_wGoPage(${_wPage-1})">‹</button>`;
+    for(let i=Math.max(1,_wPage-2);i<=Math.min(total,_wPage+2);i++) h+=`<button class="page-btn${i===_wPage?' active':''}" onclick="_wGoPage(${i})">${i}</button>`;
+    if(_wPage<total) h+=`<button class="page-btn" onclick="_wGoPage(${_wPage+1})">›</button>`;
+    pag.innerHTML=h;
+  }
+  function _wGoPage(p){_wPage=p;_wRender();}
+
+  function _wApply() {
+    const status=document.getElementById('w-status-filter').value;
+    const q=document.getElementById('w-search').value;
+    _wSyncChips();
+    document.getElementById('w-cache-info').textContent='Loading…';
+    const params=new URLSearchParams();
+    if(status) params.set('status',status);
+    if(q) params.set('q',q);
+    fetch('/blogs/write/list/?'+params).then(r=>r.json()).then(d=>{
+      _wRaw=d.blogs; _wBooks=_wSort_(_wRaw); _wPage=1; _wRender();
+      document.getElementById('w-cache-info').textContent=d.total+' topics';
+    });
+  }
+  function _wDebounce(){clearTimeout(_wDebTimer);_wDebTimer=setTimeout(_wApply,300);}
+  function _wSortChange(){_wSort=document.getElementById('w-sort').value;_wBooks=_wSort_(_wRaw);_wPage=1;_wRender();}
+  function _wChip(s){const el=document.getElementById('w-status-filter');el.value=el.value===s?'':s;_wSyncChips();_wApply();}
+  function _wSyncChips(){const cur=document.getElementById('w-status-filter').value;document.querySelectorAll('.chip[data-wstatus]').forEach(c=>c.classList.toggle('active',c.dataset.wstatus===cur));}
+
+  /* Write modal */
+  function _wOpen(){
+    _wEditId=null;
+    document.getElementById('write-modal-title').textContent='✍️ Add Write Topic';
+    document.getElementById('w-save-btn').textContent='Save';
+    document.getElementById('w-topic').value='';
+    document.getElementById('w-status').value='To Write';
+    document.getElementById('w-url').value='';
+    document.getElementById('w-error').style.display='none';
+    document.getElementById('write-overlay').classList.add('open');
+    setTimeout(()=>document.getElementById('w-topic').focus(),50);
+  }
+  function _wEdit(pid){
+    const b=_wRaw.find(x=>x.page_id===pid);if(!b)return;
+    _wEditId=pid;
+    document.getElementById('write-modal-title').textContent='✏️ Edit Topic';
+    document.getElementById('w-save-btn').textContent='Save Changes';
+    document.getElementById('w-topic').value=b.topic;
+    document.getElementById('w-status').value=b.status||'To Write';
+    document.getElementById('w-url').value=b.url||'';
+    document.getElementById('w-error').style.display='none';
+    document.getElementById('write-overlay').classList.add('open');
+    setTimeout(()=>document.getElementById('w-topic').focus(),50);
+  }
+  function _wClose(e){if(!e||e.target===document.getElementById('write-overlay'))document.getElementById('write-overlay').classList.remove('open');}
+  function _wSave(){
+    const topic=document.getElementById('w-topic').value.trim();
+    const errEl=document.getElementById('w-error');
+    if(!topic){errEl.textContent='Topic is required.';errEl.style.display='block';return;}
+    errEl.style.display='none';
+    const btn=document.getElementById('w-save-btn');
+    btn.disabled=true;btn.textContent='Saving…';
+    const isEdit=!!_wEditId;
+    const payload={topic,status:document.getElementById('w-status').value,url:document.getElementById('w-url').value.trim()};
+    fetch(isEdit?`/blogs/write/${_wEditId}/update/`:'/blogs/write/create/',{method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(r=>r.json()).then(d=>{
+        if(d.error){errEl.textContent=d.error;errEl.style.display='block';return;}
+        document.getElementById('write-overlay').classList.remove('open');
+        _wApply();loadStats();
+      }).finally(()=>{btn.disabled=false;btn.textContent=isEdit?'Save Changes':'Save';});
+  }
+
+  /* ── Delete ── */
+  function _dOpen(type,pid,name){
+    _delCtx={type,pid,name};
+    document.getElementById('del-name').textContent=name;
+    document.getElementById('del-overlay').classList.add('open');
+  }
+  function _dClose(e){if(!e||e.target===document.getElementById('del-overlay')){document.getElementById('del-overlay').classList.remove('open');_delCtx=null;}}
+  function _dDo(){
+    if(!_delCtx)return;
+    const btn=document.getElementById('del-btn');
+    btn.disabled=true;btn.textContent='Deleting…';
+    const url=_delCtx.type==='read'?`/blogs/read/${_delCtx.pid}/delete/`:`/blogs/write/${_delCtx.pid}/delete/`;
+    fetch(url,{method:'POST'}).then(r=>r.json()).then(d=>{
+      if(d.error){alert('Delete failed: '+d.error);return;}
+      document.getElementById('del-overlay').classList.remove('open');
+      _delCtx=null;
+      if(_activeTab==='read') _rApply(); else _wApply();
+      loadStats();
+    }).finally(()=>{btn.disabled=false;btn.textContent='Delete';});
+  }
+
+  /* ── Cache bust ── */
+  function _bustCache(){
+    fetch('/blogs/cache/bust/',{method:'POST'}).then(()=>{_rApply();_wApply();loadStats();});
+  }
+
+  /* ── Keyboard ── */
+  document.addEventListener('keydown', e => {
+    if(e.key==='Escape'){
+      _rClose({target:document.getElementById('read-overlay')});
+      _wClose({target:document.getElementById('write-overlay')});
+      _dClose({target:document.getElementById('del-overlay')});
+    }
+  });
+
+  /* ── Scroll animations ── */
+  (function(){
+    var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.style.animationPlayState='running';io.unobserve(e.target);}});},{threshold:0.06});
+    var delay=0;
+    document.querySelectorAll('.card,.stat-card').forEach(function(el){el.style.animationDelay=delay+'ms';delay=Math.min(delay+80,400);io.observe(el);});
+  })();
+
+  /* ── Init ── */
+  loadStats();
+  _rApply();
+  _wApply();
+</script>
+</body>
+</html>

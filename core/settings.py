@@ -11,6 +11,7 @@ INSTALLED_APPS = [
     "expenses",
     "todos",
     "books",
+    "blogs",
 ]
 
 MIDDLEWARE = [
@@ -27,6 +28,7 @@ TEMPLATES = [
             BASE_DIR / "habits" / "templates",
             BASE_DIR / "todos" / "templates",
             BASE_DIR / "books" / "templates",
+            BASE_DIR / "blogs" / "templates",
         ],
         "APP_DIRS": False,
         "OPTIONS": {"context_processors": []},

@@ -85,6 +85,7 @@
     .tile-habits::after  { background: linear-gradient(135deg, rgba(5,150,105,0.05), rgba(8,145,178,0.05)); }
     .tile-todos::after   { background: linear-gradient(135deg, rgba(2,132,199,0.05), rgba(99,102,241,0.05)); }
     .tile-books::after   { background: linear-gradient(135deg, rgba(245,158,11,0.05), rgba(239,68,68,0.05)); }
+    .tile-blogs::after   { background: linear-gradient(135deg, rgba(124,58,237,0.05), rgba(99,102,241,0.05)); }
     .tile:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 20px 60px rgba(0,0,0,0.13); }
     .tile:hover::after { opacity: 1; }
 
@@ -97,6 +98,7 @@
     .tile-habits   .tile-icon-wrap { background: linear-gradient(135deg, #ECFDF5, #D1FAE5); }
     .tile-todos    .tile-icon-wrap { background: linear-gradient(135deg, #E0F2FE, #EEF2FF); }
     .tile-books    .tile-icon-wrap { background: linear-gradient(135deg, #FFFBEB, #FEF3C7); }
+    .tile-blogs    .tile-icon-wrap { background: linear-gradient(135deg, #F5F3FF, #EEF2FF); }
 
     .tile-name { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
     .tile-desc { font-size: 0.85rem; color: #6B7280; line-height: 1.5; font-weight: 500; }
@@ -110,6 +112,7 @@
     .tile-habits   .tile-arrow { background: linear-gradient(135deg, #059669, #0891B2); color: white; }
     .tile-todos    .tile-arrow { background: linear-gradient(135deg, #0284C7, #6366F1); color: white; }
     .tile-books    .tile-arrow { background: linear-gradient(135deg, #F59E0B, #EF4444); color: white; }
+    .tile-blogs    .tile-arrow { background: linear-gradient(135deg, #7C3AED, #6366F1); color: white; }
     .tile:hover .tile-arrow { transform: translateX(3px); }
 
     .anim-card { animation: _fadeUp 0.55s ease both; animation-play-state: paused; }
@@ -158,6 +161,7 @@
     [data-theme="dark"] .tile-habits .tile-icon-wrap   { background: rgba(5,150,105,0.18); }
     [data-theme="dark"] .tile-todos .tile-icon-wrap    { background: rgba(2,132,199,0.18); }
     [data-theme="dark"] .tile-books .tile-icon-wrap    { background: rgba(245,158,11,0.18); }
+    [data-theme="dark"] .tile-blogs .tile-icon-wrap   { background: rgba(124,58,237,0.18); }
   </style>
   <script>
     (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
@@ -197,6 +201,12 @@
         <div class="tile-icon-wrap">📚</div>
         <span class="tile-name">Books</span>
         <span class="tile-desc">Track your reading list, progress and notes from Notion</span>
+        <span class="tile-arrow">→</span>
+      </a>
+      <a class="tile tile-blogs anim-card" href="/blogs/" style="animation-delay:0.85s">
+        <div class="tile-icon-wrap">📝</div>
+        <span class="tile-name">Blogs</span>
+        <span class="tile-desc">Track articles to read and blog ideas to write from Notion</span>
         <span class="tile-arrow">→</span>
       </a>
     </div>
