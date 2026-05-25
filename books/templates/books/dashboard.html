@@ -322,6 +322,10 @@
         <div class="pill-grid" id="ab-genre-pills"></div>
       </div>
       <div class="ab-field">
+        <label>Google Drive Link (optional)</label>
+        <input type="text" id="ab-drive" placeholder="https://drive.google.com/…">
+      </div>
+      <div class="ab-field">
         <label>Summary (optional)</label>
         <textarea id="ab-summary" rows="3" placeholder="Brief notes…"></textarea>
       </div>
@@ -618,6 +622,7 @@
     document.getElementById('ab-name').value = '';
     document.getElementById('ab-status').value = 'To Read';
     document.getElementById('ab-author').value = '';
+    document.getElementById('ab-drive').value = '';
     document.getElementById('ab-summary').value = '';
     document.getElementById('ab-error').style.display = 'none';
     document.querySelectorAll('#ab-genre-pills .pill').forEach(p => p.classList.remove('selected'));
@@ -631,11 +636,12 @@
   }
 
   function _abSave() {
-    const name    = document.getElementById('ab-name').value.trim();
-    const status  = document.getElementById('ab-status').value;
-    const author  = document.getElementById('ab-author').value;
-    const summary = document.getElementById('ab-summary').value.trim();
-    const genres  = [...document.querySelectorAll('#ab-genre-pills .pill.selected')].map(p => p.textContent);
+    const name      = document.getElementById('ab-name').value.trim();
+    const status    = document.getElementById('ab-status').value;
+    const author    = document.getElementById('ab-author').value;
+    const drive_url = document.getElementById('ab-drive').value.trim();
+    const summary   = document.getElementById('ab-summary').value.trim();
+    const genres    = [...document.querySelectorAll('#ab-genre-pills .pill.selected')].map(p => p.textContent);
     const errEl   = document.getElementById('ab-error');
 
     if (!name) { errEl.textContent = 'Book title is required.'; errEl.style.display = 'block'; return; }
@@ -647,7 +653,7 @@
     fetch('/books/create/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, status, authors: author ? [author] : [], genres, summary })
+      body: JSON.stringify({ name, status, authors: author ? [author] : [], genres, summary, drive_url })
     })
     .then(r => r.json())
     .then(data => {

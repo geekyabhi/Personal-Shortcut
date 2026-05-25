@@ -253,6 +253,12 @@ class BooksCreateView(View):
         if summary:
             properties["Summary"] = {"rich_text": [{"text": {"content": summary}}]}
 
+        drive_url = body.get("drive_url", "").strip()
+        if drive_url:
+            properties["Soft Copy"] = {
+                "files": [{"type": "external", "name": "Google Drive", "external": {"url": drive_url}}]
+            }
+
         resp = requests.post(
             "https://api.notion.com/v1/pages",
             headers=_headers(),
