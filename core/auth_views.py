@@ -18,7 +18,7 @@ def login_view(request):
 def auth_start(request):
     state = secrets.token_urlsafe(32)
     request.session["oauth_state"] = state
-    redirect_uri = request.build_absolute_uri("/auth/callback/")
+    redirect_uri = settings.GOOGLE_REDIRECT_URI
     params = urllib.parse.urlencode({
         "client_id":     settings.GOOGLE_WEB_CLIENT_ID,
         "redirect_uri":  redirect_uri,
@@ -38,7 +38,7 @@ def auth_callback(request):
     if not code:
         return redirect(f"/login/?error={request.GET.get('error', 'cancelled')}")
 
-    redirect_uri = request.build_absolute_uri("/auth/callback/")
+    redirect_uri = settings.GOOGLE_REDIRECT_URI
 
     # Exchange code → tokens
     try:

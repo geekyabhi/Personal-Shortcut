@@ -30,6 +30,7 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")       # Drive (Desktop app)
 GOOGLE_WEB_CLIENT_ID     = os.environ.get("GOOGLE_WEB_CLIENT_ID", "")
 GOOGLE_WEB_CLIENT_SECRET = os.environ.get("GOOGLE_WEB_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI      = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback/")
 ALLOWED_EMAIL = os.environ.get("ALLOWED_EMAIL", "abhi0strike@gmail.com")
 
 TEMPLATES = [
