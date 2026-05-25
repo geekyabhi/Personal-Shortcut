@@ -12,8 +12,7 @@ from django.core.management.base import BaseCommand
 
 
 SCOPES = [
-    "https://www.googleapis.com/auth/drive.readonly",  # list all files
-    "https://www.googleapis.com/auth/drive.file",       # upload files created by this app
+    "https://www.googleapis.com/auth/drive",  # full access — needed to upload into existing folders
 ]
 
 
