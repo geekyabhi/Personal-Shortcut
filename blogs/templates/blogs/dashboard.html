@@ -228,6 +228,24 @@
     [data-theme="dark"] .btn-edit { background: rgba(124,58,237,0.14); }
     [data-theme="dark"] .btn-delete { background: rgba(239,68,68,0.14); }
     [data-theme="dark"] .chip { border-color: rgba(124,58,237,0.25); color: #9CA3AF; }
+
+    /* ── Skeleton ── */
+    .skeleton-wrap { padding: 0.5rem 0; }
+    .sk-line { border-radius: 8px; background: linear-gradient(90deg,rgba(0,0,0,0.06) 25%,rgba(0,0,0,0.10) 50%,rgba(0,0,0,0.06) 75%); background-size: 200% 100%; animation: _shimmer 1.4s infinite; }
+    @keyframes _shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* ── Toast ── */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { padding: 0.7rem 1.1rem; border-radius: 12px; font-size: 0.83rem; font-weight: 500; font-family: inherit; box-shadow: 0 8px 32px rgba(0,0,0,0.13); display: flex; align-items: center; gap: 0.55rem; pointer-events: auto; backdrop-filter: blur(12px); max-width: 300px; animation: _toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .toast.success { background: rgba(236,253,245,0.97); color: #065F46; border: 1px solid rgba(16,185,129,0.25); }
+    .toast.error   { background: rgba(254,242,242,0.97); color: #991B1B; border: 1px solid rgba(239,68,68,0.25); }
+    .toast.info    { background: rgba(239,246,255,0.97); color: #1E40AF; border: 1px solid rgba(59,130,246,0.25); }
+    .toast.out { animation: _toastOut 0.25s ease forwards; }
+    @keyframes _toastIn  { from { opacity:0; transform:translateY(10px) scale(0.95); } to { opacity:1; transform:none; } }
+    @keyframes _toastOut { to   { opacity:0; transform:translateY(6px)  scale(0.95); } }
+
+    /* ── Dark mode skeleton ── */
+    [data-theme="dark"] .sk-line { background: linear-gradient(90deg,rgba(255,255,255,0.05) 25%,rgba(255,255,255,0.10) 50%,rgba(255,255,255,0.05) 75%); background-size: 200% 100%; }
   </style>
   <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
 </head>
@@ -371,7 +389,12 @@
             </div>
           </div>
           <div class="card" style="padding:0.75rem;">
-            <div id="read-list" class="blog-list"><div class="empty">Loading…</div></div>
+            <div id="read-list" class="blog-list"><div class="skeleton-wrap">
+              <div class="sk-line" style="width:100%;height:4rem;margin-bottom:0.55rem;border-radius:13px;"></div>
+              <div class="sk-line" style="width:100%;height:4rem;margin-bottom:0.55rem;border-radius:13px;"></div>
+              <div class="sk-line" style="width:100%;height:4rem;margin-bottom:0.55rem;border-radius:13px;"></div>
+              <div class="sk-line" style="width:85%;height:4rem;border-radius:13px;"></div>
+            </div></div>
             <div class="pagination" id="r-pagination"></div>
           </div>
         </div>
@@ -432,7 +455,12 @@
             </div>
           </div>
           <div class="card" style="padding:0.75rem;">
-            <div id="write-list" class="blog-list"><div class="empty">Loading…</div></div>
+            <div id="write-list" class="blog-list"><div class="skeleton-wrap">
+              <div class="sk-line" style="width:100%;height:4rem;margin-bottom:0.55rem;border-radius:13px;"></div>
+              <div class="sk-line" style="width:100%;height:4rem;margin-bottom:0.55rem;border-radius:13px;"></div>
+              <div class="sk-line" style="width:100%;height:4rem;margin-bottom:0.55rem;border-radius:13px;"></div>
+              <div class="sk-line" style="width:85%;height:4rem;border-radius:13px;"></div>
+            </div></div>
             <div class="pagination" id="w-pagination"></div>
           </div>
         </div>
@@ -441,6 +469,20 @@
   </div>
 
 <script>
+  function showToast(msg, type, duration) {
+    type = type || 'info'; duration = duration || 3000;
+    var wrap = document.getElementById('toast-container');
+    var el = document.createElement('div');
+    el.className = 'toast ' + type;
+    var icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+    el.innerHTML = '<span style="font-size:0.9rem">' + icon + '</span><span>' + msg + '</span>';
+    wrap.appendChild(el);
+    setTimeout(function() {
+      el.classList.add('out');
+      el.addEventListener('animationend', function() { el.remove(); }, {once:true});
+    }, duration);
+  }
+
   /* ── Theme ── */
   (function(){
     const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
@@ -654,8 +696,9 @@
     const payload={topic, status:document.getElementById('r-status').value, url:document.getElementById('r-url').value.trim()};
     fetch(isEdit?`/blogs/read/${_rEditId}/update/`:'/blogs/read/create/',{method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
       .then(r=>r.json()).then(d=>{
-        if(d.error){errEl.textContent=d.error;errEl.style.display='block';return;}
+        if(d.error){errEl.textContent=d.error;errEl.style.display='block';showToast('Update failed','error');return;}
         document.getElementById('read-overlay').classList.remove('open');
+        showToast('Updated','success');
         _rApply(); loadStats();
       }).finally(()=>{btn.disabled=false;btn.textContent=isEdit?'Save Changes':'Save';});
   }
@@ -800,8 +843,9 @@
     const payload={topic,status:document.getElementById('w-status').value,url:document.getElementById('w-url').value.trim()};
     fetch(isEdit?`/blogs/write/${_wEditId}/update/`:'/blogs/write/create/',{method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
       .then(r=>r.json()).then(d=>{
-        if(d.error){errEl.textContent=d.error;errEl.style.display='block';return;}
+        if(d.error){errEl.textContent=d.error;errEl.style.display='block';showToast('Update failed','error');return;}
         document.getElementById('write-overlay').classList.remove('open');
+        showToast('Updated','success');
         _wApply();loadStats();
       }).finally(()=>{btn.disabled=false;btn.textContent=isEdit?'Save Changes':'Save';});
   }
@@ -854,5 +898,6 @@
   _rApply();
   _wApply();
 </script>
+<div id="toast-container"></div>
 </body>
 </html>

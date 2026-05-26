@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.urls import path, include
 
 from core.auth_views import login_view, auth_start, auth_callback, logout_view
+from core.stats_view import HomeStatsView
 
 
 def home(request):
@@ -15,6 +16,7 @@ def home(request):
 
 urlpatterns = [
     path("", home, name="home"),
+    path("home/stats/", HomeStatsView.as_view(), name="home-stats"),
     path("login/",          login_view,    name="login"),
     path("auth/google/",    auth_start,    name="auth-start"),
     path("auth/callback/",  auth_callback, name="auth-callback"),

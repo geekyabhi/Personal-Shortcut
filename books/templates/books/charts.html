@@ -151,6 +151,17 @@
     [data-theme="dark"] h2 { color: #E5E7EB; }
     [data-theme="dark"] .cache-bar { background: rgba(5,150,105,0.08); border-color: rgba(5,150,105,0.15); }
     [data-theme="dark"] .theme-btn { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); }
+    [data-theme="dark"] .sk-line { background: linear-gradient(90deg,rgba(255,255,255,0.05) 25%,rgba(255,255,255,0.10) 50%,rgba(255,255,255,0.05) 75%); background-size:200% 100%; }
+
+    /* ── Toast ── */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { padding: 0.7rem 1.1rem; border-radius: 12px; font-size: 0.83rem; font-weight: 500; font-family: inherit; box-shadow: 0 8px 32px rgba(0,0,0,0.13); display: flex; align-items: center; gap: 0.55rem; pointer-events: auto; backdrop-filter: blur(12px); max-width: 300px; animation: _toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .toast.success { background: rgba(236,253,245,0.97); color: #065F46; border: 1px solid rgba(16,185,129,0.25); }
+    .toast.error   { background: rgba(254,242,242,0.97); color: #991B1B; border: 1px solid rgba(239,68,68,0.25); }
+    .toast.info    { background: rgba(239,246,255,0.97); color: #1E40AF; border: 1px solid rgba(59,130,246,0.25); }
+    .toast.out { animation: _toastOut 0.25s ease forwards; }
+    @keyframes _toastIn  { from { opacity:0; transform:translateY(10px) scale(0.95); } to { opacity:1; transform:none; } }
+    @keyframes _toastOut { to   { opacity:0; transform:translateY(6px)  scale(0.95); } }
   </style>
   <script>
     (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
@@ -225,6 +236,20 @@
   </div>
 
 <script>
+  function showToast(msg, type, duration) {
+    type = type || 'info'; duration = duration || 3000;
+    var wrap = document.getElementById('toast-container');
+    var el = document.createElement('div');
+    el.className = 'toast ' + type;
+    var icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+    el.innerHTML = '<span style="font-size:0.9rem">' + icon + '</span><span>' + msg + '</span>';
+    wrap.appendChild(el);
+    setTimeout(function() {
+      el.classList.add('out');
+      el.addEventListener('animationend', function() { el.remove(); }, {once:true});
+    }, duration);
+  }
+
   /* ── Theme toggle ── */
   (function(){
     const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
@@ -456,5 +481,6 @@
 
   loadData();
 </script>
+<div id="toast-container"></div>
 </body>
 </html>

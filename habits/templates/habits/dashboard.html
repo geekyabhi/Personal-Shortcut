@@ -206,6 +206,21 @@
     @keyframes _slideLeft { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
     @keyframes _float   { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
     @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}}
+
+    /* ── Toast ── */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { padding: 0.7rem 1.1rem; border-radius: 12px; font-size: 0.83rem; font-weight: 500; font-family: inherit; box-shadow: 0 8px 32px rgba(0,0,0,0.13); display: flex; align-items: center; gap: 0.55rem; pointer-events: auto; backdrop-filter: blur(12px); max-width: 300px; animation: _toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .toast.success { background: rgba(236,253,245,0.97); color: #065F46; border: 1px solid rgba(16,185,129,0.25); }
+    .toast.error   { background: rgba(254,242,242,0.97); color: #991B1B; border: 1px solid rgba(239,68,68,0.25); }
+    .toast.info    { background: rgba(239,246,255,0.97); color: #1E40AF; border: 1px solid rgba(59,130,246,0.25); }
+    .toast.out { animation: _toastOut 0.25s ease forwards; }
+    @keyframes _toastIn  { from { opacity:0; transform:translateY(10px) scale(0.95); } to { opacity:1; transform:none; } }
+    @keyframes _toastOut { to   { opacity:0; transform:translateY(6px)  scale(0.95); } }
+
+    /* ── Skeleton ── */
+    .skeleton-wrap { padding: 0.5rem 0; }
+    .sk-line { border-radius: 8px; background: linear-gradient(90deg,rgba(0,0,0,0.06) 25%,rgba(0,0,0,0.10) 50%,rgba(0,0,0,0.06) 75%); background-size: 200% 100%; animation: _shimmer 1.4s infinite; }
+    @keyframes _shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
   </style>
   <script>
     (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
@@ -260,8 +275,12 @@
     </div>
 
     <div id="loading" class="spinner" style="display:none;">
-      <div class="spinner-ring"></div>
-      <span class="spinner-text">Fetching from Notion…</span>
+      <div class="skeleton-wrap">
+        <div class="sk-line" style="width:100%;height:2.5rem;margin-bottom:0.85rem;border-radius:12px;"></div>
+        <div class="sk-line" style="width:100%;height:2.5rem;margin-bottom:0.85rem;border-radius:12px;"></div>
+        <div class="sk-line" style="width:100%;height:2.5rem;margin-bottom:0.85rem;border-radius:12px;"></div>
+        <div class="sk-line" style="width:80%;height:2.5rem;border-radius:12px;"></div>
+      </div>
     </div>
     <div id="error-box" class="error-box" style="display:none;"></div>
 
@@ -291,6 +310,20 @@
   </div>
 
 <script>
+  function showToast(msg, type, duration) {
+    type = type || 'info'; duration = duration || 3000;
+    var wrap = document.getElementById('toast-container');
+    var el = document.createElement('div');
+    el.className = 'toast ' + type;
+    var icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+    el.innerHTML = '<span style="font-size:0.9rem">' + icon + '</span><span>' + msg + '</span>';
+    wrap.appendChild(el);
+    setTimeout(function() {
+      el.classList.add('out');
+      el.addEventListener('animationend', function() { el.remove(); }, {once:true});
+    }, duration);
+  }
+
   const today = new Date();
   document.getElementById("year").value       = today.getFullYear();
   document.getElementById("month").value      = today.toISOString().slice(0, 7);
@@ -439,5 +472,6 @@
   document.querySelectorAll('.card').forEach(function(el){ io.observe(el); });
 })();
 </script>
+<div id="toast-container"></div>
 </body>
 </html>
