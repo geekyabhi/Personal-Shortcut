@@ -95,7 +95,8 @@
 
     /* Charts row */
     .charts-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem; }
-    .chart-wrap { position: relative; height: 260px; }
+    .chart-wrap { position: relative; height: 260px; width: 100%; max-width: 100%; display: block; }
+    .charts-grid .card { overflow: hidden; }
 
     /* Filters */
     .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
