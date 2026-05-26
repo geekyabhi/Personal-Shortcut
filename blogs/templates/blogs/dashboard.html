@@ -56,8 +56,9 @@
     .tab-btn:not(.active-read):not(.active-write):hover { background: rgba(124,58,237,0.07); color: var(--accent); }
 
     /* Layout */
-    .layout { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
-    @media (min-width:1024px) { .layout { grid-template-columns: 260px 1fr; align-items: start; } }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+    @media (min-width:1024px) { .layout { grid-template-columns: 260px minmax(0, 1fr); align-items: start; } }
+    .layout > div { min-width: 0; overflow: hidden; }
 
     /* Card */
     .card { background: rgba(255,255,255,0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.9); border-radius: 20px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 4px 24px rgba(0,0,0,0.06); animation: _fadeUp 0.5s ease both; animation-play-state: paused; transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease; }
