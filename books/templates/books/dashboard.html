@@ -317,14 +317,46 @@
     .theme-btn:active { transform: scale(0.9); }
 
     /* ── Responsive ── */
+    @media (max-width: 767px) {
+      /* Nav: full-width pill row on mobile */
+      nav { display: flex; width: 100%; border-radius: 16px; }
+      nav a { flex: 1; text-align: center; padding: 0.45rem 0.5rem; font-size: 0.82rem; }
+
+      /* Stats: 2-col stays but tighten padding */
+      .stat-card { padding: 0.75rem 0.9rem; }
+      .stat-value { font-size: 1.35rem; }
+
+      /* Charts: force single column */
+      .charts-grid { grid-template-columns: 1fr !important; }
+      .chart-wrap { height: 220px; }
+
+      /* Filters */
+      .filters { grid-template-columns: 1fr; }
+
+      /* Cache bar: stack on small screens */
+      .cache-bar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+      .cache-bar-actions { width: 100%; justify-content: flex-end; display: flex; }
+
+      /* Sort row */
+      .sort-row { gap: 0.4rem; }
+      .sort-row select { font-size: 0.78rem; }
+      .view-toggle { margin-left: auto; }
+
+      /* Book row: stack book-right below on mobile */
+      .book-row { flex-wrap: wrap; gap: 0.65rem; }
+      .book-right { flex-direction: row; flex-wrap: wrap; align-items: center;
+        width: 100%; justify-content: flex-start; gap: 0.35rem; }
+      .book-actions { margin-top: 0; }
+
+      /* Drive link: clamp width so long filenames don't overflow */
+      .drive-link { max-width: 150px; overflow: hidden; white-space: nowrap; display: inline-block; }
+
+      h1 { margin-bottom: 1rem; font-size: 1.4rem; }
+    }
     @media (max-width: 479px) {
       body { padding: 1rem 0.6rem; }
-      nav a { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
-      .book-row { flex-wrap: wrap; }
-      .book-right { flex-direction: row; flex-wrap: wrap; align-items: center; width: 100%; justify-content: flex-start; margin-top: 0.4rem; }
-      .book-actions { margin-top: 0; }
-      h1 { margin-bottom: 1rem; }
-      .drive-link { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+      nav a { font-size: 0.75rem; padding: 0.4rem 0.35rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
     }
     @media (min-width: 480px) {
       body { padding: 1.5rem 1rem; }
@@ -343,6 +375,7 @@
     @media (hover: none) {
       .book-row:hover { transform: none !important; }
       .card:hover { transform: none !important; }
+      .book-card:hover { transform: none !important; }
     }
 
     /* ── Keyframes ── */

@@ -74,7 +74,7 @@
     .brand { margin-bottom: auto; }
     .brand-logo { margin-bottom: 1rem; }
     h1 {
-      font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 800; letter-spacing: -0.03em;
+      font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 300; letter-spacing: -0.03em;
       background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 40%, #7C3AED 70%, #059669 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
       margin-bottom: 0.5rem; animation: _fadeUp 0.6s 0.15s ease both;
@@ -260,7 +260,8 @@
       .orb { display: none; }
       .left-panel { width: 100%; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 1.75rem 1.25rem; }
       .clock-wrap { flex: none; padding: 1.5rem 0 0.75rem; }
-      .right-panel { padding: 1.25rem; }
+      /* remove inner scroll — let body scroll instead */
+      .right-panel { overflow-y: visible; padding: 1.25rem; }
       .tile { padding: 1.25rem 1rem; min-height: unset; }
     }
     /* small phones ≤480px */
@@ -382,7 +383,7 @@
         <div class="clock-date" id="clock-date">January 1, 2000</div>
       </div>
 
-      <div class="left-footer">Powered by Notion &middot; Built with Django</div>
+      <div class="left-footer">Your life, quietly organised.</div>
     </div>
 
     <!-- ── RIGHT: scrollable sections ── -->
