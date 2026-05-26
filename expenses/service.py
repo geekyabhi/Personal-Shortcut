@@ -1,0 +1,921 @@
+import re
+from datetime import date, timedelta
+
+from .data_layer import ExpensesDataLayer
+
+
+class ExpensesService:
+    VALID_PERIODS = ("all", "yearly", "monthly", "weekly", "daily", "custom")
+    VALID_GROUPS = ("category", "source")
+    VALID_SORTS = ("date_desc", "date_asc", "amount_desc", "amount_asc")
+
+    YEAR_RE  = re.compile(r"^\d{4}$")
+    MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+    WEEK_RE  = re.compile(r"^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$")
+    DAY_RE   = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
+
+    def __init__(self, data_layer: ExpensesDataLayer):
+        self.dl = data_layer
+
+    # ------------------------------------------------------------------ #
+    #  Private helpers                                                     #
+    # ------------------------------------------------------------------ #
+
+    def _validate_period(
+        self,
+        period: str,
+        year: str,
+        month: str,
+        week: str,
+        day: str,
+        start: str,
+        end: str,
+        group_by: str = "",
+        sort: str = "",
+    ) -> None:
+        """Raises ValueError with a descriptive message on bad input."""
+        if period not in self.VALID_PERIODS:
+            raise ValueError(
+                f"Invalid period '{period}'. Valid options: {', '.join(self.VALID_PERIODS)}"
+            )
+        if group_by and group_by not in self.VALID_GROUPS:
+            raise ValueError(
+                f"Invalid group_by '{group_by}'. Valid options: {', '.join(self.VALID_GROUPS)}"
+            )
+        if sort and sort not in self.VALID_SORTS:
+            raise ValueError(
+                f"Invalid sort. Valid: {', '.join(self.VALID_SORTS)}"
+            )
+        if year and not self.YEAR_RE.match(year):
+            raise ValueError("Invalid year format. Use YYYY (e.g. 2026)")
+        if month and not self.MONTH_RE.match(month):
+            raise ValueError("Invalid month format. Use YYYY-MM (e.g. 2026-03)")
+        if week and not self.WEEK_RE.match(week):
+            raise ValueError("Invalid week format. Use YYYY-Www (e.g. 2026-W19)")
+        if day and not self.DAY_RE.match(day):
+            raise ValueError("Invalid day format. Use YYYY-MM-DD (e.g. 2026-05-10)")
+        if period == "custom":
+            if not start or not end:
+                raise ValueError("Custom period requires both start and end")
+            if not self.DAY_RE.match(start):
+                raise ValueError("Invalid start date. Use YYYY-MM-DD")
+            if not self.DAY_RE.match(end):
+                raise ValueError("Invalid end date. Use YYYY-MM-DD")
+            if start > end:
+                raise ValueError("start must be on or before end")
+
+    def _build_date_filter(
+        self,
+        period: str,
+        year: str = None,
+        month: str = None,
+        week: str = None,
+        day: str = None,
+        start: str = None,
+        end: str = None,
+    ):
+        """Returns (notion_filter_dict, range_start, range_end). All None for period='all'."""
+        today = date.today()
+
+        if period == "all":
+            return None, None, None
+
+        if period == "yearly":
+            y = int(year) if year else today.year
+            s = date(y, 1, 1)
+            e = date(y + 1, 1, 1)
+
+        elif period == "monthly":
+            if month:
+                yr, m = int(month[:4]), int(month[5:])
+                s = date(yr, m, 1)
+            else:
+                s = today.replace(day=1)
+            e = date(s.year + 1, 1, 1) if s.month == 12 else date(s.year, s.month + 1, 1)
+
+        elif period == "weekly":
+            if week:
+                yr, week_num = int(week[:4]), int(week[6:])
+                s = date.fromisocalendar(yr, week_num, 1)
+            else:
+                s = today - timedelta(days=today.weekday())
+            e = s + timedelta(days=7)
+
+        elif period == "daily":
+            s = date.fromisoformat(day) if day else today
+            e = s + timedelta(days=1)
+
+        elif period == "custom":
+            s = date.fromisoformat(start) if start else date(today.year, 1, 1)
+            e = date.fromisoformat(end) + timedelta(days=1) if end else today + timedelta(days=1)
+
+        notion_filter = {
+            "and": [
+                {"property": "Date", "date": {"on_or_after": s.isoformat()}},
+                {"property": "Date", "date": {"before": e.isoformat()}},
+            ]
+        }
+        return notion_filter, s, e - timedelta(days=1)
+
+    def _filter_by_date(self, rows: list, range_start, range_end) -> list:
+        """Filter rows to [range_start, range_end] inclusive. Returns all if range_start is None."""
+        if range_start is None:
+            return rows
+        result = []
+        for row in rows:
+            d_str = (
+                ((row.get("properties", {}).get("Date") or {}).get("date") or {}).get("start") or ""
+            )[:10]
+            if not d_str:
+                continue
+            try:
+                d = date.fromisoformat(d_str)
+            except ValueError:
+                continue
+            if range_start <= d <= range_end:
+                result.append(row)
+        return result
+
+    def _row_date(self, row) -> str:
+        return (
+            ((row.get("properties", {}).get("Date") or {}).get("date") or {}).get("start") or ""
+        )[:10]
+
+    def _row_amount(self, row) -> float:
+        return (row.get("properties", {}).get("Amount") or {}).get("number") or 0.0
+
+    def _row_categories(self, row) -> list:
+        props = row.get("properties", {})
+        cats = [opt["name"] for opt in (props.get("Category") or {}).get("multi_select", [])]
+        return cats or ["Uncategorized"]
+
+    def _row_source(self, row) -> str:
+        src_prop = (row.get("properties", {}).get("Source") or {})
+        if src_prop.get("select"):
+            return src_prop["select"]["name"]
+        srcs = [opt["name"] for opt in src_prop.get("multi_select", [])]
+        return srcs[0] if srcs else ""
+
+    def _extract_title(self, props) -> str:
+        for key in ("Name", "Title"):
+            prop = props.get(key, {})
+            if prop and prop.get("title"):
+                text = "".join(t.get("plain_text", "") for t in prop["title"]).strip()
+                if text:
+                    return text
+        for prop in props.values():
+            if isinstance(prop, dict) and prop.get("type") == "title":
+                parts = prop.get("title") or []
+                text = "".join(t.get("plain_text", "") for t in parts).strip()
+                if text:
+                    return text
+        return "—"
+
+    def _row_to_entry(self, row) -> dict:
+        props = row.get("properties", {})
+        amount = (props.get("Amount") or {}).get("number") or 0.0
+        cats = [opt["name"] for opt in (props.get("Category") or {}).get("multi_select", [])]
+        src_prop = props.get("Source") or {}
+        if src_prop.get("select"):
+            src = src_prop["select"]["name"]
+        else:
+            srcs = [opt["name"] for opt in src_prop.get("multi_select", [])]
+            src = srcs[0] if srcs else ""
+        date_val = ((props.get("Date") or {}).get("date") or {}).get("start", "")[:10]
+        return {
+            "page_id": row.get("id", ""),
+            "title": self._extract_title(props),
+            "amount": round(amount, 2),
+            "date": date_val,
+            "categories": cats,
+            "source": src,
+        }
+
+    def _detect_title_prop(self, rows) -> str:
+        for row in rows:
+            for key, val in row.get("properties", {}).items():
+                if isinstance(val, dict) and val.get("type") == "title":
+                    return key
+        return "Name"
+
+    def _detect_source_type(self, rows) -> str:
+        for row in rows:
+            src = (row.get("properties") or {}).get("Source") or {}
+            t = src.get("type")
+            if t in ("select", "multi_select"):
+                return t
+        return "select"
+
+    def _build_page_properties(
+        self,
+        name: str,
+        amount,
+        date_str: str,
+        categories: list,
+        source: str,
+        title_prop: str,
+        source_type: str,
+    ) -> dict:
+        props = {
+            title_prop: {"title": [{"text": {"content": name}}]},
+            "Amount": {"number": float(amount)},
+            "Date": {"date": {"start": date_str}},
+            "Category": {"multi_select": [{"name": c} for c in categories]},
+        }
+        if source_type == "multi_select":
+            props["Source"] = {"multi_select": [{"name": source}] if source else []}
+        else:
+            props["Source"] = {"select": {"name": source} if source else None}
+        return props
+
+    def _extract_groups(self, props, group_by) -> list:
+        if group_by == "category":
+            values = [opt["name"] for opt in (props.get("Category") or {}).get("multi_select", [])]
+            return values or ["Uncategorized"]
+        if group_by == "source":
+            prop = props.get("Source") or {}
+            if prop.get("select"):
+                return [prop["select"]["name"]]
+            values = [opt["name"] for opt in prop.get("multi_select", [])]
+            return values or ["Unknown"]
+        return []
+
+    def _build_display(
+        self,
+        period: str,
+        grand_total: float,
+        group_by: str,
+        group_totals: dict,
+        range_start,
+        range_end,
+    ) -> str:
+        if period == "all":
+            header = "All Time"
+        elif period == "yearly":
+            header = range_start.strftime("%Y")
+        elif period == "monthly":
+            header = range_start.strftime("%B %Y")
+        elif period == "weekly":
+            header = f"Week of {range_start.strftime('%d %b')} - {range_end.strftime('%d %b %Y')}"
+        elif period == "daily":
+            header = range_start.strftime("%d %B %Y")
+        elif period == "custom":
+            header = f"{range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}"
+
+        lines = [f"{header}  |  Total: {grand_total:,.2f}"]
+
+        if group_by and group_totals:
+            lines.append("")
+            lines.append(f"By {group_by.title()}:")
+            pad = max(len(g) for g in group_totals)
+            for g, t in sorted(group_totals.items(), key=lambda x: -x[1]):
+                lines.append(f"  {g:<{pad}}   {t:>10,.2f}")
+
+        return "\n".join(lines)
+
+    def _period_meta(
+        self,
+        period: str,
+        year: str,
+        month: str,
+        range_start,
+        range_end,
+    ) -> dict:
+        meta: dict = {}
+        if period == "yearly":
+            meta["year"] = year if year else str(date.today().year)
+        elif period == "monthly":
+            meta["month"] = month if month else date.today().strftime("%Y-%m")
+        elif period == "weekly":
+            meta["week_start"] = range_start.isoformat()
+            meta["week_end"] = range_end.isoformat()
+        elif period == "daily":
+            meta["date"] = range_start.isoformat()
+        elif period == "custom":
+            meta["start"] = range_start.isoformat()
+            meta["end"] = range_end.isoformat()
+        return meta
+
+    def _build_timeseries(self, period, year, rows, range_start, range_end):
+        """Return (labels, values) lists bucketed by the appropriate time unit."""
+        if period == "daily":
+            return (
+                [range_start.strftime("%d %b %Y")],
+                [round(sum(self._row_amount(r) for r in rows), 2)],
+            )
+
+        if period in ("monthly", "weekly"):
+            buckets: dict[str, float] = {}
+            d = range_start
+            while d <= range_end:
+                buckets[d.isoformat()] = 0.0
+                d += timedelta(days=1)
+            for row in rows:
+                k = self._row_date(row)
+                if k in buckets:
+                    buckets[k] = round(buckets[k] + self._row_amount(row), 2)
+            fmt = "%a %d" if period == "weekly" else "%-d"
+            return (
+                [date.fromisoformat(k).strftime(fmt) for k in sorted(buckets)],
+                [buckets[k] for k in sorted(buckets)],
+            )
+
+        if period == "yearly":
+            y = int(year) if year else date.today().year
+            buckets = {f"{y}-{m:02d}": 0.0 for m in range(1, 13)}
+            for row in rows:
+                k = self._row_date(row)[:7]
+                if k in buckets:
+                    buckets[k] = round(buckets[k] + self._row_amount(row), 2)
+            return (
+                [date(int(k[:4]), int(k[5:]), 1).strftime("%b") for k in sorted(buckets)],
+                [buckets[k] for k in sorted(buckets)],
+            )
+
+        if period == "custom":
+            delta = (range_end - range_start).days
+            if delta <= 60:
+                buckets2: dict[str, float] = {}
+                d = range_start
+                while d <= range_end:
+                    buckets2[d.isoformat()] = 0.0
+                    d += timedelta(days=1)
+                for row in rows:
+                    k = self._row_date(row)
+                    if k in buckets2:
+                        buckets2[k] = round(buckets2[k] + self._row_amount(row), 2)
+                return (
+                    [date.fromisoformat(k).strftime("%-d %b") for k in sorted(buckets2)],
+                    [buckets2[k] for k in sorted(buckets2)],
+                )
+            buckets3: dict[str, float] = {}
+            d = range_start
+            while d <= range_end:
+                k = d.strftime("%Y-%m")
+                buckets3.setdefault(k, 0.0)
+                d += timedelta(days=1)
+            for row in rows:
+                k = self._row_date(row)[:7]
+                if k in buckets3:
+                    buckets3[k] = round(buckets3[k] + self._row_amount(row), 2)
+            sorted_keys = sorted(buckets3)
+            return (
+                [date(int(k[:4]), int(k[5:]), 1).strftime("%b %Y") for k in sorted_keys],
+                [buckets3[k] for k in sorted_keys],
+            )
+
+        # "all" — dynamic month buckets from data
+        buckets4: dict[str, float] = {}
+        for row in rows:
+            k = self._row_date(row)[:7]
+            if len(k) == 7:
+                buckets4[k] = round(buckets4.get(k, 0.0) + self._row_amount(row), 2)
+        sorted_keys2 = sorted(buckets4)
+        return (
+            [date(int(k[:4]), int(k[5:]), 1).strftime("%b %Y") for k in sorted_keys2],
+            [buckets4[k] for k in sorted_keys2],
+        )
+
+    def _build_category_timeseries(self, period, year, rows, range_start, range_end):
+        """Returns (labels, overall_values, category_series).
+        category_series = [{"name", "values": [...], "total"}, ...] sorted by total desc.
+        All category arrays are aligned to the same labels list.
+        """
+        today = date.today()
+
+        # Build bucket keys + key extractor + label formatter
+        if period == "daily":
+            bucket_keys = [range_start.isoformat()]
+            key_fn = lambda d: range_start.isoformat()
+            fmt = lambda k: date.fromisoformat(k).strftime("%d %b %Y")
+
+        elif period in ("monthly", "weekly"):
+            bucket_keys = []
+            d = range_start
+            while d <= range_end:
+                bucket_keys.append(d.isoformat())
+                d += timedelta(days=1)
+            key_fn = lambda d: d[:10]
+            fmt = (lambda k: date.fromisoformat(k).strftime("%a %d")) if period == "weekly" \
+                  else (lambda k: date.fromisoformat(k).strftime("%-d"))
+
+        elif period == "yearly":
+            y = int(year) if year else today.year
+            bucket_keys = [f"{y}-{m:02d}" for m in range(1, 13)]
+            key_fn = lambda d: d[:7]
+            fmt = lambda k: date(int(k[:4]), int(k[5:]), 1).strftime("%b")
+
+        elif period == "custom":
+            delta = (range_end - range_start).days
+            if delta <= 60:
+                bucket_keys = []
+                d = range_start
+                while d <= range_end:
+                    bucket_keys.append(d.isoformat())
+                    d += timedelta(days=1)
+                key_fn = lambda d: d[:10]
+                fmt = lambda k: date.fromisoformat(k).strftime("%-d %b")
+            else:
+                seen: dict[str, bool] = {}
+                d = range_start
+                while d <= range_end:
+                    seen.setdefault(d.strftime("%Y-%m"), True)
+                    d += timedelta(days=1)
+                bucket_keys = sorted(seen)
+                key_fn = lambda d: d[:7]
+                fmt = lambda k: date(int(k[:4]), int(k[5:]), 1).strftime("%b %Y")
+
+        else:  # "all" — derive from data
+            month_set: set[str] = set()
+            for row in rows:
+                k = self._row_date(row)[:7]
+                if len(k) == 7:
+                    month_set.add(k)
+            bucket_keys = sorted(month_set)
+            key_fn = lambda d: d[:7]
+            fmt = lambda k: date(int(k[:4]), int(k[5:]), 1).strftime("%b %Y")
+
+        if not bucket_keys:
+            return [], [], []
+
+        bucket_set = set(bucket_keys)
+        overall: dict[str, float] = {k: 0.0 for k in bucket_keys}
+        cat_data: dict[str, dict[str, float]] = {}
+
+        for row in rows:
+            d_str = self._row_date(row)
+            if not d_str:
+                continue
+            k = key_fn(d_str)
+            if k not in bucket_set:
+                continue
+            amount = self._row_amount(row)
+            overall[k] = round(overall[k] + amount, 2)
+            cats = self._row_categories(row)
+            for cat in cats:
+                if cat not in cat_data:
+                    cat_data[cat] = {bk: 0.0 for bk in bucket_keys}
+                cat_data[cat][k] = round(cat_data[cat][k] + amount, 2)
+
+        labels = [fmt(k) for k in bucket_keys]
+        overall_values = [overall[k] for k in bucket_keys]
+        category_series = sorted(
+            [
+                {
+                    "name": cat,
+                    "values": [round(data[k], 2) for k in bucket_keys],
+                    "total": round(sum(data.values()), 2),
+                }
+                for cat, data in cat_data.items()
+            ],
+            key=lambda x: -x["total"],
+        )
+        return labels, overall_values, category_series
+
+    # ------------------------------------------------------------------ #
+    #  Public methods                                                      #
+    # ------------------------------------------------------------------ #
+
+    def get_summary(
+        self,
+        period: str,
+        group_by: str,
+        year: str,
+        month: str,
+        week: str,
+        day: str,
+        start: str,
+        end: str,
+        force: bool,
+    ) -> dict:
+        self._validate_period(period, year, month, week, day, start, end, group_by=group_by)
+        notion_filter, range_start, range_end = self._build_date_filter(
+            period, year=year or None, month=month or None,
+            week=week or None, day=day or None,
+            start=start or None, end=end or None,
+        )
+        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        rows = self._filter_by_date(all_rows, range_start, range_end)
+
+        group_totals: dict[str, float] = {}
+        grand_total = 0.0
+
+        for row in rows:
+            props = row.get("properties", {})
+            amount = (props.get("Amount") or {}).get("number") or 0.0
+            grand_total += amount
+            if group_by:
+                for g in self._extract_groups(props, group_by):
+                    group_totals[g] = group_totals.get(g, 0.0) + amount
+
+        response: dict = {
+            "period": period,
+            "grand_total": round(grand_total, 2),
+            "cache_ts": cache_ts,
+            "from_cache": from_cache,
+            "total_rows": len(all_rows),
+        }
+        response.update(self._period_meta(period, year, month, range_start, range_end))
+
+        if group_by:
+            response["group_by"] = group_by
+            response["summary"] = [
+                {"group": g, "total": round(t, 2)}
+                for g, t in sorted(group_totals.items())
+            ]
+
+        display_start = range_start or date.today()
+        display_end = range_end or date.today()
+        response["display"] = self._build_display(
+            period, round(grand_total, 2), group_by, group_totals, display_start, display_end
+        )
+        return response
+
+    def get_timeseries(
+        self,
+        period: str,
+        year: str,
+        month: str,
+        week: str,
+        day: str,
+        start: str,
+        end: str,
+        force: bool,
+    ) -> dict:
+        self._validate_period(period, year, month, week, day, start, end)
+        notion_filter, range_start, range_end = self._build_date_filter(
+            period, year=year or None, month=month or None,
+            week=week or None, day=day or None,
+            start=start or None, end=end or None,
+        )
+        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        rows = self._filter_by_date(all_rows, range_start, range_end)
+        labels, values = self._build_timeseries(period, year, rows, range_start, range_end)
+        return {
+            "labels": labels,
+            "values": values,
+            "period": period,
+            "cache_ts": cache_ts,
+            "from_cache": from_cache,
+            "total_rows": len(all_rows),
+        }
+
+    def get_chart(
+        self,
+        period: str,
+        group_by: str,
+        year: str,
+        month: str,
+        week: str,
+        day: str,
+        start: str,
+        end: str,
+        force: bool,
+    ) -> dict:
+        self._validate_period(period, year, month, week, day, start, end, group_by=group_by)
+        notion_filter, range_start, range_end = self._build_date_filter(
+            period, year=year or None, month=month or None,
+            week=week or None, day=day or None,
+            start=start or None, end=end or None,
+        )
+        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        rows = self._filter_by_date(all_rows, range_start, range_end)
+
+        grand_total = round(sum(
+            (row.get("properties", {}).get("Amount") or {}).get("number") or 0.0
+            for row in rows
+        ), 2)
+
+        trend_labels, trend_values = self._build_timeseries(period, year, rows, range_start, range_end)
+
+        breakdown = None
+        if group_by:
+            group_totals: dict[str, float] = {}
+            for row in rows:
+                amount = (row.get("properties", {}).get("Amount") or {}).get("number") or 0.0
+                for g in self._extract_groups(row.get("properties", {}), group_by):
+                    group_totals[g] = round(group_totals.get(g, 0.0) + amount, 2)
+            sorted_groups = sorted(group_totals.items(), key=lambda x: -x[1])
+            breakdown = {
+                "labels": [g for g, _ in sorted_groups],
+                "values": [t for _, t in sorted_groups],
+            }
+
+        display_start = range_start or date.today()
+        display_end = range_end or date.today()
+        group_totals_for_display = (
+            dict(zip(breakdown["labels"], breakdown["values"])) if breakdown else {}
+        )
+
+        response: dict = {
+            "period": period,
+            "grand_total": grand_total,
+            "entry_count": len(rows),
+            "trend": {"labels": trend_labels, "values": trend_values},
+            "display": self._build_display(
+                period, grand_total, group_by, group_totals_for_display,
+                display_start, display_end
+            ),
+            "cache_ts": cache_ts,
+            "from_cache": from_cache,
+            "total_rows": len(all_rows),
+        }
+        response.update(self._period_meta(period, year, month, range_start, range_end))
+
+        if breakdown:
+            response["group_by"] = group_by
+            response["breakdown"] = breakdown
+
+        return response
+
+    def get_category_timeseries(
+        self,
+        period: str,
+        year: str,
+        month: str,
+        week: str,
+        day: str,
+        start: str,
+        end: str,
+        force: bool,
+    ) -> dict:
+        self._validate_period(period, year, month, week, day, start, end)
+        notion_filter, range_start, range_end = self._build_date_filter(
+            period, year=year or None, month=month or None,
+            week=week or None, day=day or None,
+            start=start or None, end=end or None,
+        )
+        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        rows = self._filter_by_date(all_rows, range_start, range_end)
+        labels, overall_values, category_series = self._build_category_timeseries(
+            period, year, rows, range_start, range_end
+        )
+        return {
+            "period": period,
+            "labels": labels,
+            "overall": overall_values,
+            "by_category": category_series,
+            "cache_ts": cache_ts,
+            "from_cache": from_cache,
+            "total_rows": len(all_rows),
+        }
+
+    def get_insights(
+        self,
+        period: str,
+        year: str,
+        month: str,
+        week: str,
+        day: str,
+        start: str,
+        end: str,
+        force: bool,
+    ) -> dict:
+        self._validate_period(period, year, month, week, day, start, end)
+        notion_filter, range_start, range_end = self._build_date_filter(
+            period, year=year or None, month=month or None,
+            week=week or None, day=day or None,
+            start=start or None, end=end or None,
+        )
+        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        rows = self._filter_by_date(all_rows, range_start, range_end)
+
+        cat_totals: dict[str, dict] = {}
+        src_totals: dict[str, dict] = {}
+        grand_total = 0.0
+        entries = []
+
+        for row in rows:
+            e = self._row_to_entry(row)
+            grand_total += e["amount"]
+            entries.append(e)
+
+            cats = e["categories"] or ["Uncategorized"]
+            for cat in cats:
+                rec = cat_totals.setdefault(cat, {"total": 0.0, "count": 0})
+                rec["total"] += e["amount"]
+                rec["count"] += 1
+
+            src = e["source"] or "Unknown"
+            rec = src_totals.setdefault(src, {"total": 0.0, "count": 0})
+            rec["total"] += e["amount"]
+            rec["count"] += 1
+
+        cat_list = sorted(
+            [
+                {
+                    "name": k,
+                    "total": round(v["total"], 2),
+                    "count": v["count"],
+                    "pct": round(v["total"] / grand_total * 100, 1) if grand_total else 0.0,
+                }
+                for k, v in cat_totals.items()
+            ],
+            key=lambda x: -x["total"],
+        )
+        src_list = sorted(
+            [
+                {
+                    "name": k,
+                    "total": round(v["total"], 2),
+                    "count": v["count"],
+                    "pct": round(v["total"] / grand_total * 100, 1) if grand_total else 0.0,
+                }
+                for k, v in src_totals.items()
+            ],
+            key=lambda x: -x["total"],
+        )
+        top_entries = sorted(entries, key=lambda x: -x["amount"])[:10]
+        top3_pct = (
+            round(sum(c["total"] for c in cat_list[:3]) / grand_total * 100, 1)
+            if grand_total
+            else 0.0
+        )
+
+        return {
+            "period": period,
+            "grand_total": round(grand_total, 2),
+            "entry_count": len(rows),
+            "by_category": cat_list,
+            "by_source": src_list,
+            "top_entries": top_entries,
+            "concentration": {
+                "top1_name": cat_list[0]["name"] if cat_list else "",
+                "top1_pct": cat_list[0]["pct"] if cat_list else 0.0,
+                "top3_pct": top3_pct,
+            },
+            "cache_ts": cache_ts,
+            "from_cache": from_cache,
+            "total_rows": len(all_rows),
+        }
+
+    def list_entries(
+        self,
+        period: str,
+        year: str,
+        month: str,
+        week: str,
+        day: str,
+        start: str,
+        end: str,
+        category: str,
+        source: str,
+        min_amount,
+        max_amount,
+        sort: str,
+        search: str,
+        force: bool,
+        page: int,
+        page_size: int,
+    ) -> dict:
+        self._validate_period(period, year, month, week, day, start, end, sort=sort)
+        notion_filter, range_start, range_end = self._build_date_filter(
+            period, year=year or None, month=month or None,
+            week=week or None, day=day or None,
+            start=start or None, end=end or None,
+        )
+        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        rows = self._filter_by_date(all_rows, range_start, range_end)
+
+        filter_cats = [c.strip() for c in category.split(",") if c.strip()] if category else []
+
+        entries = []
+        for row in rows:
+            e = self._row_to_entry(row)
+
+            if min_amount is not None and e["amount"] < min_amount:
+                continue
+            if max_amount is not None and e["amount"] > max_amount:
+                continue
+            if filter_cats and not any(c in e["categories"] for c in filter_cats):
+                continue
+            if source and e["source"] != source:
+                continue
+            if search and search not in e["title"].lower():
+                continue
+
+            entries.append(e)
+
+        if sort == "date_desc":
+            entries.sort(key=lambda x: x["date"] or "", reverse=True)
+        elif sort == "date_asc":
+            entries.sort(key=lambda x: x["date"] or "")
+        elif sort == "amount_desc":
+            entries.sort(key=lambda x: -x["amount"])
+        elif sort == "amount_asc":
+            entries.sort(key=lambda x: x["amount"])
+
+        total_count = len(entries)
+        total_pages = max(1, (total_count + page_size - 1) // page_size)
+        page = min(page, total_pages)
+        start_idx = (page - 1) * page_size
+
+        return {
+            "total_count": total_count,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+            "entries": entries[start_idx: start_idx + page_size],
+            "cache_ts": cache_ts,
+            "from_cache": from_cache,
+            "total_rows": len(all_rows),
+        }
+
+    def get_heatmap(
+        self,
+        period: str,
+        year: str,
+        month: str,
+        week: str,
+        day: str,
+        start: str,
+        end: str,
+        force: bool,
+    ) -> dict:
+        self._validate_period(period, year, month, week, day, start, end)
+        _, range_start, range_end = self._build_date_filter(
+            period, year=year or None, month=month or None,
+            week=week or None, day=day or None,
+            start=start or None, end=end or None,
+        )
+        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        rows = self._filter_by_date(all_rows, range_start, range_end)
+
+        daily: dict[str, float] = {}
+        for row in rows:
+            d_str = self._row_date(row)
+            if not d_str:
+                continue
+            amount = self._row_amount(row)
+            daily[d_str] = round(daily.get(d_str, 0.0) + amount, 2)
+
+        # For period=all, derive actual date range from the data itself
+        if range_start is None and daily:
+            dates = sorted(daily.keys())
+            range_start = date.fromisoformat(dates[0])
+            range_end = date.fromisoformat(dates[-1])
+
+        return {
+            "daily": daily,
+            "range_start": range_start.isoformat() if range_start else None,
+            "range_end": range_end.isoformat() if range_end else None,
+            "cache_ts": cache_ts,
+            "from_cache": from_cache,
+        }
+
+    def create_entry(
+        self,
+        name: str,
+        amount,
+        date_str: str,
+        categories: list,
+        source: str,
+    ) -> str:
+        """Validates fields, creates the Notion page, busts cache. Returns page_id."""
+        if not name:
+            raise ValueError("Name is required")
+        if amount is None:
+            raise ValueError("Amount is required")
+        if not date_str:
+            raise ValueError("Date is required")
+
+        cached_rows = self.dl.__class__._cache.get("rows") or []
+        title_prop = self._detect_title_prop(cached_rows)
+        source_type = self._detect_source_type(cached_rows)
+        properties = self._build_page_properties(
+            name, amount, date_str, categories, source, title_prop, source_type
+        )
+        result = self.dl.create_page(properties)
+        self.dl.bust_cache()
+        return result.get("id", "")
+
+    def update_entry(
+        self,
+        page_id: str,
+        name: str,
+        amount,
+        date_str: str,
+        categories: list,
+        source: str,
+    ) -> None:
+        """Validates fields, patches the Notion page, busts cache."""
+        if not name:
+            raise ValueError("Name is required")
+        if amount is None:
+            raise ValueError("Amount is required")
+        if not date_str:
+            raise ValueError("Date is required")
+
+        cached_rows = self.dl.__class__._cache.get("rows") or []
+        title_prop = self._detect_title_prop(cached_rows)
+        source_type = self._detect_source_type(cached_rows)
+        properties = self._build_page_properties(
+            name, amount, date_str, categories, source, title_prop, source_type
+        )
+        self.dl.patch_page(page_id, {"properties": properties})
+        self.dl.bust_cache()
+
+    def delete_entry(self, page_id: str) -> None:
+        """Archives the Notion page and busts cache."""
+        self.dl.patch_page(page_id, {"archived": True})
+        self.dl.bust_cache()

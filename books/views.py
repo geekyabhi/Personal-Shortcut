@@ -1,107 +1,30 @@
 import json
 import os
-import time
-from collections import defaultdict
 
 import requests
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
 
-def _google_creds():
-    return (
-        os.environ.get("GOOGLE_CLIENT_ID", ""),
-        os.environ.get("GOOGLE_CLIENT_SECRET", ""),
-        os.environ.get("GOOGLE_REFRESH_TOKEN", ""),
-    )
-
-_drive_cache: dict = {"files": None, "ts": 0.0}
-DRIVE_CACHE_TTL = 300
+from .data_layer import BooksDataLayer, DriveDataLayer
+from .service import BooksService
 
 
-NOTION_VERSION = "2022-06-28"
-BOOKS_DB_ID = os.environ.get("NOTION_BOOKS_DB_ID", "752ac6b0-8422-42dc-9439-b60a411f3c3d")
-NOTION_TOKEN = os.environ.get("NOTION_TOKEN", "")
+class BooksBaseView(View):
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        data_layer = BooksDataLayer.from_env()
+        drive_layer = DriveDataLayer.from_env()
+        self.service = BooksService(data_layer, drive_layer)
+        self.drive_layer = drive_layer
 
-_books_cache: dict = {"rows": None, "ts": 0.0}
-CACHE_TTL = 300
-
-
-def _headers():
-    return {
-        "Authorization": f"Bearer {NOTION_TOKEN}",
-        "Notion-Version": NOTION_VERSION,
-        "Content-Type": "application/json",
-    }
-
-
-def _fetch_all_books():
-    now = time.time()
-    if _books_cache["rows"] is not None and now - _books_cache["ts"] < CACHE_TTL:
-        return _books_cache["rows"]
-
-    url = f"https://api.notion.com/v1/databases/{BOOKS_DB_ID}/query"
-    rows, cursor = [], None
-    while True:
-        body = {"page_size": 100}
-        if cursor:
-            body["start_cursor"] = cursor
-        resp = requests.post(url, headers=_headers(), json=body, timeout=15)
-        data = resp.json()
-        rows.extend(data.get("results", []))
-        if not data.get("has_more"):
-            break
-        cursor = data.get("next_cursor")
-
-    _books_cache["rows"] = rows
-    _books_cache["ts"] = now
-    return rows
-
-
-def _extract_files(props, key):
-    items = props.get(key, {}).get("files", [])
-    result = []
-    for f in items:
-        name = f.get("name", key)
-        if f.get("type") == "external":
-            result.append({"name": name, "url": f["external"]["url"], "hosted": False})
-        elif f.get("type") == "file":
-            result.append({"name": name, "url": f["file"]["url"], "hosted": True})
-    return result
-
-
-def _row_to_book(row):
-    props = row.get("properties", {})
-
-    def title(key):
-        return "".join(t.get("plain_text", "") for t in props.get(key, {}).get("title", [])).strip()
-
-    def rich(key):
-        return "".join(t.get("plain_text", "") for t in props.get(key, {}).get("rich_text", [])).strip()
-
-    def sel(key):
-        s = props.get(key, {}).get("select")
-        return s["name"] if s else ""
-
-    def multi(key):
-        return [o["name"] for o in props.get(key, {}).get("multi_select", [])]
-
-    return {
-        "page_id": row.get("id", ""),
-        "name": title("Book Name"),
-        "status": sel("Status"),
-        "genre": multi("Genre"),
-        "author": multi("Author"),
-        "summary": rich("Summary"),
-        "summary_status": sel("Summary Status"),
-        "soft_copy": _extract_files(props, "Soft Copy"),
-        "key_points": _extract_files(props, "Key Points"),
-        "created_time": row.get("created_time", ""),
-        "last_edited_time": row.get("last_edited_time", ""),
-    }
-
-
-STATUS_ORDER = ["Reading", "To Read", "Queued", "Finished", "Blocked", "Unorganized"]
+    @staticmethod
+    def _api_error(exc: requests.HTTPError) -> JsonResponse:
+        try:
+            text = exc.response.text
+        except Exception:
+            text = str(exc)
+        return JsonResponse({"error": text}, status=502)
 
 
 class BooksDashboardView(View):
@@ -114,129 +37,28 @@ class BooksChartsView(View):
         return render(request, "books/charts.html")
 
 
-class BooksListView(View):
+class BooksListView(BooksBaseView):
     def get(self, request):
-        rows = _fetch_all_books()
-        books = [_row_to_book(r) for r in rows]
-
-        status_filter = request.GET.get("status", "")
-        genre_filter = request.GET.get("genre", "")
-        author_filter = request.GET.get("author", "")
-        search = request.GET.get("q", "").lower()
-
-        if status_filter:
-            books = [b for b in books if b["status"] == status_filter]
-        if genre_filter:
-            books = [b for b in books if genre_filter in b["genre"]]
-        if author_filter:
-            books = [b for b in books if author_filter in b["author"]]
-        if search:
-            books = [b for b in books if search in b["name"].lower()]
-
-        books.sort(key=lambda b: (
-            STATUS_ORDER.index(b["status"]) if b["status"] in STATUS_ORDER else 99,
-            b["name"].lower(),
-        ))
-
-        return JsonResponse({"books": books, "total": len(books)})
+        result = self.service.get_list(
+            status=request.GET.get("status", ""),
+            genre=request.GET.get("genre", ""),
+            author=request.GET.get("author", ""),
+            search=request.GET.get("q", ""),
+        )
+        return JsonResponse(result)
 
 
-class BooksStatsView(View):
+class BooksStatsView(BooksBaseView):
     def get(self, request):
-        rows = _fetch_all_books()
-        books = [_row_to_book(r) for r in rows]
-
-        status_counts = {}
-        genre_counts = {}
-        author_counts = {}
-        all_genres, all_authors = set(), set()
-
-        for b in books:
-            s = b["status"] or "Unknown"
-            status_counts[s] = status_counts.get(s, 0) + 1
-            for g in b["genre"]:
-                genre_counts[g] = genre_counts.get(g, 0) + 1
-                all_genres.add(g)
-            for a in b["author"]:
-                author_counts[a] = author_counts.get(a, 0) + 1
-                all_authors.add(a)
-
-        top_genres = sorted(genre_counts.items(), key=lambda x: -x[1])[:15]
-        top_authors = sorted(author_counts.items(), key=lambda x: -x[1])[:10]
-
-        return JsonResponse({
-            "total": len(books),
-            "status_counts": status_counts,
-            "genre_counts": genre_counts,
-            "top_genres": top_genres,
-            "top_authors": top_authors,
-            "all_genres": sorted(all_genres),
-            "all_authors": sorted(all_authors),
-        })
+        return JsonResponse(self.service.get_stats())
 
 
-class BooksChartsDataView(View):
+class BooksChartsDataView(BooksBaseView):
     def get(self, request):
-        rows = _fetch_all_books()
-        books = [_row_to_book(r) for r in rows]
-
-        status_counts = {}
-        genre_counts = {}
-        author_counts = {}
-        finished_by_year = defaultdict(int)
-        finished_by_month = defaultdict(int)   # "YYYY-MM"
-        added_by_year = defaultdict(int)
-
-        for b in books:
-            s = b["status"] or "Unknown"
-            status_counts[s] = status_counts.get(s, 0) + 1
-
-            for g in b["genre"]:
-                genre_counts[g] = genre_counts.get(g, 0) + 1
-            for a in b["author"]:
-                author_counts[a] = author_counts.get(a, 0) + 1
-
-            # Books added to DB by year
-            if b["created_time"]:
-                yr = b["created_time"][:4]
-                added_by_year[yr] += 1
-
-            # Finished books — use last_edited_time as proxy for finish date
-            if b["status"] == "Finished" and b["last_edited_time"]:
-                yr = b["last_edited_time"][:4]
-                ym = b["last_edited_time"][:7]
-                finished_by_year[yr] += 1
-                finished_by_month[ym] += 1
-
-        # Fill missing months for last 24 months
-        import datetime
-        today = datetime.date.today()
-        all_months = []
-        for i in range(23, -1, -1):
-            m = today.month - i
-            y = today.year
-            while m <= 0:
-                m += 12
-                y -= 1
-            all_months.append(f"{y}-{m:02d}")
-
-        monthly_finished = {m: finished_by_month.get(m, 0) for m in all_months}
-
-        top_genres = sorted(genre_counts.items(), key=lambda x: -x[1])[:15]
-        top_authors = sorted(author_counts.items(), key=lambda x: -x[1])[:10]
-
-        return JsonResponse({
-            "total": len(books),
-            "status_counts": status_counts,
-            "top_genres": top_genres,
-            "top_authors": top_authors,
-            "finished_by_year": dict(sorted(finished_by_year.items())),
-            "monthly_finished": monthly_finished,
-            "added_by_year": dict(sorted(added_by_year.items())),
-        })
+        return JsonResponse(self.service.get_chart_data())
 
 
-class BooksCreateView(View):
+class BooksCreateView(BooksBaseView):
     def post(self, request):
         try:
             body = json.loads(request.body)
@@ -247,217 +69,88 @@ class BooksCreateView(View):
         if not name:
             return JsonResponse({"error": "Book name is required"}, status=400)
 
-        status = body.get("status", "To Read")
-        authors = body.get("authors", [])
-        genres = body.get("genres", [])
-        summary = body.get("summary", "").strip()
+        try:
+            page_id = self.service.create_book(
+                name=name,
+                status=body.get("status", "To Read"),
+                authors=body.get("authors", []),
+                genres=body.get("genres", []),
+                summary=body.get("summary", "").strip(),
+                drive_url=body.get("drive_url", "").strip(),
+            )
+        except requests.HTTPError as exc:
+            return self._api_error(exc)
 
-        properties = {
-            "Book Name": {"title": [{"text": {"content": name}}]},
-            "Status": {"select": {"name": status}},
-        }
-        if authors:
-            properties["Author"] = {"multi_select": [{"name": a} for a in authors]}
-        if genres:
-            properties["Genre"] = {"multi_select": [{"name": g} for g in genres]}
-        if summary:
-            properties["Summary"] = {"rich_text": [{"text": {"content": summary}}]}
-
-        drive_url = body.get("drive_url", "").strip()
-        if drive_url:
-            properties["Soft Copy"] = {
-                "files": [{"type": "external", "name": "Google Drive", "external": {"url": drive_url}}]
-            }
-
-        resp = requests.post(
-            "https://api.notion.com/v1/pages",
-            headers=_headers(),
-            json={"parent": {"database_id": BOOKS_DB_ID}, "properties": properties},
-            timeout=15,
-        )
-
-        if resp.status_code not in (200, 201):
-            return JsonResponse({"error": resp.text}, status=502)
-
-        _books_cache["ts"] = 0.0
-        return JsonResponse({"ok": True, "page_id": resp.json().get("id", "")})
+        return JsonResponse({"ok": True, "page_id": page_id})
 
 
-def _get_drive_service():
-    from google.oauth2.credentials import Credentials
-    from google.auth.transport.requests import Request
-    from googleapiclient.discovery import build
-
-    client_id, client_secret, refresh_token = _google_creds()
-    creds = Credentials(
-        token=None,
-        refresh_token=refresh_token,
-        token_uri="https://oauth2.googleapis.com/token",
-        client_id=client_id,
-        client_secret=client_secret,
-    )
-    creds.refresh(Request())
-    return build("drive", "v3", credentials=creds, cache_discovery=False)
-
-
-class BooksDriveFilesView(View):
+class BooksDriveFilesView(BooksBaseView):
     def get(self, request):
-        if not all(_google_creds()):
+        if not self.drive_layer.is_configured:
             return JsonResponse({"configured": False, "files": []})
 
-        now = time.time()
-        if _drive_cache["files"] is not None and now - _drive_cache["ts"] < DRIVE_CACHE_TTL:
-            return JsonResponse({"configured": True, "files": _drive_cache["files"]})
-
         try:
-            service = _get_drive_service()
-        except Exception as e:
-            return JsonResponse({"configured": False, "files": [], "error": str(e)})
-
-        files, page_token = [], None
-        while True:
-            resp = service.files().list(
-                q="(mimeType='application/pdf' or mimeType='application/vnd.google-apps.document') and trashed=false",
-                fields="nextPageToken, files(id, name, webViewLink, mimeType)",
-                pageSize=100,
-                pageToken=page_token,
-            ).execute()
-
-            for f in resp.get("files", []):
-                files.append({
-                    "id": f["id"],
-                    "name": f.get("name", "Untitled"),
-                    "url": f.get("webViewLink", ""),
-                    "type": "pdf" if f["mimeType"] == "application/pdf" else "doc",
-                })
-
-            page_token = resp.get("nextPageToken")
-            if not page_token:
-                break
-
-        files.sort(key=lambda f: f["name"].lower())
-        _drive_cache["files"] = files
-        _drive_cache["ts"] = now
+            files = self.service.list_drive_files()
+        except Exception as exc:
+            return JsonResponse({"configured": False, "files": [], "error": str(exc)})
 
         return JsonResponse({"configured": True, "files": files})
 
 
-class BooksDriveUploadView(View):
+class BooksDriveUploadView(BooksBaseView):
     def post(self, request):
-        if not all(_google_creds()):
+        if not self.drive_layer.is_configured:
             return JsonResponse({"error": "Google Drive not configured"}, status=400)
 
         upload = request.FILES.get("file")
         if not upload:
             return JsonResponse({"error": "No file provided"}, status=400)
 
-        # 50 MB limit
         if upload.size > 50 * 1024 * 1024:
             return JsonResponse({"error": "File too large (max 50 MB)"}, status=400)
 
         try:
-            import io
-            from googleapiclient.http import MediaIoBaseUpload
-
-            service = _get_drive_service()
-            media = MediaIoBaseUpload(
-                io.BytesIO(upload.read()),
-                mimetype=upload.content_type or "application/octet-stream",
-                resumable=False,
-            )
-            file_meta = {"name": upload.name}
             folder_id = os.environ.get("GOOGLE_DRIVE_UPLOAD_FOLDER_ID", "").strip()
-            if folder_id:
-                file_meta["parents"] = [folder_id]
+            drive_file = self.service.upload_drive_file(upload, folder_id)
+        except Exception as exc:
+            return JsonResponse({"error": str(exc)}, status=502)
 
-            drive_file = service.files().create(
-                body=file_meta,
-                media_body=media,
-                fields="id, name, webViewLink",
-            ).execute()
-
-            # Bust Drive file list cache so new file appears in picker
-            _drive_cache["ts"] = 0.0
-
-            return JsonResponse({
-                "ok": True,
-                "name": drive_file.get("name", upload.name),
-                "url": drive_file.get("webViewLink", ""),
-                "id": drive_file.get("id", ""),
-            })
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=502)
+        return JsonResponse({
+            "ok": True,
+            "name": drive_file.get("name", upload.name),
+            "url": drive_file.get("webViewLink", ""),
+            "id": drive_file.get("id", ""),
+        })
 
 
-class BooksUpdateView(View):
+class BooksUpdateView(BooksBaseView):
     def patch(self, request, page_id):
         try:
             body = json.loads(request.body)
         except (json.JSONDecodeError, ValueError):
             return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-        properties = {}
+        try:
+            self.service.update_book(page_id, body)
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        except requests.HTTPError as exc:
+            return self._api_error(exc)
 
-        if "name" in body:
-            name = body["name"].strip()
-            if not name:
-                return JsonResponse({"error": "Book name required"}, status=400)
-            properties["Book Name"] = {"title": [{"text": {"content": name}}]}
-
-        if "status" in body:
-            properties["Status"] = {"select": {"name": body["status"]}}
-
-        if "authors" in body:
-            properties["Author"] = {"multi_select": [{"name": a} for a in body["authors"]]}
-
-        if "genres" in body:
-            properties["Genre"] = {"multi_select": [{"name": g} for g in body["genres"]]}
-
-        if "summary" in body:
-            properties["Summary"] = {"rich_text": [{"text": {"content": body["summary"]}}]}
-
-        if "drive_url" in body:
-            if body["drive_url"].strip():
-                properties["Soft Copy"] = {
-                    "files": [{"type": "external", "name": "Google Drive", "external": {"url": body["drive_url"].strip()}}]
-                }
-            else:
-                properties["Soft Copy"] = {"files": []}
-
-        if not properties:
-            return JsonResponse({"error": "No fields to update"}, status=400)
-
-        resp = requests.patch(
-            f"https://api.notion.com/v1/pages/{page_id}",
-            headers=_headers(),
-            json={"properties": properties},
-            timeout=15,
-        )
-
-        if resp.status_code not in (200, 201):
-            return JsonResponse({"error": resp.text}, status=502)
-
-        _books_cache["ts"] = 0.0
         return JsonResponse({"ok": True})
 
 
-class BooksDeleteView(View):
+class BooksDeleteView(BooksBaseView):
     def post(self, request, page_id):
-        resp = requests.patch(
-            f"https://api.notion.com/v1/pages/{page_id}",
-            headers=_headers(),
-            json={"archived": True},
-            timeout=15,
-        )
+        try:
+            self.service.delete_book(page_id)
+        except requests.HTTPError as exc:
+            return self._api_error(exc)
 
-        if resp.status_code not in (200, 201):
-            return JsonResponse({"error": resp.text}, status=502)
-
-        _books_cache["ts"] = 0.0
         return JsonResponse({"ok": True})
 
 
-class BooksCacheView(View):
+class BooksCacheView(BooksBaseView):
     def post(self, request):
-        _books_cache["ts"] = 0.0
+        self.service.bust_cache()
         return JsonResponse({"ok": True})
