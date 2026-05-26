@@ -209,7 +209,9 @@
     .modal-overlay {
       display: none; position: fixed; inset: 0; z-index: 999;
       background: rgba(17,24,39,0.45); backdrop-filter: blur(4px);
-      align-items: center; justify-content: center;
+      align-items: flex-start; justify-content: center;
+      padding-top: max(10vh, env(safe-area-inset-top, 0px) + 48px);
+      overflow-y: auto;
     }
     .modal-overlay.open { display: flex; }
     .modal-box {
@@ -353,6 +355,10 @@
     }
     .corner-btn:hover { color: rgba(79,70,229,0.35); background: rgba(79,70,229,0.06); }
     .corner-btn.on    { color: rgba(16,185,129,0.45); }
+    /* on mobile move it below the nav row so it doesn't sit on the Home link */
+    @media (max-width: 480px) {
+      .corner-btn { top: auto; bottom: 1.25rem; left: 1rem; }
+    }
 
     /* ── Cache status bar ── */
     .cache-bar {
