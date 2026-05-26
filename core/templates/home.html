@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Personal Shortcut</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234F46E5'/><text x='16' y='22' text-anchor='middle' font-family='system-ui' font-weight='800' font-size='14' fill='white'>PS</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -71,16 +72,7 @@
     }
 
     .brand { margin-bottom: auto; }
-    .badge {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      background: rgba(255,255,255,0.7); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
-      padding: 0.35rem 1rem; font-size: 0.72rem; font-weight: 600; color: #6B7280;
-      letter-spacing: 0.05em; text-transform: uppercase;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 1.1rem;
-      animation: _fadeIn 0.5s ease both;
-    }
-    .badge-dot { width: 6px; height: 6px; background: #10B981; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+    .brand-logo { margin-bottom: 1rem; }
     h1 {
       font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 800; letter-spacing: -0.03em;
       background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 40%, #7C3AED 70%, #059669 100%);
@@ -249,13 +241,37 @@
     .tile-blogs    .tile-arrow { background: linear-gradient(135deg, #7C3AED, #6366F1); color: #fff; }
     .tile:hover .tile-arrow { transform: translateX(3px); }
 
-    /* ── Responsive: stack on small screens ── */
+    /* ── Responsive ── */
+    /* touch: disable slide hover effect */
+    @media (hover: none) {
+      .tile:hover { transform: none !important; box-shadow: 0 2px 16px rgba(0,0,0,0.06) !important; }
+      .tile:hover .tile-arrow { transform: none !important; }
+    }
+    /* tablet 769–1024px */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .left-panel { width: 42%; padding: 2rem; }
+      .right-panel { padding: 2rem; }
+    }
+    /* mobile ≤768px */
     @media (max-width: 768px) {
-      html, body { overflow: auto; height: auto; }
+      html { overflow-x: hidden; }
+      body { overflow-x: hidden; overflow-y: auto; height: auto; }
       .dashboard { flex-direction: column; height: auto; }
-      .left-panel { width: 100%; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 2rem 1.5rem; }
-      .clock-wrap { flex: none; padding: 2rem 0 1rem; }
-      .right-panel { padding: 1.5rem; }
+      .orb { display: none; }
+      .left-panel { width: 100%; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 1.75rem 1.25rem; }
+      .clock-wrap { flex: none; padding: 1.5rem 0 0.75rem; }
+      .right-panel { padding: 1.25rem; }
+      .tile { padding: 1.25rem 1rem; min-height: unset; }
+    }
+    /* small phones ≤480px */
+    @media (max-width: 480px) {
+      .left-panel { padding: 1.25rem 1rem; }
+      .right-panel { padding: 1rem; }
+      .clock-digits, .clock-sep { font-size: clamp(1.8rem, 9vw, 2.6rem) !important; }
+    }
+    /* large screens: cap tile width */
+    @media (min-width: 1400px) {
+      .tile { max-width: 700px; }
     }
 
     /* ── Keyframes ── */
@@ -268,7 +284,6 @@
     /* ── Dark mode ── */
     [data-theme="dark"] body { background: #0F0F14; color: #F9FAFB; }
     [data-theme="dark"] .left-panel { border-right-color: rgba(255,255,255,0.06); }
-    [data-theme="dark"] .badge { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); color: #9CA3AF; }
     [data-theme="dark"] .subtitle { color: #6B7280; }
     [data-theme="dark"] .clock-date { color: #9CA3AF; }
     [data-theme="dark"] .left-footer { color: #374151; }
@@ -320,7 +335,22 @@
     <!-- ── LEFT: branding + clock ── -->
     <div class="left-panel">
       <div class="brand">
-        <div class="badge"><span class="badge-dot"></span>Personal Dashboard</div>
+        <div class="brand-logo">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="logo-grad" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#4F46E5"/>
+                <stop offset="100%" stop-color="#10B981"/>
+              </linearGradient>
+            </defs>
+            <!-- outer ring -->
+            <circle cx="22" cy="22" r="20" stroke="url(#logo-grad)" stroke-width="2.5" fill="none" opacity="0.35"/>
+            <!-- inner filled circle -->
+            <circle cx="22" cy="22" r="13" fill="url(#logo-grad)"/>
+            <!-- spark / lightning bolt -->
+            <path d="M24.5 12L17 23h6.5L19.5 32L27 21h-6.5L24.5 12Z" fill="white"/>
+          </svg>
+        </div>
         <h1>Personal Shortcut</h1>
         <p class="subtitle" id="greeting">Your data, beautifully organised.</p>
       </div>
@@ -357,8 +387,6 @@
 
     <!-- ── RIGHT: scrollable sections ── -->
     <div class="right-panel">
-      <div class="right-heading">Your Space</div>
-
       <a class="tile tile-expenses" href="/expenses/" style="animation-delay:0.3s">
         <div class="tile-icon-wrap">💰</div>
         <div class="tile-text">

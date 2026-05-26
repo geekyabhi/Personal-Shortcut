@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Books</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234F46E5'/><text x='16' y='22' text-anchor='middle' font-family='system-ui' font-weight='800' font-size='14' fill='white'>PS</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -21,6 +22,7 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: #F5F4FA; color: #111827;
       min-height: 100vh; padding: 1.25rem 0.75rem; position: relative;
+      overflow-x: hidden;
     }
     .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
     .orb-1 { width: 450px; height: 450px; background: rgba(5,150,105,0.10); top: -120px; right: -80px; animation: _float 9s ease-in-out infinite; }
@@ -315,14 +317,32 @@
     .theme-btn:active { transform: scale(0.9); }
 
     /* ── Responsive ── */
+    @media (max-width: 479px) {
+      body { padding: 1rem 0.6rem; }
+      nav a { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
+      .book-row { flex-wrap: wrap; }
+      .book-right { flex-direction: row; flex-wrap: wrap; align-items: center; width: 100%; justify-content: flex-start; margin-top: 0.4rem; }
+      .book-actions { margin-top: 0; }
+      h1 { margin-bottom: 1rem; }
+      .drive-link { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+    }
+    @media (min-width: 480px) {
+      body { padding: 1.5rem 1rem; }
+    }
     @media (min-width: 640px) {
+      body { padding: 1.75rem 1.25rem; }
       .stats-grid { grid-template-columns: repeat(4, 1fr); }
       .filters { grid-template-columns: repeat(2, 1fr); }
       .charts-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (min-width: 1024px) {
+      body { padding: 2rem 1.5rem; }
       .layout { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; }
       .filters { grid-template-columns: 1fr; }
+    }
+    @media (hover: none) {
+      .book-row:hover { transform: none !important; }
+      .card:hover { transform: none !important; }
     }
 
     /* ── Keyframes ── */
