@@ -108,7 +108,21 @@
     }
     .clock-unit {
       display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; position: relative;
     }
+    @keyframes _cu-wild {
+      0%   { transform: scale(1) rotate(0deg) translate(0,0); }
+      8%   { transform: scale(1.25) rotate(-12deg) translate(-3px,-6px); }
+      18%  { transform: scale(0.85) rotate(10deg) translate(4px, 5px); }
+      28%  { transform: scale(1.2) rotate(-7deg) translate(-2px,-4px); }
+      38%  { transform: scale(0.9) rotate(8deg) translate(3px, 3px) skewX(6deg); }
+      48%  { transform: scale(1.15) rotate(-4deg) translate(-1px,-3px) skewX(-4deg); }
+      60%  { transform: scale(0.95) rotate(3deg) translate(2px, 2px); }
+      72%  { transform: scale(1.06) rotate(-2deg) translate(-1px,-1px); }
+      84%  { transform: scale(0.98) rotate(1deg); }
+      100% { transform: scale(1) rotate(0deg) translate(0,0); }
+    }
+    .clock-unit.scrambling { animation: _cu-wild 0.6s cubic-bezier(0.36,0.07,0.19,0.97) both; }
     .clock-digits {
       font-size: clamp(3rem, 7vw, 5.5rem);
       font-weight: 200; letter-spacing: -0.05em; line-height: 1;
@@ -413,6 +427,39 @@
       requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
+  })();
+
+  /* ── Clock hover scramble ── */
+  (function(){
+    const restore = {
+      'clock-hh': function(){ var n=new Date(); return String(n.getHours()).padStart(2,'0'); },
+      'clock-mm': function(){ var n=new Date(); return String(n.getMinutes()).padStart(2,'0'); },
+      'clock-ss': function(){ var n=new Date(); return String(n.getSeconds()).padStart(2,'0'); },
+      'clock-ms': function(){ var n=new Date(); return String(n.getMilliseconds()).padStart(3,'0'); },
+    };
+    document.querySelectorAll('.clock-unit').forEach(function(unit){
+      var digit = unit.querySelector('.clock-digits');
+      if(!digit || !restore[digit.id]) return;
+      var busy = false;
+      unit.addEventListener('mouseenter', function(){
+        if(busy) return;
+        busy = true;
+        unit.classList.remove('scrambling');
+        void unit.offsetWidth; // reflow to restart animation
+        unit.classList.add('scrambling');
+        var len = digit.id === 'clock-ms' ? 3 : 2;
+        var count = 0, total = 18;
+        var iv = setInterval(function(){
+          digit.textContent = Array.from({length:len}, function(){ return Math.floor(Math.random()*10); }).join('');
+          if(++count >= total){
+            clearInterval(iv);
+            digit.textContent = restore[digit.id]();
+            busy = false;
+          }
+        }, 33);
+        unit.addEventListener('animationend', function(){ unit.classList.remove('scrambling'); }, {once:true});
+      });
+    });
   })();
 </script>
 </body>
