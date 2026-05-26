@@ -344,14 +344,23 @@
       .sort-row select { font-size: 0.78rem; }
       .view-toggle { margin-left: auto; }
 
-      /* Book row: stack book-right below on mobile */
-      .book-row { flex-wrap: wrap; gap: 0.65rem; }
-      .book-right { flex-direction: row; flex-wrap: wrap; align-items: center;
-        width: 100%; justify-content: flex-start; gap: 0.35rem; }
-      .book-actions { margin-top: 0; }
+      /* Book row: grid layout prevents any column from overflowing */
+      .book-row {
+        display: grid;
+        grid-template-columns: 38px 1fr auto;
+        grid-template-areas: "icon info right";
+        gap: 0.65rem;
+        align-items: center;
+      }
+      .book-icon  { grid-area: icon; align-self: start; margin-top: 0.1rem; }
+      .book-info  { grid-area: info; min-width: 0; overflow: hidden; }
+      .book-right { grid-area: right; align-items: flex-end; }
 
-      /* Drive link: clamp width so long filenames don't overflow */
-      .drive-link { max-width: 150px; overflow: hidden; white-space: nowrap; display: inline-block; }
+      /* Drive link: clamp so long filenames truncate */
+      .drive-link { max-width: 130px; overflow: hidden; white-space: nowrap; display: inline-block; text-overflow: ellipsis; }
+
+      /* Genre tags hidden on mobile to save space */
+      .genre-tags { display: none; }
 
       h1 { margin-bottom: 1rem; font-size: 1.4rem; }
     }
