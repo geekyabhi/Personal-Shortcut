@@ -209,9 +209,9 @@
     .modal-overlay {
       display: none; position: fixed; inset: 0; z-index: 999;
       background: rgba(17,24,39,0.45); backdrop-filter: blur(4px);
-      align-items: flex-start; justify-content: center;
-      padding-top: max(10vh, env(safe-area-inset-top, 0px) + 48px);
-      overflow-y: auto;
+      align-items: center; justify-content: center;
+      /* push flex centre into the top half so iOS keyboard doesn't cover the box */
+      padding-bottom: 45vh;
     }
     .modal-overlay.open { display: flex; }
     .modal-box {
@@ -355,9 +355,9 @@
     }
     .corner-btn:hover { color: rgba(79,70,229,0.35); background: rgba(79,70,229,0.06); }
     .corner-btn.on    { color: rgba(16,185,129,0.45); }
-    /* on mobile move it below the nav row so it doesn't sit on the Home link */
-    @media (max-width: 480px) {
-      .corner-btn { top: auto; bottom: 1.25rem; left: 1rem; }
+    /* on mobile indent the nav past the corner button so they don't overlap */
+    @media (max-width: 640px) {
+      nav { margin-left: 2.5rem; }
     }
 
     /* ── Cache status bar ── */
