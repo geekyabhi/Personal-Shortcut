@@ -40,7 +40,7 @@
     nav a:not(.active):hover { background: rgba(5,150,105,0.07); color: var(--accent); }
 
     h1 {
-      font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 900; letter-spacing: -0.03em; margin-bottom: 1.5rem;
+      font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 500; letter-spacing: -0.03em; margin-bottom: 1.5rem;
       background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
       animation: _fadeUp 0.5s 0.1s ease both;
     }
@@ -82,11 +82,12 @@
     .preset-btn:hover { background: var(--grad); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
 
     .btn-primary {
-      margin-top: 1.1rem; width: 100%; padding: 0.85rem;
+      margin-top: 1.1rem; padding: 0.55rem 1.75rem;
+      display: block; width: fit-content;
       background: var(--grad); color: #fff; border: none; border-radius: 100px;
-      font-size: 0.97rem; font-weight: 700; font-family: inherit;
+      font-size: 0.88rem; font-weight: 600; font-family: inherit;
       cursor: pointer; transition: all 0.25s ease;
-      box-shadow: 0 4px 15px rgba(5,150,105,0.35);
+      box-shadow: 0 4px 15px rgba(5,150,105,0.30);
     }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(5,150,105,0.45); }
     .btn-primary:active { transform: translateY(0) scale(0.97); }
@@ -94,10 +95,11 @@
     .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
     .btn-secondary {
-      margin-top: 0.6rem; width: 100%; padding: 0.85rem;
+      margin-top: 0.6rem; padding: 0.55rem 1.75rem;
+      display: block; width: fit-content;
       background: rgba(255,255,255,0.8); color: var(--accent);
       border: 2px solid rgba(5,150,105,0.3); border-radius: 100px;
-      font-size: 0.97rem; font-weight: 700; font-family: inherit;
+      font-size: 0.88rem; font-weight: 600; font-family: inherit;
       cursor: pointer; transition: all 0.25s ease;
     }
     .btn-secondary:hover { background: rgba(5,150,105,0.07); border-color: var(--accent); transform: translateY(-1px); }
@@ -123,7 +125,7 @@
       border: 1px solid rgba(255,255,255,0.9); border-radius: 18px;
       padding: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center;
     }
-    .stat-value { font-size: clamp(1.3rem, 4vw, 1.8rem); font-weight: 900; letter-spacing: -0.02em; }
+    .stat-value { font-size: clamp(1.3rem, 4vw, 1.8rem); font-weight: 400; letter-spacing: -0.02em; }
     .stat-label { font-size: 0.7rem; color: #6B7280; margin-top: 0.25rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
     .stat-value.green {
       background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
@@ -131,13 +133,13 @@
     .stat-value.blue  { background: linear-gradient(135deg,#4F46E5,#7C3AED); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
     .stat-value.amber { background: linear-gradient(135deg,#D97706,#F59E0B); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 
-    h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; color: #374151; }
+    h2 { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.85rem; color: #374151; }
 
     /* Habit list */
     .habit-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0; border-bottom: 1px solid #F3F4F6; transition: background 0.15s; }
     .habit-item:last-child { border-bottom: none; }
     .habit-name { font-size: 0.88rem; font-weight: 600; min-width: 0; flex-shrink: 1; word-break: break-word; flex: 1; }
-    .habit-rate { font-size: 0.88rem; font-weight: 800; white-space: nowrap; flex-shrink: 0; width: 3.5rem; text-align: right; }
+    .habit-rate { font-size: 0.88rem; font-weight: 500; white-space: nowrap; flex-shrink: 0; width: 3.5rem; text-align: right; }
     .habit-bar-wrap { width: 80px; flex-shrink: 0; height: 6px; background: #E5E7EB; border-radius: 3px; overflow: hidden; display: none; }
     .habit-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
     .habit-done { font-size: 0.78rem; color: #9CA3AF; white-space: nowrap; flex-shrink: 0; font-weight: 500; }
