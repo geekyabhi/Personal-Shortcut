@@ -205,24 +205,51 @@
 
     /* Responsive */
     @media (max-width: 767px) {
+      /* Nav: full-width block row */
       nav { display: flex; width: 100%; border-radius: 16px; }
       nav a { flex: 1; text-align: center; padding: 0.45rem 0.5rem; font-size: 0.82rem; }
 
       h1 { font-size: 1.4rem; margin-bottom: 1rem; }
 
-      /* blog row: wrap right column below on mobile */
-      .blog-row { flex-wrap: wrap; gap: 0.6rem; }
-      .blog-right { flex-direction: row; flex-wrap: wrap; align-items: center;
-        width: 100%; justify-content: flex-start; gap: 0.3rem; }
-      .blog-url-btn { max-width: 150px; overflow: hidden; white-space: nowrap; display: inline-block; }
+      /* Tab bar: stretch across full width */
+      .tab-bar { width: 100%; box-sizing: border-box; }
+      .tab-btn { flex: 1; padding: 0.5rem 0.5rem; font-size: 0.8rem; }
 
-      /* cache / sort */
+      /* Stats: 2-col on mobile */
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+      /* Action bar: stack buttons below label */
+      .action-bar { flex-direction: column; align-items: flex-start; }
+      .action-bar-btns { width: 100%; justify-content: flex-end; display: flex; }
+
+      /* Blog row: CSS grid keeps icon+info+actions in fixed columns */
+      .blog-row {
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        grid-template-areas: "icon info right";
+        gap: 0.6rem;
+        align-items: center;
+      }
+      .blog-icon  { grid-area: icon; align-self: start; margin-top: 0.1rem; }
+      .blog-info  { grid-area: info; min-width: 0; overflow: hidden; }
+      .blog-right { grid-area: right; align-items: flex-end; flex-shrink: unset; }
+
+      /* URL button: clip long URLs */
+      .blog-url-btn { max-width: 120px; overflow: hidden; white-space: nowrap;
+        display: inline-block; text-overflow: ellipsis; }
+
+      /* Sort row */
       .sort-row { gap: 0.4rem; }
+      .sort-row select { max-width: 120px; }
       .view-toggle { margin-left: auto; }
+
+      /* Card padding tighter */
+      .card { padding: 1rem; }
     }
     @media (max-width: 479px) {
       body { padding: 1rem 0.6rem; }
       nav a { font-size: 0.75rem; padding: 0.4rem 0.35rem; }
+      .tab-btn { font-size: 0.74rem; }
     }
     @media (min-width:640px) { .stats-grid { grid-template-columns: repeat(4,1fr); } }
 
