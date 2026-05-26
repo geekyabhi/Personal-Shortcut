@@ -1,4 +1,7 @@
+import io
 import json
+from functools import lru_cache
+
 from django.http import HttpResponse
 
 _ICON_SVG = """\
@@ -20,11 +23,17 @@ _MANIFEST = {
     "orientation": "portrait-primary",
     "icons": [
         {
+            "src": "/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png",
+            "purpose": "any maskable",
+        },
+        {
             "src": "/pwa-icon.svg",
             "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "any maskable",
-        }
+        },
     ],
 }
 
@@ -73,3 +82,43 @@ def service_worker(request):
 
 def pwa_icon(request):
     return HttpResponse(_ICON_SVG, content_type="image/svg+xml")
+
+
+@lru_cache(maxsize=1)
+def _apple_touch_icon_png_bytes():
+    from PIL import Image, ImageDraw, ImageFont
+
+    size = 180
+    img = Image.new("RGB", (size, size), (79, 70, 229))  # #4F46E5
+    draw = ImageDraw.Draw(img)
+
+    font = None
+    font_size = 76
+    for path in [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/SFNS.ttf",
+    ]:
+        try:
+            font = ImageFont.truetype(path, font_size)
+            break
+        except OSError:
+            continue
+
+    if font is None:
+        font = ImageFont.load_default(size=font_size)
+
+    text = "PS"
+    bbox = draw.textbbox((0, 0), text, font=font)
+    w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    draw.text(((size - w) // 2 - bbox[0], (size - h) // 2 - bbox[1]), text, fill="white", font=font)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def apple_touch_icon(request):
+    return HttpResponse(_apple_touch_icon_png_bytes(), content_type="image/png")
