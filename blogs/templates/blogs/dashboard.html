@@ -189,6 +189,7 @@
     .overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 1rem; }
     .overlay.open { display: flex; }
     .modal { background: #fff; border-radius: 24px; padding: 1.75rem; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.20); animation: _modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+    #top-loader { position: fixed; top: 0; left: 0; z-index: 9999; height: 3px; width: 0%; background: var(--grad); opacity: 0; transition: width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease; pointer-events: none; border-radius: 0 2px 2px 0; }
     @keyframes _modalPop { from { opacity:0; transform:scale(0.88) translateY(20px); } to { opacity:1; transform:none; } }
     .modal h2 { font-size: 1.1rem; font-weight: 500; margin-bottom: 1.25rem; letter-spacing: -0.02em; }
     .m-field { margin-bottom: 0.85rem; }
@@ -307,6 +308,7 @@
   <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
 </head>
 <body>
+  <div id="top-loader"></div>
   <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
@@ -696,6 +698,19 @@
   }
   function _rGoPage(p) { _rPage=p; _rRender(); }
 
+  let _loaderTimer;
+  function _showLoader() {
+    const el = document.getElementById('top-loader');
+    clearTimeout(_loaderTimer);
+    el.style.transition = 'none'; el.style.width = '0%'; el.style.opacity = '1';
+    requestAnimationFrame(() => { el.style.transition = 'width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease'; el.style.width = '70%'; });
+  }
+  function _hideLoader() {
+    const el = document.getElementById('top-loader');
+    el.style.width = '100%';
+    _loaderTimer = setTimeout(() => { el.style.opacity = '0'; setTimeout(() => { el.style.width = '0%'; }, 300); }, 200);
+  }
+
   function _rApply() {
     const status = document.getElementById('r-status-filter').value;
     const q = document.getElementById('r-search').value;
@@ -704,12 +719,14 @@
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (q) params.set('q', q);
+    _showLoader();
     fetch('/blogs/read/list/?' + params).then(r=>r.json()).then(d => {
       _rRaw = d.blogs;
       _rBooks = _rSort_(_rRaw.filter(b => !_rLinkFilter || b.url));
       _rPage=1; _rRender();
       document.getElementById('r-cache-info').textContent = d.total + ' blogs';
-    });
+      _hideLoader();
+    }).catch(() => _hideLoader());
   }
   function _rDebounce() { clearTimeout(_rDebTimer); _rDebTimer = setTimeout(_rApply, 300); }
   function _rSortChange() { _rSort = document.getElementById('r-sort').value; _rBooks = _rSort_(_rRaw.filter(b=>!_rLinkFilter||b.url)); _rPage=1; _rRender(); }
@@ -854,10 +871,12 @@
     const params=new URLSearchParams();
     if(status) params.set('status',status);
     if(q) params.set('q',q);
+    _showLoader();
     fetch('/blogs/write/list/?'+params).then(r=>r.json()).then(d=>{
       _wRaw=d.blogs; _wBooks=_wSort_(_wRaw); _wPage=1; _wRender();
       document.getElementById('w-cache-info').textContent=d.total+' topics';
-    });
+      _hideLoader();
+    }).catch(()=>_hideLoader());
   }
   function _wDebounce(){clearTimeout(_wDebTimer);_wDebTimer=setTimeout(_wApply,300);}
   function _wSortChange(){_wSort=document.getElementById('w-sort').value;_wBooks=_wSort_(_wRaw);_wPage=1;_wRender();}
