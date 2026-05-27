@@ -190,6 +190,16 @@
       margin-bottom: 1rem; font-weight: 500;
     }
 
+    /* Top loader bar */
+    #top-loader {
+      position: fixed; top: 0; left: 0; z-index: 9999;
+      height: 3px; width: 0%;
+      background: var(--grad);
+      opacity: 0;
+      transition: width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease;
+      pointer-events: none; border-radius: 0 2px 2px 0;
+    }
+
     /* Spinner */
     .spinner { display: flex; flex-direction: column; align-items: center; gap: 0.65rem; padding: 1.5rem 0; }
     .spinner-ring {
@@ -627,6 +637,7 @@
   </script>
 </head>
 <body>
+  <div id="top-loader"></div>
   <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
@@ -1351,9 +1362,28 @@
   }
 
   /* ── Fetch summary + insights ── */
+  /* ── Top loader bar ── */
+  let _loaderTimer;
+  function _showLoader() {
+    const el = document.getElementById('top-loader');
+    clearTimeout(_loaderTimer);
+    el.style.transition = 'none'; el.style.width = '0%'; el.style.opacity = '1';
+    requestAnimationFrame(() => {
+      el.style.transition = 'width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease';
+      el.style.width = '80%';
+    });
+  }
+  function _hideLoader() {
+    const el = document.getElementById('top-loader');
+    el.style.transition = 'width 0.2s ease, opacity 0.4s ease 0.15s';
+    el.style.width = '100%';
+    _loaderTimer = setTimeout(() => { el.style.opacity = '0'; setTimeout(() => { el.style.width = '0%'; }, 400); }, 150);
+  }
+
   async function fetchAll(force = false) {
     const btn = document.getElementById("btn-summary");
     btn.disabled = true;
+    _showLoader();
     document.getElementById("loading-summary").style.display = "flex";
     document.getElementById("results-summary").style.display = "none";
     document.getElementById("error-summary").style.display   = "none";
@@ -1401,6 +1431,7 @@
       showError("error-summary", "Network error: " + e.message);
     } finally {
       document.getElementById("loading-summary").style.display = "none";
+      _hideLoader();
       btn.disabled = false;
     }
   }
@@ -1409,6 +1440,7 @@
   async function fetchList(page, force = false) {
     const btn = document.getElementById("btn-browse");
     btn.disabled = true;
+    _showLoader();
     document.getElementById("loading-browse").style.display  = "flex";
     document.getElementById("results-browse").style.display  = "none";
     document.getElementById("error-browse").style.display    = "none";
@@ -1426,6 +1458,7 @@
       showError("error-browse", "Network error: " + e.message);
     } finally {
       document.getElementById("loading-browse").style.display = "none";
+      _hideLoader();
       btn.disabled = false;
     }
   }
