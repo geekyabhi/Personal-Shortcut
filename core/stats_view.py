@@ -85,11 +85,12 @@ def _todos_stat():
     dl = JiraDataLayer.from_env()
     if not dl.is_configured:
         return None
-    jql = f"project={dl.project} AND statusCategory != Done ORDER BY created DESC"
-    resp = dl.search_jql(jql=jql, max_results=0, fields="id")
+    jql = f"project={dl.project} AND status != Done ORDER BY created DESC"
+    resp = dl.search_jql(jql=jql, max_results=1)
     if not resp.ok:
         return None
-    total = resp.json().get("total", 0)
+    data = resp.json()
+    total = data.get("total", len(data.get("issues", [])))
     return f"{total} open issues"
 
 
