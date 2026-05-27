@@ -70,7 +70,7 @@ def _habits_stat():
 
 def _books_stat():
     token = os.environ.get("NOTION_TOKEN", "")
-    db_id = os.environ.get("NOTION_BOOKS_DB_ID", "")
+    db_id = os.environ.get("NOTION_BOOKS_DB_ID", "752ac6b0-8422-42dc-9439-b60a411f3c3d")
     if not token or not db_id:
         return None
     rows = _query_notion(db_id, token)
@@ -84,7 +84,7 @@ def _books_stat():
 def _todos_stat():
     email    = os.environ.get("JIRA_EMAIL", "")
     token    = os.environ.get("JIRA_API_TOKEN", "")
-    base_url = os.environ.get("JIRA_BASE_URL", "")
+    base_url = os.environ.get("JIRA_BASE_URL", "https://abhistrike.atlassian.net")
     project  = os.environ.get("JIRA_PROJECT_KEY", "TODO")
     if not email or not token or not base_url:
         return None
@@ -104,7 +104,7 @@ def _todos_stat():
 
 def _blogs_stat():
     token  = os.environ.get("NOTION_TOKEN", "")
-    db_id  = os.environ.get("NOTION_READ_BLOGS_DB_ID", "")
+    db_id  = os.environ.get("NOTION_READ_BLOGS_DB_ID", "2832ba62-358b-8100-bb76-ebe4dbc79ff4")
     if not token or not db_id:
         return None
     rows = _query_notion(db_id, token)
