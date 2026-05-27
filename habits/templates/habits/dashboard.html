@@ -155,6 +155,7 @@
 
     .error-box { background: #FEF2F2; border-left: 4px solid #EF4444; color: #B91C1C; border-radius: 12px; padding: 0.9rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; font-weight: 500; }
     #results { display: none; }
+    #top-loader { position: fixed; top: 0; left: 0; z-index: 9999; height: 3px; width: 0%; background: var(--grad); opacity: 0; transition: width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease; pointer-events: none; border-radius: 0 2px 2px 0; }
     .spinner { display: flex; flex-direction: column; align-items: center; gap: 0.65rem; padding: 1.5rem 0; }
     .spinner-ring { width: 36px; height: 36px; border: 3px solid rgba(5,150,105,0.15); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.75s linear infinite; }
     .spinner-text { font-size: 0.85rem; color: #9CA3AF; font-weight: 500; }
@@ -236,6 +237,7 @@
   </script>
 </head>
 <body>
+  <div id="top-loader"></div>
   <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
@@ -422,9 +424,14 @@
     }
   }
 
+  let _loaderTimer;
+  function _showLoader() { const el=document.getElementById('top-loader'); clearTimeout(_loaderTimer); el.style.transition='none'; el.style.width='0%'; el.style.opacity='1'; requestAnimationFrame(()=>{ el.style.transition='width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease'; el.style.width='80%'; }); }
+  function _hideLoader() { const el=document.getElementById('top-loader'); el.style.transition='width 0.2s ease, opacity 0.4s ease 0.15s'; el.style.width='100%'; _loaderTimer=setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{ el.style.width='0%'; },400); },150); }
+
   async function fetchSummary() {
     const btn = document.getElementById("btn");
     btn.disabled = true;
+    _showLoader();
     document.getElementById("loading").style.display = "flex";
     document.getElementById("results").style.display = "none";
     document.getElementById("error-box").style.display = "none";
@@ -454,6 +461,7 @@
       document.getElementById("error-box").style.display = "block";
     } finally {
       document.getElementById("loading").style.display = "none";
+      _hideLoader();
       btn.disabled = false;
     }
   }

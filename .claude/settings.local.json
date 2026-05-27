@@ -12,7 +12,19 @@
       "Bash(python manage.py check)",
       "Bash(python -c ' *)",
       "Bash(pip list *)",
-      "Bash(python -c \"from core.stats_view import HomeStatsView; print\\('import OK'\\)\")"
+      "Bash(python -c \"from core.stats_view import HomeStatsView; print\\('import OK'\\)\")",
+      "Bash(git -C \"/Users/abhinavsingh/Documents/Personal Shortcut\" status)",
+      "Bash(git -C \"/Users/abhinavsingh/Documents/Personal Shortcut\" log --oneline -5)",
+      "Bash(git *)",
+      "Bash(sed -n '29,32p' \"/Users/abhinavsingh/Documents/Personal Shortcut/blogs/templates/blogs/dashboard.html\")",
+      "Read(//Users/abbhinavsingh/Documents/Personal Shortcut/blogs/templates/blogs/**)",
+      "Bash(sed -n '99,160p' \"/Users/abhinavsingh/Documents/Personal Shortcut/blogs/templates/blogs/dashboard.html\")",
+      "Bash(python -c \"import django; django.setup\\(\\); from habits.views import BackfillView, ChartsView, CheckHabitsView, DashboardView, HabitsChartView, HabitsSummaryView; print\\('OK'\\)\")",
+      "Bash(DJANGO_SETTINGS_MODULE=personal_shortcut.settings python -c \"import django; django.setup\\(\\); from habits.views import BackfillView, ChartsView, CheckHabitsView, DashboardView, HabitsChartView, HabitsSummaryView; print\\('OK'\\)\")",
+      "Bash(DJANGO_SETTINGS_MODULE=core.settings python -c \"import django; django.setup\\(\\); from habits.views import BackfillView, ChartsView, CheckHabitsView, DashboardView, HabitsChartView, HabitsSummaryView; print\\('OK'\\)\")",
+      "Bash(python3 *)",
+      "Bash(xargs sed *)",
+      "Bash(xargs ls *)"
     ]
   }
 }

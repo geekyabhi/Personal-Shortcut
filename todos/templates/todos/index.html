@@ -141,6 +141,7 @@
     }
     .banner a { color: inherit; font-weight: 700; }
 
+    #top-loader { position: fixed; top: 0; left: 0; z-index: 9999; height: 3px; width: 0%; background: var(--grad); opacity: 0; transition: width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease; pointer-events: none; border-radius: 0 2px 2px 0; }
     /* Spinner */
     .spinner-wrap { display: none; text-align: center; padding: 1.5rem 0; }
     .spinner-ring {
@@ -311,6 +312,7 @@
   </script>
 </head>
 <body>
+  <div id="top-loader"></div>
   <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
@@ -468,9 +470,14 @@
     loadIssues();
   }
 
+  let _loaderTimer;
+  function _showLoader() { const el=document.getElementById('top-loader'); clearTimeout(_loaderTimer); el.style.transition='none'; el.style.width='0%'; el.style.opacity='1'; requestAnimationFrame(()=>{ el.style.transition='width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease'; el.style.width='80%'; }); }
+  function _hideLoader() { const el=document.getElementById('top-loader'); el.style.transition='width 0.2s ease, opacity 0.4s ease 0.15s'; el.style.width='100%'; _loaderTimer=setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{ el.style.width='0%'; },400); },150); }
+
   async function loadIssues() {
     const loading = document.getElementById("list-loading");
     const wrap    = document.getElementById("issues-wrap");
+    _showLoader();
     loading.style.display = "block";
     wrap.innerHTML = "";
 
@@ -503,6 +510,7 @@
       wrap.innerHTML = `<div class="empty-state">Network error: ${e.message}</div>`;
     } finally {
       loading.style.display = "none";
+      _hideLoader();
     }
   }
 
