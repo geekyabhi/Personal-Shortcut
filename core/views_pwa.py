@@ -1,19 +1,16 @@
+import io
 import json
-import urllib.request
 from functools import lru_cache
 
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 
-_CL_BASE = "https://res.cloudinary.com/dciwki8ry/image/upload"
-_CL_IMG  = "v1779852541/Gemini_Generated_Image_z11dhpz11dhpz11d-Photoroom_zo41z4.png"
-
-
-@lru_cache(maxsize=4)
-def _fetch_icon(w, h):
-    # e_trim strips surrounding whitespace from the source image before resizing
-    url = f"{_CL_BASE}/e_trim:10/w_{w},h_{h},c_pad,b_rgb:4F46E5,f_png/{_CL_IMG}"
-    with urllib.request.urlopen(url, timeout=10) as r:
-        return r.read()
+_ICON_SVG = """\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#4F46E5"/>
+  <text x="256" y="340" text-anchor="middle"
+        font-family="system-ui,-apple-system,sans-serif"
+        font-weight="800" font-size="230" fill="white">PS</text>
+</svg>"""
 
 _MANIFEST = {
     "name": "Personal Shortcut",
@@ -33,15 +30,15 @@ _MANIFEST = {
         },
         {
             "src": "/pwa-icon.svg",
-            "sizes": "512x512",
-            "type": "image/png",
+            "sizes": "any",
+            "type": "image/svg+xml",
             "purpose": "any maskable",
         },
     ],
 }
 
 _SERVICE_WORKER = """\
-const CACHE = 'ps-v4';
+const CACHE = 'ps-v5';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -84,12 +81,40 @@ def service_worker(request):
 
 
 def pwa_icon(request):
-    resp = HttpResponse(_fetch_icon(512, 512), content_type="image/png")
-    resp["Cache-Control"] = "public, max-age=86400"
-    return resp
+    return HttpResponse(_ICON_SVG, content_type="image/svg+xml")
+
+
+@lru_cache(maxsize=1)
+def _apple_touch_icon_png_bytes():
+    from PIL import Image, ImageDraw, ImageFont
+
+    size = 180
+    img = Image.new("RGB", (size, size), (79, 70, 229))
+    draw = ImageDraw.Draw(img)
+
+    font = None
+    for path in [
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/SFNS.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    ]:
+        try:
+            font = ImageFont.truetype(path, 76)
+            break
+        except OSError:
+            continue
+    if font is None:
+        font = ImageFont.load_default(size=76)
+
+    bbox = draw.textbbox((0, 0), "PS", font=font)
+    w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    draw.text(((size - w) // 2 - bbox[0], (size - h) // 2 - bbox[1]), "PS", fill="white", font=font)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 def apple_touch_icon(request):
-    resp = HttpResponse(_fetch_icon(180, 180), content_type="image/png")
-    resp["Cache-Control"] = "public, max-age=86400"
-    return resp
+    return HttpResponse(_apple_touch_icon_png_bytes(), content_type="image/png")
