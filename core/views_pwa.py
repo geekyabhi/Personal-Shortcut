@@ -1,9 +1,18 @@
 import json
+import urllib.request
+from functools import lru_cache
 
 from django.http import HttpResponse, HttpResponseRedirect
 
 _CL_BASE = "https://res.cloudinary.com/dciwki8ry/image/upload"
 _CL_IMG  = "v1779852541/Gemini_Generated_Image_z11dhpz11dhpz11d-Photoroom_zo41z4.png"
+
+
+@lru_cache(maxsize=4)
+def _fetch_icon(w, h):
+    url = f"{_CL_BASE}/w_{w},h_{h},c_fill/{_CL_IMG}"
+    with urllib.request.urlopen(url, timeout=10) as r:
+        return r.read()
 
 _MANIFEST = {
     "name": "Personal Shortcut",
@@ -22,7 +31,7 @@ _MANIFEST = {
             "purpose": "any maskable",
         },
         {
-            "src": f"{_CL_BASE}/w_512,h_512,c_fill/{_CL_IMG}",
+            "src": "/pwa-icon.svg",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable",
@@ -31,7 +40,7 @@ _MANIFEST = {
 }
 
 _SERVICE_WORKER = """\
-const CACHE = 'ps-v1';
+const CACHE = 'ps-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -74,8 +83,12 @@ def service_worker(request):
 
 
 def pwa_icon(request):
-    return HttpResponseRedirect(f"{_CL_BASE}/w_512,h_512,c_fill/{_CL_IMG}")
+    resp = HttpResponse(_fetch_icon(512, 512), content_type="image/png")
+    resp["Cache-Control"] = "public, max-age=86400"
+    return resp
 
 
 def apple_touch_icon(request):
-    return HttpResponseRedirect(f"{_CL_BASE}/w_180,h_180,c_fill/{_CL_IMG}")
+    resp = HttpResponse(_fetch_icon(180, 180), content_type="image/png")
+    resp["Cache-Control"] = "public, max-age=86400"
+    return resp
