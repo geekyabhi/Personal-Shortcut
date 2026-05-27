@@ -10,4 +10,6 @@ class LoginRequiredMiddleware:
     def __call__(self, request):
         if request.path not in _PUBLIC and not request.session.get("user_email"):
             return redirect("/login/")
-        return self.get_response(request)
+        response = self.get_response(request)
+        response["Content-Security-Policy"] = "upgrade-insecure-requests"
+        return response
