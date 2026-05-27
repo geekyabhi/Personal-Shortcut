@@ -1,6 +1,9 @@
 from django.shortcuts import redirect
 
-_PUBLIC = {"/login/", "/auth/google/", "/auth/callback/", "/auth/logout/"}
+_PUBLIC = {
+    "/login/", "/auth/google/", "/auth/callback/", "/auth/logout/",
+    "/manifest.json", "/service-worker.js", "/pwa-icon.svg", "/apple-touch-icon.png",
+}
 
 
 class LoginRequiredMiddleware:
