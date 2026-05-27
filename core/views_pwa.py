@@ -1,16 +1,9 @@
-import io
 import json
-from functools import lru_cache
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 
-_ICON_SVG = """\
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#4F46E5"/>
-  <text x="256" y="340" text-anchor="middle"
-        font-family="system-ui,-apple-system,sans-serif"
-        font-weight="800" font-size="230" fill="white">PS</text>
-</svg>"""
+_CL_BASE = "https://res.cloudinary.com/dciwki8ry/image/upload"
+_CL_IMG  = "v1779852541/Gemini_Generated_Image_z11dhpz11dhpz11d-Photoroom_zo41z4.png"
 
 _MANIFEST = {
     "name": "Personal Shortcut",
@@ -29,9 +22,9 @@ _MANIFEST = {
             "purpose": "any maskable",
         },
         {
-            "src": "/pwa-icon.svg",
-            "sizes": "any",
-            "type": "image/svg+xml",
+            "src": f"{_CL_BASE}/w_512,h_512,c_fill/{_CL_IMG}",
+            "sizes": "512x512",
+            "type": "image/png",
             "purpose": "any maskable",
         },
     ],
@@ -81,44 +74,8 @@ def service_worker(request):
 
 
 def pwa_icon(request):
-    return HttpResponse(_ICON_SVG, content_type="image/svg+xml")
-
-
-@lru_cache(maxsize=1)
-def _apple_touch_icon_png_bytes():
-    from PIL import Image, ImageDraw, ImageFont
-
-    size = 180
-    img = Image.new("RGB", (size, size), (79, 70, 229))  # #4F46E5
-    draw = ImageDraw.Draw(img)
-
-    font = None
-    font_size = 76
-    for path in [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        "/System/Library/Fonts/Helvetica.ttc",
-        "/System/Library/Fonts/SFNS.ttf",
-    ]:
-        try:
-            font = ImageFont.truetype(path, font_size)
-            break
-        except OSError:
-            continue
-
-    if font is None:
-        font = ImageFont.load_default(size=font_size)
-
-    text = "PS"
-    bbox = draw.textbbox((0, 0), text, font=font)
-    w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    draw.text(((size - w) // 2 - bbox[0], (size - h) // 2 - bbox[1]), text, fill="white", font=font)
-
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return buf.getvalue()
+    return HttpResponseRedirect(f"{_CL_BASE}/w_512,h_512,c_fill/{_CL_IMG}")
 
 
 def apple_touch_icon(request):
-    return HttpResponse(_apple_touch_icon_png_bytes(), content_type="image/png")
+    return HttpResponseRedirect(f"{_CL_BASE}/w_180,h_180,c_fill/{_CL_IMG}")
