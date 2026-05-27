@@ -1,5 +1,4 @@
 import os
-import base64
 import requests
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -82,22 +81,14 @@ def _books_stat():
 
 
 def _todos_stat():
-    email    = os.environ.get("JIRA_EMAIL", "")
-    token    = os.environ.get("JIRA_API_TOKEN", "")
-    base_url = os.environ.get("JIRA_BASE_URL", "https://abhistrike.atlassian.net")
-    project  = os.environ.get("JIRA_PROJECT_KEY", "TODO")
-    if not email or not token or not base_url:
+    from todos.data_layer import JiraDataLayer
+    dl = JiraDataLayer.from_env()
+    if not dl.is_configured:
         return None
-    encoded = base64.b64encode(f"{email}:{token}".encode()).decode()
-    headers = {"Authorization": f"Basic {encoded}", "Content-Type": "application/json"}
-    jql = f"project={project} AND statusCategory != Done ORDER BY created DESC"
-    resp = requests.get(
-        f"{base_url}/rest/api/3/search",
-        headers=headers,
-        params={"jql": jql, "maxResults": 0, "fields": "id"},
-        timeout=10,
-    )
-    resp.raise_for_status()
+    jql = f"project={dl.project} AND statusCategory != Done ORDER BY created DESC"
+    resp = dl.search_jql(jql=jql, max_results=0, fields="id")
+    if not resp.ok:
+        return None
     total = resp.json().get("total", 0)
     return f"{total} open issues"
 
