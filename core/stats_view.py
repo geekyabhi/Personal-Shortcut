@@ -122,6 +122,7 @@ class HomeStatsView(View):
                 key = futures[future]
                 try:
                     results[key] = future.result()
-                except Exception:
+                except Exception as e:
                     results[key] = None
+                    results[f"{key}_error"] = str(e)
         return JsonResponse(results)
