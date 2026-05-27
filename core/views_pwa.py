@@ -10,7 +10,8 @@ _CL_IMG  = "v1779852541/Gemini_Generated_Image_z11dhpz11dhpz11d-Photoroom_zo41z4
 
 @lru_cache(maxsize=4)
 def _fetch_icon(w, h):
-    url = f"{_CL_BASE}/w_{w},h_{h},c_pad,b_rgb:4F46E5/{_CL_IMG}"
+    # e_trim strips surrounding whitespace from the source image before resizing
+    url = f"{_CL_BASE}/e_trim:10/w_{w},h_{h},c_pad,b_rgb:4F46E5,f_png/{_CL_IMG}"
     with urllib.request.urlopen(url, timeout=10) as r:
         return r.read()
 
@@ -40,7 +41,7 @@ _MANIFEST = {
 }
 
 _SERVICE_WORKER = """\
-const CACHE = 'ps-v3';
+const CACHE = 'ps-v4';
 
 self.addEventListener('install', () => self.skipWaiting());
 
