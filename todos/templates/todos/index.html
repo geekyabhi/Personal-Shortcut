@@ -263,34 +263,58 @@
       font-family: inherit;
     }
     .theme-btn:hover { transform: scale(1.12); box-shadow: 0 4px 18px rgba(0,0,0,0.16); }
-    [data-theme="dark"] .theme-btn {
+    [data-theme="night"] .theme-btn {
       background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10);
       box-shadow: 0 2px 12px rgba(0,0,0,0.40);
     }
 
-    /* ── Dark mode ── */
-    [data-theme="dark"] body { background: #0D1017; color: #F9FAFB; }
-    [data-theme="dark"] .card {
+    /* ── Morning theme ── */
+    [data-theme="morning"] body { background: #FFFBF0; color: #1C1008; }
+    [data-theme="morning"] .card { background: rgba(255,252,235,0.95); border-color: rgba(245,158,11,0.15); box-shadow: 0 4px 24px rgba(180,100,0,0.07); }
+    [data-theme="morning"] .card:hover { box-shadow: 0 20px 60px rgba(180,100,0,0.12); }
+    [data-theme="morning"] nav { background: rgba(255,251,235,0.92); border-color: rgba(245,158,11,0.15); }
+    [data-theme="morning"] nav a { color: #92704A; }
+    [data-theme="morning"] h2 { color: #1C1008; }
+    [data-theme="morning"] label { color: #92704A; }
+    [data-theme="morning"] select, [data-theme="morning"] input[type="month"], [data-theme="morning"] input[type="week"], [data-theme="morning"] input[type="date"], [data-theme="morning"] input[type="number"], [data-theme="morning"] input[type="text"] { background: rgba(255,248,220,0.8); border-color: rgba(245,158,11,0.25); color: #1C1008; }
+    [data-theme="morning"] .error-box { background: rgba(239,68,68,0.07); }
+    [data-theme="morning"] p { color: #92704A; }
+    [data-theme="morning"] .theme-btn { background: rgba(255,251,235,0.92); border-color: rgba(245,158,11,0.30); }
+    /* ── Evening theme ── */
+    [data-theme="evening"] body { background: #1C1025; color: #EDE9FE; }
+    [data-theme="evening"] .card { background: rgba(255,255,255,0.05); border-color: rgba(251,191,36,0.10); box-shadow: 0 4px 24px rgba(0,0,0,0.30); }
+    [data-theme="evening"] .card:hover { box-shadow: 0 20px 60px rgba(0,0,0,0.50); }
+    [data-theme="evening"] nav { background: rgba(255,255,255,0.04); border-color: rgba(251,191,36,0.08); }
+    [data-theme="evening"] nav a { color: #C4B5FD; }
+    [data-theme="evening"] h2 { color: #EDE9FE; }
+    [data-theme="evening"] label { color: #A78BFA; }
+    [data-theme="evening"] select, [data-theme="evening"] input[type="month"], [data-theme="evening"] input[type="week"], [data-theme="evening"] input[type="date"], [data-theme="evening"] input[type="number"], [data-theme="evening"] input[type="text"] { background: rgba(255,255,255,0.06); border-color: rgba(251,191,36,0.15); color: #EDE9FE; }
+    [data-theme="evening"] .error-box { background: rgba(239,68,68,0.10); }
+    [data-theme="evening"] p { color: #C4B5FD; }
+    [data-theme="evening"] .theme-btn { background: rgba(28,16,40,0.92); border-color: rgba(251,191,36,0.20); }
+    /* ── Night mode ── */
+    [data-theme="night"] body { background: #0D1017; color: #F9FAFB; }
+    [data-theme="night"] .card {
       background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07);
       box-shadow: 0 4px 24px rgba(0,0,0,0.30);
     }
-    [data-theme="dark"] .card:hover { box-shadow: 0 20px 60px rgba(0,0,0,0.50); }
-    [data-theme="dark"] nav { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
-    [data-theme="dark"] nav a { color: #9CA3AF; }
-    [data-theme="dark"] nav a:not(.active):hover { background: rgba(255,255,255,0.07); color: #E5E7EB; }
-    [data-theme="dark"] h1 { /* gradient text — fine as is */ }
-    [data-theme="dark"] h2 { color: #E5E7EB; }
-    [data-theme="dark"] label { color: #6B7280; }
-    [data-theme="dark"] select,
-    [data-theme="dark"] input[type="month"],
-    [data-theme="dark"] input[type="week"],
-    [data-theme="dark"] input[type="date"],
-    [data-theme="dark"] input[type="number"],
-    [data-theme="dark"] input[type="text"] {
+    [data-theme="night"] .card:hover { box-shadow: 0 20px 60px rgba(0,0,0,0.50); }
+    [data-theme="night"] nav { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+    [data-theme="night"] nav a { color: #9CA3AF; }
+    [data-theme="night"] nav a:not(.active):hover { background: rgba(255,255,255,0.07); color: #E5E7EB; }
+    [data-theme="night"] h1 { /* gradient text — fine as is */ }
+    [data-theme="night"] h2 { color: #E5E7EB; }
+    [data-theme="night"] label { color: #6B7280; }
+    [data-theme="night"] select,
+    [data-theme="night"] input[type="month"],
+    [data-theme="night"] input[type="week"],
+    [data-theme="night"] input[type="date"],
+    [data-theme="night"] input[type="number"],
+    [data-theme="night"] input[type="text"] {
       background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
     }
-    [data-theme="dark"] .error-box { background: rgba(239,68,68,0.10); }
-    [data-theme="dark"] p { color: #9CA3AF; }
+    [data-theme="night"] .error-box { background: rgba(239,68,68,0.10); }
+    [data-theme="night"] p { color: #9CA3AF; }
 
     /* ── Toast ── */
     #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }

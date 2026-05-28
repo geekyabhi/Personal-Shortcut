@@ -24,7 +24,9 @@
       "Bash(DJANGO_SETTINGS_MODULE=core.settings python -c \"import django; django.setup\\(\\); from habits.views import BackfillView, ChartsView, CheckHabitsView, DashboardView, HabitsChartView, HabitsSummaryView; print\\('OK'\\)\")",
       "Bash(python3 *)",
       "Bash(xargs sed *)",
-      "Bash(xargs ls *)"
+      "Bash(xargs ls *)",
+      "Bash(awk '{print $NF}')",
+      "Bash(xargs cat *)"
     ]
   }
 }
