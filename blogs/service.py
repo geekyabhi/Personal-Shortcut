@@ -3,7 +3,7 @@ from .data_layer import BlogsDataLayer
 
 class BlogsService:
     READ_STATUS_ORDER = ["Reading", "To Read", "Read"]
-    WRITE_STATUS_ORDER = ["Draft", "To Write", "Written", "Published"]
+    WRITE_STATUS_ORDER = ["To Write", "Writing", "Finished"]
 
     def __init__(self, data_layer: BlogsDataLayer):
         self.data_layer = data_layer
@@ -38,6 +38,9 @@ class BlogsService:
         def title(key):
             return "".join(t.get("plain_text", "") for t in props.get(key, {}).get("title", [])).strip()
 
+        def rich(key):
+            return "".join(t.get("plain_text", "") for t in props.get(key, {}).get("rich_text", [])).strip()
+
         def sel(key):
             s = props.get(key, {}).get("select")
             return s["name"] if s else ""
@@ -47,6 +50,7 @@ class BlogsService:
             "topic": title("Topic"),
             "status": sel("Status"),
             "url": props.get("URL", {}).get("url", "") or "",
+            "topic_to_cover": rich("Topics To Cover"),
             "created_time": row.get("created_time", ""),
             "last_edited_time": row.get("last_edited_time", ""),
         }
@@ -117,7 +121,7 @@ class BlogsService:
         self.data_layer.bust_read_cache()
         return data.get("id", "")
 
-    def create_write(self, topic, status, url):
+    def create_write(self, topic, status, url, topic_to_cover=""):
         topic = topic.strip()
         if not topic:
             raise ValueError("Topic is required")
@@ -129,6 +133,9 @@ class BlogsService:
         url = (url or "").strip()
         if url:
             properties["URL"] = {"url": url}
+        topic_to_cover = (topic_to_cover or "").strip()
+        if topic_to_cover:
+            properties["Topics To Cover"] = {"rich_text": [{"text": {"content": topic_to_cover}}]}
 
         data = self.data_layer.create_page(self.write_db_id, properties)
         self.data_layer.bust_write_cache()
@@ -164,6 +171,9 @@ class BlogsService:
         if "url" in body:
             url = body["url"].strip()
             properties["URL"] = {"url": url if url else None}
+        if "topic_to_cover" in body:
+            ttc = body["topic_to_cover"].strip()
+            properties["Topics To Cover"] = {"rich_text": [{"text": {"content": ttc}}] if ttc else []}
 
         if not properties:
             raise ValueError("Nothing to update")

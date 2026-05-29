@@ -153,6 +153,9 @@
     .blog-icon { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; background: var(--grad-soft); display: flex; align-items: center; justify-content: center; font-size: 1rem; }
     .blog-info { flex: 1; min-width: 0; }
     .blog-topic { font-size: 0.9rem; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .blog-ttc { font-size: 0.75rem; color: #6B7280; margin-top: 0.18rem; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
+    .blog-card-ttc { font-size: 0.74rem; color: #6B7280; line-height: 1.5; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+    .bc-ttc { font-size: 0.72rem; color: #9CA3AF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; flex-shrink: 1; }
     .blog-url-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.55rem; border-radius: 100px; font-size: 0.68rem; font-weight: 600; background: rgba(124,58,237,0.09); color: #7C3AED; border: 1px solid rgba(124,58,237,0.20); text-decoration: none; transition: all 0.18s; white-space: nowrap; margin-top: 0.25rem; }
     .blog-url-btn:hover { background: var(--grad); color: #fff; border-color: transparent; }
     .blog-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; flex-shrink: 0; }
@@ -163,10 +166,9 @@
     .badge-reading   { background: rgba(5,150,105,0.12);   color: #059669; }
     .badge-to-read   { background: rgba(245,158,11,0.12);  color: #D97706; }
     .badge-read      { background: rgba(124,58,237,0.12);  color: #7C3AED; }
-    .badge-to-write  { background: rgba(245,158,11,0.12);  color: #D97706; }
-    .badge-draft     { background: rgba(8,145,178,0.12);   color: #0891B2; }
-    .badge-written   { background: rgba(99,102,241,0.12);  color: #4F46E5; }
-    .badge-published { background: rgba(5,150,105,0.12);   color: #059669; }
+    .badge-to-write { background: rgba(245,158,11,0.12);  color: #D97706; }
+    .badge-writing  { background: rgba(8,145,178,0.12);   color: #0891B2; }
+    .badge-finished { background: rgba(5,150,105,0.12);   color: #059669; }
     .badge-default   { background: rgba(156,163,175,0.15); color: #6B7280; }
 
     /* Icon buttons */
@@ -277,6 +279,7 @@
     [data-theme="dark"] .blog-row { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
     [data-theme="dark"] .blog-row:hover { background: rgba(255,255,255,0.07); }
     [data-theme="dark"] .blog-topic { color: #F9FAFB; }
+    [data-theme="dark"] .blog-ttc, [data-theme="dark"] .blog-card-ttc, [data-theme="dark"] .bc-ttc { color: #6B7280; }
     [data-theme="dark"] .section-heading { color: #E5E7EB; }
     [data-theme="dark"] .action-bar { background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.15); }
     [data-theme="dark"] .theme-btn { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); }
@@ -344,11 +347,11 @@
         <label>Status</label>
         <select id="w-status">
           <option>To Write</option>
-          <option>Draft</option>
-          <option>Written</option>
-          <option>Published</option>
+          <option>Writing</option>
+          <option>Finished</option>
         </select>
       </div>
+      <div class="m-field"><label>Topics To Cover</label><textarea id="w-topics" placeholder="Key points, subtopics, or ideas to cover…" rows="3" style="min-height:72px;"></textarea></div>
       <div class="m-field"><label>Published URL (optional)</label><input type="text" id="w-url" placeholder="https://…"></div>
       <p class="m-error" id="w-error"></p>
       <div class="m-actions">
@@ -473,19 +476,17 @@
                 <select id="w-status-filter" onchange="_wApply()">
                   <option value="">All Statuses</option>
                   <option>To Write</option>
-                  <option>Draft</option>
-                  <option>Written</option>
-                  <option>Published</option>
+                  <option>Writing</option>
+                  <option>Finished</option>
                 </select>
               </div>
             </div>
             <div style="margin-top:0.9rem;">
               <label>Quick Filter</label>
               <div class="chip-row">
-                <button class="chip" data-wstatus="To Write"  onclick="_wChip('To Write')">📋 To Write</button>
-                <button class="chip" data-wstatus="Draft"     onclick="_wChip('Draft')">📝 Draft</button>
-                <button class="chip" data-wstatus="Written"   onclick="_wChip('Written')">✍ Written</button>
-                <button class="chip" data-wstatus="Published" onclick="_wChip('Published')">🚀 Published</button>
+                <button class="chip" data-wstatus="To Write" onclick="_wChip('To Write')">📋 To Write</button>
+                <button class="chip" data-wstatus="Writing"  onclick="_wChip('Writing')">✍️ Writing</button>
+                <button class="chip" data-wstatus="Finished" onclick="_wChip('Finished')">✅ Finished</button>
               </div>
             </div>
             <button class="btn-primary" onclick="_wApply()">Apply</button>
@@ -562,7 +563,7 @@
   let _rEditId = null, _wEditId = null, _delCtx = null;
 
   const READ_ORDER  = {Reading:0,'To Read':1,Read:2};
-  const WRITE_ORDER = {Draft:0,'To Write':1,Written:2,Published:3};
+  const WRITE_ORDER = {'To Write':0,Writing:1,Finished:2};
 
   const STATUS_GRAD_READ = {
     Reading:  'linear-gradient(135deg,#059669,#0891B2)',
@@ -571,9 +572,8 @@
   };
   const STATUS_GRAD_WRITE = {
     'To Write': 'linear-gradient(135deg,#F59E0B,#EF4444)',
-    Draft:      'linear-gradient(135deg,#0891B2,#6366F1)',
-    Written:    'linear-gradient(135deg,#4F46E5,#7C3AED)',
-    Published:  'linear-gradient(135deg,#059669,#0891B2)',
+    Writing:    'linear-gradient(135deg,#0891B2,#6366F1)',
+    Finished:   'linear-gradient(135deg,#059669,#0891B2)',
   };
 
   function _setView(mode) {
@@ -588,7 +588,7 @@
       const m = {Reading:'reading','To Read':'to-read',Read:'read'};
       return 'badge badge-' + (m[s] || 'default');
     }
-    const m = {'To Write':'to-write',Draft:'draft',Written:'written',Published:'published'};
+    const m = {'To Write':'to-write',Writing:'writing',Finished:'finished'};
     return 'badge badge-' + (m[s] || 'default');
   }
 
@@ -790,11 +790,12 @@
 
   function _wRenderList(b) {
     const urlHtml = b.url ? `<a class="blog-url-btn" href="${b.url}" target="_blank" rel="noopener">🔗 Published</a>` : '';
+    const ttcHtml = b.topic_to_cover ? `<div class="blog-ttc" title="${b.topic_to_cover.replace(/"/g,'&quot;')}">${b.topic_to_cover}</div>` : '';
     return `<div class="blog-row">
       <div class="blog-icon">✍️</div>
       <div class="blog-info">
         <div class="blog-topic" title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</div>
-        ${urlHtml}
+        ${ttcHtml}${urlHtml}
       </div>
       <div class="blog-right">
         <span class="${_statusClass(b.status,'write')}">${b.status||'?'}</span>
@@ -808,6 +809,7 @@
   function _wRenderCard(b) {
     const sg = STATUS_GRAD_WRITE[b.status] || 'linear-gradient(135deg,#9CA3AF,#D1D5DB)';
     const urlHtml = b.url ? `<a class="bc-link" href="${b.url}" target="_blank" rel="noopener">🔗 Published</a>` : '';
+    const ttcHtml = b.topic_to_cover ? `<div class="blog-card-ttc" title="${b.topic_to_cover.replace(/"/g,'&quot;')}">${b.topic_to_cover}</div>` : '';
     return `<div class="blog-card">
       <div class="blog-card-stripe" style="--sg:${sg}"></div>
       <div class="blog-card-body">
@@ -816,6 +818,7 @@
           <span class="${_statusClass(b.status,'write')}">${b.status||'?'}</span>
         </div>
         <div class="blog-card-topic">${b.topic||'—'}</div>
+        ${ttcHtml}
         <div class="blog-card-link">${urlHtml}</div>
       </div>
       <div class="blog-card-footer">
@@ -826,9 +829,11 @@
   }
   function _wRenderCompact(b) {
     const urlHtml = b.url ? `<a class="bc-link" href="${b.url}" target="_blank" rel="noopener">🔗</a>` : '';
+    const ttcAttr = b.topic_to_cover ? ` title="${b.topic_to_cover.replace(/"/g,'&quot;')}"` : '';
     return `<div class="blog-compact">
       <span class="bc-icon">✍️</span>
-      <span class="bc-topic" title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</span>
+      <span class="bc-topic"${ttcAttr} title="${b.topic.replace(/"/g,'&quot;')}">${b.topic||'—'}</span>
+      ${b.topic_to_cover ? `<span class="bc-ttc">${b.topic_to_cover.split('\n')[0]}</span>` : ''}
       <span class="${_statusClass(b.status,'write')}">${b.status||'?'}</span>
       ${urlHtml}
       <div class="bc-acts">
@@ -890,6 +895,7 @@
     document.getElementById('w-save-btn').textContent='Save';
     document.getElementById('w-topic').value='';
     document.getElementById('w-status').value='To Write';
+    document.getElementById('w-topics').value='';
     document.getElementById('w-url').value='';
     document.getElementById('w-error').style.display='none';
     document.getElementById('write-overlay').classList.add('open');
@@ -902,6 +908,7 @@
     document.getElementById('w-save-btn').textContent='Save Changes';
     document.getElementById('w-topic').value=b.topic;
     document.getElementById('w-status').value=b.status||'To Write';
+    document.getElementById('w-topics').value=b.topic_to_cover||'';
     document.getElementById('w-url').value=b.url||'';
     document.getElementById('w-error').style.display='none';
     document.getElementById('write-overlay').classList.add('open');
@@ -916,7 +923,7 @@
     const btn=document.getElementById('w-save-btn');
     btn.disabled=true;btn.textContent='Saving…';
     const isEdit=!!_wEditId;
-    const payload={topic,status:document.getElementById('w-status').value,url:document.getElementById('w-url').value.trim()};
+    const payload={topic,status:document.getElementById('w-status').value,topic_to_cover:document.getElementById('w-topics').value.trim(),url:document.getElementById('w-url').value.trim()};
     fetch(isEdit?`/blogs/write/${_wEditId}/update/`:'/blogs/write/create/',{method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
       .then(r=>r.json()).then(d=>{
         if(d.error){errEl.textContent=d.error;errEl.style.display='block';showToast('Update failed','error');return;}

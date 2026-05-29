@@ -139,6 +139,7 @@ class WriteBlogsCreateView(BlogsBaseView):
                 topic=body.get("topic", ""),
                 status=body.get("status", ""),
                 url=body.get("url", ""),
+                topic_to_cover=body.get("topic_to_cover", ""),
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
