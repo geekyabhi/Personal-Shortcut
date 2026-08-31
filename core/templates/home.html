@@ -14,6 +14,7 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -65,13 +66,14 @@
 
     /* ── Dashboard split ── */
     .dashboard {
-      display: flex; height: 100vh; width: 100%;
+      display: flex; height: 100vh; width: 100%; max-width: 100%;
+      overflow-x: hidden;
       position: relative; z-index: 1;
     }
 
     /* ── LEFT PANEL ── */
     .left-panel {
-      width: 50%; flex-shrink: 0;
+      width: 50%; flex-shrink: 0; min-width: 0;
       display: flex; flex-direction: column;
       padding: 2.5rem 3rem;
       border-right: 1px solid rgba(0,0,0,0.06);
@@ -79,7 +81,6 @@
     }
 
     .brand { margin-bottom: auto; }
-    .brand-logo { margin-bottom: 1rem; }
     h1 {
       font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 300; letter-spacing: -0.03em;
       background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 40%, #7C3AED 70%, #059669 100%);
@@ -91,58 +92,129 @@
       animation: _fadeUp 0.55s 0.28s ease both;
     }
 
-    /* ── CLOCK ── */
+    /* ── NEO-CHRONOMETER (Pro) 3D CYLINDER CLOCK ── */
     .clock-wrap {
       flex: 1; display: flex; flex-direction: column;
-      justify-content: center; gap: 0.6rem;
+      justify-content: center; align-items: center; gap: 0.6rem;
+      overflow: hidden; max-width: 100%; padding: 18px 12px;
       animation: _fadeUp 0.6s 0.4s ease both;
-      /* isolate frequent text repaints so scroll layout is never invalidated */
       contain: layout style;
     }
-    .clock-day {
-      font-size: 0.65rem; font-weight: 600; color: #9CA3AF;
-      text-transform: uppercase; letter-spacing: 0.16em;
+    .odo-widget {
+      display: inline-flex; flex-direction: column; gap: 8px;
+      user-select: none; -webkit-user-select: none;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      transform: scale(var(--odo-scale, 1)); transform-origin: center;
+      transition: transform .18s ease;
+      /* default theme = cyan */
+      --accent-glow: rgba(56,189,248,0.4); --accent-primary: #38bdf8; --accent-light: #e0f2fe;
+      --accent-border: rgba(56,189,248,0.25); --housing-border: rgba(56,189,248,0.22); --housing-glow: rgba(14,165,233,0.12);
+      --seconds-face-bg: linear-gradient(90deg, #0c2d48 0%, #14426b 50%, #0c2d48 100%); --seconds-text: #e0f2fe; --seconds-border: rgba(56,189,248,0.4);
+      --fast-face-bg: linear-gradient(90deg, #115e59 0%, #0f766e 50%, #115e59 100%); --fast-text: #ecfeff; --fast-border: rgba(45,212,191,0.45);
     }
-    .clock-time-row {
-      display: flex; align-items: flex-start; gap: 0;
-      font-variant-numeric: tabular-nums;
+    .odo-widget.theme-emerald {
+      --accent-glow: rgba(16,185,129,0.4); --accent-primary: #10b981; --accent-light: #a7f3d0;
+      --accent-border: rgba(16,185,129,0.25); --housing-border: rgba(16,185,129,0.22); --housing-glow: rgba(16,185,129,0.12);
+      --seconds-face-bg: linear-gradient(90deg, #064e3b 0%, #047857 50%, #064e3b 100%); --seconds-text: #ecfdf5; --seconds-border: rgba(16,185,129,0.45);
+      --fast-face-bg: linear-gradient(90deg, #022c22 0%, #065f46 50%, #022c22 100%); --fast-text: #a7f3d0; --fast-border: rgba(52,211,153,0.5);
     }
-    .clock-unit {
-      display: flex; flex-direction: column; align-items: center;
-      position: relative;
+    .odo-widget.theme-vintage {
+      --accent-glow: rgba(245,158,11,0.4); --accent-primary: #f59e0b; --accent-light: #fef3c7;
+      --accent-border: rgba(245,158,11,0.25); --housing-border: rgba(245,158,11,0.22); --housing-glow: rgba(245,158,11,0.1);
+      --seconds-face-bg: linear-gradient(90deg, #7f1d1d 0%, #b91c1c 50%, #7f1d1d 100%); --seconds-text: #fee2e2; --seconds-border: rgba(239,68,68,0.5);
+      --fast-face-bg: linear-gradient(90deg, #78350f 0%, #b45309 50%, #78350f 100%); --fast-text: #fef3c7; --fast-border: rgba(245,158,11,0.45);
     }
-    .clock-digits {
-      font-size: clamp(3rem, 7vw, 5.5rem);
-      font-weight: 200; letter-spacing: -0.05em; line-height: 1;
-      background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 45%, #7C3AED 80%, #059669 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    .odo-widget.theme-stealth {
+      --accent-glow: rgba(255,255,255,0.2); --accent-primary: #e2e8f0; --accent-light: #ffffff;
+      --accent-border: rgba(255,255,255,0.18); --housing-border: rgba(255,255,255,0.15); --housing-glow: rgba(255,255,255,0.04);
+      --seconds-face-bg: linear-gradient(90deg, #27272a 0%, #3f3f46 50%, #27272a 100%); --seconds-text: #ffffff; --seconds-border: rgba(255,255,255,0.3);
+      --fast-face-bg: linear-gradient(90deg, #18181b 0%, #27272a 50%, #18181b 100%); --fast-text: #e4e4e7; --fast-border: rgba(255,255,255,0.2);
     }
-    .clock-unit-label {
-      font-size: 0.52rem; font-weight: 500; color: #B0B7C3;
-      letter-spacing: 0.06em; margin-top: 0.3rem; text-align: center;
-      -webkit-text-fill-color: initial; background: none;
+
+    /* header controls */
+    .odo-topline { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; padding: 0 2px; }
+    .odo-topline .btns { display: flex; align-items: center; gap: 4px; }
+    .control-group { display: flex; gap: 2px; background: #090b10; padding: 2px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); }
+    .mode-btn, .icon-btn {
+      background: transparent; border: none; color: #64748b; cursor: pointer;
+      font: 600 0.56rem/1 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .05em;
+      padding: 4px 7px; border-radius: 4px; transition: all .2s ease;
+      display: inline-flex; align-items: center; gap: 4px; touch-action: manipulation;
     }
-    .clock-sep {
-      font-size: clamp(3rem, 7vw, 5.5rem);
-      font-weight: 200; letter-spacing: -0.05em; line-height: 1;
-      background: linear-gradient(135deg, #1E1B4B 0%, #4F46E5 45%, #7C3AED 80%, #059669 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      padding: 0 0.05em;
+    .icon-btn { background: #090b10; border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; }
+    .mode-btn.active { background: #1e293b; color: var(--accent-primary); box-shadow: 0 0 8px var(--accent-glow); }
+    .icon-btn:hover { border-color: var(--accent-border); color: var(--accent-primary); }
+    .icon-btn.active { color: var(--accent-primary); border-color: var(--accent-border); box-shadow: 0 0 8px var(--accent-glow); }
+    .theme-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent-primary); box-shadow: 0 0 6px var(--accent-glow); }
+
+    /* status line (weekday / model) */
+    .odo-statusline { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; padding: 0 4px; }
+    .odo-day { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.2em; color: var(--accent-primary); }
+    .odo-model { font-size: 0.6rem; letter-spacing: 0.15em; color: #475569; font-weight: 400; }
+
+    .odo-housing {
+      display: inline-flex; align-items: center; gap: 4px; width: fit-content;
+      background: linear-gradient(180deg, #11141c 0%, #090b10 100%);
+      padding: 10px 14px; border-radius: 12px;
+      border: 1px solid var(--housing-border);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 12px 30px -8px rgba(0,0,0,0.8), 0 0 20px -5px var(--housing-glow);
+      transition: border-color .3s ease, box-shadow .3s ease;
     }
-    .clock-sep-wrap { display: flex; flex-direction: column; align-items: center; }
-    .clock-sep-gap { height: 0.3rem; margin-top: 0.3rem; visibility: hidden; font-size: 0.52rem; content: '.'; }
-    .clock-date {
-      font-size: clamp(0.95rem, 2vw, 1.2rem); font-weight: 500;
-      color: #374151; letter-spacing: -0.01em;
+    .odo-widget[data-mode="clock"] .odo-actions { display: none; }
+    .odo-widget:not([data-mode="clock"]) .cal-only { display: none; }
+    .odo-widget:not([data-mode="timer"]) .tmr-only { display: none; }
+
+    .odo-group { display: flex; flex-direction: column; align-items: center; }
+    .odo-digits { display: flex; gap: 2.5px; }
+    .odo-digit {
+      width: 22px; height: 38px; perspective: 320px; position: relative;
+      border-radius: 5px; background: #06070a; border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.9); overflow: hidden;
+      transition: border-color .3s ease;
     }
-    .clock-accent {
-      width: 40px; height: 3px; border-radius: 2px;
-      background: linear-gradient(90deg, #4F46E5, #059669);
-      margin-top: 0.25rem; opacity: 0.5;
+    .odo-digit::before {
+      content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+      background: linear-gradient(180deg,
+        rgba(6,7,10,0.95) 0%, rgba(6,7,10,0.15) 30%,
+        rgba(255,255,255,0.06) 50%,
+        rgba(6,7,10,0.15) 70%, rgba(6,7,10,0.95) 100%);
     }
-    /* blinking colon to signal the clock is live without forcing repaints */
-    @keyframes _blink { 0%,49%{opacity:1} 50%,100%{opacity:0.3} }
-    .clock-sep { animation: _blink 1s step-end infinite; }
+    .odo-digit.day-drum { width: 46px; }
+    .odo-cylinder {
+      width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
+      transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    .fast-drum .odo-cylinder { transition: transform 0.08s linear; }
+    .odo-face {
+      position: absolute; width: 100%; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.15rem; font-weight: 300; color: #e2e8f0;
+      backface-visibility: hidden; letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #0e1118 0%, #171b26 50%, #0e1118 100%);
+    }
+    .day-drum .odo-face { font-size: 0.75rem; letter-spacing: 0.08em; font-weight: 400; }
+    .accent-seconds .odo-face { color: var(--seconds-text); background: var(--seconds-face-bg); }
+    .accent-seconds .odo-digit { border-color: var(--seconds-border); }
+    .odo-group.accent-seconds .odo-label { color: var(--accent-primary); }
+    .accent-fast .odo-face { color: var(--fast-text); font-weight: 400; background: var(--fast-face-bg); }
+    .accent-fast .odo-digit { border-color: var(--fast-border); box-shadow: 0 0 8px var(--housing-glow); }
+    .odo-group.accent-fast .odo-label { color: var(--fast-text); }
+    .odo-label { font-size: 0.5rem; color: #64748b; font-weight: 400; margin-top: 5px; letter-spacing: 0.1em; }
+    .odo-sep { color: #334155; font-weight: 300; font-size: 1rem; margin: 0 1px 16px 1px; }
+
+    /* stopwatch / timer action bar */
+    .odo-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; width: 100%; }
+    .act-btn {
+      background: #090b10; border: 1px solid rgba(255,255,255,0.08); color: #94a3b8;
+      font: 600 0.56rem/1 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .06em;
+      padding: 6px 10px; border-radius: 5px; cursor: pointer; transition: all .2s ease;
+      touch-action: manipulation;
+    }
+    .act-btn:hover { border-color: var(--accent-border); color: var(--accent-primary); }
+    .act-btn.primary { color: var(--accent-primary); border-color: var(--accent-border); }
+    .act-btn.wide { min-width: 78px; }
+    .odo-housing.finished { animation: _tmrflash .45s steps(1) 6; }
+    @keyframes _tmrflash { 50% { border-color: var(--seconds-border); box-shadow: 0 0 26px -2px var(--accent-glow); } }
 
     .left-footer {
       font-size: 0.72rem; color: #C4CAD4; font-weight: 400;
@@ -151,7 +223,7 @@
 
     /* ── RIGHT PANEL ── */
     .right-panel {
-      flex: 1; overflow-y: auto;
+      flex: 1; min-width: 0; overflow-y: auto;
       padding: 2.5rem 2.5rem 2.5rem 2.5rem;
       display: flex; flex-direction: column; gap: 1.1rem;
     }
@@ -258,7 +330,7 @@
       .dashboard { flex-direction: column; height: auto; }
       .orb { display: none; }
       .left-panel { width: 100%; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); padding: 1.75rem 1.25rem; }
-      .clock-wrap { flex: none; padding: 1.5rem 0 0.75rem; }
+      .clock-wrap { flex: none; padding: 1.25rem 0.5rem 0.75rem; }
       /* remove inner scroll — let body scroll instead */
       .right-panel { overflow-y: visible; padding: 1.25rem; }
       .tile { padding: 1.25rem 1rem; min-height: unset; }
@@ -267,7 +339,6 @@
     @media (max-width: 480px) {
       .left-panel { padding: 1.25rem 1rem; }
       .right-panel { padding: 1rem; }
-      .clock-digits, .clock-sep { font-size: clamp(1.8rem, 9vw, 2.6rem) !important; }
     }
     /* large screens: cap tile width */
     @media (min-width: 1400px) {
@@ -282,67 +353,31 @@
     @media (prefers-reduced-motion:reduce){ *, *::before, *::after { animation-duration:0.01ms!important; transition-duration:0.01ms!important; } }
 
     /* ── Dark mode ── */
-    [data-theme="morning"] body { background: #FFFBF0; color: #1C1008; }
-    [data-theme="morning"] .left-panel { border-right-color: rgba(180,100,0,0.10); }
-    [data-theme="morning"] .subtitle { color: #92704A; }
-    [data-theme="morning"] .clock-date { color: #A07848; }
-    [data-theme="morning"] .left-footer { color: #C8A882; }
-    [data-theme="morning"] .right-heading { color: #B89060; }
-    [data-theme="morning"] .tile { background: rgba(255,252,235,0.95); border-color: rgba(245,158,11,0.20); color: #1C1008; }
-    [data-theme="morning"] .tile:hover { box-shadow: 0 8px 32px rgba(180,100,0,0.12); }
-    [data-theme="morning"] .tile-name { color: #1C1008; }
-    [data-theme="morning"] .tile-desc { color: #92704A; }
-    [data-theme="morning"] .tile-stat.loading { background: linear-gradient(90deg,rgba(245,158,11,0.08) 25%,rgba(245,158,11,0.14) 50%,rgba(245,158,11,0.08) 75%); background-size: 200% 100%; }
-    [data-theme="morning"] .theme-btn { background: rgba(255,251,235,0.92); border-color: rgba(245,158,11,0.30); }
-    [data-theme="morning"] .user-chip { background: rgba(255,251,235,0.92); border-color: rgba(245,158,11,0.25); color: #1C1008; }
-    [data-theme="evening"] body { background: #1C1025; color: #EDE9FE; }
-    [data-theme="evening"] .left-panel { border-right-color: rgba(251,191,36,0.08); }
-    [data-theme="evening"] .subtitle { color: #A78BFA; }
-    [data-theme="evening"] .clock-date { color: #C4B5FD; }
-    [data-theme="evening"] .left-footer { color: #4C3B6B; }
-    [data-theme="evening"] .right-heading { color: #6D55A0; }
-    [data-theme="evening"] .tile { background: rgba(255,255,255,0.04); border-color: rgba(251,191,36,0.10); color: #EDE9FE; box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
-    [data-theme="evening"] .tile:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
-    [data-theme="evening"] .tile-name { color: #EDE9FE; }
-    [data-theme="evening"] .tile-desc { color: #A78BFA; }
-    [data-theme="evening"] .tile-stat.loading { background: linear-gradient(90deg,rgba(255,255,255,0.05) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.05) 75%); background-size: 200% 100%; }
-    [data-theme="evening"] .tile-expenses .tile-stat { background: rgba(245,158,11,0.18); color: #FCD34D; }
-    [data-theme="evening"] .tile-habits   .tile-stat { background: rgba(167,139,250,0.18); color: #C4B5FD; }
-    [data-theme="evening"] .tile-todos    .tile-stat { background: rgba(251,191,36,0.18); color: #FDE68A; }
-    [data-theme="evening"] .tile-books    .tile-stat { background: rgba(236,72,153,0.18); color: #F9A8D4; }
-    [data-theme="evening"] .tile-blogs    .tile-stat { background: rgba(239,68,68,0.18); color: #FCA5A5; }
-    [data-theme="evening"] .tile-expenses .tile-icon-wrap { background: rgba(245,158,11,0.18); }
-    [data-theme="evening"] .tile-habits   .tile-icon-wrap { background: rgba(167,139,250,0.18); }
-    [data-theme="evening"] .tile-todos    .tile-icon-wrap { background: rgba(251,191,36,0.18); }
-    [data-theme="evening"] .tile-books    .tile-icon-wrap { background: rgba(236,72,153,0.18); }
-    [data-theme="evening"] .tile-blogs    .tile-icon-wrap { background: rgba(239,68,68,0.18); }
-    [data-theme="evening"] .theme-btn { background: rgba(28,16,40,0.92); border-color: rgba(251,191,36,0.20); }
-    [data-theme="evening"] .user-chip { background: rgba(28,16,40,0.92); border-color: rgba(251,191,36,0.15); color: #EDE9FE; }
-    [data-theme="night"] body { background: #0F0F14; color: #F9FAFB; }
-    [data-theme="night"] .left-panel { border-right-color: rgba(255,255,255,0.06); }
-    [data-theme="night"] .subtitle { color: #6B7280; }
-    [data-theme="night"] .clock-date { color: #9CA3AF; }
-    [data-theme="night"] .left-footer { color: #374151; }
-    [data-theme="night"] .right-heading { color: #4B5563; }
-    [data-theme="night"] .tile { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); color: #F9FAFB; box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
-    [data-theme="night"] .tile:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
-    [data-theme="night"] .tile-name { color: #F9FAFB; }
-    [data-theme="night"] .tile-desc { color: #6B7280; }
-    [data-theme="night"] .tile-stat.loading { background: linear-gradient(90deg,rgba(255,255,255,0.05) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.05) 75%); background-size: 200% 100%; }
-    [data-theme="night"] .tile-expenses .tile-stat { background: rgba(79,70,229,0.18); color: #818CF8; }
-    [data-theme="night"] .tile-habits   .tile-stat { background: rgba(5,150,105,0.18); color: #34D399; }
-    [data-theme="night"] .tile-todos    .tile-stat { background: rgba(2,132,199,0.18); color: #38BDF8; }
-    [data-theme="night"] .tile-books    .tile-stat { background: rgba(245,158,11,0.18); color: #FCD34D; }
-    [data-theme="night"] .tile-blogs    .tile-stat { background: rgba(124,58,237,0.18); color: #C4B5FD; }
-    [data-theme="night"] .tile-expenses .tile-icon-wrap { background: rgba(79,70,229,0.18); }
-    [data-theme="night"] .tile-habits   .tile-icon-wrap { background: rgba(5,150,105,0.18); }
-    [data-theme="night"] .tile-todos    .tile-icon-wrap { background: rgba(2,132,199,0.18); }
-    [data-theme="night"] .tile-books    .tile-icon-wrap { background: rgba(245,158,11,0.18); }
-    [data-theme="night"] .tile-blogs    .tile-icon-wrap { background: rgba(124,58,237,0.18); }
-    [data-theme="night"] .theme-btn { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); }
-    [data-theme="night"] .user-chip { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); color: #E5E7EB; }
+    [data-theme="dark"] body { background: #0F0F14; color: #F9FAFB; }
+    [data-theme="dark"] .left-panel { border-right-color: rgba(255,255,255,0.06); }
+    [data-theme="dark"] .subtitle { color: #6B7280; }
+    [data-theme="dark"] .left-footer { color: #374151; }
+    [data-theme="dark"] .left-footer { color: #374151; }
+    [data-theme="dark"] .right-heading { color: #4B5563; }
+    [data-theme="dark"] .tile { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); color: #F9FAFB; box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
+    [data-theme="dark"] .tile:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+    [data-theme="dark"] .tile-name { color: #F9FAFB; }
+    [data-theme="dark"] .tile-desc { color: #6B7280; }
+    [data-theme="dark"] .tile-stat.loading { background: linear-gradient(90deg,rgba(255,255,255,0.05) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.05) 75%); background-size: 200% 100%; }
+    [data-theme="dark"] .tile-expenses .tile-stat { background: rgba(79,70,229,0.18); color: #818CF8; }
+    [data-theme="dark"] .tile-habits   .tile-stat { background: rgba(5,150,105,0.18); color: #34D399; }
+    [data-theme="dark"] .tile-todos    .tile-stat { background: rgba(2,132,199,0.18); color: #38BDF8; }
+    [data-theme="dark"] .tile-books    .tile-stat { background: rgba(245,158,11,0.18); color: #FCD34D; }
+    [data-theme="dark"] .tile-blogs    .tile-stat { background: rgba(124,58,237,0.18); color: #C4B5FD; }
+    [data-theme="dark"] .tile-expenses .tile-icon-wrap { background: rgba(79,70,229,0.18); }
+    [data-theme="dark"] .tile-habits   .tile-icon-wrap { background: rgba(5,150,105,0.18); }
+    [data-theme="dark"] .tile-todos    .tile-icon-wrap { background: rgba(2,132,199,0.18); }
+    [data-theme="dark"] .tile-books    .tile-icon-wrap { background: rgba(245,158,11,0.18); }
+    [data-theme="dark"] .tile-blogs    .tile-icon-wrap { background: rgba(124,58,237,0.18); }
+    [data-theme="dark"] .theme-btn { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); }
+    [data-theme="dark"] .user-chip { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); color: #E5E7EB; }
   </style>
-  <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t) document.documentElement.setAttribute('data-theme',t); })();</script>
+  <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
 </head>
 <body>
   <!-- Background orbs -->
@@ -371,40 +406,99 @@
     <!-- ── LEFT: branding + clock ── -->
     <div class="left-panel">
       <div class="brand">
-        <div class="brand-logo">
-          <img src="https://res.cloudinary.com/dciwki8ry/image/upload/e_trim:10/w_160,h_160,c_pad,f_png/v1779852541/Gemini_Generated_Image_z11dhpz11dhpz11d-Photoroom_zo41z4.png"
-               alt="Personal Shortcut" width="80" height="80" draggable="false"
-               style="border-radius:16px;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none;">
-        </div>
         <h1>Personal Shortcut</h1>
         <p class="subtitle" id="greeting">Your data, beautifully organised.</p>
       </div>
 
       <div class="clock-wrap">
-        <div class="clock-day" id="clock-day">Monday</div>
-        <div class="clock-time-row">
-          <div class="clock-unit">
-            <span class="clock-digits" id="clock-hh">00</span>
-            <span class="clock-unit-label">h</span>
+        <div class="odo-widget theme-cyan" data-mode="clock" role="group" aria-label="Neo-Chronometer">
+          <div class="odo-topline">
+            <div class="control-group" role="tablist" aria-label="Mode">
+              <button class="mode-btn active" id="mb-clock" type="button">CLK</button>
+              <button class="mode-btn" id="mb-sw" type="button">SW</button>
+              <button class="mode-btn" id="mb-tmr" type="button">TMR</button>
+            </div>
+            <div class="btns">
+              <button class="icon-btn" id="sound-btn" type="button" aria-pressed="false">&#9834; OFF</button>
+              <button class="icon-btn" id="theme-cycle" type="button" title="Cycle theme">
+                <span class="theme-dot"></span><span id="theme-label">CYAN</span>
+              </button>
+            </div>
           </div>
-          <div class="clock-sep-wrap"><span class="clock-sep">:</span><span class="clock-sep-gap"></span></div>
-          <div class="clock-unit">
-            <span class="clock-digits" id="clock-mm">00</span>
-            <span class="clock-unit-label">m</span>
+
+          <div class="odo-statusline">
+            <span class="odo-day" id="odo-day">&mdash;</span>
+            <span class="odo-model">SYSTEM // CHRONO-CORE</span>
           </div>
-          <div class="clock-sep-wrap"><span class="clock-sep">:</span><span class="clock-sep-gap"></span></div>
-          <div class="clock-unit">
-            <span class="clock-digits" id="clock-ss">00</span>
-            <span class="clock-unit-label">s</span>
+
+          <div class="odo-housing" id="odo-housing">
+            <div class="odo-group cal-only">
+              <div class="odo-digits">
+                <div class="odo-digit" id="y0"></div><div class="odo-digit" id="y1"></div>
+                <div class="odo-digit" id="y2"></div><div class="odo-digit" id="y3"></div>
+              </div>
+              <span class="odo-label">YYYY</span>
+            </div>
+            <span class="odo-sep cal-only">&middot;</span>
+            <div class="odo-group cal-only">
+              <div class="odo-digits">
+                <div class="odo-digit" id="mo0"></div><div class="odo-digit" id="mo1"></div>
+              </div>
+              <span class="odo-label">MM</span>
+            </div>
+            <span class="odo-sep cal-only">&middot;</span>
+            <div class="odo-group cal-only">
+              <div class="odo-digits">
+                <div class="odo-digit" id="d0"></div><div class="odo-digit" id="d1"></div>
+              </div>
+              <span class="odo-label">DD</span>
+            </div>
+            <span class="odo-sep cal-only">&middot;</span>
+            <div class="odo-group cal-only">
+              <div class="odo-digits">
+                <div class="odo-digit day-drum" id="day-drum"></div>
+              </div>
+              <span class="odo-label">DAY</span>
+            </div>
+            <span class="odo-sep cal-only">|</span>
+            <div class="odo-group">
+              <div class="odo-digits">
+                <div class="odo-digit" id="h0"></div><div class="odo-digit" id="h1"></div>
+              </div>
+              <span class="odo-label">HH</span>
+            </div>
+            <span class="odo-sep">:</span>
+            <div class="odo-group">
+              <div class="odo-digits">
+                <div class="odo-digit" id="m0"></div><div class="odo-digit" id="m1"></div>
+              </div>
+              <span class="odo-label">MM</span>
+            </div>
+            <span class="odo-sep">:</span>
+            <div class="odo-group accent-seconds">
+              <div class="odo-digits">
+                <div class="odo-digit" id="s0"></div><div class="odo-digit" id="s1"></div>
+              </div>
+              <span class="odo-label">SS</span>
+            </div>
+            <span class="odo-sep">.</span>
+            <div class="odo-group accent-fast">
+              <div class="odo-digits">
+                <div class="odo-digit fast-drum" id="cs0"></div><div class="odo-digit fast-drum" id="cs1"></div>
+              </div>
+              <span class="odo-label">CS</span>
+            </div>
           </div>
-          <div class="clock-sep-wrap"><span class="clock-sep">:</span><span class="clock-sep-gap"></span></div>
-          <div class="clock-unit">
-            <span class="clock-digits" id="clock-ms">000</span>
-            <span class="clock-unit-label">ms</span>
+
+          <div class="odo-actions" id="odo-actions">
+            <button class="act-btn primary wide" id="act-start" type="button">&#9654; START</button>
+            <button class="act-btn" id="act-reset" type="button">&#8635; RESET</button>
+            <button class="act-btn tmr-only" data-adj="60000" type="button">+1:00</button>
+            <button class="act-btn tmr-only" data-adj="-60000" type="button">&minus;1:00</button>
+            <button class="act-btn tmr-only" data-adj="10000" type="button">+0:10</button>
+            <button class="act-btn tmr-only" data-adj="-10000" type="button">&minus;0:10</button>
           </div>
         </div>
-        <div class="clock-accent"></div>
-        <div class="clock-date" id="clock-date">January 1, 2000</div>
       </div>
 
       <div class="left-footer">Your life, quietly organised.</div>
@@ -468,46 +562,251 @@
 <script>
   /* ── Theme ── */
   (function(){
-    const _THEMES=['morning','day','evening','night'];
-    const _ICONS={'morning':'🌅','day':'☀️','evening':'🌆','night':'🌙'};
-    const btn=document.getElementById('theme-btn');
-    function _getTheme(){ return document.documentElement.getAttribute('data-theme')||'day'; }
-    function _applyTheme(t){ document.documentElement.setAttribute('data-theme',t); localStorage.setItem('ps_theme',t); if(btn) btn.textContent=_ICONS[t]; }
-    if(btn) btn.textContent=_ICONS[_getTheme()]||'☀️';
-    window._toggleTheme=function(){ _applyTheme(_THEMES[(_THEMES.indexOf(_getTheme())+1)%_THEMES.length]); };
+    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+    window._toggleTheme = function(){
+      const dark = !isDark();
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
+      if (btn) btn.textContent = dark ? '🌙' : '☀️';
+    };
   })();
 
-  /* ── Live clock ── */
-  (function(){
-    const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const elHH   = document.getElementById('clock-hh');
-    const elMM   = document.getElementById('clock-mm');
-    const elSS   = document.getElementById('clock-ss');
-    const elMs   = document.getElementById('clock-ms');
-    const elDay  = document.getElementById('clock-day');
-    const elDate = document.getElementById('clock-date');
-    let lastSec = -1, lastMsBucket = -1;
-    function tick(){
-      const now  = new Date();
-      // bucket ms into 10 steps → DOM write ~10×/s instead of 60×/s
-      const bucket = Math.floor(now.getMilliseconds() / 100);
-      if (bucket !== lastMsBucket) {
-        lastMsBucket = bucket;
-        elMs.textContent = String(now.getMilliseconds()).padStart(3, '0');
+  /* ── Neo-Chronometer — 3D cylinder clock / stopwatch / timer ── */
+  (function () {
+    const SHORT_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const FULL_DAYS  = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    const RADIUS_10 = 58, RADIUS_7 = 44;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const p2 = n => String(n).padStart(2, '0');
+    const $ = id => document.getElementById(id);
+    const widget  = document.querySelector('.odo-widget');
+    const housing = $('odo-housing');
+    if (!widget) return;
+
+    /* ---- build the 3D barrels ---- */
+    function build3DCylinders() {
+      document.querySelectorAll('.odo-digit:not(.day-drum)').forEach(digit => {
+        const cyl = document.createElement('div');
+        cyl.className = 'odo-cylinder';
+        for (let i = 0; i < 10; i++) {
+          const face = document.createElement('div');
+          face.className = 'odo-face';
+          face.textContent = i;
+          face.style.transform = 'rotateX(' + (i * 36) + 'deg) translateZ(' + RADIUS_10 + 'px)';
+          cyl.appendChild(face);
+        }
+        digit.appendChild(cyl);
+      });
+      const dayEl = $('day-drum');
+      if (dayEl) {
+        const cyl = document.createElement('div');
+        cyl.className = 'odo-cylinder';
+        SHORT_DAYS.forEach((d, i) => {
+          const face = document.createElement('div');
+          face.className = 'odo-face';
+          face.textContent = d;
+          face.style.transform = 'rotateX(' + (i * (360 / 7)) + 'deg) translateZ(' + RADIUS_7 + 'px)';
+          cyl.appendChild(face);
+        });
+        dayEl.appendChild(cyl);
       }
-      const sec = now.getSeconds();
-      if (sec !== lastSec) {
-        lastSec = sec;
-        elHH.textContent   = String(now.getHours()).padStart(2,'0');
-        elMM.textContent   = String(now.getMinutes()).padStart(2,'0');
-        elSS.textContent   = String(sec).padStart(2,'0');
-        elDay.textContent  = DAYS[now.getDay()];
-        elDate.textContent = MONTHS[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
-      }
-      requestAnimationFrame(tick);
     }
-    requestAnimationFrame(tick);
+    function rotate3D(id, val, totalFaces) {
+      totalFaces = totalFaces || 10;
+      const el = $(id); if (!el) return;
+      const cyl = el.querySelector('.odo-cylinder'); if (!cyl) return;
+      const radius = totalFaces === 10 ? RADIUS_10 : RADIUS_7;
+      cyl.style.transform = 'translateZ(-' + radius + 'px) rotateX(' + (-(val * (360 / totalFaces))) + 'deg)';
+    }
+    function showTime(h, m, s, cs) {
+      const H = p2(h), M = p2(m), S = p2(s), C = p2(cs);
+      rotate3D('h0', H[0]); rotate3D('h1', H[1]);
+      rotate3D('m0', M[0]); rotate3D('m1', M[1]);
+      rotate3D('s0', S[0]); rotate3D('s1', S[1]);
+      rotate3D('cs0', C[0]); rotate3D('cs1', C[1]);
+    }
+    function splitHMSC(ms) {
+      ms = Math.max(0, ms);
+      return [
+        Math.min(99, Math.floor(ms / 3600000)),
+        Math.floor(ms / 60000) % 60,
+        Math.floor(ms / 1000) % 60,
+        Math.floor(ms / 10) % 100,
+      ];
+    }
+
+    /* ---- theme cycle (emerald / cyan / vintage / stealth) ---- */
+    const THEMES = ['theme-cyan', 'theme-emerald', 'theme-vintage', 'theme-stealth'];
+    const LABEL  = { 'theme-cyan': 'CYAN', 'theme-emerald': 'EMERALD', 'theme-vintage': 'VINTAGE', 'theme-stealth': 'STEALTH' };
+    let themeIdx = 0;
+    function applyTheme(cls, persist) {
+      THEMES.forEach(t => widget.classList.remove(t));
+      widget.classList.add(cls);
+      themeIdx = Math.max(0, THEMES.indexOf(cls));
+      const lbl = $('theme-label'); if (lbl) lbl.textContent = LABEL[cls];
+      if (persist) { try { localStorage.setItem('chrono_theme', cls); } catch (e) {} }
+    }
+    (function () {
+      let saved; try { saved = localStorage.getItem('chrono_theme'); } catch (e) {}
+      applyTheme(THEMES.indexOf(saved) > -1 ? saved : 'theme-cyan', false);
+    })();
+    $('theme-cycle').addEventListener('click', () => applyTheme(THEMES[(themeIdx + 1) % THEMES.length], true));
+
+    /* ---- tick sound ---- */
+    let soundOn = false, ac = null;
+    try { soundOn = localStorage.getItem('chrono_sound') === '1'; } catch (e) {}
+    const soundBtn = $('sound-btn');
+    function reflectSound() {
+      soundBtn.classList.toggle('active', soundOn);
+      soundBtn.textContent = (soundOn ? '♪ ON' : '♪ OFF');
+      soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+    }
+    function blip(freq, dur, vol) {
+      if (!ac) return;
+      const t = ac.currentTime;
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'square'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(ac.destination);
+      o.start(t); o.stop(t + dur + 0.02);
+    }
+    const tickSound = () => { if (soundOn && ac) blip(1800, 0.045, 0.05); };
+    const alarm = () => { if (soundOn && ac) [0, 150, 300].forEach((ms, i) => setTimeout(() => blip(760 + i * 240, 0.18, 0.09), ms)); };
+    reflectSound();
+    soundBtn.addEventListener('click', () => {
+      soundOn = !soundOn;
+      try { localStorage.setItem('chrono_sound', soundOn ? '1' : '0'); } catch (e) {}
+      if (soundOn) {
+        if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+        if (ac.state === 'suspended') ac.resume();
+        blip(1500, 0.05, 0.05);
+      }
+      reflectSound();
+    });
+
+    /* ---- modes: clock | stopwatch | timer ---- */
+    let mode = 'clock', lastSecond = -1;
+    let swRunning = false, swAccum = 0, swStart = 0;
+    let tmrRunning = false, tmrDuration = 5 * 60000, tmrRemain = 5 * 60000, tmrEnd = 0;
+    const startBtn = $('act-start'), resetBtn = $('act-reset');
+    const modeBtns = { clock: $('mb-clock'), stopwatch: $('mb-sw'), timer: $('mb-tmr') };
+
+    const swElapsed = () => swAccum + (swRunning ? (performance.now() - swStart) : 0);
+    const tmrLeft   = () => (tmrRunning ? Math.max(0, tmrEnd - Date.now()) : tmrRemain);
+    const renderStopwatch = () => showTime.apply(null, splitHMSC(swElapsed()));
+    const renderTimer     = () => showTime.apply(null, splitHMSC(tmrLeft()));
+
+    function reflectActions() {
+      const running = mode === 'stopwatch' ? swRunning : tmrRunning;
+      startBtn.textContent = running ? '❚❚ PAUSE' : '▶ START';
+      startBtn.classList.toggle('primary', !running);
+    }
+    function setMode(m) {
+      mode = m;
+      widget.dataset.mode = m;
+      Object.keys(modeBtns).forEach(k => modeBtns[k].classList.toggle('active', k === m));
+      lastSecond = -1;
+      if (m === 'clock') {
+        $('odo-day').textContent = FULL_DAYS[new Date().getDay()];
+      } else if (m === 'stopwatch') {
+        $('odo-day').textContent = 'STOPWATCH';
+        renderStopwatch(); reflectActions();
+      } else {
+        $('odo-day').textContent = 'TIMER';
+        housing.classList.remove('finished');
+        renderTimer(); reflectActions();
+      }
+      fitWidget();
+    }
+    modeBtns.clock.addEventListener('click', () => setMode('clock'));
+    modeBtns.stopwatch.addEventListener('click', () => setMode('stopwatch'));
+    modeBtns.timer.addEventListener('click', () => setMode('timer'));
+
+    startBtn.addEventListener('click', () => {
+      if (mode === 'stopwatch') {
+        if (swRunning) { swAccum = swElapsed(); swRunning = false; }
+        else { swStart = performance.now(); swRunning = true; }
+      } else if (mode === 'timer') {
+        if (tmrRunning) { tmrRemain = tmrLeft(); tmrRunning = false; }
+        else {
+          if (tmrRemain <= 0) tmrRemain = tmrDuration;
+          tmrEnd = Date.now() + tmrRemain; tmrRunning = true;
+          housing.classList.remove('finished');
+        }
+      }
+      reflectActions();
+    });
+    resetBtn.addEventListener('click', () => {
+      if (mode === 'stopwatch') { swRunning = false; swAccum = 0; renderStopwatch(); }
+      else if (mode === 'timer') { tmrRunning = false; tmrRemain = tmrDuration; housing.classList.remove('finished'); renderTimer(); }
+      reflectActions();
+    });
+    document.querySelectorAll('[data-adj]').forEach(b => b.addEventListener('click', () => {
+      if (tmrRunning) return;
+      const MAX = 99 * 3600000 + 59 * 60000 + 59000;
+      tmrDuration = Math.max(10000, Math.min(MAX, tmrDuration + parseInt(b.dataset.adj, 10)));
+      tmrRemain = tmrDuration;
+      renderTimer();
+    }));
+
+    /* ---- master loop ---- */
+    function frame() {
+      if (mode === 'clock') {
+        const now = new Date();
+        if (!reduce) {
+          const cs = p2(Math.floor(now.getMilliseconds() / 10));
+          rotate3D('cs0', cs[0]); rotate3D('cs1', cs[1]);
+        }
+        const sec = now.getSeconds();
+        if (sec !== lastSecond) {
+          lastSecond = sec;
+          const y = String(now.getFullYear()).padStart(4, '0');
+          const mo = p2(now.getMonth() + 1), d = p2(now.getDate());
+          rotate3D('y0', y[0]); rotate3D('y1', y[1]); rotate3D('y2', y[2]); rotate3D('y3', y[3]);
+          rotate3D('mo0', mo[0]); rotate3D('mo1', mo[1]);
+          rotate3D('d0', d[0]); rotate3D('d1', d[1]);
+          rotate3D('day-drum', now.getDay(), 7);
+          rotate3D('h0', p2(now.getHours())[0]); rotate3D('h1', p2(now.getHours())[1]);
+          rotate3D('m0', p2(now.getMinutes())[0]); rotate3D('m1', p2(now.getMinutes())[1]);
+          rotate3D('s0', p2(sec)[0]); rotate3D('s1', p2(sec)[1]);
+          $('odo-day').textContent = FULL_DAYS[now.getDay()];
+          tickSound();
+        }
+      } else if (mode === 'stopwatch') {
+        renderStopwatch();
+      } else {
+        renderTimer();
+        if (tmrRunning && tmrLeft() <= 0) {
+          tmrRunning = false; tmrRemain = 0;
+          housing.classList.add('finished');
+          reflectActions();
+          alarm();
+        }
+      }
+    }
+
+    /* ---- fit the fixed-size widget to the panel ---- */
+    function fitWidget() {
+      const wrap = document.querySelector('.clock-wrap');
+      if (!wrap) return;
+      widget.style.setProperty('--odo-scale', '1');
+      const natural = widget.offsetWidth;
+      const avail = wrap.clientWidth - 24;
+      widget.style.setProperty('--odo-scale', Math.max(0.4, Math.min(1, avail / natural)).toFixed(3));
+    }
+
+    build3DCylinders();
+    setMode('clock');
+    fitWidget();
+    window.addEventListener('resize', fitWidget);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitWidget);
+
+    if (reduce) { frame(); setInterval(frame, 250); }
+    else (function raf() { frame(); requestAnimationFrame(raf); })();
   })();
 
 
