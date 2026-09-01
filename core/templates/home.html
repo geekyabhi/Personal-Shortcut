@@ -92,129 +92,532 @@
       animation: _fadeUp 0.55s 0.28s ease both;
     }
 
-    /* ── NEO-CHRONOMETER (Pro) 3D CYLINDER CLOCK ── */
+    /* ── NEO-CHRONOMETER (Pro Edition) — verbatim from reference ── */
     .clock-wrap {
       flex: 1; display: flex; flex-direction: column;
       justify-content: center; align-items: center; gap: 0.6rem;
-      overflow: hidden; max-width: 100%; padding: 18px 12px;
+      max-width: 100%; padding: 18px 12px;
       animation: _fadeUp 0.6s 0.4s ease both;
-      contain: layout style;
     }
+    .odo-fit { display: inline-block; transform: scale(var(--odo-scale, 1)); transform-origin: top center; transition: transform .18s ease; }
+
+    /* THEME SYSTEM */
+    .theme-emerald {
+      --accent-glow: rgba(16, 185, 129, 0.4);
+      --accent-primary: #10b981;
+      --accent-light: #a7f3d0;
+      --accent-border: rgba(16, 185, 129, 0.25);
+      --housing-border: rgba(16, 185, 129, 0.22);
+      --housing-glow: rgba(16, 185, 129, 0.12);
+      --seconds-face-bg: linear-gradient(90deg, #064e3b 0%, #047857 50%, #064e3b 100%);
+      --seconds-text: #ecfdf5;
+      --seconds-border: rgba(16, 185, 129, 0.45);
+      --fast-face-bg: linear-gradient(90deg, #022c22 0%, #065f46 50%, #022c22 100%);
+      --fast-text: #a7f3d0;
+      --fast-border: rgba(52, 211, 153, 0.5);
+    }
+
+    .theme-cyan {
+      --accent-glow: rgba(56, 189, 248, 0.4);
+      --accent-primary: #38bdf8;
+      --accent-light: #e0f2fe;
+      --accent-border: rgba(56, 189, 248, 0.25);
+      --housing-border: rgba(56, 189, 248, 0.22);
+      --housing-glow: rgba(14, 165, 233, 0.12);
+      --seconds-face-bg: linear-gradient(90deg, #0c2d48 0%, #14426b 50%, #0c2d48 100%);
+      --seconds-text: #e0f2fe;
+      --seconds-border: rgba(56, 189, 248, 0.4);
+      --fast-face-bg: linear-gradient(90deg, #115e59 0%, #0f766e 50%, #115e59 100%);
+      --fast-text: #ecfeff;
+      --fast-border: rgba(45, 212, 191, 0.45);
+    }
+
+    .theme-vintage {
+      --accent-glow: rgba(245, 158, 11, 0.4);
+      --accent-primary: #f59e0b;
+      --accent-light: #fef3c7;
+      --accent-border: rgba(245, 158, 11, 0.25);
+      --housing-border: rgba(245, 158, 11, 0.22);
+      --housing-glow: rgba(245, 158, 11, 0.1);
+      --seconds-face-bg: linear-gradient(90deg, #7f1d1d 0%, #b91c1c 50%, #7f1d1d 100%);
+      --seconds-text: #fee2e2;
+      --seconds-border: rgba(239, 68, 68, 0.5);
+      --fast-face-bg: linear-gradient(90deg, #78350f 0%, #b45309 50%, #78350f 100%);
+      --fast-text: #fef3c7;
+      --fast-border: rgba(245, 158, 11, 0.45);
+    }
+
+    .theme-stealth {
+      --accent-glow: rgba(255, 255, 255, 0.2);
+      --accent-primary: #e2e8f0;
+      --accent-light: #ffffff;
+      --accent-border: rgba(255, 255, 255, 0.18);
+      --housing-border: rgba(255, 255, 255, 0.15);
+      --housing-glow: rgba(255, 255, 255, 0.04);
+      --seconds-face-bg: linear-gradient(90deg, #27272a 0%, #3f3f46 50%, #27272a 100%);
+      --seconds-text: #ffffff;
+      --seconds-border: rgba(255, 255, 255, 0.3);
+      --fast-face-bg: linear-gradient(90deg, #18181b 0%, #27272a 50%, #18181b 100%);
+      --fast-text: #e4e4e7;
+      --fast-border: rgba(255, 255, 255, 0.2);
+    }
+
     .odo-widget {
-      display: inline-flex; flex-direction: column; gap: 8px;
-      user-select: none; -webkit-user-select: none;
-      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-      transform: scale(var(--odo-scale, 1)); transform-origin: center;
-      transition: transform .18s ease;
-      /* default theme = cyan */
-      --accent-glow: rgba(56,189,248,0.4); --accent-primary: #38bdf8; --accent-light: #e0f2fe;
-      --accent-border: rgba(56,189,248,0.25); --housing-border: rgba(56,189,248,0.22); --housing-glow: rgba(14,165,233,0.12);
-      --seconds-face-bg: linear-gradient(90deg, #0c2d48 0%, #14426b 50%, #0c2d48 100%); --seconds-text: #e0f2fe; --seconds-border: rgba(56,189,248,0.4);
-      --fast-face-bg: linear-gradient(90deg, #115e59 0%, #0f766e 50%, #115e59 100%); --fast-text: #ecfeff; --fast-border: rgba(45,212,191,0.45);
-    }
-    .odo-widget.theme-emerald {
-      --accent-glow: rgba(16,185,129,0.4); --accent-primary: #10b981; --accent-light: #a7f3d0;
-      --accent-border: rgba(16,185,129,0.25); --housing-border: rgba(16,185,129,0.22); --housing-glow: rgba(16,185,129,0.12);
-      --seconds-face-bg: linear-gradient(90deg, #064e3b 0%, #047857 50%, #064e3b 100%); --seconds-text: #ecfdf5; --seconds-border: rgba(16,185,129,0.45);
-      --fast-face-bg: linear-gradient(90deg, #022c22 0%, #065f46 50%, #022c22 100%); --fast-text: #a7f3d0; --fast-border: rgba(52,211,153,0.5);
-    }
-    .odo-widget.theme-vintage {
-      --accent-glow: rgba(245,158,11,0.4); --accent-primary: #f59e0b; --accent-light: #fef3c7;
-      --accent-border: rgba(245,158,11,0.25); --housing-border: rgba(245,158,11,0.22); --housing-glow: rgba(245,158,11,0.1);
-      --seconds-face-bg: linear-gradient(90deg, #7f1d1d 0%, #b91c1c 50%, #7f1d1d 100%); --seconds-text: #fee2e2; --seconds-border: rgba(239,68,68,0.5);
-      --fast-face-bg: linear-gradient(90deg, #78350f 0%, #b45309 50%, #78350f 100%); --fast-text: #fef3c7; --fast-border: rgba(245,158,11,0.45);
-    }
-    .odo-widget.theme-stealth {
-      --accent-glow: rgba(255,255,255,0.2); --accent-primary: #e2e8f0; --accent-light: #ffffff;
-      --accent-border: rgba(255,255,255,0.18); --housing-border: rgba(255,255,255,0.15); --housing-glow: rgba(255,255,255,0.04);
-      --seconds-face-bg: linear-gradient(90deg, #27272a 0%, #3f3f46 50%, #27272a 100%); --seconds-text: #ffffff; --seconds-border: rgba(255,255,255,0.3);
-      --fast-face-bg: linear-gradient(90deg, #18181b 0%, #27272a 50%, #18181b 100%); --fast-text: #e4e4e7; --fast-border: rgba(255,255,255,0.2);
+      display: inline-flex;
+      flex-direction: column;
+      gap: 8px;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'JetBrains Mono', monospace;
+      position: relative;
     }
 
-    /* header controls */
-    .odo-topline { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; padding: 0 2px; }
-    .odo-topline .btns { display: flex; align-items: center; gap: 4px; }
-    .control-group { display: flex; gap: 2px; background: #090b10; padding: 2px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); }
-    .mode-btn, .icon-btn {
-      background: transparent; border: none; color: #64748b; cursor: pointer;
-      font: 600 0.56rem/1 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .05em;
-      padding: 4px 7px; border-radius: 4px; transition: all .2s ease;
-      display: inline-flex; align-items: center; gap: 4px; touch-action: manipulation;
+    /* Top Navigation & Controls */
+    .odo-topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 0 4px;
     }
-    .icon-btn { background: #090b10; border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; }
-    .mode-btn.active { background: #1e293b; color: var(--accent-primary); box-shadow: 0 0 8px var(--accent-glow); }
-    .icon-btn:hover { border-color: var(--accent-border); color: var(--accent-primary); }
-    .icon-btn.active { color: var(--accent-primary); border-color: var(--accent-border); box-shadow: 0 0 8px var(--accent-glow); }
-    .theme-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent-primary); box-shadow: 0 0 6px var(--accent-glow); }
 
-    /* status line (weekday / model) */
-    .odo-statusline { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; padding: 0 4px; }
-    .odo-day { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.2em; color: var(--accent-primary); }
-    .odo-model { font-size: 0.6rem; letter-spacing: 0.15em; color: #475569; font-weight: 400; }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
 
-    .odo-housing {
-      display: inline-flex; align-items: center; gap: 4px; width: fit-content;
-      background: linear-gradient(180deg, #11141c 0%, #090b10 100%);
-      padding: 10px 14px; border-radius: 12px;
-      border: 1px solid var(--housing-border);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 12px 30px -8px rgba(0,0,0,0.8), 0 0 20px -5px var(--housing-glow);
-      transition: border-color .3s ease, box-shadow .3s ease;
+    .header-right {
+      display: flex;
+      align-items: center;
     }
-    .odo-widget[data-mode="clock"] .odo-actions { display: none; }
-    .odo-widget:not([data-mode="clock"]) .cal-only { display: none; }
-    .odo-widget:not([data-mode="timer"]) .tmr-only { display: none; }
 
-    .odo-group { display: flex; flex-direction: column; align-items: center; }
-    .odo-digits { display: flex; gap: 2.5px; }
-    .odo-digit {
-      width: 22px; height: 38px; perspective: 320px; position: relative;
-      border-radius: 5px; background: #06070a; border: 1px solid rgba(255,255,255,0.06);
-      box-shadow: inset 0 0 8px rgba(0,0,0,0.9); overflow: hidden;
-      transition: border-color .3s ease;
+    .control-group {
+      display: flex;
+      gap: 2px;
+      background: #090b10;
+      padding: 2px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .odo-digit::before {
-      content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
-      background: linear-gradient(180deg,
-        rgba(6,7,10,0.95) 0%, rgba(6,7,10,0.15) 30%,
-        rgba(255,255,255,0.06) 50%,
-        rgba(6,7,10,0.15) 70%, rgba(6,7,10,0.95) 100%);
-    }
-    .odo-digit.day-drum { width: 46px; }
-    .odo-cylinder {
-      width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
-      transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
-    }
-    .fast-drum .odo-cylinder { transition: transform 0.08s linear; }
-    .odo-face {
-      position: absolute; width: 100%; height: 38px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.15rem; font-weight: 300; color: #e2e8f0;
-      backface-visibility: hidden; letter-spacing: -0.02em;
-      background: linear-gradient(90deg, #0e1118 0%, #171b26 50%, #0e1118 100%);
-    }
-    .day-drum .odo-face { font-size: 0.75rem; letter-spacing: 0.08em; font-weight: 400; }
-    .accent-seconds .odo-face { color: var(--seconds-text); background: var(--seconds-face-bg); }
-    .accent-seconds .odo-digit { border-color: var(--seconds-border); }
-    .odo-group.accent-seconds .odo-label { color: var(--accent-primary); }
-    .accent-fast .odo-face { color: var(--fast-text); font-weight: 400; background: var(--fast-face-bg); }
-    .accent-fast .odo-digit { border-color: var(--fast-border); box-shadow: 0 0 8px var(--housing-glow); }
-    .odo-group.accent-fast .odo-label { color: var(--fast-text); }
-    .odo-label { font-size: 0.5rem; color: #64748b; font-weight: 400; margin-top: 5px; letter-spacing: 0.1em; }
-    .odo-sep { color: #334155; font-weight: 300; font-size: 1rem; margin: 0 1px 16px 1px; }
 
-    /* stopwatch / timer action bar */
-    .odo-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; width: 100%; }
-    .act-btn {
-      background: #090b10; border: 1px solid rgba(255,255,255,0.08); color: #94a3b8;
-      font: 600 0.56rem/1 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .06em;
-      padding: 6px 10px; border-radius: 5px; cursor: pointer; transition: all .2s ease;
+    .mode-btn, .sound-toggle-btn, .popover-btn, .timeformat-btn {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      font-size: 0.58rem;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       touch-action: manipulation;
     }
-    .act-btn:hover { border-color: var(--accent-border); color: var(--accent-primary); }
-    .act-btn.primary { color: var(--accent-primary); border-color: var(--accent-border); }
-    .act-btn.wide { min-width: 78px; }
-    .odo-housing.finished { animation: _tmrflash .45s steps(1) 6; }
-    @keyframes _tmrflash { 50% { border-color: var(--seconds-border); box-shadow: 0 0 26px -2px var(--accent-glow); } }
+
+    .popover-btn, .timeformat-btn {
+      background: #090b10;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+    }
+
+    .popover-btn:hover, .popover-btn.open, .timeformat-btn:hover {
+      border-color: var(--accent-border);
+      color: var(--accent-primary);
+    }
+
+    .active-tag {
+      color: var(--accent-primary);
+      font-weight: 700;
+    }
+
+    .sound-toggle-btn {
+      background: #090b10;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sound-toggle-btn.active {
+      color: var(--accent-primary);
+      border-color: var(--accent-border);
+    }
+
+    .mode-btn.active {
+      background: #1e293b;
+      color: var(--accent-primary);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    /* Dropdown Menus */
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 28px;
+      background: #0f121a;
+      border: 1px solid var(--accent-border);
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.85);
+      z-index: 50;
+      padding: 4px;
+      min-width: 175px;
+    }
+
+    .dropdown-menu.visible {
+      display: block;
+    }
+
+    #tzDropdown { left: 0; }
+    #themeDropdown { left: 190px; min-width: 140px; }
+
+    .menu-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .menu-option:hover {
+      background: #1a202c;
+      color: var(--accent-primary);
+    }
+
+    .menu-option.selected {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--accent-primary);
+      font-weight: 600;
+    }
+
+    /* Main Bezel Housing */
+    .odo-housing-wrapper {
+      display: flex;
+      align-items: center;
+    }
+
+    .odo-housing {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%),
+        linear-gradient(180deg, #11141d 0%, #090b10 100%);
+      padding: 12px 16px;
+      border-radius: 14px 4px 4px 14px;
+      border: 1px solid var(--housing-border);
+      border-right: none;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 12px 30px -8px rgba(0, 0, 0, 0.85),
+        0 0 25px -5px var(--housing-glow);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* Interactive Side Knurled Crown Dial */
+    .odo-crown-stem {
+      width: 18px;
+      height: 48px;
+      background: linear-gradient(180deg, #333a4d 0%, #171b26 50%, #333a4d 100%);
+      border: 1px solid var(--housing-border);
+      border-left: 1px solid #090b10;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        4px 4px 12px rgba(0, 0, 0, 0.6);
+      transition: filter 0.15s ease, transform 0.1s ease;
+      touch-action: none;
+    }
+
+    .odo-crown-stem:hover {
+      filter: brightness(1.25);
+    }
+
+    .odo-crown-stem:active, .odo-crown-stem.active {
+      transform: scaleX(0.9);
+      filter: brightness(1.4);
+    }
+
+    .odo-crown-ridges {
+      width: 100%;
+      height: 70%;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.2) 0px,
+        rgba(255, 255, 255, 0.2) 2px,
+        transparent 2px,
+        transparent 5px
+      );
+    }
+
+    /* Skeleton Gear Window */
+    .odo-gear-window {
+      width: 32px;
+      height: 38px;
+      position: relative;
+      border-radius: 5px;
+      background: #040507;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.95);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 2px;
+    }
+
+    .odo-gear-window::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, transparent 40%, transparent 60%, rgba(0, 0, 0, 0.8) 100%);
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.8);
+    }
+
+    .gear {
+      position: absolute;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      will-change: transform;
+    }
+
+    .gear-brass {
+      width: 28px;
+      height: 28px;
+      background: radial-gradient(circle, #78350f 20%, #b45309 60%, #451a03 100%);
+      border: 2px dashed #d97706;
+      top: -2px;
+      left: -6px;
+    }
+
+    .gear-pinion {
+      width: 22px;
+      height: 22px;
+      background: radial-gradient(circle, #334155 30%, #64748b 80%, #1e293b 100%);
+      border: 2px dashed #94a3b8;
+      bottom: -3px;
+      right: -4px;
+    }
+
+    .gear-center {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #f8fafc;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+    }
+
+    .odo-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .odo-digits {
+      display: flex;
+      gap: 2.5px;
+    }
+
+    /* 3D Barrel Window */
+    .odo-digit {
+      width: 22px;
+      height: 38px;
+      perspective: 320px;
+      position: relative;
+      border-radius: 5px;
+      background: #06070a;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow:
+        inset 0 0 10px rgba(0, 0, 0, 0.95),
+        0 2px 5px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .odo-digit::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      background: linear-gradient(
+        180deg,
+        rgba(6, 7, 10, 0.95) 0%,
+        rgba(6, 7, 10, 0.1) 32%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(6, 7, 10, 0.1) 68%,
+        rgba(6, 7, 10, 0.95) 100%
+      );
+      box-shadow: inset 1px 0 1px rgba(255, 255, 255, 0.04), inset -1px 0 1px rgba(0, 0, 0, 0.6);
+    }
+
+    .odo-digit.day-drum { width: 46px; }
+    .odo-digit.ampm-drum { width: 32px; }
+
+    /* Mechanical Cylinder Rotation */
+    .odo-cylinder {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.42s cubic-bezier(0.34, 1.45, 0.64, 1);
+      will-change: transform;
+    }
+
+    .fast-drum .odo-cylinder { transition: transform 0.06s linear; }
+
+    .odo-face {
+      position: absolute;
+      width: 100%;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      font-weight: 300;
+      color: #e2e8f0;
+      backface-visibility: hidden;
+      background: linear-gradient(90deg, #0d1017 0%, #171b26 50%, #0d1017 100%);
+      letter-spacing: -0.02em;
+    }
+
+    .day-drum .odo-face { font-size: 0.75rem; letter-spacing: 0.08em; font-weight: 400; }
+    .ampm-drum .odo-face { font-size: 0.7rem; font-weight: 600; color: var(--accent-light); }
+
+    .accent-seconds .odo-face { color: var(--seconds-text); background: var(--seconds-face-bg); }
+    .accent-seconds .odo-digit { border-color: var(--seconds-border); }
+    .accent-seconds .odo-label { color: var(--accent-primary); }
+
+    .accent-fast .odo-face { color: var(--fast-text); font-weight: 400; background: var(--fast-face-bg); }
+    .accent-fast .odo-digit { border-color: var(--fast-border); box-shadow: 0 0 10px var(--accent-glow); }
+    .accent-fast .odo-label { color: var(--accent-light); }
+
+    .odo-label {
+      font-size: 0.5rem;
+      color: #64748b;
+      font-weight: 400;
+      margin-top: 5px;
+      letter-spacing: 0.1em;
+    }
+
+    .odo-sep {
+      color: #334155;
+      font-weight: 300;
+      font-size: 1rem;
+      margin: 0 1px 16px 1px;
+    }
+
+    /* Interactive Sub-panels */
+    .chrono-controls {
+      display: none;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .chrono-controls.visible { display: flex; }
+
+    .chrono-btn {
+      background: #11141d;
+      border: 1px solid var(--accent-border);
+      color: #e2e8f0;
+      font-family: inherit;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .chrono-btn.start { border-color: rgba(16, 185, 129, 0.4); color: #34d399; }
+    .chrono-btn.start.running { border-color: rgba(239, 68, 68, 0.4); color: #f87171; }
+    .chrono-btn:hover { filter: brightness(1.2); }
+
+    /* ── Light-mode skin for the watch (page ☀️ mode) ── */
+    :root:not([data-theme="dark"]) .odo-housing {
+      background:
+        linear-gradient(135deg, rgba(0,0,0,0.02) 0%, transparent 100%),
+        linear-gradient(180deg, #f6f7f9 0%, #e6e8ec 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.9),
+        0 12px 30px -10px rgba(30,41,59,0.28),
+        0 0 25px -6px var(--housing-glow);
+    }
+    :root:not([data-theme="dark"]) .odo-digit {
+      background: #f8f9fb;
+      border-color: rgba(15,23,42,0.12);
+      box-shadow: inset 0 0 10px rgba(15,23,42,0.14), 0 1px 3px rgba(15,23,42,0.12);
+    }
+    :root:not([data-theme="dark"]) .odo-digit::before {
+      background: linear-gradient(
+        180deg,
+        rgba(20,24,33,0.30) 0%,
+        rgba(20,24,33,0.05) 34%,
+        rgba(255,255,255,0.15) 50%,
+        rgba(20,24,33,0.05) 66%,
+        rgba(20,24,33,0.30) 100%);
+      box-shadow: inset 1px 0 1px rgba(255,255,255,0.5), inset -1px 0 1px rgba(15,23,42,0.15);
+    }
+    :root:not([data-theme="dark"]) .odo-face {
+      color: #1e2430;
+      background: linear-gradient(90deg, #eceef2 0%, #f9fafb 50%, #eceef2 100%);
+    }
+    :root:not([data-theme="dark"]) .ampm-drum .odo-face { color: var(--accent-primary); }
+    :root:not([data-theme="dark"]) .odo-gear-window {
+      background: #1a1d24;
+      border-color: rgba(15,23,42,0.18);
+    }
+    :root:not([data-theme="dark"]) .odo-crown-stem {
+      background: linear-gradient(180deg, #d3d7de 0%, #a8aeb9 50%, #d3d7de 100%);
+      border-left: 1px solid #9aa0ab;
+    }
+    :root:not([data-theme="dark"]) .odo-crown-ridges {
+      background: repeating-linear-gradient(
+        180deg,
+        rgba(15,23,42,0.28) 0px, rgba(15,23,42,0.28) 2px,
+        transparent 2px, transparent 5px);
+    }
+    :root:not([data-theme="dark"]) .control-group {
+      background: #e9ebef; border-color: rgba(15,23,42,0.10);
+    }
+    :root:not([data-theme="dark"]) .mode-btn { color: #64748b; }
+    :root:not([data-theme="dark"]) .mode-btn.active {
+      background: #ffffff; color: var(--accent-primary);
+      box-shadow: 0 1px 4px rgba(15,23,42,0.15), 0 0 8px var(--accent-glow);
+    }
+    :root:not([data-theme="dark"]) .sound-toggle-btn,
+    :root:not([data-theme="dark"]) .popover-btn,
+    :root:not([data-theme="dark"]) .timeformat-btn {
+      background: #f1f3f6; border-color: rgba(15,23,42,0.10); color: #475569;
+    }
+    :root:not([data-theme="dark"]) .dropdown-menu {
+      background: #ffffff; border-color: var(--accent-border);
+      box-shadow: 0 12px 28px rgba(15,23,42,0.22);
+    }
+    :root:not([data-theme="dark"]) .menu-option { color: #475569; }
+    :root:not([data-theme="dark"]) .menu-option:hover { background: #f1f3f6; color: var(--accent-primary); }
+    :root:not([data-theme="dark"]) .menu-option.selected { background: rgba(15,23,42,0.06); color: var(--accent-primary); }
+    :root:not([data-theme="dark"]) .chrono-btn {
+      background: #f1f3f6; border-color: var(--accent-border); color: #1e2430;
+    }
+    :root:not([data-theme="dark"]) .accent-fast .odo-label { color: var(--accent-primary); }
 
     .left-footer {
       font-size: 0.72rem; color: #C4CAD4; font-weight: 400;
@@ -352,30 +755,65 @@
     @keyframes pulse    { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.2)} }
     @media (prefers-reduced-motion:reduce){ *, *::before, *::after { animation-duration:0.01ms!important; transition-duration:0.01ms!important; } }
 
-    /* ── Dark mode ── */
-    [data-theme="dark"] body { background: #0F0F14; color: #F9FAFB; }
-    [data-theme="dark"] .left-panel { border-right-color: rgba(255,255,255,0.06); }
-    [data-theme="dark"] .subtitle { color: #6B7280; }
-    [data-theme="dark"] .left-footer { color: #374151; }
-    [data-theme="dark"] .left-footer { color: #374151; }
-    [data-theme="dark"] .right-heading { color: #4B5563; }
-    [data-theme="dark"] .tile { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); color: #F9FAFB; box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
-    [data-theme="dark"] .tile:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
-    [data-theme="dark"] .tile-name { color: #F9FAFB; }
-    [data-theme="dark"] .tile-desc { color: #6B7280; }
-    [data-theme="dark"] .tile-stat.loading { background: linear-gradient(90deg,rgba(255,255,255,0.05) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.05) 75%); background-size: 200% 100%; }
-    [data-theme="dark"] .tile-expenses .tile-stat { background: rgba(79,70,229,0.18); color: #818CF8; }
-    [data-theme="dark"] .tile-habits   .tile-stat { background: rgba(5,150,105,0.18); color: #34D399; }
-    [data-theme="dark"] .tile-todos    .tile-stat { background: rgba(2,132,199,0.18); color: #38BDF8; }
-    [data-theme="dark"] .tile-books    .tile-stat { background: rgba(245,158,11,0.18); color: #FCD34D; }
-    [data-theme="dark"] .tile-blogs    .tile-stat { background: rgba(124,58,237,0.18); color: #C4B5FD; }
-    [data-theme="dark"] .tile-expenses .tile-icon-wrap { background: rgba(79,70,229,0.18); }
-    [data-theme="dark"] .tile-habits   .tile-icon-wrap { background: rgba(5,150,105,0.18); }
-    [data-theme="dark"] .tile-todos    .tile-icon-wrap { background: rgba(2,132,199,0.18); }
-    [data-theme="dark"] .tile-books    .tile-icon-wrap { background: rgba(245,158,11,0.18); }
-    [data-theme="dark"] .tile-blogs    .tile-icon-wrap { background: rgba(124,58,237,0.18); }
-    [data-theme="dark"] .theme-btn { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); }
-    [data-theme="dark"] .user-chip { background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10); color: #E5E7EB; }
+    /* ── Dark mode — full restyle ── */
+    [data-theme="dark"] body {
+      background:
+        radial-gradient(1100px 620px at 12% -5%, #17171f 0%, rgba(11,11,16,0) 60%),
+        radial-gradient(900px 600px at 100% 110%, #10131a 0%, rgba(8,8,12,0) 55%),
+        #0b0b10;
+      color: #E7E9EE;
+    }
+    [data-theme="dark"] .orb-1 { background: rgba(99,102,241,0.22); }
+    [data-theme="dark"] .orb-2 { background: rgba(16,185,129,0.16); }
+    [data-theme="dark"] .orb-3 { background: rgba(139,92,246,0.16); }
+
+    [data-theme="dark"] h1 {
+      background: linear-gradient(135deg, #A5B4FC 0%, #818CF8 35%, #C4B5FD 62%, #6EE7B7 100%);
+      -webkit-background-clip: text; background-clip: text;
+    }
+    [data-theme="dark"] .subtitle { color: #8B93A7; }
+    [data-theme="dark"] .left-panel { border-right-color: rgba(255,255,255,0.07); border-bottom-color: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .left-footer { color: #5B6472; }
+    [data-theme="dark"] .right-heading { color: #6B7280; }
+    [data-theme="dark"] .right-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); }
+
+    [data-theme="dark"] .tile {
+      background: rgba(255,255,255,0.035);
+      border-color: rgba(255,255,255,0.08);
+      color: #E7E9EE;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    [data-theme="dark"] .tile:hover {
+      border-color: rgba(255,255,255,0.14);
+      box-shadow: 0 12px 44px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    [data-theme="dark"] .tile-name { color: #F3F4F6; }
+    [data-theme="dark"] .tile-desc { color: #8B93A7; }
+    [data-theme="dark"] .tile-expenses::after { background: linear-gradient(135deg, rgba(129,140,248,0.12), rgba(167,139,250,0.12)); }
+    [data-theme="dark"] .tile-habits::after   { background: linear-gradient(135deg, rgba(52,211,153,0.12), rgba(56,189,248,0.12)); }
+    [data-theme="dark"] .tile-todos::after    { background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(129,140,248,0.12)); }
+    [data-theme="dark"] .tile-books::after    { background: linear-gradient(135deg, rgba(251,191,36,0.12), rgba(248,113,113,0.12)); }
+    [data-theme="dark"] .tile-blogs::after    { background: linear-gradient(135deg, rgba(167,139,250,0.12), rgba(129,140,248,0.12)); }
+
+    [data-theme="dark"] .tile-stat.loading { background: linear-gradient(90deg,rgba(255,255,255,0.05) 25%,rgba(255,255,255,0.11) 50%,rgba(255,255,255,0.05) 75%); background-size: 200% 100%; }
+    [data-theme="dark"] .tile-expenses .tile-stat { background: rgba(99,102,241,0.20); color: #A5B4FC; }
+    [data-theme="dark"] .tile-habits   .tile-stat { background: rgba(16,185,129,0.20); color: #6EE7B7; }
+    [data-theme="dark"] .tile-todos    .tile-stat { background: rgba(56,189,248,0.20); color: #7DD3FC; }
+    [data-theme="dark"] .tile-books    .tile-stat { background: rgba(245,158,11,0.20); color: #FCD34D; }
+    [data-theme="dark"] .tile-blogs    .tile-stat { background: rgba(139,92,246,0.20); color: #C4B5FD; }
+    [data-theme="dark"] .tile-expenses .tile-icon-wrap { background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(139,92,246,0.16)); }
+    [data-theme="dark"] .tile-habits   .tile-icon-wrap { background: linear-gradient(135deg, rgba(16,185,129,0.22), rgba(8,145,178,0.16)); }
+    [data-theme="dark"] .tile-todos    .tile-icon-wrap { background: linear-gradient(135deg, rgba(2,132,199,0.22), rgba(99,102,241,0.16)); }
+    [data-theme="dark"] .tile-books    .tile-icon-wrap { background: linear-gradient(135deg, rgba(245,158,11,0.22), rgba(239,68,68,0.16)); }
+    [data-theme="dark"] .tile-blogs    .tile-icon-wrap { background: linear-gradient(135deg, rgba(124,58,237,0.22), rgba(99,102,241,0.16)); }
+
+    [data-theme="dark"] .theme-btn { background: rgba(20,20,28,0.85); border-color: rgba(255,255,255,0.12); box-shadow: 0 2px 14px rgba(0,0,0,0.5); }
+    [data-theme="dark"] .user-chip { background: rgba(20,20,28,0.85); border-color: rgba(255,255,255,0.12); color: #E5E7EB; box-shadow: 0 2px 14px rgba(0,0,0,0.45); }
+
+    [data-theme="dark"] .toast { box-shadow: 0 8px 32px rgba(0,0,0,0.55); }
+    [data-theme="dark"] .toast.success { background: rgba(6,40,30,0.95); color: #6EE7B7; border-color: rgba(16,185,129,0.35); }
+    [data-theme="dark"] .toast.error   { background: rgba(48,16,16,0.95); color: #FCA5A5; border-color: rgba(239,68,68,0.35); }
+    [data-theme="dark"] .toast.info    { background: rgba(16,26,48,0.95); color: #93C5FD; border-color: rgba(59,130,246,0.35); }
   </style>
   <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
 </head>
@@ -411,94 +849,186 @@
       </div>
 
       <div class="clock-wrap">
-        <div class="odo-widget theme-cyan" data-mode="clock" role="group" aria-label="Neo-Chronometer">
+       <div class="odo-fit" id="odoFit">
+        <div class="odo-widget theme-emerald" id="odoWidget">
+
           <div class="odo-topline">
-            <div class="control-group" role="tablist" aria-label="Mode">
-              <button class="mode-btn active" id="mb-clock" type="button">CLK</button>
-              <button class="mode-btn" id="mb-sw" type="button">SW</button>
-              <button class="mode-btn" id="mb-tmr" type="button">TMR</button>
+            <div class="header-left">
+              <div class="control-group">
+                <button class="mode-btn active" id="btnModeClock">CLOCK</button>
+                <button class="mode-btn" id="btnModeChrono">STOPWATCH</button>
+                <button class="mode-btn" id="btnModePomo">POMO</button>
+                <button class="mode-btn" id="btnModeUnix">UNIX</button>
+              </div>
+
+              <button class="timeformat-btn" id="btnTimeFormat" title="Toggle 12H/24H Mode">24H</button>
+
+              <button class="popover-btn" id="btnTzTrigger" title="Select Timezone">
+                <span>TZ:</span>
+                <span class="active-tag" id="tzDisplay">IST (INDIA)</span>
+                <span style="font-size: 0.5rem;">&#9660;</span>
+              </button>
+
+              <div class="dropdown-menu" id="tzDropdown">
+                <div class="menu-option selected" data-tz="Asia/Kolkata" data-code="IST (INDIA)">
+                  <span>India (IST)</span> <span>UTC+5:30</span>
+                </div>
+                <div class="menu-option" data-tz="UTC" data-code="UTC / ZULU">
+                  <span>UTC / GMT</span> <span>UTC+0:00</span>
+                </div>
+                <div class="menu-option" data-tz="America/New_York" data-code="EST (NEW YORK)">
+                  <span>New York (EST)</span> <span>UTC-5:00</span>
+                </div>
+                <div class="menu-option" data-tz="America/Los_Angeles" data-code="PST (SF)">
+                  <span>San Francisco (PST)</span> <span>UTC-8:00</span>
+                </div>
+                <div class="menu-option" data-tz="Europe/London" data-code="LON (LONDON)">
+                  <span>London (GMT/BST)</span> <span>UTC+0/1:00</span>
+                </div>
+                <div class="menu-option" data-tz="Asia/Dubai" data-code="DXB (DUBAI)">
+                  <span>Dubai (GST)</span> <span>UTC+4:00</span>
+                </div>
+                <div class="menu-option" data-tz="Asia/Tokyo" data-code="JST (TOKYO)">
+                  <span>Tokyo (JST)</span> <span>UTC+9:00</span>
+                </div>
+                <div class="menu-option" data-tz="Australia/Sydney" data-code="AEST (SYDNEY)">
+                  <span>Sydney (AEST)</span> <span>UTC+10:00</span>
+                </div>
+              </div>
+
+              <button class="popover-btn" id="btnThemeTrigger" title="Change Theme">
+                <span>THEME:</span>
+                <span class="active-tag" id="themeDisplay">EMERALD</span>
+                <span style="font-size: 0.5rem;">&#9660;</span>
+              </button>
+
+              <div class="dropdown-menu" id="themeDropdown">
+                <div class="menu-option selected" data-theme="theme-emerald" data-label="EMERALD">
+                  <span>Emerald Green</span> <span>&#128994;</span>
+                </div>
+                <div class="menu-option" data-theme="theme-cyan" data-label="CYAN">
+                  <span>Cyber Cyan</span> <span>&#128309;</span>
+                </div>
+                <div class="menu-option" data-theme="theme-vintage" data-label="VINTAGE">
+                  <span>Vintage Dash</span> <span>&#128992;</span>
+                </div>
+                <div class="menu-option" data-theme="theme-stealth" data-label="STEALTH">
+                  <span>Stealth Titanium</span> <span>&#9898;</span>
+                </div>
+              </div>
             </div>
-            <div class="btns">
-              <button class="icon-btn" id="sound-btn" type="button" aria-pressed="false">&#9834; OFF</button>
-              <button class="icon-btn" id="theme-cycle" type="button" title="Cycle theme">
-                <span class="theme-dot"></span><span id="theme-label">CYAN</span>
+
+            <div class="header-right">
+              <button class="sound-toggle-btn active" id="btnSoundToggle" title="Toggle Audio (Shortcut: M)">
+                <span id="soundIcon">&#128266;</span>
+                <span id="soundText">SOUND ON</span>
               </button>
             </div>
           </div>
 
-          <div class="odo-statusline">
-            <span class="odo-day" id="odo-day">&mdash;</span>
-            <span class="odo-model">SYSTEM // CHRONO-CORE</span>
+          <div class="odo-housing-wrapper">
+            <div class="odo-housing">
+              <div class="odo-group">
+                <div class="odo-digits">
+                  <div class="odo-digit" id="y0"></div>
+                  <div class="odo-digit" id="y1"></div>
+                  <div class="odo-digit" id="y2"></div>
+                  <div class="odo-digit" id="y3"></div>
+                </div>
+                <span class="odo-label" id="lblY">YYYY</span>
+              </div>
+
+              <span class="odo-sep" id="sepY">&middot;</span>
+
+              <div class="odo-group">
+                <div class="odo-digits">
+                  <div class="odo-digit" id="mo0"></div>
+                  <div class="odo-digit" id="mo1"></div>
+                </div>
+                <span class="odo-label" id="lblMo">MM</span>
+              </div>
+
+              <span class="odo-sep" id="sepMo">&middot;</span>
+
+              <div class="odo-group">
+                <div class="odo-digits">
+                  <div class="odo-digit" id="d0"></div>
+                  <div class="odo-digit" id="d1"></div>
+                </div>
+                <span class="odo-label" id="lblD">DD</span>
+              </div>
+
+              <span class="odo-sep" id="sepD">&middot;</span>
+
+              <div class="odo-group">
+                <div class="odo-digits">
+                  <div class="odo-digit day-drum" id="day-drum"></div>
+                </div>
+                <span class="odo-label" id="lblDay">DAY</span>
+              </div>
+
+              <div class="odo-gear-window" id="gearWindow" title="Internal Movement">
+                <div class="gear gear-brass" id="gearBrass"><div class="gear-center"></div></div>
+                <div class="gear gear-pinion" id="gearPinion"><div class="gear-center"></div></div>
+              </div>
+
+              <div class="odo-group">
+                <div class="odo-digits">
+                  <div class="odo-digit" id="h0"></div>
+                  <div class="odo-digit" id="h1"></div>
+                </div>
+                <span class="odo-label" id="lblH">HH</span>
+              </div>
+
+              <span class="odo-sep">:</span>
+
+              <div class="odo-group">
+                <div class="odo-digits">
+                  <div class="odo-digit" id="m0"></div>
+                  <div class="odo-digit" id="m1"></div>
+                </div>
+                <span class="odo-label" id="lblM">MM</span>
+              </div>
+
+              <span class="odo-sep">:</span>
+
+              <div class="odo-group accent-seconds">
+                <div class="odo-digits">
+                  <div class="odo-digit" id="s0"></div>
+                  <div class="odo-digit" id="s1"></div>
+                </div>
+                <span class="odo-label" id="lblS">SS</span>
+              </div>
+
+              <div class="odo-group" id="ampmGroup" style="display: none; margin-left: 2px;">
+                <div class="odo-digits">
+                  <div class="odo-digit ampm-drum" id="ampm-drum"></div>
+                </div>
+                <span class="odo-label">12H</span>
+              </div>
+
+              <span class="odo-sep">.</span>
+
+              <div class="odo-group accent-fast">
+                <div class="odo-digits">
+                  <div class="odo-digit fast-drum" id="cs0"></div>
+                  <div class="odo-digit fast-drum" id="cs1"></div>
+                </div>
+                <span class="odo-label">CS</span>
+              </div>
+            </div>
+
+            <div class="odo-crown-stem" id="odoCrown" title="Side Knob: Reset / Reel Back">
+              <div class="odo-crown-ridges"></div>
+            </div>
           </div>
 
-          <div class="odo-housing" id="odo-housing">
-            <div class="odo-group cal-only">
-              <div class="odo-digits">
-                <div class="odo-digit" id="y0"></div><div class="odo-digit" id="y1"></div>
-                <div class="odo-digit" id="y2"></div><div class="odo-digit" id="y3"></div>
-              </div>
-              <span class="odo-label">YYYY</span>
-            </div>
-            <span class="odo-sep cal-only">&middot;</span>
-            <div class="odo-group cal-only">
-              <div class="odo-digits">
-                <div class="odo-digit" id="mo0"></div><div class="odo-digit" id="mo1"></div>
-              </div>
-              <span class="odo-label">MM</span>
-            </div>
-            <span class="odo-sep cal-only">&middot;</span>
-            <div class="odo-group cal-only">
-              <div class="odo-digits">
-                <div class="odo-digit" id="d0"></div><div class="odo-digit" id="d1"></div>
-              </div>
-              <span class="odo-label">DD</span>
-            </div>
-            <span class="odo-sep cal-only">&middot;</span>
-            <div class="odo-group cal-only">
-              <div class="odo-digits">
-                <div class="odo-digit day-drum" id="day-drum"></div>
-              </div>
-              <span class="odo-label">DAY</span>
-            </div>
-            <span class="odo-sep cal-only">|</span>
-            <div class="odo-group">
-              <div class="odo-digits">
-                <div class="odo-digit" id="h0"></div><div class="odo-digit" id="h1"></div>
-              </div>
-              <span class="odo-label">HH</span>
-            </div>
-            <span class="odo-sep">:</span>
-            <div class="odo-group">
-              <div class="odo-digits">
-                <div class="odo-digit" id="m0"></div><div class="odo-digit" id="m1"></div>
-              </div>
-              <span class="odo-label">MM</span>
-            </div>
-            <span class="odo-sep">:</span>
-            <div class="odo-group accent-seconds">
-              <div class="odo-digits">
-                <div class="odo-digit" id="s0"></div><div class="odo-digit" id="s1"></div>
-              </div>
-              <span class="odo-label">SS</span>
-            </div>
-            <span class="odo-sep">.</span>
-            <div class="odo-group accent-fast">
-              <div class="odo-digits">
-                <div class="odo-digit fast-drum" id="cs0"></div><div class="odo-digit fast-drum" id="cs1"></div>
-              </div>
-              <span class="odo-label">CS</span>
-            </div>
-          </div>
-
-          <div class="odo-actions" id="odo-actions">
-            <button class="act-btn primary wide" id="act-start" type="button">&#9654; START</button>
-            <button class="act-btn" id="act-reset" type="button">&#8635; RESET</button>
-            <button class="act-btn tmr-only" data-adj="60000" type="button">+1:00</button>
-            <button class="act-btn tmr-only" data-adj="-60000" type="button">&minus;1:00</button>
-            <button class="act-btn tmr-only" data-adj="10000" type="button">+0:10</button>
-            <button class="act-btn tmr-only" data-adj="-10000" type="button">&minus;0:10</button>
+          <div class="chrono-controls" id="timerControls">
+            <button class="chrono-btn start" id="btnTimerStart">START</button>
+            <button class="chrono-btn reset" id="btnTimerReset">RESET</button>
           </div>
         </div>
+       </div>
       </div>
 
       <div class="left-footer">Your life, quietly organised.</div>
@@ -573,241 +1103,662 @@
     };
   })();
 
-  /* ── Neo-Chronometer — 3D cylinder clock / stopwatch / timer ── */
+  /* ── Neo-Chronometer (Pro Edition) — verbatim from reference ── */
   (function () {
-    const SHORT_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-    const FULL_DAYS  = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
-    const RADIUS_10 = 58, RADIUS_7 = 44;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const p2 = n => String(n).padStart(2, '0');
-    const $ = id => document.getElementById(id);
-    const widget  = document.querySelector('.odo-widget');
-    const housing = $('odo-housing');
-    if (!widget) return;
-
-    /* ---- build the 3D barrels ---- */
-    function build3DCylinders() {
-      document.querySelectorAll('.odo-digit:not(.day-drum)').forEach(digit => {
-        const cyl = document.createElement('div');
-        cyl.className = 'odo-cylinder';
-        for (let i = 0; i < 10; i++) {
-          const face = document.createElement('div');
-          face.className = 'odo-face';
-          face.textContent = i;
-          face.style.transform = 'rotateX(' + (i * 36) + 'deg) translateZ(' + RADIUS_10 + 'px)';
-          cyl.appendChild(face);
-        }
-        digit.appendChild(cyl);
-      });
-      const dayEl = $('day-drum');
-      if (dayEl) {
-        const cyl = document.createElement('div');
-        cyl.className = 'odo-cylinder';
-        SHORT_DAYS.forEach((d, i) => {
-          const face = document.createElement('div');
-          face.className = 'odo-face';
-          face.textContent = d;
-          face.style.transform = 'rotateX(' + (i * (360 / 7)) + 'deg) translateZ(' + RADIUS_7 + 'px)';
-          cyl.appendChild(face);
-        });
-        dayEl.appendChild(cyl);
-      }
-    }
-    function rotate3D(id, val, totalFaces) {
-      totalFaces = totalFaces || 10;
-      const el = $(id); if (!el) return;
-      const cyl = el.querySelector('.odo-cylinder'); if (!cyl) return;
-      const radius = totalFaces === 10 ? RADIUS_10 : RADIUS_7;
-      cyl.style.transform = 'translateZ(-' + radius + 'px) rotateX(' + (-(val * (360 / totalFaces))) + 'deg)';
-    }
-    function showTime(h, m, s, cs) {
-      const H = p2(h), M = p2(m), S = p2(s), C = p2(cs);
-      rotate3D('h0', H[0]); rotate3D('h1', H[1]);
-      rotate3D('m0', M[0]); rotate3D('m1', M[1]);
-      rotate3D('s0', S[0]); rotate3D('s1', S[1]);
-      rotate3D('cs0', C[0]); rotate3D('cs1', C[1]);
-    }
-    function splitHMSC(ms) {
-      ms = Math.max(0, ms);
-      return [
-        Math.min(99, Math.floor(ms / 3600000)),
-        Math.floor(ms / 60000) % 60,
-        Math.floor(ms / 1000) % 60,
-        Math.floor(ms / 10) % 100,
+      const SHORT_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'RUN', 'STP', 'CLR', 'POM', 'UNX'];
+      const AMPM_LIST = ['AM', 'PM'];
+      const THEMES = ['theme-emerald', 'theme-cyan', 'theme-vintage', 'theme-stealth'];
+      const TIMEZONES = [
+        { tz: 'Asia/Kolkata', code: 'IST (INDIA)' },
+        { tz: 'UTC', code: 'UTC / ZULU' },
+        { tz: 'America/New_York', code: 'EST (NEW YORK)' },
+        { tz: 'America/Los_Angeles', code: 'PST (SF)' },
+        { tz: 'Europe/London', code: 'LON (LONDON)' },
+        { tz: 'Asia/Dubai', code: 'DXB (DUBAI)' },
+        { tz: 'Asia/Tokyo', code: 'JST (TOKYO)' },
+        { tz: 'Australia/Sydney', code: 'AEST (SYDNEY)' }
       ];
-    }
 
-    /* ---- theme cycle (emerald / cyan / vintage / stealth) ---- */
-    const THEMES = ['theme-cyan', 'theme-emerald', 'theme-vintage', 'theme-stealth'];
-    const LABEL  = { 'theme-cyan': 'CYAN', 'theme-emerald': 'EMERALD', 'theme-vintage': 'VINTAGE', 'theme-stealth': 'STEALTH' };
-    let themeIdx = 0;
-    function applyTheme(cls, persist) {
-      THEMES.forEach(t => widget.classList.remove(t));
-      widget.classList.add(cls);
-      themeIdx = Math.max(0, THEMES.indexOf(cls));
-      const lbl = $('theme-label'); if (lbl) lbl.textContent = LABEL[cls];
-      if (persist) { try { localStorage.setItem('chrono_theme', cls); } catch (e) {} }
-    }
-    (function () {
-      let saved; try { saved = localStorage.getItem('chrono_theme'); } catch (e) {}
-      applyTheme(THEMES.indexOf(saved) > -1 ? saved : 'theme-cyan', false);
-    })();
-    $('theme-cycle').addEventListener('click', () => applyTheme(THEMES[(themeIdx + 1) % THEMES.length], true));
+      const RADIUS_10 = 58;
+      const RADIUS_12 = 70;
+      const RADIUS_2 = 18;
 
-    /* ---- tick sound ---- */
-    let soundOn = false, ac = null;
-    try { soundOn = localStorage.getItem('chrono_sound') === '1'; } catch (e) {}
-    const soundBtn = $('sound-btn');
-    function reflectSound() {
-      soundBtn.classList.toggle('active', soundOn);
-      soundBtn.textContent = (soundOn ? '♪ ON' : '♪ OFF');
-      soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
-    }
-    function blip(freq, dur, vol) {
-      if (!ac) return;
-      const t = ac.currentTime;
-      const o = ac.createOscillator(), g = ac.createGain();
-      o.type = 'square'; o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g).connect(ac.destination);
-      o.start(t); o.stop(t + dur + 0.02);
-    }
-    const tickSound = () => { if (soundOn && ac) blip(1800, 0.045, 0.05); };
-    const alarm = () => { if (soundOn && ac) [0, 150, 300].forEach((ms, i) => setTimeout(() => blip(760 + i * 240, 0.18, 0.09), ms)); };
-    reflectSound();
-    soundBtn.addEventListener('click', () => {
-      soundOn = !soundOn;
-      try { localStorage.setItem('chrono_sound', soundOn ? '1' : '0'); } catch (e) {}
-      if (soundOn) {
-        if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
-        if (ac.state === 'suspended') ac.resume();
-        blip(1500, 0.05, 0.05);
+      const odoWidget = document.getElementById('odoWidget');
+      const odoFit = document.getElementById('odoFit');
+
+      let currentMode = 'CLOCK';
+      let is12Hour = localStorage.getItem('odo_12h') === 'true';
+      let selectedTimeZone = localStorage.getItem('odo_tz') || 'Asia/Kolkata';
+      let currentTheme = localStorage.getItem('odo_theme') || 'theme-emerald';
+      let soundEnabled = localStorage.getItem('odo_sound') !== 'false';
+
+      let swRunning = false;
+      let swStartTime = 0;
+      let swElapsedTime = 0;
+
+      const POMO_DURATION = 25 * 60 * 1000;
+      let pomoRunning = false;
+      let pomoStartTime = 0;
+      let pomoRemaining = POMO_DURATION;
+
+      const prevPositions = {};
+      let gearAngleBrass = 0;
+      let gearAnglePinion = 0;
+
+      /* fit the fixed-size watch into whatever width the panel gives us */
+      function fitOdo() {
+        const wrap = document.querySelector('.clock-wrap');
+        if (!wrap || !odoFit) return;
+        odoFit.style.setProperty('--odo-scale', '1');
+        const natural = odoWidget.offsetWidth;
+        const avail = wrap.clientWidth - 8;
+        odoFit.style.setProperty('--odo-scale', Math.max(0.35, Math.min(1, avail / natural)).toFixed(3));
       }
-      reflectSound();
-    });
 
-    /* ---- modes: clock | stopwatch | timer ---- */
-    let mode = 'clock', lastSecond = -1;
-    let swRunning = false, swAccum = 0, swStart = 0;
-    let tmrRunning = false, tmrDuration = 5 * 60000, tmrRemain = 5 * 60000, tmrEnd = 0;
-    const startBtn = $('act-start'), resetBtn = $('act-reset');
-    const modeBtns = { clock: $('mb-clock'), stopwatch: $('mb-sw'), timer: $('mb-tmr') };
-
-    const swElapsed = () => swAccum + (swRunning ? (performance.now() - swStart) : 0);
-    const tmrLeft   = () => (tmrRunning ? Math.max(0, tmrEnd - Date.now()) : tmrRemain);
-    const renderStopwatch = () => showTime.apply(null, splitHMSC(swElapsed()));
-    const renderTimer     = () => showTime.apply(null, splitHMSC(tmrLeft()));
-
-    function reflectActions() {
-      const running = mode === 'stopwatch' ? swRunning : tmrRunning;
-      startBtn.textContent = running ? '❚❚ PAUSE' : '▶ START';
-      startBtn.classList.toggle('primary', !running);
-    }
-    function setMode(m) {
-      mode = m;
-      widget.dataset.mode = m;
-      Object.keys(modeBtns).forEach(k => modeBtns[k].classList.toggle('active', k === m));
-      lastSecond = -1;
-      if (m === 'clock') {
-        $('odo-day').textContent = FULL_DAYS[new Date().getDay()];
-      } else if (m === 'stopwatch') {
-        $('odo-day').textContent = 'STOPWATCH';
-        renderStopwatch(); reflectActions();
-      } else {
-        $('odo-day').textContent = 'TIMER';
-        housing.classList.remove('finished');
-        renderTimer(); reflectActions();
-      }
-      fitWidget();
-    }
-    modeBtns.clock.addEventListener('click', () => setMode('clock'));
-    modeBtns.stopwatch.addEventListener('click', () => setMode('stopwatch'));
-    modeBtns.timer.addEventListener('click', () => setMode('timer'));
-
-    startBtn.addEventListener('click', () => {
-      if (mode === 'stopwatch') {
-        if (swRunning) { swAccum = swElapsed(); swRunning = false; }
-        else { swStart = performance.now(); swRunning = true; }
-      } else if (mode === 'timer') {
-        if (tmrRunning) { tmrRemain = tmrLeft(); tmrRunning = false; }
-        else {
-          if (tmrRemain <= 0) tmrRemain = tmrDuration;
-          tmrEnd = Date.now() + tmrRemain; tmrRunning = true;
-          housing.classList.remove('finished');
+      function triggerHaptic(pattern = [15]) {
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate(pattern);
+          } catch(e) {}
         }
       }
-      reflectActions();
-    });
-    resetBtn.addEventListener('click', () => {
-      if (mode === 'stopwatch') { swRunning = false; swAccum = 0; renderStopwatch(); }
-      else if (mode === 'timer') { tmrRunning = false; tmrRemain = tmrDuration; housing.classList.remove('finished'); renderTimer(); }
-      reflectActions();
-    });
-    document.querySelectorAll('[data-adj]').forEach(b => b.addEventListener('click', () => {
-      if (tmrRunning) return;
-      const MAX = 99 * 3600000 + 59 * 60000 + 59000;
-      tmrDuration = Math.max(10000, Math.min(MAX, tmrDuration + parseInt(b.dataset.adj, 10)));
-      tmrRemain = tmrDuration;
-      renderTimer();
-    }));
 
-    /* ---- master loop ---- */
-    function frame() {
-      if (mode === 'clock') {
+      let audioCtx = null;
+      function getAudioContext() {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      function playMechanicalTick(isHigh = false, intensity = 0.08) {
+        if (!soundEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
+        try {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(isHigh ? 1800 : 1200, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + 0.018);
+
+          gain.gain.setValueAtTime(intensity, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.018);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start();
+          osc.stop(ctx.currentTime + 0.018);
+        } catch (e) {}
+      }
+
+      function playChime() {
+        if (!soundEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        try {
+          [523.25, 659.25, 783.99].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
+            gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.1 + 0.35);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + idx * 0.1);
+            osc.stop(ctx.currentTime + idx * 0.1 + 0.35);
+          });
+        } catch (e) {}
+      }
+
+      function build3DCylinders() {
+        document.querySelectorAll('.odo-digit:not(.day-drum):not(.ampm-drum)').forEach(digit => {
+          const cyl = document.createElement('div');
+          cyl.className = 'odo-cylinder';
+          for (let i = 0; i < 10; i++) {
+            const face = document.createElement('div');
+            face.className = 'odo-face';
+            face.textContent = i;
+            face.style.transform = `rotateX(${i * 36}deg) translateZ(${RADIUS_10}px)`;
+            cyl.appendChild(face);
+          }
+          digit.appendChild(cyl);
+        });
+
+        const dayContainer = document.getElementById('day-drum');
+        if (dayContainer) {
+          const cyl = document.createElement('div');
+          cyl.className = 'odo-cylinder';
+          SHORT_DAYS.forEach((label, i) => {
+            const face = document.createElement('div');
+            face.className = 'odo-face';
+            face.textContent = label;
+            face.style.transform = `rotateX(${i * 30}deg) translateZ(${RADIUS_12}px)`;
+            cyl.appendChild(face);
+          });
+          dayContainer.appendChild(cyl);
+        }
+
+        const ampmContainer = document.getElementById('ampm-drum');
+        if (ampmContainer) {
+          const cyl = document.createElement('div');
+          cyl.className = 'odo-cylinder';
+          AMPM_LIST.forEach((label, i) => {
+            const face = document.createElement('div');
+            face.className = 'odo-face';
+            face.textContent = label;
+            face.style.transform = `rotateX(${i * 180}deg) translateZ(${RADIUS_2}px)`;
+            cyl.appendChild(face);
+          });
+          ampmContainer.appendChild(cyl);
+        }
+      }
+
+      function rotateCascade(id, val, cascadeDelayMs = 0, totalFaces = 10, radius = RADIUS_10) {
+        const numVal = parseInt(val, 10);
+        if (prevPositions[id] === numVal) return;
+        prevPositions[id] = numVal;
+
+        const el = document.getElementById(id);
+        if (!el) return;
+        const cyl = el.querySelector('.odo-cylinder');
+        if (cyl) {
+          setTimeout(() => {
+            const angle = -(numVal * (360 / totalFaces));
+            cyl.style.transform = `translateZ(-${radius}px) rotateX(${angle}deg)`;
+          }, cascadeDelayMs);
+        }
+      }
+
+      function getTimeInZone(date, tz, use12h) {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: tz,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          weekday: 'short',
+          hour12: use12h
+        });
+        const parts = formatter.formatToParts(date);
+        const map = {};
+        parts.forEach(p => map[p.type] = p.value);
+        return map;
+      }
+
+      const gearBrass = document.getElementById('gearBrass');
+      const gearPinion = document.getElementById('gearPinion');
+
+      function tickGears() {
+        gearAngleBrass += 30;
+        gearAnglePinion -= 45;
+        gearBrass.style.transform = `rotate(${gearAngleBrass}deg)`;
+        gearPinion.style.transform = `rotate(${gearAnglePinion}deg)`;
+      }
+
+      let lastSecond = -1;
+      let animId = null;
+
+      function renderLoop() {
         const now = new Date();
-        if (!reduce) {
-          const cs = p2(Math.floor(now.getMilliseconds() / 10));
-          rotate3D('cs0', cs[0]); rotate3D('cs1', cs[1]);
+
+        if (currentMode === 'CLOCK') {
+          const centis = Math.floor(now.getMilliseconds() / 10);
+          const csStr = String(centis).padStart(2, '0');
+          rotateCascade('cs0', csStr[0], 0);
+          rotateCascade('cs1', csStr[1], 0);
+
+          const currentSec = now.getSeconds();
+          if (currentSec !== lastSecond) {
+            lastSecond = currentSec;
+            playMechanicalTick(currentSec % 2 === 0);
+            tickGears();
+
+            const tzData = getTimeInZone(now, selectedTimeZone, is12Hour);
+            const weekdayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+            const dayIndex = weekdayMap[tzData.weekday] ?? 0;
+
+            const y = String(tzData.year).padStart(4, '0');
+            const mo = String(tzData.month).padStart(2, '0');
+            const d = String(tzData.day).padStart(2, '0');
+            const h = String(tzData.hour).padStart(2, '0');
+            const m = String(tzData.minute).padStart(2, '0');
+            const s = String(tzData.second).padStart(2, '0');
+
+            rotateCascade('s1', s[1], 0);
+            rotateCascade('s0', s[0], s[1] === '0' ? 40 : 0);
+            rotateCascade('m1', m[1], s === '00' ? 70 : 0);
+            rotateCascade('m0', m[0], (s === '00' && m[1] === '0') ? 110 : 0);
+            rotateCascade('h1', h[1], (s === '00' && m === '00') ? 150 : 0);
+            rotateCascade('h0', h[0], (s === '00' && m === '00' && h[1] === '0') ? 190 : 0);
+            rotateCascade('day-drum', dayIndex, 0, 12, RADIUS_12);
+            rotateCascade('d1', d[1], 0);
+            rotateCascade('d0', d[0], 0);
+            rotateCascade('mo1', mo[1], 0);
+            rotateCascade('mo0', mo[0], 0);
+            rotateCascade('y3', y[3], 0);
+            rotateCascade('y2', y[2], 0);
+            rotateCascade('y1', y[1], 0);
+            rotateCascade('y0', y[0], 0);
+
+            if (is12Hour && tzData.dayPeriod) {
+              rotateCascade('ampm-drum', tzData.dayPeriod.toUpperCase() === 'PM' ? 1 : 0, 0, 2, RADIUS_2);
+            }
+          }
+        } else if (currentMode === 'STOPWATCH') {
+          let totalMs = swElapsedTime;
+          if (swRunning) totalMs += (performance.now() - swStartTime);
+
+          const totalCs = Math.floor(totalMs / 10);
+          const cs = String(totalCs % 100).padStart(2, '0');
+          const totalSecs = Math.floor(totalMs / 1000);
+          const s = String(totalSecs % 60).padStart(2, '0');
+          const totalMins = Math.floor(totalSecs / 60);
+          const m = String(totalMins % 60).padStart(2, '0');
+          const h = String(Math.floor(totalMins / 60) % 100).padStart(2, '0');
+
+          if (totalSecs !== lastSecond && swRunning) {
+            lastSecond = totalSecs;
+            playMechanicalTick(totalSecs % 2 === 0);
+            tickGears();
+          }
+
+          rotateCascade('cs0', cs[0], 0);
+          rotateCascade('cs1', cs[1], 0);
+          rotateCascade('s0', s[0], 0);
+          rotateCascade('s1', s[1], 0);
+          rotateCascade('m0', m[0], 0);
+          rotateCascade('m1', m[1], 0);
+          rotateCascade('h0', h[0], 0);
+          rotateCascade('h1', h[1], 0);
+
+          rotateCascade('y0', 0, 0); rotateCascade('y1', 0, 0); rotateCascade('y2', 0, 0); rotateCascade('y3', 0, 0);
+          rotateCascade('mo0', 0, 0); rotateCascade('mo1', 0, 0);
+          rotateCascade('d0', 0, 0); rotateCascade('d1', 0, 0);
+          rotateCascade('day-drum', swRunning ? 7 : (swElapsedTime > 0 ? 8 : 9), 0, 12, RADIUS_12);
+        } else if (currentMode === 'POMO') {
+          let remaining = pomoRemaining;
+          if (pomoRunning) {
+            remaining = Math.max(0, pomoRemaining - (performance.now() - pomoStartTime));
+            if (remaining === 0) {
+              pomoRunning = false;
+              pomoRemaining = 0;
+              btnTimerStart.textContent = 'START';
+              btnTimerStart.classList.remove('running');
+              playChime();
+              triggerHaptic([50, 50, 100, 50, 150]);
+            }
+          }
+
+          const totalCs = Math.floor(remaining / 10);
+          const cs = String(totalCs % 100).padStart(2, '0');
+          const totalSecs = Math.floor(remaining / 1000);
+          const s = String(totalSecs % 60).padStart(2, '0');
+          const totalMins = Math.floor(totalSecs / 60);
+          const m = String(totalMins % 60).padStart(2, '0');
+          const h = String(Math.floor(totalMins / 60) % 100).padStart(2, '0');
+
+          if (totalSecs !== lastSecond && pomoRunning) {
+            lastSecond = totalSecs;
+            playMechanicalTick(totalSecs % 2 === 0);
+            tickGears();
+          }
+
+          rotateCascade('cs0', cs[0], 0);
+          rotateCascade('cs1', cs[1], 0);
+          rotateCascade('s0', s[0], 0);
+          rotateCascade('s1', s[1], 0);
+          rotateCascade('m0', m[0], 0);
+          rotateCascade('m1', m[1], 0);
+          rotateCascade('h0', h[0], 0);
+          rotateCascade('h1', h[1], 0);
+
+          rotateCascade('y0', 0, 0); rotateCascade('y1', 0, 0); rotateCascade('y2', 0, 0); rotateCascade('y3', 0, 0);
+          rotateCascade('mo0', 0, 0); rotateCascade('mo1', 0, 0);
+          rotateCascade('d0', 0, 0); rotateCascade('d1', 0, 0);
+          rotateCascade('day-drum', 10, 0, 12, RADIUS_12);
+        } else if (currentMode === 'UNIX') {
+          const unixTimeMs = Date.now();
+          const unixSecs = String(Math.floor(unixTimeMs / 1000)).padStart(10, '0');
+          const centis = String(Math.floor((unixTimeMs % 1000) / 10)).padStart(2, '0');
+
+          rotateCascade('cs0', centis[0], 0);
+          rotateCascade('cs1', centis[1], 0);
+
+          rotateCascade('y0', unixSecs[0], 0);
+          rotateCascade('y1', unixSecs[1], 0);
+          rotateCascade('y2', unixSecs[2], 0);
+          rotateCascade('y3', unixSecs[3], 0);
+          rotateCascade('mo0', unixSecs[4], 0);
+          rotateCascade('mo1', unixSecs[5], 0);
+          rotateCascade('d0', unixSecs[6], 0);
+          rotateCascade('d1', unixSecs[7], 0);
+          rotateCascade('h0', unixSecs[8], 0);
+          rotateCascade('h1', unixSecs[9], 0);
+
+          rotateCascade('day-drum', 11, 0, 12, RADIUS_12);
+          rotateCascade('m0', 0, 0); rotateCascade('m1', 0, 0);
+          rotateCascade('s0', 0, 0); rotateCascade('s1', 0, 0);
         }
-        const sec = now.getSeconds();
-        if (sec !== lastSecond) {
-          lastSecond = sec;
-          const y = String(now.getFullYear()).padStart(4, '0');
-          const mo = p2(now.getMonth() + 1), d = p2(now.getDate());
-          rotate3D('y0', y[0]); rotate3D('y1', y[1]); rotate3D('y2', y[2]); rotate3D('y3', y[3]);
-          rotate3D('mo0', mo[0]); rotate3D('mo1', mo[1]);
-          rotate3D('d0', d[0]); rotate3D('d1', d[1]);
-          rotate3D('day-drum', now.getDay(), 7);
-          rotate3D('h0', p2(now.getHours())[0]); rotate3D('h1', p2(now.getHours())[1]);
-          rotate3D('m0', p2(now.getMinutes())[0]); rotate3D('m1', p2(now.getMinutes())[1]);
-          rotate3D('s0', p2(sec)[0]); rotate3D('s1', p2(sec)[1]);
-          $('odo-day').textContent = FULL_DAYS[now.getDay()];
-          tickSound();
+
+        animId = requestAnimationFrame(renderLoop);
+      }
+
+      // UI Element Bindings
+      const btnClock = document.getElementById('btnModeClock');
+      const btnChrono = document.getElementById('btnModeChrono');
+      const btnPomo = document.getElementById('btnModePomo');
+      const btnUnix = document.getElementById('btnModeUnix');
+      const btnTimeFormat = document.getElementById('btnTimeFormat');
+      const ampmGroup = document.getElementById('ampmGroup');
+
+      const timerControls = document.getElementById('timerControls');
+      const btnTimerStart = document.getElementById('btnTimerStart');
+      const btnTimerReset = document.getElementById('btnTimerReset');
+      const btnSound = document.getElementById('btnSoundToggle');
+      const soundIcon = document.getElementById('soundIcon');
+      const soundText = document.getElementById('soundText');
+      const crown = document.getElementById('odoCrown');
+
+      const btnTzTrigger = document.getElementById('btnTzTrigger');
+      const tzDropdown = document.getElementById('tzDropdown');
+      const tzDisplay = document.getElementById('tzDisplay');
+
+      const btnThemeTrigger = document.getElementById('btnThemeTrigger');
+      const themeDropdown = document.getElementById('themeDropdown');
+      const themeDisplay = document.getElementById('themeDisplay');
+
+      // 12H / 24H Format Initialization
+      function updateTimeFormatUI() {
+        btnTimeFormat.textContent = is12Hour ? '12H' : '24H';
+        ampmGroup.style.display = (is12Hour && currentMode === 'CLOCK') ? 'flex' : 'none';
+        lastSecond = -1;
+      }
+      btnTimeFormat.addEventListener('click', () => {
+        is12Hour = !is12Hour;
+        localStorage.setItem('odo_12h', is12Hour);
+        updateTimeFormatUI();
+        triggerHaptic([15]);
+        playMechanicalTick(true);
+        fitOdo();
+      });
+      updateTimeFormatUI();
+
+      // Theme Init
+      odoWidget.className = 'odo-widget ' + currentTheme;
+      const initialThemeOpt = document.querySelector(`.menu-option[data-theme="${currentTheme}"]`);
+      if (initialThemeOpt) {
+        document.querySelectorAll('#themeDropdown .menu-option').forEach(o => o.classList.remove('selected'));
+        initialThemeOpt.classList.add('selected');
+        themeDisplay.textContent = initialThemeOpt.getAttribute('data-label');
+      }
+
+      // Timezone Init
+      const initialTzOpt = document.querySelector(`.menu-option[data-tz="${selectedTimeZone}"]`);
+      if (initialTzOpt) {
+        document.querySelectorAll('#tzDropdown .menu-option').forEach(o => o.classList.remove('selected'));
+        initialTzOpt.classList.add('selected');
+        tzDisplay.textContent = initialTzOpt.getAttribute('data-code');
+      }
+
+      // Audio Init
+      if (!soundEnabled) {
+        btnSound.classList.remove('active');
+        soundIcon.textContent = '🔇';
+        soundText.textContent = 'MUTED';
+      }
+
+      btnSound.addEventListener('click', (e) => {
+        e.preventDefault();
+        getAudioContext();
+        soundEnabled = !soundEnabled;
+        localStorage.setItem('odo_sound', soundEnabled);
+
+        if (soundEnabled) {
+          btnSound.classList.add('active');
+          soundIcon.textContent = '🔊';
+          soundText.textContent = 'SOUND ON';
+          playMechanicalTick(true, 0.12);
+        } else {
+          btnSound.classList.remove('active');
+          soundIcon.textContent = '🔇';
+          soundText.textContent = 'MUTED';
         }
-      } else if (mode === 'stopwatch') {
-        renderStopwatch();
-      } else {
-        renderTimer();
-        if (tmrRunning && tmrLeft() <= 0) {
-          tmrRunning = false; tmrRemain = 0;
-          housing.classList.add('finished');
-          reflectActions();
-          alarm();
+        triggerHaptic([15]);
+      });
+
+      // Side Crown Action
+      function triggerCrownAction() {
+        getAudioContext();
+        playMechanicalTick(true, 0.18);
+        triggerHaptic([15, 30, 15]);
+        tickGears();
+        crown.classList.add('active');
+        setTimeout(() => crown.classList.remove('active'), 150);
+
+        if (currentMode === 'STOPWATCH' || currentMode === 'POMO') {
+          btnTimerReset.click();
+        } else {
+          lastSecond = -1;
         }
       }
-    }
 
-    /* ---- fit the fixed-size widget to the panel ---- */
-    function fitWidget() {
-      const wrap = document.querySelector('.clock-wrap');
-      if (!wrap) return;
-      widget.style.setProperty('--odo-scale', '1');
-      const natural = widget.offsetWidth;
-      const avail = wrap.clientWidth - 24;
-      widget.style.setProperty('--odo-scale', Math.max(0.4, Math.min(1, avail / natural)).toFixed(3));
-    }
+      crown.addEventListener('click', (e) => {
+        e.preventDefault();
+        triggerCrownAction();
+      });
 
-    build3DCylinders();
-    setMode('clock');
-    fitWidget();
-    window.addEventListener('resize', fitWidget);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitWidget);
+      // Timezone Dropdown
+      btnTzTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        themeDropdown.classList.remove('visible');
+        btnThemeTrigger.classList.remove('open');
+        const isOpen = tzDropdown.classList.toggle('visible');
+        btnTzTrigger.classList.toggle('open', isOpen);
+        triggerHaptic([15]);
+      });
 
-    if (reduce) { frame(); setInterval(frame, 250); }
-    else (function raf() { frame(); requestAnimationFrame(raf); })();
-  })();
+      document.querySelectorAll('#tzDropdown .menu-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          document.querySelectorAll('#tzDropdown .menu-option').forEach(o => o.classList.remove('selected'));
+          opt.classList.add('selected');
+
+          selectedTimeZone = opt.getAttribute('data-tz');
+          tzDisplay.textContent = opt.getAttribute('data-code');
+          localStorage.setItem('odo_tz', selectedTimeZone);
+
+          tzDropdown.classList.remove('visible');
+          btnTzTrigger.classList.remove('open');
+
+          lastSecond = -1;
+          triggerHaptic([15]);
+          playMechanicalTick(true);
+        });
+      });
+
+      // Theme Dropdown
+      btnThemeTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        tzDropdown.classList.remove('visible');
+        btnTzTrigger.classList.remove('open');
+        const isOpen = themeDropdown.classList.toggle('visible');
+        btnThemeTrigger.classList.toggle('open', isOpen);
+        triggerHaptic([15]);
+      });
+
+      function applyTheme(themeName, label) {
+        currentTheme = themeName;
+        odoWidget.className = 'odo-widget ' + currentTheme;
+        themeDisplay.textContent = label;
+        localStorage.setItem('odo_theme', currentTheme);
+        document.querySelectorAll('#themeDropdown .menu-option').forEach(o => {
+          o.classList.toggle('selected', o.getAttribute('data-theme') === themeName);
+        });
+      }
+
+      document.querySelectorAll('#themeDropdown .menu-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          applyTheme(opt.getAttribute('data-theme'), opt.getAttribute('data-label'));
+          themeDropdown.classList.remove('visible');
+          btnThemeTrigger.classList.remove('open');
+          triggerHaptic([15]);
+          playMechanicalTick(true);
+        });
+      });
+
+      document.addEventListener('click', () => {
+        tzDropdown.classList.remove('visible');
+        btnTzTrigger.classList.remove('open');
+        themeDropdown.classList.remove('visible');
+        btnThemeTrigger.classList.remove('open');
+      });
+
+      // Mode Navigation
+      function setMode(mode) {
+        currentMode = mode;
+        [btnClock, btnChrono, btnPomo, btnUnix].forEach(b => b.classList.remove('active'));
+        timerControls.classList.remove('visible');
+        ampmGroup.style.display = 'none';
+
+        if (mode === 'CLOCK') {
+          btnClock.classList.add('active');
+          if (is12Hour) ampmGroup.style.display = 'flex';
+        } else if (mode === 'STOPWATCH') {
+          btnChrono.classList.add('active');
+          timerControls.classList.add('visible');
+          btnTimerStart.textContent = swRunning ? 'PAUSE' : 'START';
+          btnTimerStart.classList.toggle('running', swRunning);
+        } else if (mode === 'POMO') {
+          btnPomo.classList.add('active');
+          timerControls.classList.add('visible');
+          btnTimerStart.textContent = pomoRunning ? 'PAUSE' : 'START';
+          btnTimerStart.classList.toggle('running', pomoRunning);
+        } else if (mode === 'UNIX') {
+          btnUnix.classList.add('active');
+        }
+
+        lastSecond = -1;
+        triggerHaptic([15]);
+        playMechanicalTick(true);
+        fitOdo();
+      }
+
+      btnClock.addEventListener('click', () => setMode('CLOCK'));
+      btnChrono.addEventListener('click', () => setMode('STOPWATCH'));
+      btnPomo.addEventListener('click', () => setMode('POMO'));
+      btnUnix.addEventListener('click', () => setMode('UNIX'));
+
+      // Timer Controls (Shared by Stopwatch & Pomodoro)
+      btnTimerStart.addEventListener('click', () => {
+        getAudioContext();
+        triggerHaptic([15]);
+
+        if (currentMode === 'STOPWATCH') {
+          if (!swRunning) {
+            swRunning = true;
+            swStartTime = performance.now();
+            btnTimerStart.textContent = 'PAUSE';
+            btnTimerStart.classList.add('running');
+          } else {
+            swRunning = false;
+            swElapsedTime += (performance.now() - swStartTime);
+            btnTimerStart.textContent = 'START';
+            btnTimerStart.classList.remove('running');
+          }
+        } else if (currentMode === 'POMO') {
+          if (!pomoRunning) {
+            if (pomoRemaining === 0) pomoRemaining = POMO_DURATION;
+            pomoRunning = true;
+            pomoStartTime = performance.now();
+            btnTimerStart.textContent = 'PAUSE';
+            btnTimerStart.classList.add('running');
+          } else {
+            pomoRunning = false;
+            pomoRemaining = Math.max(0, pomoRemaining - (performance.now() - pomoStartTime));
+            btnTimerStart.textContent = 'START';
+            btnTimerStart.classList.remove('running');
+          }
+        }
+        playMechanicalTick(true);
+      });
+
+      btnTimerReset.addEventListener('click', () => {
+        getAudioContext();
+        triggerHaptic([15]);
+
+        if (currentMode === 'STOPWATCH') {
+          swRunning = false;
+          swElapsedTime = 0;
+          btnTimerStart.textContent = 'START';
+          btnTimerStart.classList.remove('running');
+        } else if (currentMode === 'POMO') {
+          pomoRunning = false;
+          pomoRemaining = POMO_DURATION;
+          btnTimerStart.textContent = 'START';
+          btnTimerStart.classList.remove('running');
+        }
+        playMechanicalTick(false);
+      });
+
+      // Keyboard Shortcuts (Space, R, M, T, Z)
+      window.addEventListener('keydown', (e) => {
+        if (['input', 'textarea'].includes(document.activeElement.tagName.toLowerCase())) return;
+
+        if (e.code === 'Space') {
+          e.preventDefault();
+          if (currentMode === 'STOPWATCH' || currentMode === 'POMO') {
+            btnTimerStart.click();
+          }
+        } else if (e.key === 'r' || e.key === 'R') {
+          if (currentMode === 'STOPWATCH' || currentMode === 'POMO') {
+            btnTimerReset.click();
+          } else {
+            triggerCrownAction();
+          }
+        } else if (e.key === 'm' || e.key === 'M') {
+          btnSound.click();
+        } else if (e.key === 't' || e.key === 'T') {
+          const nextIdx = (THEMES.indexOf(currentTheme) + 1) % THEMES.length;
+          const targetTheme = THEMES[nextIdx];
+          const opt = document.querySelector(`.menu-option[data-theme="${targetTheme}"]`);
+          if (opt) applyTheme(targetTheme, opt.getAttribute('data-label'));
+        } else if (e.key === 'z' || e.key === 'Z') {
+          const currentTzIdx = TIMEZONES.findIndex(t => t.tz === selectedTimeZone);
+          const nextTz = TIMEZONES[(currentTzIdx + 1) % TIMEZONES.length];
+          selectedTimeZone = nextTz.tz;
+          tzDisplay.textContent = nextTz.code;
+          localStorage.setItem('odo_tz', selectedTimeZone);
+          lastSecond = -1;
+          playMechanicalTick(true);
+        }
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          cancelAnimationFrame(animId);
+        } else {
+          lastSecond = -1;
+          animId = requestAnimationFrame(renderLoop);
+        }
+      });
+
+      build3DCylinders();
+      fitOdo();
+      window.addEventListener('resize', fitOdo);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitOdo);
+      animId = requestAnimationFrame(renderLoop);
+    })();
 
 
   /* ── Greeting ── */
