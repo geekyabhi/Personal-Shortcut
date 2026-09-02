@@ -141,6 +141,22 @@
       position: fixed; inset: 0; z-index: 900; border-radius: 0;
       overflow-y: auto; padding: 0;
     }
+    /* Mobile landscape: rotate the whole panel 90° so the chart gets the long edge */
+    .grafana-panel.fullscreen.fs-landscape {
+      inset: auto; top: 50%; left: 50%;
+      width: 100vh; height: 100vw;
+      transform: translate(-50%, -50%) rotate(90deg);
+      transform-origin: center center;
+      -webkit-overflow-scrolling: touch;
+    }
+    #fs-rotate { display: none; }
+    .grafana-panel.fullscreen #fs-rotate { display: inline-flex; }
+    @media (min-width: 768px) { .grafana-panel.fullscreen #fs-rotate { display: none; } }
+    /* Landscape = focused chart: drop the extras so it fits without scrolling */
+    .grafana-panel.fullscreen.fs-landscape .stats-row,
+    .grafana-panel.fullscreen.fs-landscape .brush-section,
+    .grafana-panel.fullscreen.fs-landscape .legend-table-wrap { display: none; }
+    .grafana-panel.fullscreen.fs-landscape .panel-chart-wrap canvas { max-height: none; }
     .fs-overlay {
       display: none; position: fixed; inset: 0; z-index: 899;
       background: rgba(10,10,20,0.55); backdrop-filter: blur(4px);
@@ -175,6 +191,45 @@
     }
     .icon-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,70,229,0.04); }
     .icon-btn.danger:hover { border-color: #EF4444; color: #EF4444; background: rgba(239,68,68,0.04); }
+    .icon-btn.on { border-color: var(--accent); color: var(--accent); background: rgba(79,70,229,0.07); }
+
+    /* Toggle group dimmed when not applicable */
+    .tg-dim { opacity: 0.35 !important; pointer-events: none !important; }
+
+    /* Category filter popover */
+    .cat-filter { position: relative; display: inline-flex; }
+    .cat-filter-pop {
+      position: absolute; top: calc(100% + 6px); right: 0; z-index: 50;
+      width: 250px; max-height: 340px; display: flex; flex-direction: column;
+      background: #fff; border: 1px solid #E5E7EB; border-radius: 10px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.18); padding: 8px;
+    }
+    .cat-filter-pop[hidden] { display: none; }
+    .cfp-head { display: flex; gap: 4px; margin-bottom: 6px; }
+    .cfp-head input {
+      flex: 1; min-width: 0; padding: 4px 8px; font-size: 0.72rem;
+      border: 1.5px solid #E5E7EB; border-radius: 6px; font-family: inherit; outline: none;
+    }
+    .cfp-head input:focus { border-color: var(--accent); }
+    .cfp-head .tb { background: #F3F4F6; }
+    .cfp-list { overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+    .cfp-item {
+      display: flex; align-items: center; gap: 7px; padding: 4px 6px;
+      border-radius: 6px; cursor: pointer; font-size: 0.74rem; color: #374151;
+    }
+    .cfp-item:hover { background: #F3F4F6; }
+    .cfp-item input { accent-color: var(--accent); cursor: pointer; }
+    .cfp-sw { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+    .cfp-nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cfp-vl { opacity: 0.5; font-variant-numeric: tabular-nums; }
+    .ov-pop { width: 190px; max-height: none; padding: 6px; }
+    .ov-pop .cfp-item { font-size: 0.75rem; }
+    .ov-note { padding: 5px 6px 2px; font-size: 0.64rem; color: #9CA3AF; line-height: 1.35; }
+    [data-theme="dark"] .cat-filter-pop { background: #1F2430; border-color: rgba(255,255,255,0.1); }
+    [data-theme="dark"] .cfp-item { color: #D1D5DB; }
+    [data-theme="dark"] .cfp-item:hover { background: rgba(255,255,255,0.06); }
+    [data-theme="dark"] .cfp-head input { background: #151922; color: #F9FAFB; border-color: rgba(255,255,255,0.12); }
+    [data-theme="dark"] .cfp-head .tb { background: rgba(255,255,255,0.06); }
 
     /* Threshold input */
     .threshold-input {
@@ -184,6 +239,8 @@
     }
     .threshold-input:focus { border-color: #EF4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
     .threshold-input::placeholder { color: #D1D5DB; font-weight: 500; }
+    .sma-input { width: 96px; }
+    .sma-input:focus { border-color: #D97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.12); }
 
     /* Threshold stat coloring */
     .stat-cell.over   { background: rgba(239,68,68,0.07); }
@@ -214,6 +271,13 @@
       text-align: center; font-size: 0.68rem; color: #C4C9D4; font-weight: 500;
       padding: 0.3rem 0 0.6rem; letter-spacing: 0.02em;
     }
+    .cat-empty {
+      position: absolute; inset: 1rem 1.25rem 1.5rem; display: none;
+      align-items: center; justify-content: center; text-align: center;
+      font-size: 0.82rem; color: #9CA3AF; font-weight: 600; pointer-events: none;
+    }
+    .cat-empty.show { display: flex; }
+    .cat-empty b { color: var(--accent); font-weight: 700; }
 
     /* ── Time range brush ── */
     .brush-section {
@@ -270,6 +334,27 @@
     .legend-row.active { background: rgba(79,70,229,0.08); }
     .legend-row.dimmed td,
     .legend-row.dimmed .legend-name { color: #C9D0D8 !important; }
+    .legend-swatch { cursor: pointer; box-shadow: 0 0 0 0 rgba(79,70,229,0); transition: box-shadow .12s; }
+    .legend-swatch:hover { box-shadow: 0 0 0 3px rgba(79,70,229,0.25); }
+    .legend-table th.lsort { cursor: pointer; user-select: none; white-space: nowrap; }
+    .legend-table th.lsort:hover { color: var(--accent); }
+    .legend-table th.lsort.on::after { content: attr(data-dir); margin-left: 3px; font-size: 0.8em; }
+
+    /* Period drill-down popover */
+    .cat-drill {
+      position: absolute; z-index: 30; display: none; width: 232px; max-height: 300px; overflow-y: auto;
+      background: rgba(17,24,39,0.95); color: #F9FAFB; font-size: 0.72rem; line-height: 1.4;
+      padding: 9px 11px; border-radius: 9px; box-shadow: 0 12px 32px rgba(0,0,0,0.32);
+    }
+    .cat-drill.show { display: block; }
+    .cat-drill .cd-hd { font-weight: 700; margin-bottom: 5px; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+    .cat-drill .cd-x  { cursor: pointer; opacity: 0.55; }
+    .cat-drill .cd-x:hover { opacity: 1; }
+    .cat-drill .cd-row { display: flex; align-items: center; gap: 6px; }
+    .cat-drill .cd-sw { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    .cat-drill .cd-nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cat-drill .cd-vl { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .cat-drill .cd-tot { margin-top: 5px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.2); font-weight: 700; display: flex; justify-content: space-between; gap: 10px; }
 
     @media (min-width: 480px) {
       body { padding: 1.75rem 1.25rem; }
@@ -446,6 +531,24 @@
       padding: 3px 8px 4px; border-radius: 6px; white-space: nowrap;
       box-shadow: 0 4px 14px rgba(0,0,0,0.25);
     }
+
+    /* ── Category chart tooltip — pinned to a chart corner, never over the cursor ── */
+    .cat-tip {
+      position: absolute; z-index: 20; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease;
+      background: rgba(17,24,39,0.92); color: #F9FAFB;
+      font-size: 0.7rem; font-family: inherit; line-height: 1.4;
+      padding: 8px 10px; border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+      overflow-y: auto;
+    }
+    .cat-tip .ctt-hd { font-weight: 700; font-size: 0.72rem; margin-bottom: 4px; opacity: .85; }
+    .cat-tip .ctt-list { column-gap: 16px; }
+    .cat-tip .ctt-row { display: flex; align-items: center; gap: 6px; white-space: nowrap; break-inside: avoid; }
+    .cat-tip .ctt-sw { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    .cat-tip .ctt-nm { flex: 1; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+    .cat-tip .ctt-vl { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .cat-tip .ctt-tot { margin-top: 5px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.18); font-weight: 700; display: flex; justify-content: space-between; gap: 10px; }
 
     /* ── Cache status bar ── */
     .cache-bar {
@@ -691,12 +794,6 @@
         </div>
       </div>
 
-      <!-- Standard charts -->
-      <div class="card" id="line-card">
-        <h2>Spending Over Time</h2>
-        <div class="chart-wrap"><canvas id="line-chart"></canvas></div>
-      </div>
-
       <!-- Spend heatmap (GitHub style) -->
       <div class="card" id="heatmap-card" style="display:none;">
         <h2>Daily Spend</h2>
@@ -735,6 +832,12 @@
           <span class="panel-title">📊 Spend by Category</span>
           <div class="panel-controls">
 
+            <!-- View -->
+            <div class="tg" title="What to plot">
+              <button class="tb active" data-group="view" data-val="category" onclick="setCatState('view','category')">By Category</button>
+              <button class="tb"        data-group="view" data-val="overall"  onclick="setCatState('view','overall')">Overall</button>
+            </div>
+
             <!-- Chart type -->
             <div class="tg" title="Chart type">
               <button class="tb active" data-group="type" data-val="area"  onclick="setCatState('type','area')">Area</button>
@@ -748,17 +851,43 @@
               <button class="tb"        data-group="stack" data-val="0" onclick="setCatState('stack',false)">Split</button>
             </div>
 
-            <!-- Aggregation -->
-            <div class="tg" title="Aggregation">
-              <button class="tb active" data-group="agg" data-val="0" onclick="setCatState('agg',false)">Sum</button>
-              <button class="tb"        data-group="agg" data-val="1" onclick="setCatState('agg',true)">Cumul.</button>
+            <!-- Scale -->
+            <div class="tg" id="tg-scale" title="Value scale">
+              <button class="tb active" data-group="scale" data-val="sum"        onclick="setCatState('scale','sum')">Sum</button>
+              <button class="tb"        data-group="scale" data-val="cumulative" onclick="setCatState('scale','cumulative')">Cumul.</button>
+              <button class="tb"        data-group="scale" data-val="share"      onclick="setCatState('scale','share')">Share&nbsp;%</button>
+              <button class="tb"        data-group="scale" data-val="index"      onclick="setCatState('scale','index')">Index</button>
             </div>
 
             <!-- Top N -->
-            <div class="tg" title="Show top N categories">
+            <div class="tg" id="tg-topn" title="Show top N categories">
               <button class="tb active" data-group="topn" data-val="0"  onclick="setCatState('topn',0)">All</button>
               <button class="tb"        data-group="topn" data-val="5"  onclick="setCatState('topn',5)">Top 5</button>
               <button class="tb"        data-group="topn" data-val="10" onclick="setCatState('topn',10)">Top 10</button>
+            </div>
+
+            <!-- Category filter -->
+            <div class="cat-filter" id="cat-filter">
+              <button class="icon-btn" id="cat-filter-btn" onclick="toggleCatFilterPop(event)" title="Include / exclude categories">☰ Categories</button>
+              <div class="cat-filter-pop" id="cat-filter-pop" hidden>
+                <div class="cfp-head">
+                  <input type="text" id="cfp-search" placeholder="Search…" oninput="renderCatFilterList()">
+                  <button class="tb" onclick="setAllCats(true)">All</button>
+                  <button class="tb" onclick="setAllCats(false)">None</button>
+                </div>
+                <label class="cfp-item" style="border-bottom:1px solid #EEE;border-radius:0;margin-bottom:2px"
+                       title="With Top 5/10, roll the remaining categories into one “Other” series instead of hiding them">
+                  <input type="checkbox" id="cat-other-cb" onchange="setCatState('other', this.checked)">
+                  <span class="cfp-nm">Group the rest as “Other”</span>
+                </label>
+                <div class="cfp-list" id="cfp-list"></div>
+              </div>
+            </div>
+
+            <!-- Overlays -->
+            <div class="cat-filter" id="ov-wrap">
+              <button class="icon-btn" id="ov-btn" onclick="toggleOverlayPop(event)" title="Analysis overlays">∿ Overlays</button>
+              <div class="cat-filter-pop ov-pop" id="ov-pop" hidden></div>
             </div>
 
             <!-- Threshold -->
@@ -766,8 +895,16 @@
               placeholder="₹ Budget/period" min="0" step="500"
               oninput="setCatThreshold(this.value)" title="Budget threshold line">
 
+            <!-- SMA (moving-average overlay) -->
+            <input type="number" id="sma-input" class="threshold-input sma-input"
+              placeholder="SMA window" min="0" max="60" step="1"
+              oninput="setCatSMA(this.value)" title="Simple moving average of the total — window in periods (0 = off)">
+
             <!-- Actions -->
+            <button class="icon-btn" onclick="exportCatPNG()" title="Download chart as PNG">⤓ PNG</button>
+            <button class="icon-btn" onclick="exportCatCSV()" title="Download data as CSV">⤓ CSV</button>
             <button class="icon-btn" onclick="resetZoom()" title="Reset zoom">⟳ Reset</button>
+            <button class="icon-btn" id="fs-rotate" onclick="toggleFsOrientation()" title="Rotate chart (landscape / portrait)">⟲</button>
             <button class="icon-btn" id="fs-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
           </div>
         </div>
@@ -798,7 +935,10 @@
         <!-- Chart -->
         <div class="panel-chart-wrap">
           <canvas id="cat-chart"></canvas>
-          <div class="zoom-hint">Scroll / pinch to zoom · Drag to pan · Double-click to reset</div>
+          <div id="cat-tip" class="cat-tip"></div>
+          <div id="cat-drill" class="cat-drill"></div>
+          <div id="cat-empty" class="cat-empty">Every category is filtered out — open&nbsp;<b>☰ Categories</b>&nbsp;to add some back.</div>
+          <div class="zoom-hint">Click a period for its breakdown · ⌘/Ctrl-scroll or pinch to zoom · Drag to pan · Double-click to reset</div>
         </div>
 
         <!-- Time range brush -->
@@ -818,14 +958,14 @@
         <div class="legend-table-wrap">
           <table class="legend-table">
             <thead>
-              <tr>
-                <th></th>
-                <th>Category</th>
-                <th>Total</th>
-                <th>Min</th>
-                <th>Max</th>
-                <th>Avg</th>
-                <th>Last</th>
+              <tr id="legend-head">
+                <th title="Click a swatch to isolate that category"></th>
+                <th class="lsort" data-sort="name">Category</th>
+                <th class="lsort" data-sort="total">Total</th>
+                <th class="lsort" data-sort="min">Min</th>
+                <th class="lsort" data-sort="max">Max</th>
+                <th class="lsort" data-sort="avg">Avg</th>
+                <th class="lsort" data-sort="last">Last</th>
               </tr>
             </thead>
             <tbody id="legend-tbody"></tbody>
@@ -863,8 +1003,34 @@
     return `rgba(${r},${g},${b},${a})`;
   }
 
+  /* ── Stable per-category colour: hash the name → HSL → hex.
+     A category keeps the same colour regardless of its rank, the filter, or Top N. ── */
+  function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))))
+                     .toString(16).padStart(2, "0");
+    return `#${f(0)}${f(8)}${f(4)}`;
+  }
+  const _catColorCache = {};
+  function catColor(name) {
+    if (name === "Overall") return "#4F46E5";
+    if (name === "Other")   return "#9CA3AF";
+    if (_catColorCache[name]) return _catColorCache[name];
+    let h = 0;
+    for (let i = 0; i < String(name).length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    return (_catColorCache[name] = hslToHex(h % 360, 58 + (h >> 8) % 22, 45 + (h >> 16) % 12));
+  }
+
+  /* ── Theme-aware axis colours ── */
+  function axisColors() {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    return { grid: dark ? "rgba(255,255,255,0.07)" : "#F3F4F6", tick: dark ? "#9CA3AF" : "#6B7280" };
+  }
+
   /* ── Chart instances ── */
-  let lineChart = null, donutChart = null, catChart = null, brushChart = null;
+  let donutChart = null, catChart = null, brushChart = null;
 
   /* ── Cache status ── */
   let _cacheTs = null, _totalCachedRows = 0;
@@ -971,10 +1137,7 @@
     // Re-render category panel with updated filter
     if (catDataCache) {
       pinnedIdx = -1;
-      const visibleCats = { ...catDataCache, by_category: catDataCache.by_category.filter(c => !_hid(c.name)) };
-      updateStats(visibleCats);
-      renderCatChart(getProcessedData(catDataCache));
-      document.getElementById("cat-panel").style.display = visibleCats.by_category.length ? "block" : "none";
+      refreshCatChart();
     }
   }
 
@@ -988,9 +1151,68 @@
   let catChartType  = 'area';   // 'area' | 'bar' | 'lines'
   let catStacked    = true;
   let catTopN       = 0;        // 0 = all
-  let catCumulative = false;
+  let catScale      = 'sum';    // 'sum' | 'cumulative' | 'share' | 'index'
+  let catOther      = false;    // with Top N, roll the tail into an "Other" series
   let catThreshold  = 0;
+  let catSMA        = 0;          // simple-moving-average window in periods (0 = off)
+  let catView       = 'category'; // 'category' | 'overall'
+  let catHidden     = new Set();  // category names excluded via the filter popover
+  let catOverlays   = new Set();  // 'trend'|'mean'|'median'|'ema'|'band'|'anomaly'
+  let catSolo       = null;       // soloed category name, or null
+  let catLegendSort = { key: 'total', dir: -1 };
   let isFullscreen  = false;
+  let catFsLandscape = null;      // null = auto (rotate on mobile); true/false = user choice
+
+  const esc = s => String(s).replace(/[&<>"']/g, m =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
+
+  /* ── Panel settings: persisted to localStorage + the URL (?cat=…) ── */
+  function catSettingsObj() {
+    return {
+      v: catView, t: catChartType, st: catStacked ? 1 : 0, sc: catScale,
+      tn: catTopN, ot: catOther ? 1 : 0, th: catThreshold || 0, ma: catSMA || 0,
+      ov: [...catOverlays].join(','), hd: [...catHidden].join('|'),
+      so: catSolo || '', ls: `${catLegendSort.key}:${catLegendSort.dir}`,
+      fl: catFsLandscape == null ? '' : (catFsLandscape ? 1 : 0),
+    };
+  }
+  function applyCatSettings(o) {
+    if (!o || typeof o !== 'object') return;
+    if (o.v)  catView = o.v;
+    if (o.t)  catChartType = o.t;
+    if (o.st != null) catStacked = !!+o.st;
+    if (o.sc) catScale = o.sc;
+    if (o.tn != null) catTopN = +o.tn || 0;
+    if (o.ot != null) catOther = !!+o.ot;
+    if (o.th != null) catThreshold = +o.th || 0;
+    if (o.ma != null) catSMA = Math.max(0, Math.min(60, +o.ma || 0));
+    if (typeof o.ov === 'string') catOverlays = new Set(o.ov.split(',').filter(Boolean));
+    if (typeof o.hd === 'string' && o.hd) catHidden = new Set(o.hd.split('|').filter(Boolean));
+    if (o.so) catSolo = o.so;
+    if (o.ls) { const [k, d] = String(o.ls).split(':'); if (k) catLegendSort = { key: k, dir: +d < 0 ? -1 : 1 }; }
+    if (o.fl === 0 || o.fl === 1 || o.fl === '0' || o.fl === '1') catFsLandscape = !!+o.fl;
+  }
+  function saveCatSettings() {
+    try { localStorage.setItem('exp_cat_v1', JSON.stringify(catSettingsObj())); } catch {}
+    if (typeof pushState === 'function') pushState();
+  }
+  /* Reflect current state onto the toolbar controls. */
+  function syncCatControls() {
+    const grp = (g, v) => document.querySelectorAll(`[data-group="${g}"]`).forEach(b =>
+      b.classList.toggle('active', String(b.dataset.val) === String(v)));
+    grp('view', catView);
+    grp('type', catChartType);
+    grp('stack', catStacked ? '1' : '0');
+    grp('scale', catScale);
+    grp('topn', catTopN);
+    const th = document.getElementById('threshold-input');
+    if (th && th !== document.activeElement) th.value = catThreshold || '';
+    const ma = document.getElementById('sma-input');
+    if (ma && ma !== document.activeElement) ma.value = catSMA || '';
+    const ocb = document.getElementById('cat-other-cb'); if (ocb) ocb.checked = catOther;
+    document.getElementById('ov-btn')?.classList.toggle('on', catOverlays.size > 0);
+    if (typeof syncCatDims === 'function') syncCatDims();
+  }
 
   /* ── Crosshair sync state ── */
   let _crosshairIdx = -1;
@@ -1009,11 +1231,10 @@
   document.getElementById("end-date").value   = today.toISOString().slice(0, 10);
   document.getElementById("start-date").value = monthsAgo(1).toISOString().slice(0, 10);
 
-  /* ── URL state ── */
+  /* ── URL + localStorage state ── */
   function pushState() {
     const p = new URLSearchParams(buildParams());
-    const t = document.getElementById("threshold-input").value;
-    if (t) p.set("threshold", t);
+    try { p.set("cat", btoa(JSON.stringify(catSettingsObj()))); } catch {}
     history.replaceState(null, "", "?" + p.toString());
   }
   (function restoreState() {
@@ -1029,12 +1250,21 @@
       if (p.has("day"))       document.getElementById("day").value        = p.get("day");
       if (p.has("start"))     document.getElementById("start-date").value = p.get("start");
       if (p.has("end"))       document.getElementById("end-date").value   = p.get("end");
-      if (p.has("threshold")) {
-        const t = p.get("threshold");
-        document.getElementById("threshold-input").value = t;
-        catThreshold = parseFloat(t) || 0;
-      }
     }
+
+    // Panel settings: URL (?cat=) wins, else localStorage, else defaults.
+    let applied = false;
+    if (p.has("cat")) {
+      try { applyCatSettings(JSON.parse(atob(p.get("cat")))); applied = true; } catch {}
+    }
+    if (!applied) {
+      try { applyCatSettings(JSON.parse(localStorage.getItem("exp_cat_v1"))); } catch {}
+    }
+    // Legacy single-purpose params still understood.
+    if (p.has("threshold")) catThreshold = parseFloat(p.get("threshold")) || catThreshold;
+    if (p.has("sma"))       catSMA = Math.max(0, Math.min(60, parseInt(p.get("sma"), 10) || catSMA));
+    syncCatControls();
+
     loadCharts();  // always auto-load on page open
   })();
 
@@ -1098,25 +1328,75 @@
     return data.period;
   }
 
-  /* ── Threshold ── */
-  function setCatThreshold(v) {
+  /* ── Debounced numeric inputs (were rebuilding the whole chart per keystroke) ── */
+  function _debounce(fn, ms) {
+    let t;
+    return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  }
+  const _applyThreshold = _debounce(v => {
     catThreshold = parseFloat(v) || 0;
-    if (catDataCache) { updateStats(catDataCache); refreshCatChart(); }
+    saveCatSettings();
+    if (catDataCache) refreshCatChart();
+  }, 220);
+  const _applySMA = _debounce(v => {
+    catSMA = Math.max(0, Math.min(60, parseInt(v, 10) || 0));
+    saveCatSettings();
+    if (catDataCache) refreshCatChart();
+  }, 220);
+  function setCatThreshold(v) { _applyThreshold(v); }
+  function setCatSMA(v)       { _applySMA(v); }
+  // Trailing simple moving average; first (w-1) points are null so the line
+  // starts only once there's a full window of history.
+  const _r2 = n => Math.round(n * 100) / 100;
+  function movingAverage(src, w) {
+    if (w < 2) return src.slice();
+    let run = 0;
+    return src.map((v, i) => {
+      run += v || 0;
+      if (i >= w) run -= src[i - w] || 0;
+      return i >= w - 1 ? _r2(run / w) : null;
+    });
+  }
+  function ema(src, span) {                     // exponential MA, seeded with src[0]
+    if (span < 2 || !src.length) return src.slice();
+    const k = 2 / (span + 1);
+    let prev = src[0] || 0;
+    return src.map((v, i) => (i === 0 ? prev : (prev = _r2((v || 0) * k + prev * (1 - k)))));
+  }
+  const meanOf   = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+  const medianOf = a => {
+    if (!a.length) return 0;
+    const s = [...a].sort((x, y) => x - y), m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  };
+  const stdevOf = a => {
+    if (a.length < 2) return 0;
+    const m = meanOf(a);
+    return Math.sqrt(a.reduce((s, v) => s + (v - m) ** 2, 0) / a.length);
+  };
+  function linreg(src) {                        // least-squares fit over index 0..n-1
+    const n = src.length;
+    if (n < 2) return src.slice();
+    let sx = 0, sy = 0, sxx = 0, sxy = 0;
+    src.forEach((y, x) => { sx += x; sy += y; sxx += x * x; sxy += x * y; });
+    const b = (n * sxy - sx * sy) / (n * sxx - sx * sx || 1);
+    const a = (sy - b * sx) / n;
+    return src.map((_, x) => _r2(a + b * x));
   }
 
-  /* ── Crosshair plugins ── */
+  /* ── Crosshair plugins (a vertical guide line on the category chart itself) ── */
   const _syncPlugin = {
     id: 'syncCrosshair',
     beforeEvent(chart, args) {
       const evt = args.event;
+      let idx = _crosshairIdx;
       if (evt.type === 'mousemove') {
         const pts = chart.getElementsAtEventForMode(evt.native, 'index', { intersect: false }, false);
-        const newLbl = pts.length ? chart.data.labels[pts[0].index] : null;
-        const newIdx = newLbl && lineChart ? lineChart.data.labels.indexOf(newLbl) : -1;
-        if (newIdx !== _crosshairIdx) { _crosshairIdx = newIdx; if (lineChart) lineChart.update('none'); }
+        idx = pts.length ? pts[0].index : -1;
       } else if (evt.type === 'mouseout') {
-        _crosshairIdx = -1; if (lineChart) lineChart.update('none');
+        idx = -1;
       }
+      if (idx !== _crosshairIdx) { _crosshairIdx = idx; args.changed = true; }
     }
   };
   const _drawPlugin = {
@@ -1150,15 +1430,6 @@
     }
   });
 
-  function renderLineChart(labels, values) {
-    if (lineChart) lineChart.destroy();
-    lineChart = new Chart(document.getElementById("line-chart").getContext("2d"), {
-      type: "line",
-      data: { labels, datasets: [{ data: values, borderColor: "#4F46E5", borderWidth: 1.5, backgroundColor: "rgba(79,70,229,0.06)", fill: true, tension: 0.4, pointRadius: 2.5, pointHoverRadius: 5, pointBackgroundColor: "#4F46E5", pointBorderColor: "#fff", pointBorderWidth: 1.5 }] },
-      options: baseOpts(window.innerWidth < 480 ? 1.4 : 2.8),
-      plugins: [_drawPlugin],
-    });
-  }
   /* ── Stats mini cards ── */
   function renderStatsCards(data) {
     const vals = (data.trend?.values || []).filter(v => v > 0);
@@ -1413,32 +1684,67 @@
 
   /* ── State change ── */
   function setCatState(key, val) {
-    if (key === 'type')  catChartType  = val;
-    if (key === 'stack') catStacked    = val;
-    if (key === 'agg')   catCumulative = val;
-    if (key === 'topn')  catTopN       = Number(val);
-    document.querySelectorAll(`[data-group="${key}"]`).forEach(btn => {
-      btn.classList.toggle('active', String(btn.dataset.val) === String(val === true ? '1' : val === false ? '0' : val));
-    });
-    // hide stack toggle for lines (doesn't make sense)
-    document.getElementById('tg-stack').style.opacity = catChartType === 'lines' ? '0.35' : '1';
+    if (key === 'type')  catChartType = val;
+    if (key === 'stack') catStacked   = val;
+    if (key === 'scale') catScale     = val;
+    if (key === 'topn')  catTopN      = Number(val);
+    if (key === 'view')  catView      = val;
+    if (key === 'other') catOther     = !!val;
+    if (key !== 'other') {
+      document.querySelectorAll(`[data-group="${key}"]`).forEach(btn => {
+        btn.classList.toggle('active', String(btn.dataset.val) === String(val === true ? '1' : val === false ? '0' : val));
+      });
+    }
+    syncCatDims();
     pinnedIdx = -1;
+    saveCatSettings();
     if (catDataCache) refreshCatChart();
   }
 
+  /* ── Category selection helpers ── */
+  function visibleCatList(raw) {
+    return raw.by_category.filter(c => !_hid(c.name) && !catHidden.has(c.name));
+  }
+  function sumSeries(cats, n) {
+    return Array.from({ length: n }, (_, i) =>
+      Math.round(cats.reduce((s, c) => s + (c.values[i] || 0), 0) * 100) / 100);
+  }
+  const _cume = arr => arr.reduce((acc, v) => {
+    acc.push(Math.round(((acc[acc.length - 1] || 0) + v) * 100) / 100);
+    return acc;
+  }, []);
+
   /* ── Data transforms ── */
   function getProcessedData(raw) {
-    let cats = raw.by_category.filter(c => !_hid(c.name)).slice(0, catTopN > 0 ? catTopN : undefined);
-    if (catCumulative) {
-      cats = cats.map(cat => ({
-        ...cat,
-        values: cat.values.reduce((acc, v) => {
-          acc.push(Math.round(((acc[acc.length - 1] || 0) + v) * 100) / 100);
-          return acc;
-        }, []),
-      }));
+    const n = raw.labels.length;
+    let cats = catSolo
+      ? raw.by_category.filter(c => c.name === catSolo && !_hid(c.name))
+      : visibleCatList(raw);
+    const overall = sumSeries(cats, n);   // raw total of the selected categories (drives stats + brush)
+
+    if (catView === 'overall') {
+      cats = [{ name: 'Overall', values: overall.slice(), total: overall.reduce((s, v) => s + v, 0) }];
+    } else if (catTopN > 0 && cats.length > catTopN) {
+      const head = cats.slice(0, catTopN);
+      if (catOther) {
+        const rv = sumSeries(cats.slice(catTopN), n);
+        head.push({ name: 'Other', values: rv, total: rv.reduce((s, v) => s + v, 0), _other: true });
+      }
+      cats = head;
     }
-    return { ...raw, by_category: cats };
+
+    if (catScale === 'cumulative') {
+      cats = cats.map(c => ({ ...c, values: _cume(c.values) }));
+    } else if (catScale === 'share') {
+      cats = cats.map(c => ({ ...c, values: c.values.map((v, i) => overall[i] ? Math.round((v / overall[i]) * 1000) / 10 : 0) }));
+    } else if (catScale === 'index') {
+      cats = cats.map(c => {
+        const base = c.values.find(v => v > 0) || 0;
+        return { ...c, values: base ? c.values.map(v => Math.round((v / base) * 1000) / 10) : c.values.map(() => 0) };
+      });
+    }
+
+    return { ...raw, by_category: cats, overall, _scale: catScale };
   }
 
   /* ── Stats ── */
@@ -1477,28 +1783,151 @@
   }
 
   /* ── Render category chart ── */
+  function syncCatDims() {
+    const overall = catView === 'overall';
+    const pctish  = catScale === 'share' || catScale === 'index';
+    document.getElementById('tg-stack').classList.toggle('tg-dim', overall || catChartType === 'lines' || catScale === 'share');
+    document.getElementById('tg-topn').classList.toggle('tg-dim', overall);
+    document.getElementById('threshold-input').classList.toggle('tg-dim', pctish);
+    document.getElementById('sma-input').classList.toggle('tg-dim', pctish);
+    document.getElementById('ov-btn')?.classList.toggle('tg-dim', pctish);
+    const ocb = document.getElementById('cat-other-cb');
+    if (ocb) ocb.checked = catOther;
+  }
   function refreshCatChart() {
     if (!catDataCache) return;
-    renderCatChart(getProcessedData(catDataCache));
+    syncCatDims();
+    const statCats = catSolo
+      ? catDataCache.by_category.filter(c => c.name === catSolo && !_hid(c.name))
+      : visibleCatList(catDataCache);
+    const statOverall = sumSeries(statCats, catDataCache.labels.length);
+    updateStats({ ...catDataCache, by_category: statCats, overall: statOverall });
+    const processed = getProcessedData(catDataCache);
+    renderCatChart(processed);
+    updateCatFilterBtn();
+    document.getElementById("cat-empty").classList.toggle("show", processed.by_category.length === 0);
+    // Keep the panel (and its filter control) visible as long as the dataset has
+    // categories — even if the user has filtered them all out for the moment.
+    const hasData = catDataCache.by_category.some(c => !_hid(c.name));
+    document.getElementById("cat-panel").style.display = hasData ? "block" : "none";
   }
+
+  /* ── Category filter popover ── */
+  function toggleCatFilterPop(e) {
+    e.stopPropagation();
+    const pop = document.getElementById('cat-filter-pop');
+    pop.hidden = !pop.hidden;
+    if (!pop.hidden) { renderCatFilterList(); document.getElementById('cfp-search').focus(); }
+  }
+  function renderCatFilterList() {
+    if (!catDataCache) return;
+    const q    = (document.getElementById('cfp-search').value || '').toLowerCase();
+    const list = catDataCache.by_category.filter(c => !_hid(c.name));
+    const rows = list
+      .map(c => ({ c, color: catColor(c.name) }))
+      .filter(({ c }) => c.name.toLowerCase().includes(q))
+      .map(({ c, color }) => `
+        <label class="cfp-item">
+          <input type="checkbox" data-name="${esc(c.name)}" ${catHidden.has(c.name) ? '' : 'checked'}>
+          <span class="cfp-sw" style="background:${color}"></span>
+          <span class="cfp-nm">${esc(c.name)}</span>
+          <span class="cfp-vl">${fmtK(c.total)}</span>
+        </label>`).join('');
+    document.getElementById('cfp-list').innerHTML =
+      rows || '<div style="padding:6px;font-size:.72rem;color:#9CA3AF">No matches</div>';
+  }
+  function toggleCatCheck(name, on) {
+    if (on) catHidden.delete(name); else catHidden.add(name);
+    catSolo = null;
+    saveCatSettings();
+    refreshCatChart();
+  }
+  function setAllCats(on) {
+    const list = catDataCache.by_category.filter(c => !_hid(c.name));
+    if (on) catHidden.clear();
+    else    list.forEach(c => catHidden.add(c.name));
+    catSolo = null;
+    saveCatSettings();
+    renderCatFilterList();
+    refreshCatChart();
+  }
+  function updateCatFilterBtn() {
+    const btn = document.getElementById('cat-filter-btn');
+    if (!btn || !catDataCache) return;
+    const total = catDataCache.by_category.filter(c => !_hid(c.name)).length;
+    const shown = total - catHidden.size;
+    const active = catHidden.size > 0 || !!catSolo;
+    btn.textContent = catSolo ? `☰ ${catSolo} only`
+                    : catHidden.size ? `☰ Categories (${shown}/${total})`
+                    : '☰ Categories';
+    btn.classList.toggle('on', active);
+  }
+  // Checkbox toggles (delegated) + close on outside click
+  document.getElementById('cfp-list')?.addEventListener('change', e => {
+    const cb = e.target.closest('input[type=checkbox]');
+    if (cb) toggleCatCheck(cb.dataset.name, cb.checked);
+  });
+  document.addEventListener('click', e => {
+    const cf = document.getElementById('cat-filter');
+    if (cf && !cf.contains(e.target)) document.getElementById('cat-filter-pop').hidden = true;
+    const ov = document.getElementById('ov-wrap');
+    if (ov && !ov.contains(e.target)) document.getElementById('ov-pop').hidden = true;
+  });
+
+  /* ── Analysis overlays popover ── */
+  const OVERLAYS = [
+    ['trend',   'Trend line',       '#6366F1'],
+    ['mean',    'Average',          '#10B981'],
+    ['median',  'Median',           '#14B8A6'],
+    ['ema',     'EMA',              '#8B5CF6'],
+    ['band',    'Volatility band',  '#F59E0B'],
+    ['anomaly', 'Anomaly markers',  '#EF4444'],
+  ];
+  function toggleOverlayPop(e) {
+    e.stopPropagation();
+    const p = document.getElementById('ov-pop');
+    p.hidden = !p.hidden;
+    if (!p.hidden) renderOverlayPop();
+  }
+  function renderOverlayPop() {
+    document.getElementById('ov-pop').innerHTML =
+      OVERLAYS.map(([k, lbl, col]) => `
+        <label class="cfp-item">
+          <input type="checkbox" data-ov="${k}" ${catOverlays.has(k) ? 'checked' : ''}>
+          <span class="cfp-sw" style="background:${col}"></span>
+          <span class="cfp-nm">${lbl}</span>
+        </label>`).join('') +
+      `<div class="ov-note">All overlays track the displayed total. EMA &amp; band need the MA-window field set.</div>`;
+  }
+  document.getElementById('ov-pop')?.addEventListener('change', e => {
+    const cb = e.target.closest('input[data-ov]');
+    if (!cb) return;
+    if (cb.checked) catOverlays.add(cb.dataset.ov); else catOverlays.delete(cb.dataset.ov);
+    document.getElementById('ov-btn').classList.toggle('on', catOverlays.size > 0);
+    saveCatSettings();
+    refreshCatChart();
+  });
 
   function renderCatChart(data) {
     if (catChart) catChart.destroy();
 
-    catColors = data.by_category.map((_, i) => COLORS[i % COLORS.length]);
+    const isOverall = catView === 'overall';
+    catColors = data.by_category.map(c => catColor(c.name));
     const isBar   = catChartType === 'bar';
-    const isLines = catChartType === 'lines';
-    const stacked = catStacked && !isLines;
+    const isLines = catChartType === 'lines' && !isOverall;
+    const stacked = catStacked && !isLines && !isOverall;
 
     const datasets = data.by_category.map((cat, i) => ({
       label:            cat.name,
       data:             cat.values,
-      backgroundColor:  hexToRgba(catColors[i], isLines ? 0.08 : isBar ? 0.80 : 0.58),
+      backgroundColor:  isOverall
+                          ? (isBar ? "rgba(79,70,229,0.80)" : "rgba(79,70,229,0.10)")
+                          : hexToRgba(catColors[i], isLines ? 0.08 : isBar ? 0.80 : 0.58),
       borderColor:      catColors[i],
-      borderWidth:      isLines ? 1.5 : 1,
+      borderWidth:      isOverall && !isBar ? 1.5 : isLines ? 1.5 : 1,
       fill:             isLines ? false : true,
-      tension:          isBar ? 0 : 0.35,
-      pointRadius:      isLines ? 2 : 0,
+      tension:          isBar ? 0 : isOverall ? 0.4 : 0.35,
+      pointRadius:      isOverall && !isBar ? 2.5 : isLines ? 2 : 0,
       pointHoverRadius: 5,
       pointBackgroundColor: catColors[i],
       pointBorderColor: "#fff",
@@ -1507,11 +1936,22 @@
       borderSkipped:    false,
     }));
 
-    const aspect = isFullscreen
-      ? (window.innerWidth < 600 ? 1.6 : 2.8)
-      : (window.innerWidth < 480 ? 1.4 : 2.4);
+    let aspect;
+    if (isFullscreen && document.getElementById("cat-panel").classList.contains("fs-landscape")) {
+      // Panel is rotated 90°: its layout width ≈ viewport height, and the chart
+      // area height ≈ viewport width minus the toolbar/legend chrome.
+      const w = window.innerHeight;
+      const h = Math.max(200, window.innerWidth - 110);
+      aspect = Math.min(3.6, Math.max(1.7, w / h));
+    } else if (isFullscreen) {
+      aspect = window.innerWidth < 600 ? 1.6 : 2.8;
+    } else {
+      aspect = window.innerWidth < 480 ? 1.4 : 2.4;
+    }
+    const _ax = axisColors();
+    const _overlaysApply = catScale !== 'share' && catScale !== 'index';
 
-    if (catThreshold > 0) {
+    if (catThreshold > 0 && _overlaysApply) {
       datasets.push({
         label: `Budget (${fmtK(catThreshold)})`,
         data: Array(data.labels.length).fill(catThreshold),
@@ -1520,10 +1960,73 @@
         borderWidth: 1.5,
         borderDash: [6, 4],
         backgroundColor: 'transparent',
-        fill: false, tension: 0,
+        fill: false, tension: 0, stepped: false,
+        stack: '_budget',        // own stack group → drawn at its raw value, not summed onto the stack
         pointRadius: 0, pointHoverRadius: 0,
         order: 999,
       });
+    }
+
+    // Sum of the *displayed* category series per period (tracks Cumulative & View).
+    const _totals = data.labels.map((_, i) =>
+      datasets.reduce((s, d) => s + (d.stack ? 0 : (d.data[i] || 0)), 0));
+
+    if (catSMA >= 2 && _overlaysApply) {
+      datasets.push({
+        label: `SMA (${catSMA})`,
+        data: movingAverage(_totals, catSMA),
+        type: 'line',
+        borderColor: 'rgba(217,119,6,0.95)',
+        borderWidth: 2,
+        borderDash: [3, 3],
+        backgroundColor: 'transparent',
+        fill: false, tension: 0.3, spanGaps: false,
+        stack: '_sma',           // own group → plotted at raw value, never stacked
+        pointRadius: 0, pointHoverRadius: 0,
+        order: 998,
+      });
+    }
+
+    if (_overlaysApply && catOverlays.size && data.by_category.length) {
+      const nz   = _totals.filter(v => v > 0);
+      const mean = meanOf(nz), med = medianOf(nz), sd = stdevOf(nz);
+      const ovLine = (label, arr, color, dash) => ({
+        label, data: arr, type: 'line', borderColor: color, borderWidth: 1.75,
+        borderDash: dash || [], backgroundColor: 'transparent', fill: false,
+        tension: 0.25, spanGaps: false, stack: '_ov', pointRadius: 0, pointHoverRadius: 0, order: 997,
+      });
+      if (catOverlays.has('trend'))
+        datasets.push(ovLine('Trend', linreg(_totals), '#6366F1', [8, 4]));
+      if (catOverlays.has('mean'))
+        datasets.push(ovLine(`Avg ${fmtK(mean)}`, _totals.map(() => _r2(mean)), '#10B981', [2, 3]));
+      if (catOverlays.has('median'))
+        datasets.push(ovLine(`Median ${fmtK(med)}`, _totals.map(() => _r2(med)), '#14B8A6', [2, 3]));
+      if (catOverlays.has('ema') && catSMA >= 2)
+        datasets.push(ovLine(`EMA (${catSMA})`, ema(_totals, catSMA), '#8B5CF6', [4, 3]));
+      if (catOverlays.has('band') && catSMA >= 2) {
+        const mid = movingAverage(_totals, catSMA);
+        datasets.push({
+          label: 'σ upper', data: mid.map(v => v == null ? null : _r2(v + sd)),
+          type: 'line', borderColor: 'rgba(245,158,11,0.30)', borderWidth: 1,
+          backgroundColor: 'transparent', fill: false, spanGaps: false,
+          stack: '_ov', pointRadius: 0, pointHoverRadius: 0, order: 996,
+        });
+        datasets.push({
+          label: `± σ band`, data: mid.map(v => v == null ? null : _r2(v - sd)),
+          type: 'line', borderColor: 'rgba(245,158,11,0.30)', borderWidth: 1,
+          backgroundColor: 'rgba(245,158,11,0.10)', fill: '-1', spanGaps: false,
+          stack: '_ov', pointRadius: 0, pointHoverRadius: 0, order: 996,
+        });
+      }
+      if (catOverlays.has('anomaly')) {
+        const thr = mean + 2 * sd;
+        datasets.push({
+          label: 'Anomaly', type: 'line', data: _totals.map(v => v > thr ? v : null),
+          borderColor: 'transparent', backgroundColor: '#EF4444',
+          pointRadius: 5, pointHoverRadius: 6, pointStyle: 'rectRot', showLine: false,
+          stack: '_ov', order: 995,
+        });
+      }
     }
 
     catChart = new Chart(document.getElementById("cat-chart").getContext("2d"), {
@@ -1532,21 +2035,19 @@
       options: {
         responsive: true, maintainAspectRatio: true, aspectRatio: aspect,
         interaction: { mode: "index", intersect: false },
+        onClick: (evt, _els, chart) => {
+          const p = chart.getElementsAtEventForMode(evt, "index", { intersect: false }, false);
+          if (p.length) showCatDrill(p[0].index); else hideCatDrill();
+        },
         plugins: {
           legend: { display: false },
           tooltip: {
-            cornerRadius: 10,
-            callbacks: {
-              label:  ctx => ctx.dataset.label?.startsWith('Budget') ? null : ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`,
-              footer: items => {
-                const sum = items.filter(i => !i.dataset.label?.startsWith('Budget')).reduce((s, i) => s + i.parsed.y, 0);
-                return `  Total: ${fmt(sum)}`;
-              },
-            }
+            enabled:  false,
+            external: catExternalTooltip,
           },
           zoom: {
             zoom: {
-              wheel:  { enabled: true, speed: 0.08 },
+              wheel:  { enabled: false },   // handled manually — see bindCatWheelZoom()
               pinch:  { enabled: true },
               mode:   "x",
             },
@@ -1561,47 +2062,183 @@
           x: {
             stacked: isBar ? stacked : false,
             grid:    { display: false },
-            ticks:   { font: { size: 10, family: "Inter" }, maxRotation: 45 },
+            ticks:   { font: { size: 10, family: "Inter" }, maxRotation: 45, color: _ax.tick },
           },
           y: {
             stacked:    stacked,
             beginAtZero: true,
-            grid:  { color: "#F3F4F6" },
-            ticks: { font: { size: 10, family: "Inter" }, callback: v => fmtK(v) },
+            max:   catScale === 'share' ? 100 : undefined,
+            grid:  { color: _ax.grid },
+            ticks: {
+              font: { size: 10, family: "Inter" }, color: _ax.tick,
+              callback: catScale === 'share' ? (v => v + '%')
+                      : catScale === 'index' ? (v => v)
+                      : (v => fmtK(v)),
+            },
           },
         },
       },
-      plugins: [_syncPlugin],
+      plugins: [_syncPlugin, _drawPlugin],
     });
 
     renderLegendTable(data);
     initBrush(data.labels, data.overall);
+    bindCatWheelZoom();
   }
 
-  /* ── Legend table ── */
+  /* ── Manual wheel zoom ──
+     The plugin's wheel handler applied one zoom step per raw wheel event, so a
+     trackpad (60+ events/sec + momentum coast) zoomed violently and hijacked
+     every attempt to just scroll past the chart. New rules:
+       • plain scroll  → page scrolls normally, chart does NOT zoom
+       • ⌘/Ctrl + scroll, or trackpad pinch → gentle, delta-proportional zoom
+     Zoom by pinch, ⌘-scroll, drag-to-pan, or the Time Range brush below. */
+  let _catWheelBound = false;
+  function bindCatWheelZoom() {
+    if (_catWheelBound) return;
+    const canvas = document.getElementById("cat-chart");
+    if (!canvas) return;
+    _catWheelBound = true;
+
+    canvas.addEventListener("wheel", e => {
+      if (!catChart) return;
+      // Only intercept when zooming is explicitly requested.
+      if (!e.ctrlKey && !e.metaKey) return;   // let the page scroll
+      e.preventDefault();
+
+      const rect = canvas.getBoundingClientRect();
+      const focalPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+      // deltaMode 1 = lines → approx px; clamp so momentum spikes can't lurch
+      let d = e.deltaY * (e.deltaMode === 1 ? 16 : 1);
+      d = Math.max(-60, Math.min(60, d));
+      const factor = Math.exp(-d * 0.004);    // ~±0.6% per unit, smooth
+      catChart.zoom({ x: Math.max(0.9, Math.min(1.11, factor)), focalPoint });
+    }, { passive: false });
+  }
+
+  /* ── External tooltip for the category chart ──
+     The built-in tooltip drew itself on top of the data. This one shows every
+     non-zero category for the hovered period (in 1–3 columns so the whole list
+     fits without covering the chart), and pins to whichever top corner the
+     cursor is furthest from — so it never sits under the pointer. */
+  function catExternalTooltip(context) {
+    const el = document.getElementById("cat-tip");
+    if (!el) return;
+    const tt = context.tooltip;
+    if (!tt || tt.opacity === 0) { el.style.opacity = 0; return; }
+
+    const isOverlay = dp => dp.dataset.stack && dp.dataset.stack[0] === '_';
+    // Overlay lines (SMA / EMA / Trend / Avg / Median …) shown as their own footer rows.
+    const ovPts = (tt.dataPoints || []).filter(dp =>
+      isOverlay(dp) && dp.parsed.y != null && dp.dataset.label && dp.dataset.label !== 'σ upper');
+    const pts = (tt.dataPoints || [])
+      .filter(dp => !isOverlay(dp) && dp.parsed.y > 0)
+      .sort((a, b) => b.parsed.y - a.parsed.y);
+    const total = pts.reduce((s, dp) => s + dp.parsed.y, 0);
+
+    const area = context.chart.chartArea;
+    const cv   = context.chart.canvas;
+    const areaH = area.bottom - area.top;
+    const areaW = area.right - area.left;
+
+    // Columns: enough to keep the list shorter than the plot, capped by width.
+    const cols = Math.max(1, Math.min(
+      Math.ceil(pts.length / 15),
+      Math.floor(areaW / 190) || 1,
+      3,
+    ));
+
+    el.innerHTML =
+      `<div class="ctt-hd">${tt.title?.[0] || ""}</div>` +
+      `<div class="ctt-list" style="column-count:${cols}">` +
+      pts.map(dp => `<div class="ctt-row">
+          <span class="ctt-sw" style="background:${catColor(dp.dataset.label)}"></span>
+          <span class="ctt-nm">${dp.dataset.label}</span>
+          <span class="ctt-vl">${fmt(dp.parsed.y)}</span>
+        </div>`).join("") +
+      `</div>` +
+      `<div class="ctt-tot"><span>Total (${pts.length})</span><span>${fmt(total)}</span></div>` +
+      ovPts.map(dp => `<div class="ctt-tot" style="color:${dp.dataset.borderColor && dp.dataset.borderColor !== 'transparent' ? dp.dataset.borderColor : dp.dataset.backgroundColor}">
+          <span>${dp.dataset.label}</span><span>${fmt(dp.parsed.y)}</span></div>`).join("");
+
+    el.style.maxHeight = (areaH - 12) + "px";
+
+    const mid    = (area.left + area.right) / 2;
+    const onLeft = tt.caretX > mid;                 // cursor on right → tip goes left
+    const tipW   = el.offsetWidth || 220;
+    let x = onLeft ? area.left + 6 : area.right - tipW - 6;
+    x = Math.max(area.left + 2, Math.min(x, area.right - tipW - 2));
+
+    el.style.left    = (cv.offsetLeft + x) + "px";
+    el.style.right   = "auto";
+    el.style.top     = (cv.offsetTop + area.top + 6) + "px";
+    el.style.opacity = 1;
+  }
+
+  /* ── Legend table (sortable; swatch = solo) ── */
   function renderLegendTable(data) {
     const grand = data.by_category.reduce((s, c) => s + c.total, 0) || 1;
-    document.getElementById("legend-tbody").innerHTML = data.by_category.map((cat, i) => {
-      const color = catColors[i];
-      const nonZ  = cat.values.filter(v => v > 0);
-      const min   = nonZ.length ? Math.min(...nonZ) : 0;
-      const max   = nonZ.length ? Math.max(...nonZ) : 0;
-      const avg   = nonZ.length ? cat.total / nonZ.length : 0;
-      const last  = cat.values.length ? cat.values[cat.values.length - 1] : 0;
-      const pct   = (cat.total / grand * 100).toFixed(1);
-      return `<tr class="legend-row" id="lrow-${i}"
-                onmouseenter="hoverCat(${i})" onmouseleave="unHoverCat()"
-                onclick="pinCat(${i})">
-          <td><span class="legend-swatch" style="background:${color}"></span></td>
-          <td><span class="legend-name">${cat.name}</span><span class="legend-pct" style="color:${color}">${pct}%</span></td>
-          <td>${fmtK(cat.total)}</td>
-          <td>${fmtK(min)}</td>
-          <td>${fmtK(max)}</td>
-          <td>${fmtK(avg)}</td>
-          <td>${fmtK(last)}</td>
+    const rows = data.by_category.map((cat, i) => {
+      const nonZ = cat.values.filter(v => v > 0);
+      return {
+        i, name: cat.name, color: catColor(cat.name),
+        total: cat.total,
+        min: nonZ.length ? Math.min(...nonZ) : 0,
+        max: nonZ.length ? Math.max(...nonZ) : 0,
+        avg: nonZ.length ? cat.total / nonZ.length : 0,
+        last: cat.values.length ? cat.values[cat.values.length - 1] : 0,
+      };
+    });
+    const { key, dir } = catLegendSort;
+    rows.sort((a, b) => key === 'name'
+      ? dir * String(a.name).localeCompare(String(b.name))
+      : dir * ((a[key] || 0) - (b[key] || 0)));
+
+    document.getElementById("legend-tbody").innerHTML = rows.map(r => {
+      const pct = (r.total / grand * 100).toFixed(1);
+      const soloed = catSolo === r.name;
+      return `<tr class="legend-row${soloed ? ' active' : ''}" data-di="${r.i}" data-name="${esc(r.name)}"
+                onmouseenter="hoverCat(${r.i})" onmouseleave="unHoverCat()" onclick="pinCat(${r.i})">
+          <td><span class="legend-swatch" style="background:${r.color}" title="Isolate ${esc(r.name)}"></span></td>
+          <td><span class="legend-name">${esc(r.name)}</span><span class="legend-pct" style="color:${r.color}">${pct}%</span></td>
+          <td>${fmtK(r.total)}</td>
+          <td>${fmtK(r.min)}</td>
+          <td>${fmtK(r.max)}</td>
+          <td>${fmtK(r.avg)}</td>
+          <td>${fmtK(r.last)}</td>
         </tr>`;
     }).join("");
+
+    document.querySelectorAll('#legend-head th.lsort').forEach(th => {
+      const on = th.dataset.sort === key;
+      th.classList.toggle('on', on);
+      th.dataset.dir = on ? (dir < 0 ? '▾' : '▴') : '';
+    });
   }
+  function soloCat(name) {
+    catSolo = (catSolo === name) ? null : name;
+    saveCatSettings();
+    refreshCatChart();
+  }
+  // Swatch click → solo that category (without triggering the row's pin handler)
+  document.getElementById('legend-tbody')?.addEventListener('click', e => {
+    const sw = e.target.closest('.legend-swatch');
+    if (!sw) return;
+    e.stopPropagation();
+    const name = sw.closest('tr')?.dataset.name;
+    if (name) soloCat(name);
+  }, true);
+  document.getElementById('legend-head')?.addEventListener('click', e => {
+    const th = e.target.closest('th.lsort');
+    if (!th || !catDataCache) return;
+    const k = th.dataset.sort;
+    catLegendSort = catLegendSort.key === k
+      ? { key: k, dir: -catLegendSort.dir }
+      : { key: k, dir: k === 'name' ? 1 : -1 };
+    saveCatSettings();
+    renderLegendTable(getProcessedData(catDataCache));
+  });
 
   /* ── Time range brush ── */
   function initBrush(labels, overallValues) {
@@ -1678,34 +2315,104 @@
   function _applyHL(focusIdx) {
     if (!catChart) return;
     catChart.data.datasets.forEach((ds, i) => {
+      if (ds.stack && ds.stack[0] === '_') return;  // leave overlays (_budget/_sma/_ov) alone
       const f = focusIdx === -1 || i === focusIdx;
       const isBar   = catChartType === 'bar';
       const isLines = catChartType === 'lines';
-      ds.backgroundColor = hexToRgba(catColors[i], f ? (isLines ? 0.12 : isBar ? 0.88 : 0.72) : 0.05);
-      ds.borderColor     = hexToRgba(catColors[i], f ? 1 : 0.12);
+      const col = catColor(ds.label);
+      ds.backgroundColor = hexToRgba(col, f ? (isLines ? 0.12 : isBar ? 0.88 : 0.72) : 0.05);
+      ds.borderColor     = hexToRgba(col, f ? 1 : 0.12);
       ds.borderWidth     = f ? (isLines ? 2.5 : 2) : 1;
       ds.order           = f ? 0 : i + 1;
     });
     catChart.update("none");
-    document.querySelectorAll(".legend-row").forEach((row, i) => {
-      row.classList.toggle("dimmed", focusIdx !== -1 && i !== focusIdx);
+    document.querySelectorAll(".legend-row").forEach(row => {
+      row.classList.toggle("dimmed", focusIdx !== -1 && +row.dataset.di !== focusIdx);
     });
   }
   function hoverCat(i)  { if (pinnedIdx !== -1) return; _applyHL(i); }
   function unHoverCat() { if (pinnedIdx !== -1) return; _applyHL(-1); }
   function pinCat(i) {
     pinnedIdx = pinnedIdx === i ? -1 : i;
-    document.querySelectorAll(".legend-row").forEach((row, j) => row.classList.toggle("active", j === pinnedIdx));
+    document.querySelectorAll(".legend-row").forEach(row =>
+      row.classList.toggle("active", +row.dataset.di === pinnedIdx));
     _applyHL(pinnedIdx);
   }
 
   /* ── Zoom / brush reset ── */
   function resetZoom() { resetBrush(); }
 
+  /* ── Export ── */
+  function _dlName(ext) {
+    const p = (document.getElementById("period-badge").textContent || "range").replace(/[^\w–-]+/g, "_");
+    return `spend-by-category_${p}.${ext}`;
+  }
+  function exportCatPNG() {
+    if (!catChart) return;
+    const a = document.createElement("a");
+    a.href = catChart.toBase64Image("image/png", 1);
+    a.download = _dlName("png");
+    a.click();
+  }
+  function exportCatCSV() {
+    if (!catDataCache) return;
+    const cats = visibleCatList(catDataCache);
+    const q = x => `"${String(x).replace(/"/g, '""')}"`;
+    const rows = [["Period", ...cats.map(c => c.name), "Total"]];
+    catDataCache.labels.forEach((lbl, i) => {
+      const vals = cats.map(c => c.values[i] || 0);
+      rows.push([lbl, ...vals, vals.reduce((s, v) => s + v, 0)]);
+    });
+    const csv = rows.map(r => r.map(q).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = _dlName("csv");
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  /* ── Period drill-down (click a period → its category breakdown) ── */
+  function hideCatDrill() { document.getElementById("cat-drill")?.classList.remove("show"); }
+  function showCatDrill(idx) {
+    if (!catChart || !catDataCache) return;
+    const d = document.getElementById("cat-drill");
+    const lbl = catDataCache.labels[idx] ?? "";
+    const src = catSolo
+      ? catDataCache.by_category.filter(c => c.name === catSolo && !_hid(c.name))
+      : visibleCatList(catDataCache);
+    const items = src.map(c => ({ name: c.name, v: c.values[idx] || 0 }))
+      .filter(x => x.v > 0).sort((a, b) => b.v - a.v);
+    if (!items.length) { hideCatDrill(); return; }
+    const tot = items.reduce((s, x) => s + x.v, 0);
+    d.innerHTML =
+      `<div class="cd-hd"><span>${esc(lbl)}</span><span class="cd-x" onclick="hideCatDrill()">✕</span></div>` +
+      items.map(x => `<div class="cd-row">
+          <span class="cd-sw" style="background:${catColor(x.name)}"></span>
+          <span class="cd-nm">${esc(x.name)}</span>
+          <span class="cd-vl">${fmt(x.v)}</span>
+        </div>`).join("") +
+      `<div class="cd-tot"><span>Total (${items.length})</span><span>${fmt(tot)}</span></div>`;
+
+    const area = catChart.chartArea, cv = catChart.canvas;
+    const meta = catChart.getDatasetMeta(0)?.data[idx];
+    const px   = meta ? meta.x : (area.left + area.right) / 2;
+    let x = Math.min(Math.max(px + 12, area.left), area.right - 232);
+    d.style.left = (cv.offsetLeft + x) + "px";
+    d.style.top  = (cv.offsetTop + area.top + 6) + "px";
+    d.classList.add("show");
+  }
+  document.addEventListener("click", e => {
+    const d = document.getElementById("cat-drill");
+    if (d && d.classList.contains("show") && !d.contains(e.target) &&
+        e.target?.id !== "cat-chart") hideCatDrill();
+  });
+
   /* ── Fullscreen ── */
   let _fsPrev = null;  // { parent, nextSibling } — saved position for restoration
 
   function toggleFullscreen() { setFullscreen(!isFullscreen); }
+  const _isNarrow = () => window.matchMedia("(max-width: 767px)").matches;
+  const _rerenderCat = () => { if (catChart) { catChart.destroy(); refreshCatChart(); } };
 
   function setFullscreen(on) {
     isFullscreen = on;
@@ -1726,15 +2433,35 @@
     }
 
     panel.classList.toggle("fullscreen", on);
+    // Landscape rotation: honour the user's choice, else auto-rotate on mobile.
+    const land = on && (catFsLandscape == null ? _isNarrow() : catFsLandscape);
+    panel.classList.toggle("fs-landscape", !!land);
     overlay.classList.toggle("open", on);
     btn.textContent = on ? "✕" : "⛶";
     btn.title       = on ? "Exit fullscreen (Esc)" : "Fullscreen";
     document.body.style.overflow = on ? "hidden" : "";
 
-    setTimeout(() => { if (catChart) { catChart.destroy(); refreshCatChart(); } }, 60);
+    setTimeout(_rerenderCat, 60);
   }
 
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && isFullscreen) setFullscreen(false); });
+  function toggleFsOrientation() {
+    const panel = document.getElementById("cat-panel");
+    if (!panel.classList.contains("fullscreen")) { setFullscreen(true); return; }
+    catFsLandscape = !panel.classList.contains("fs-landscape");
+    panel.classList.toggle("fs-landscape", catFsLandscape);
+    saveCatSettings();
+    setTimeout(_rerenderCat, 60);
+  }
+
+  window.addEventListener("orientationchange", () => {
+    if (isFullscreen) setTimeout(_rerenderCat, 250);
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    if (document.getElementById("cat-drill")?.classList.contains("show")) { hideCatDrill(); return; }
+    if (isFullscreen) setFullscreen(false);
+  });
 
   /* ══════════════════════════════════════════
      MAIN LOAD
@@ -1773,7 +2500,6 @@
       document.getElementById("grand-total").textContent  = fmt(data.grand_total);
 
       renderStatsCards(data);
-      renderLineChart(data.trend.labels, data.trend.values);
 
       loadComparison(data);
       loadHeatmap(qsCat);
@@ -1801,10 +2527,13 @@
       if (catRes.ok && catData.by_category?.length) {
         catDataCache = catData;
         pinnedIdx    = -1;
-        const visibleCats = { ...catData, by_category: catData.by_category.filter(c => !_hid(c.name)) };
-        updateStats(visibleCats);
-        renderCatChart(getProcessedData(catData));
-        document.getElementById("cat-panel").style.display = visibleCats.by_category.length ? "block" : "none";
+        // Drop stale filter / solo entries that don't exist in the new dataset.
+        const names = new Set(catData.by_category.map(c => c.name));
+        catHidden.forEach(n => { if (!names.has(n)) catHidden.delete(n); });
+        if (catSolo && !names.has(catSolo)) catSolo = null;
+        syncCatControls();
+        renderCatFilterList();
+        refreshCatChart();
       } else {
         document.getElementById("cat-panel").style.display = "none";
       }
