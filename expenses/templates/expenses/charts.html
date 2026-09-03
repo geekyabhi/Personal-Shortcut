@@ -43,6 +43,7 @@
     .topbar {
       display: flex; align-items: center; justify-content: space-between;
       gap: 0.75rem; margin-bottom: 2rem; animation: _fadeIn 0.5s ease both;
+      position: relative; z-index: 50;
     }
     /* ── Nav ── */
     nav {
@@ -67,7 +68,7 @@
     .nav-drop-btn svg { width: 17px; height: 17px; flex: none; }
     .nav-drop-menu {
       position: absolute; top: calc(100% + 8px); left: 0; z-index: 10;
-      min-width: 200px; max-height: 70vh; overflow-y: auto;
+      width: 224px; max-width: calc(100vw - 2.2rem); max-height: 70vh; overflow-y: auto;
       padding: 0.35rem; display: flex; flex-direction: column; gap: 0.12rem;
       background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 14px;
       box-shadow: 0 14px 44px rgba(0,0,0,0.18);
