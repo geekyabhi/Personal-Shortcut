@@ -182,6 +182,12 @@ class ExpensesService:
             srcs = [opt["name"] for opt in src_prop.get("multi_select", [])]
             src = srcs[0] if srcs else ""
         date_val = ((props.get("Date") or {}).get("date") or {}).get("start", "")[:10]
+        comment = "".join(
+            t.get("plain_text", "") for t in (props.get("Comment") or {}).get("rich_text", [])
+        ).strip()
+        other_partner = "".join(
+            t.get("plain_text", "") for t in (props.get("Other Partner") or {}).get("rich_text", [])
+        ).strip()
         return {
             "page_id": row.get("id", ""),
             "title": self._extract_title(props),
@@ -189,6 +195,13 @@ class ExpensesService:
             "date": date_val,
             "categories": cats,
             "source": src,
+            "comment": comment,
+            "other_partner": other_partner,
+            "add_to_split": bool((props.get("Add to Split") or {}).get("checkbox")),
+            "from_split": bool((props.get("From Split") or {}).get("checkbox")),
+            "split_added": bool((props.get("Split Added") or {}).get("checkbox")),
+            "processed": bool((props.get("Processed") or {}).get("checkbox")),
+            "splitwise_id": (props.get("Splitwise ID") or {}).get("number"),
         }
 
     def _detect_title_prop(self, rows) -> str:
@@ -487,6 +500,7 @@ class ExpensesService:
         start: str,
         end: str,
         force: bool,
+        partial: bool = False,
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, group_by=group_by)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -494,7 +508,9 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+            force=force, partial=partial
+        )
         rows = self._filter_by_date(all_rows, range_start, range_end)
 
         group_totals: dict[str, float] = {}
@@ -513,6 +529,7 @@ class ExpensesService:
             "grand_total": round(grand_total, 2),
             "cache_ts": cache_ts,
             "from_cache": from_cache,
+            "partial": is_partial,
             "total_rows": len(all_rows),
         }
         response.update(self._period_meta(period, year, month, range_start, range_end))
@@ -541,6 +558,7 @@ class ExpensesService:
         start: str,
         end: str,
         force: bool,
+        partial: bool = False,
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -548,7 +566,9 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+            force=force, partial=partial
+        )
         rows = self._filter_by_date(all_rows, range_start, range_end)
         labels, values = self._build_timeseries(period, year, rows, range_start, range_end)
         return {
@@ -557,6 +577,7 @@ class ExpensesService:
             "period": period,
             "cache_ts": cache_ts,
             "from_cache": from_cache,
+            "partial": is_partial,
             "total_rows": len(all_rows),
         }
 
@@ -571,6 +592,7 @@ class ExpensesService:
         start: str,
         end: str,
         force: bool,
+        partial: bool = False,
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, group_by=group_by)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -578,7 +600,9 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+            force=force, partial=partial
+        )
         rows = self._filter_by_date(all_rows, range_start, range_end)
 
         grand_total = round(sum(
@@ -618,6 +642,7 @@ class ExpensesService:
             ),
             "cache_ts": cache_ts,
             "from_cache": from_cache,
+            "partial": is_partial,
             "total_rows": len(all_rows),
         }
         response.update(self._period_meta(period, year, month, range_start, range_end))
@@ -638,6 +663,7 @@ class ExpensesService:
         start: str,
         end: str,
         force: bool,
+        partial: bool = False,
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -645,7 +671,9 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+            force=force, partial=partial
+        )
         rows = self._filter_by_date(all_rows, range_start, range_end)
         labels, overall_values, category_series = self._build_category_timeseries(
             period, year, rows, range_start, range_end
@@ -657,6 +685,7 @@ class ExpensesService:
             "by_category": category_series,
             "cache_ts": cache_ts,
             "from_cache": from_cache,
+            "partial": is_partial,
             "total_rows": len(all_rows),
         }
 
@@ -670,6 +699,7 @@ class ExpensesService:
         start: str,
         end: str,
         force: bool,
+        partial: bool = False,
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -677,7 +707,9 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+            force=force, partial=partial
+        )
         rows = self._filter_by_date(all_rows, range_start, range_end)
 
         cat_totals: dict[str, dict] = {}
@@ -746,6 +778,7 @@ class ExpensesService:
             },
             "cache_ts": cache_ts,
             "from_cache": from_cache,
+            "partial": is_partial,
             "total_rows": len(all_rows),
         }
 
@@ -767,6 +800,8 @@ class ExpensesService:
         force: bool,
         page: int,
         page_size: int,
+        split_filter: str = "",
+        partial: bool = False,
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, sort=sort)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -774,7 +809,9 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+            force=force, partial=partial
+        )
         rows = self._filter_by_date(all_rows, range_start, range_end)
 
         filter_cats = [c.strip() for c in category.split(",") if c.strip()] if category else []
@@ -792,6 +829,14 @@ class ExpensesService:
             if source and e["source"] != source:
                 continue
             if search and search not in e["title"].lower():
+                continue
+            if split_filter == "needs" and not (e["add_to_split"] and not e["split_added"]):
+                continue
+            if split_filter == "done" and not e["split_added"]:
+                continue
+            if split_filter == "flagged" and not e["add_to_split"]:
+                continue
+            if split_filter == "unflagged" and e["add_to_split"]:
                 continue
 
             entries.append(e)
@@ -818,6 +863,7 @@ class ExpensesService:
             "entries": entries[start_idx: start_idx + page_size],
             "cache_ts": cache_ts,
             "from_cache": from_cache,
+            "partial": is_partial,
             "total_rows": len(all_rows),
         }
 
@@ -831,6 +877,7 @@ class ExpensesService:
         start: str,
         end: str,
         force: bool,
+        partial: bool = False,
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
         _, range_start, range_end = self._build_date_filter(
@@ -838,7 +885,9 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache = self.dl.get_cached_rows(force=force)
+        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+            force=force, partial=partial
+        )
         rows = self._filter_by_date(all_rows, range_start, range_end)
 
         daily: dict[str, float] = {}
@@ -861,7 +910,42 @@ class ExpensesService:
             "range_end": range_end.isoformat() if range_end else None,
             "cache_ts": cache_ts,
             "from_cache": from_cache,
+            "partial": is_partial,
         }
+
+    @staticmethod
+    def _extra_props(
+        comment=None,
+        other_partner=None,
+        add_to_split=None,
+        from_split=None,
+        split_added=None,
+        processed=None,
+        splitwise_id=None,
+    ) -> dict:
+        """Notion property payloads for the optional columns. A value of
+        ``None`` means 'leave this column untouched'."""
+        props: dict = {}
+        if comment is not None:
+            props["Comment"] = {
+                "rich_text": [{"text": {"content": comment[:2000]}}] if comment else []
+            }
+        if other_partner is not None:
+            props["Other Partner"] = {
+                "rich_text": [{"text": {"content": other_partner[:2000]}}] if other_partner else []
+            }
+        if add_to_split is not None:
+            props["Add to Split"] = {"checkbox": bool(add_to_split)}
+        if from_split is not None:
+            props["From Split"] = {"checkbox": bool(from_split)}
+        if split_added is not None:
+            props["Split Added"] = {"checkbox": bool(split_added)}
+        if processed is not None:
+            props["Processed"] = {"checkbox": bool(processed)}
+        if splitwise_id is not None:
+            s = str(splitwise_id).strip()
+            props["Splitwise ID"] = {"number": int(float(s)) if s else None}
+        return props
 
     def create_entry(
         self,
@@ -870,8 +954,11 @@ class ExpensesService:
         date_str: str,
         categories: list,
         source: str,
+        **extra,
     ) -> str:
-        """Validates fields, creates the Notion page, busts cache. Returns page_id."""
+        """Validates fields, creates the Notion page, busts cache. Returns page_id.
+        ``extra`` may carry comment / other_partner / add_to_split / from_split /
+        split_added / splitwise_id."""
         if not name:
             raise ValueError("Name is required")
         if amount is None:
@@ -879,12 +966,72 @@ class ExpensesService:
         if not date_str:
             raise ValueError("Date is required")
 
-        cached_rows = self.dl.__class__._cache.get("rows") or []
+        cached_rows, _, _, _ = self.dl.get_cached_rows()
         title_prop = self._detect_title_prop(cached_rows)
         source_type = self._detect_source_type(cached_rows)
         properties = self._build_page_properties(
             name, amount, date_str, categories, source, title_prop, source_type
         )
+        properties.update(self._extra_props(**extra))
+        result = self.dl.create_page(properties)
+        self.dl.bust_cache()
+        return result.get("id", "")
+
+    SPLITWISE_ID_PROP = "Splitwise ID"
+
+    def imported_splitwise_ids(self):
+        """Set of Splitwise expense ids already present in Notion, or None if
+        the 'Splitwise ID' column does not exist (dedupe unavailable).
+
+        Uses a narrow filtered query (rows that carry a Splitwise id), not
+        the full dataset.
+        """
+        ids, exists = self.dl.imported_splitwise_ids(self.SPLITWISE_ID_PROP)
+        return ids if exists else None
+
+    def create_from_split(
+        self,
+        name: str,
+        amount,
+        date_str: str,
+        sources: list,
+        comment: str,
+        splitwise_id=None,
+    ) -> str:
+        """Create a Notion row from a Splitwise import: Category fixed to
+        'Splitwise', 'From Split' ticked, Source = the payer(s), the
+        breakdown in Comment, and the Splitwise expense id recorded (if the
+        'Splitwise ID' column exists). Returns the page_id."""
+        if not name:
+            raise ValueError("Name is required")
+        if amount is None:
+            raise ValueError("Amount is required")
+        if not date_str:
+            raise ValueError("Date is required")
+
+        cached_rows, _, _, _ = self.dl.get_cached_rows()
+        title_prop = self._detect_title_prop(cached_rows)
+        source_type = self._detect_source_type(cached_rows)
+        sources = [s for s in (sources or []) if s]
+
+        properties = {
+            title_prop: {"title": [{"text": {"content": name}}]},
+            "Amount": {"number": float(amount)},
+            "Date": {"date": {"start": date_str}},
+            "Category": {"multi_select": [{"name": "Splitwise"}]},
+            "From Split": {"checkbox": True},
+            "Comment": {"rich_text": [{"text": {"content": (comment or "")[:2000]}}]},
+        }
+        if source_type == "multi_select":
+            properties["Source"] = {"multi_select": [{"name": s} for s in sources]}
+        else:
+            properties["Source"] = {"select": {"name": sources[0]} if sources else None}
+
+        if splitwise_id is not None:
+            _, has_swid = self.dl.imported_splitwise_ids(self.SPLITWISE_ID_PROP)
+            if has_swid:
+                properties[self.SPLITWISE_ID_PROP] = {"number": int(splitwise_id)}
+
         result = self.dl.create_page(properties)
         self.dl.bust_cache()
         return result.get("id", "")
@@ -897,8 +1044,11 @@ class ExpensesService:
         date_str: str,
         categories: list,
         source: str,
+        **extra,
     ) -> None:
-        """Validates fields, patches the Notion page, busts cache."""
+        """Validates fields, patches the Notion page, busts cache.
+        ``extra`` may carry comment / other_partner / add_to_split / from_split /
+        split_added / splitwise_id."""
         if not name:
             raise ValueError("Name is required")
         if amount is None:
@@ -906,16 +1056,32 @@ class ExpensesService:
         if not date_str:
             raise ValueError("Date is required")
 
-        cached_rows = self.dl.__class__._cache.get("rows") or []
+        cached_rows, _, _, _ = self.dl.get_cached_rows()
         title_prop = self._detect_title_prop(cached_rows)
         source_type = self._detect_source_type(cached_rows)
         properties = self._build_page_properties(
             name, amount, date_str, categories, source, title_prop, source_type
         )
+        properties.update(self._extra_props(**extra))
         self.dl.patch_page(page_id, {"properties": properties})
         self.dl.bust_cache()
 
     def delete_entry(self, page_id: str) -> None:
         """Archives the Notion page and busts cache."""
         self.dl.patch_page(page_id, {"archived": True})
+        self.dl.bust_cache()
+
+    def get_entry(self, page_id: str) -> dict:
+        """Return a single entry (as `_row_to_entry`) from the cached rows."""
+        rows, _, _, _ = self.dl.get_cached_rows()
+        for row in rows:
+            if row.get("id") == page_id:
+                return self._row_to_entry(row)
+        raise ValueError("Expense not found")
+
+    def mark_split_added(self, page_id: str, value: bool = True) -> None:
+        """Tick / untick the Notion 'Split Added' checkbox and bust cache."""
+        self.dl.patch_page(
+            page_id, {"properties": {"Split Added": {"checkbox": value}}}
+        )
         self.dl.bust_cache()

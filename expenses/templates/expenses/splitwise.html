@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Splitwise</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234F46E5'/><text x='16' y='22' text-anchor='middle' font-family='system-ui' font-weight='800' font-size='14' fill='white'>PS</text></svg>">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Shortcut">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { overflow-x: hidden; }
+    :root { --accent: #4F46E5; --accent-2: #7C3AED; --grad: linear-gradient(135deg, #4F46E5, #7C3AED); }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F5F4FA; color: #111827;
+      min-height: 100vh; padding: 1.25rem 0.75rem; position: relative; overflow-x: hidden;
+    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
+    .orb-1 { width: 450px; height: 450px; background: rgba(79,70,229,0.10); top: -120px; right: -80px; }
+    .orb-2 { width: 350px; height: 350px; background: rgba(124,58,237,0.08); bottom: -100px; left: -80px; }
+
+    .container { max-width: 1000px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+
+    nav {
+      display: inline-flex; gap: 0.2rem; flex-wrap: wrap;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); margin-bottom: 2rem;
+    }
+    nav a { padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280; }
+    nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
+    nav a:not(.active):hover { background: rgba(79,70,229,0.07); color: var(--accent); }
+
+    .head-row { display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 500; letter-spacing: -0.03em;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .as-who { font-size: 0.85rem; color: #9CA3AF; }
+    .refresh-btn {
+      margin-left: auto; font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.95rem;
+      border-radius: 100px; border: 1px solid rgba(0,0,0,0.12); background: rgba(255,255,255,0.7);
+      color: #6B7280; cursor: pointer;
+    }
+    .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .card {
+      background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
+      padding: 1.4rem; margin-bottom: 1.25rem; box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+    }
+    .card h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: #374151; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .stat { background: rgba(0,0,0,0.03); border-radius: 16px; padding: 1.1rem 1.2rem; }
+    .stat-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9CA3AF; }
+    .stat-value { font-size: 1.55rem; font-weight: 800; margin-top: 0.35rem; letter-spacing: -0.02em; }
+    .pos { color: #10B981; } .neg { color: #EF4444; } .zero { color: #9CA3AF; }
+
+    /* ── Directory ── */
+    .dir-item {
+      display: flex; align-items: center; gap: 0.8rem; width: 100%; text-align: left;
+      padding: 0.85rem 0.4rem; border: none; background: transparent; cursor: pointer;
+      border-bottom: 1px solid rgba(0,0,0,0.06); font: inherit; color: inherit;
+    }
+    .dir-item:last-child { border-bottom: none; }
+    .dir-item:hover { background: rgba(79,70,229,0.05); border-radius: 10px; }
+    .dir-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--grad); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex: none; }
+    .dir-body { flex: 1; min-width: 0; }
+    .dir-name { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dir-sub { font-size: 0.76rem; color: #9CA3AF; margin-top: 0.1rem; }
+    .dir-chev { color: #C4C7D0; font-size: 1.1rem; flex: none; }
+
+    /* ── Group detail ── */
+    .back-btn {
+      font-size: 0.8rem; font-weight: 600; color: #6B7280; background: none; border: none;
+      cursor: pointer; padding: 0.3rem 0; margin-bottom: 0.9rem;
+    }
+    .back-btn:hover { color: var(--accent); }
+    .detail-head { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+    .detail-head h2 { margin: 0; font-size: 1.1rem; }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; }
+    .fchip {
+      font-size: 0.76rem; font-weight: 600; padding: 0.32rem 0.8rem; border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.12); background: rgba(255,255,255,0.6); color: #6B7280; cursor: pointer;
+    }
+    .fchip:hover { border-color: var(--accent); color: var(--accent); }
+    .fchip.active { background: var(--grad); border-color: transparent; color: #fff; }
+    .detail-controls { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .detail-controls input, .detail-controls select, #dir-search {
+      flex: 1; min-width: 140px; padding: 0.45rem 0.7rem; border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.14); background: #fff; font-size: 0.83rem;
+    }
+    #dir-search { width: 100%; margin-bottom: 0.8rem; }
+    #dir-list { max-height: 340px; overflow-y: auto; margin: 0 -0.3rem; padding: 0 0.3rem; }
+    #dir-list::-webkit-scrollbar { width: 8px; }
+    #dir-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 8px; }
+    [data-theme="dark"] #dir-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+    .detail-summary { font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 0.7rem; padding: 0.55rem 0.8rem; background: rgba(0,0,0,0.03); border-radius: 10px; }
+    .bulk-bar { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; margin-bottom: 0.7rem; padding: 0.5rem 0.8rem; background: rgba(79,70,229,0.08); border: 1px solid var(--accent); border-radius: 12px; font-size: 0.82rem; font-weight: 600; }
+    .bulk-bar button { font-size: 0.77rem; font-weight: 700; padding: 0.32rem 0.8rem; border-radius: 8px; cursor: pointer; border: none; }
+    .bulk-bar .b-go { background: var(--accent); color: #fff; }
+    .bulk-bar .b-go:disabled { opacity: 0.5; cursor: default; }
+    .bulk-bar .b-plain { background: transparent; border: 1px solid rgba(0,0,0,0.15); color: #6B7280; }
+    .imp-pick-wrap { flex: none; display: flex; align-items: center; padding-right: 0.1rem; }
+    .imp-pick-wrap input { width: 15px; height: 15px; cursor: pointer; }
+    .more-btn {
+      margin-top: 0.9rem; width: 100%; padding: 0.55rem; border-radius: 10px; border: 1px dashed rgba(0,0,0,0.2);
+      background: transparent; color: #6B7280; font-weight: 600; font-size: 0.82rem; cursor: pointer;
+    }
+    .more-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .row {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+      padding: 0.7rem 0; border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .row:last-child { border-bottom: none; }
+    .row-main { min-width: 0; }
+    .row-title { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-sub { font-size: 0.76rem; color: #9CA3AF; margin-top: 0.15rem; }
+    .row-right { text-align: right; flex: none; }
+    .row-amt { font-weight: 700; font-size: 0.9rem; }
+    .row-net { font-size: 0.74rem; margin-top: 0.15rem; }
+
+    .chip { display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.5rem; border-radius: 999px; background: rgba(79,70,229,0.1); color: var(--accent); margin-right: 0.3rem; }
+    .chip.muted { background: rgba(0,0,0,0.05); color: #6B7280; }
+    .chip.pay { background: rgba(16,185,129,0.12); color: #059669; }
+
+    .import-btn {
+      font-size: 0.7rem; font-weight: 600; padding: 0.28rem 0.7rem; border-radius: 8px;
+      border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; margin-top: 0.35rem;
+    }
+    .import-btn:hover:not(:disabled) { background: var(--accent); color: #fff; }
+    .import-btn:disabled { opacity: 0.5; cursor: default; }
+
+    .muted-note { font-size: 0.85rem; color: #9CA3AF; }
+    .banner { background: rgba(245,158,11,0.12); color: #92400E; border: 1px solid rgba(245,158,11,0.35); border-radius: 14px; padding: 0.9rem 1.1rem; font-size: 0.85rem; margin-bottom: 1.25rem; }
+
+    .theme-btn {
+      position: fixed; top: 1rem; right: 1rem; z-index: 50; width: 40px; height: 40px; border-radius: 50%;
+      border: none; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.12); font-size: 1.1rem; cursor: pointer;
+    }
+    #toast-container { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast { background: #111827; color: #fff; font-size: 0.82rem; font-weight: 600; padding: 0.6rem 1rem; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
+    .toast.success { background: #059669; } .toast.error { background: #DC2626; }
+
+    @media (max-width: 760px) { .stat-grid { grid-template-columns: 1fr; } }
+
+    [data-theme="dark"] body { background: #0F0F14; color: #F9FAFB; }
+    [data-theme="dark"] .card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
+    [data-theme="dark"] .card h2, [data-theme="dark"] .detail-summary { color: #E5E7EB; }
+    [data-theme="dark"] nav { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] nav a { color: #9CA3AF; }
+    [data-theme="dark"] .stat, [data-theme="dark"] .detail-summary { background: rgba(255,255,255,0.05); }
+    [data-theme="dark"] .row, [data-theme="dark"] .dir-item { border-bottom-color: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .dir-item:hover { background: rgba(255,255,255,0.05); }
+    [data-theme="dark"] .refresh-btn, [data-theme="dark"] .fchip { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #9CA3AF; }
+    [data-theme="dark"] .detail-controls input, [data-theme="dark"] .detail-controls select, [data-theme="dark"] #dir-search { background: #1B1B28; color: #F9FAFB; border-color: rgba(255,255,255,0.14); }
+    [data-theme="dark"] .chip.muted { background: rgba(255,255,255,0.08); color: #9CA3AF; }
+    [data-theme="dark"] .theme-btn { background: #1F2430; color: #F9FAFB; }
+  </style>
+  <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
+</head>
+<body>
+  <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="container">
+    <nav>
+      <a href="/">Home</a>
+      <a href="/expenses/">Dashboard</a>
+      <a href="/expenses/charts/">Charts</a>
+      <a href="/expenses/splitwise/" class="active">Splitwise</a>
+    </nav>
+
+    <div class="head-row">
+      <h1>Splitwise</h1>
+      <span class="as-who" id="as-who"></span>
+      <button class="refresh-btn" id="refresh-btn" onclick="_load(true)">↺ Refresh</button>
+    </div>
+
+    <div id="banner" class="banner" hidden></div>
+
+    <div class="card">
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">You owe</div><div class="stat-value" id="s-owe">—</div></div>
+        <div class="stat"><div class="stat-label">You're owed</div><div class="stat-value" id="s-owed">—</div></div>
+        <div class="stat"><div class="stat-label">Net position</div><div class="stat-value" id="s-net">—</div></div>
+      </div>
+    </div>
+
+    <!-- Directory -->
+    <div id="view-dir">
+      <div class="card">
+        <h2>Groups &amp; individuals</h2>
+        <input type="search" id="dir-search" placeholder="Search groups…" autocomplete="off">
+        <div id="dir-list"><div class="muted-note">Loading…</div></div>
+      </div>
+      <div class="card">
+        <h2>Who owes what</h2>
+        <div id="bal-list"><div class="muted-note">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- Group detail -->
+    <div id="view-detail" hidden>
+      <button class="back-btn" onclick="_showDir()">← All groups &amp; individuals</button>
+      <div class="card">
+        <div class="detail-head">
+          <h2 id="d-name">—</h2>
+          <span class="muted-note" id="d-meta"></span>
+        </div>
+        <div class="filter-row" id="d-filters">
+          <button class="fchip active" data-f="all">All</button>
+          <button class="fchip" data-f="i-paid">I paid</button>
+          <button class="fchip" data-f="other-paid">Someone else paid</button>
+          <button class="fchip" data-f="i-owe">I owe on this</button>
+          <button class="fchip" data-f="i-owed">I'm owed on this</button>
+          <button class="fchip" data-f="uncat">Uncategorised</button>
+          <button class="fchip" data-f="payments">Settle-ups</button>
+        </div>
+        <div class="detail-controls">
+          <input type="search" id="d-search" placeholder="Search description…" autocomplete="off">
+          <select id="d-sort">
+            <option value="date_desc">Newest first</option>
+            <option value="date_asc">Oldest first</option>
+            <option value="cost_desc">Cost: high → low</option>
+            <option value="myshare_desc">My share: high → low</option>
+          </select>
+        </div>
+        <div class="detail-summary" id="d-summary"></div>
+        <div class="bulk-bar" id="bulk-bar" hidden>
+          <span id="bulk-count">0 selected</span>
+          <button class="b-go" id="bulk-go" onclick="_bulkImport()">Import selected to Notion</button>
+          <button class="b-plain" onclick="_bulkSelectShown()">Select all shown</button>
+          <button class="b-plain" onclick="_bulkClear()">Clear</button>
+        </div>
+        <div id="d-list"><div class="muted-note">Loading…</div></div>
+        <button class="more-btn" id="d-more" hidden onclick="_loadMore()">Load more</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    (function () {
+      const btn = document.getElementById('theme-btn');
+      const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+      if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+      window._toggleTheme = function () {
+        const dark = !isDark();
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
+        if (btn) btn.textContent = dark ? '🌙' : '☀️';
+      };
+    })();
+
+    const CUR = { INR: '₹', USD: '$', EUR: '€', GBP: '£' };
+    const cur = c => CUR[c] || (c ? c + ' ' : '');
+    const fmt = (n, c) => cur(c) + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+    const netCls = n => (n > 0.005 ? 'pos' : n < -0.005 ? 'neg' : 'zero');
+
+    function showToast(msg, type) {
+      const el = document.createElement('div');
+      el.className = 'toast ' + (type || '');
+      el.textContent = msg;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+    function _getCsrf() {
+      return document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
+    }
+
+    const S = {
+      currency: 'INR', groups: [], friends: [], gnet: {},
+      groupId: null, groupName: '', expenses: [], offset: 0, hasMore: false, pageSize: 100,
+      filter: 'all', search: '', sort: 'date_desc',
+      imported: new Set(), dedupe: false,
+      picks: new Set(), shown: [],
+    };
+
+    const FILT = {
+      all: () => true,
+      'i-paid': e => e.my_paid_share > 0.005,
+      'other-paid': e => e.my_paid_share <= 0.005 && !e.is_payment,
+      'i-owe': e => e.my_net < -0.005,
+      'i-owed': e => e.my_net > 0.005,
+      'uncat': e => !e.category && !e.is_payment,
+      payments: e => e.is_payment,
+    };
+
+    async function _load(force) {
+      const rb = document.getElementById('refresh-btn');
+      rb.disabled = true; rb.textContent = '…';
+      try {
+        const r = await fetch('/expenses/splitwise/overview/');
+        const ov = await r.json();
+        if (!ov || ov.configured === false) {
+          const b = document.getElementById('banner');
+          b.hidden = false;
+          b.textContent = (ov && ov.error) || 'Splitwise is not connected. Set SPLITWISE_CONSUMER_KEY / SPLITWISE_CONSUMER_SECRET / SPLITWISE_API_KEY.';
+          document.getElementById('dir-list').innerHTML = '<div class="muted-note">Not connected.</div>';
+          return;
+        }
+        document.getElementById('banner').hidden = true;
+        S.currency = (ov.me && ov.me.currency) || 'INR';
+        S.groups = ov.groups || [];
+        S.friends = ov.friends || [];
+        document.getElementById('as-who').textContent = ov.me ? 'as ' + ov.me.name : '';
+        renderStats(ov.totals || {});
+        renderDir();
+        renderBalances();
+        if (S.groupId !== null) _openGroup(S.groupId, S.groupName, true);  // refresh open group
+      } catch (e) {
+        showToast('Failed to load Splitwise: ' + e.message, 'error');
+      } finally {
+        rb.disabled = false; rb.textContent = '↺ Refresh';
+      }
+    }
+
+    function renderStats(t) {
+      const c = S.currency;
+      const owe = document.getElementById('s-owe'), owed = document.getElementById('s-owed'), net = document.getElementById('s-net');
+      owe.textContent = fmt(t.you_owe, c); owe.className = 'stat-value ' + (t.you_owe > 0 ? 'neg' : 'zero');
+      owed.textContent = fmt(t.you_are_owed, c); owed.className = 'stat-value ' + (t.you_are_owed > 0 ? 'pos' : 'zero');
+      net.textContent = fmt(t.net, c); net.className = 'stat-value ' + netCls(t.net);
+    }
+
+    function renderDir() {
+      const el = document.getElementById('dir-list');
+      const q = (document.getElementById('dir-search').value || '').trim().toLowerCase();
+      const real = S.groups.filter(g => g.id !== 0).sort((a, b) => a.name.localeCompare(b.name));
+
+      let entries = [
+        { id: '', name: 'All activity', sub: 'every recent expense', icon: '📋' },
+        { id: '0', name: 'Individual / non-group', sub: 'expenses not in any group', icon: '👤' },
+        ...real.map(g => ({ id: String(g.id), name: g.name, sub: `${(g.members || []).length} members`, icon: '👥' })),
+      ];
+      if (q) entries = entries.filter(x => x.name.toLowerCase().includes(q));
+      el.innerHTML = entries.length
+        ? entries.map(x => dirRow(x.id, x.name, x.sub, x.icon)).join('')
+        : '<div class="muted-note">No groups match.</div>';
+    }
+
+    function renderBalances() {
+      const el = document.getElementById('bal-list');
+      const rows = (S.friends || [])
+        .filter(f => Math.abs(f.net) > 0.005)
+        .sort((a, b) => a.net - b.net);
+      if (!rows.length) { el.innerHTML = '<div class="muted-note">All settled up.</div>'; return; }
+      const youOwe = rows.filter(f => f.net < 0).reduce((s, f) => s - f.net, 0);
+      const owedYou = rows.filter(f => f.net > 0).reduce((s, f) => s + f.net, 0);
+      const head = `<div class="row-sub" style="margin-bottom:0.5rem;">You owe ${fmt(youOwe, S.currency)} · owed to you ${fmt(owedYou, S.currency)}</div>`;
+      el.innerHTML = head + rows.map(f => `
+        <div class="row">
+          <div class="row-main">
+            <div class="row-title">${esc(f.name)}</div>
+            <div class="row-sub">${f.net < 0 ? 'you owe them' : 'they owe you'}</div>
+          </div>
+          <div class="row-right"><div class="row-amt ${netCls(f.net)}">${fmt(Math.abs(f.net), S.currency)}</div></div>
+        </div>`).join('');
+    }
+
+    document.getElementById('dir-search').addEventListener('input', renderDir);
+
+    function dirRow(id, name, sub, icon) {
+      const n = S.gnet[id];
+      const netTag = (n != null && Math.abs(n) > 0.005)
+        ? ` · <span class="${netCls(n)}" style="font-weight:700;">${n > 0 ? 'you lent ' : 'you owe '}${fmt(Math.abs(n), S.currency)}</span>`
+        : '';
+      return `<button class="dir-item" data-gid="${esc(id)}" data-gname="${esc(name)}">
+        <span class="dir-icon">${icon}</span>
+        <span class="dir-body"><span class="dir-name">${esc(name)}</span><span class="dir-sub">${esc(sub)}${netTag}</span></span>
+        <span class="dir-chev">›</span>
+      </button>`;
+    }
+
+    document.getElementById('dir-list').addEventListener('click', e => {
+      const b = e.target.closest('.dir-item');
+      if (!b) return;
+      _openGroup(b.dataset.gid, b.dataset.gname, true);
+    });
+
+    function _showDir() {
+      S.groupId = null;
+      renderDir();  // pick up any group-net values learned while browsing
+      document.getElementById('view-detail').hidden = true;
+      document.getElementById('view-dir').hidden = false;
+    }
+
+    async function _openGroup(gid, gname, reset) {
+      S.groupId = gid; S.groupName = gname;
+      document.getElementById('view-dir').hidden = true;
+      document.getElementById('view-detail').hidden = false;
+      document.getElementById('d-name').textContent = gname;
+      if (reset) {
+        S.expenses = []; S.offset = 0; S.hasMore = false; S.picks.clear();
+        S.filter = 'all'; S.search = ''; S.sort = 'date_desc';
+        document.getElementById('d-search').value = '';
+        document.getElementById('d-sort').value = 'date_desc';
+        document.querySelectorAll('#d-filters .fchip').forEach(c => c.classList.toggle('active', c.dataset.f === 'all'));
+        document.getElementById('d-list').innerHTML = '<div class="muted-note">Loading…</div>';
+        document.getElementById('d-summary').textContent = '';
+      }
+      await _fetchPage();
+    }
+
+    async function _fetchPage() {
+      const q = new URLSearchParams({ limit: String(S.pageSize), offset: String(S.offset) });
+      if (S.groupId) q.set('group_id', S.groupId);   // "0" is a real value (non-group); "" => all activity
+      try {
+        const r = await fetch('/expenses/splitwise/expenses/?' + q.toString());
+        const d = await r.json();
+        if (!r.ok) { showToast(d.error || 'Failed to load group', 'error'); return; }
+        S.expenses = S.expenses.concat(d.expenses || []);
+        S.offset += (d.expenses || []).length;
+        S.hasMore = !!d.has_more;
+        S.dedupe = !!d.dedupe_enabled;
+        (d.already_imported || []).forEach(id => S.imported.add(Number(id)));
+        // remember this group's net for the directory
+        const gnet = S.expenses.reduce((s, e) => s + (e.my_net || 0), 0);
+        S.gnet[S.groupId == null ? '' : String(S.groupId)] = Math.round(gnet * 100) / 100;
+        renderDetail();
+      } catch (e) {
+        showToast('Network error: ' + e.message, 'error');
+      }
+    }
+
+    function _loadMore() { _fetchPage(); }
+
+    function renderDetail() {
+      const meta = document.getElementById('d-meta');
+      const g = S.groups.find(x => String(x.id) === String(S.groupId));
+      meta.textContent = g && g.members ? `${g.members.length} members` : '';
+
+      let list = S.expenses.filter(FILT[S.filter] || FILT.all);
+      const q = S.search.trim().toLowerCase();
+      if (q) list = list.filter(e => (e.description || '').toLowerCase().includes(q));
+
+      const sorters = {
+        date_desc: (a, b) => (b.date || '').localeCompare(a.date || ''),
+        date_asc: (a, b) => (a.date || '').localeCompare(b.date || ''),
+        cost_desc: (a, b) => b.cost - a.cost,
+        myshare_desc: (a, b) => Math.abs(b.my_net) - Math.abs(a.my_net),
+      };
+      list = list.slice().sort(sorters[S.sort] || sorters.date_desc);
+
+      const totCost = list.reduce((s, e) => s + (e.cost || 0), 0);
+      const totNet = list.reduce((s, e) => s + (e.my_net || 0), 0);
+      const netTxt = totNet > 0.005 ? `you lent ${fmt(totNet, S.currency)}`
+        : totNet < -0.005 ? `you owe ${fmt(-totNet, S.currency)}` : 'settled';
+      document.getElementById('d-summary').textContent =
+        `${list.length} expense${list.length !== 1 ? 's' : ''} · ${fmt(totCost, S.currency)} total · ${netTxt}`;
+
+      const importable = e => !e.is_payment && !S.imported.has(Number(e.id));
+      S.shown = list.filter(importable).map(e => Number(e.id));
+
+      const el = document.getElementById('d-list');
+      if (!list.length) { el.innerHTML = '<div class="muted-note">Nothing matches these filters.</div>'; }
+      else {
+        const hint = S.dedupe ? '' :
+          '<div class="muted-note" style="margin-bottom:0.6rem;">Add a <strong>Splitwise ID</strong> (Number) column in Notion to block duplicate imports.</div>';
+        el.innerHTML = hint + list.map(e => {
+          const grp = (e.group_name && String(S.groupId) !== String(e.group_id)) ? `<span class="chip">${esc(e.group_name)}</span>` : '';
+          const cat = e.category ? `<span class="chip muted">${esc(e.category)}</span>` : '';
+          const pay = e.is_payment ? '<span class="chip pay">settle-up</span>' : '';
+          const net = e.my_net;
+          const who = e.is_payment ? '' :
+            (e.my_paid_share > 0.005 ? '<span class="chip muted">you paid</span>' : '<span class="chip muted">someone else paid</span>');
+          const netTxt = net > 0.005 ? `you lent ${fmt(net, e.currency)}`
+            : net < -0.005 ? `you owe ${fmt(-net, e.currency)}` : 'not involved';
+          const done = S.imported.has(Number(e.id));
+          const canImp = importable(e);
+          const pick = canImp
+            ? `<label class="imp-pick-wrap"><input type="checkbox" class="imp-pick" data-pick="${e.id}" ${S.picks.has(Number(e.id)) ? 'checked' : ''}></label>`
+            : `<span class="imp-pick-wrap" style="width:15px;"></span>`;
+          const imp = e.is_payment ? '' :
+            `<button class="import-btn" data-import="${e.id}" ${done ? 'disabled' : ''}>${done ? '✓ In Notion' : 'Import to Notion'}</button>`;
+          return `<div class="row">
+            <div style="display:flex;align-items:flex-start;gap:0.5rem;min-width:0;">
+              ${pick}
+              <div class="row-main">
+                <div class="row-title">${esc(e.description) || '—'}</div>
+                <div class="row-sub">${pay}${grp}${cat}${who}${esc(e.date)}</div>
+                ${imp}
+              </div>
+            </div>
+            <div class="row-right">
+              <div class="row-amt">${fmt(e.cost, e.currency)}</div>
+              <div class="row-net ${netCls(net)}">${netTxt}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+      document.getElementById('d-more').hidden = !S.hasMore;
+      _bulkSync();
+    }
+
+    /* ── Bulk import ── */
+    function _bulkSync() {
+      // keep only picks that are still loaded and still importable
+      const loaded = new Set(S.expenses.filter(e => !e.is_payment && !S.imported.has(Number(e.id))).map(e => Number(e.id)));
+      [...S.picks].forEach(id => { if (!loaded.has(id)) S.picks.delete(id); });
+      const n = S.picks.size;
+      document.getElementById('bulk-count').textContent = n
+        ? `${n} selected` : '0 selected';
+      document.getElementById('bulk-bar').hidden = n === 0;
+    }
+
+    function _bulkClear() {
+      S.picks.clear();
+      document.querySelectorAll('.imp-pick').forEach(c => (c.checked = false));
+      _bulkSync();
+    }
+
+    function _bulkSelectShown() {
+      S.shown.forEach(id => S.picks.add(id));
+      document.querySelectorAll('.imp-pick').forEach(c => {
+        if (S.picks.has(Number(c.dataset.pick))) c.checked = true;
+      });
+      _bulkSync();
+    }
+
+    document.getElementById('d-list').addEventListener('change', e => {
+      const cb = e.target.closest('.imp-pick');
+      if (!cb) return;
+      const id = Number(cb.dataset.pick);
+      if (cb.checked) S.picks.add(id); else S.picks.delete(id);
+      _bulkSync();
+    });
+
+    async function _bulkImport() {
+      const ids = [...S.picks];
+      if (!ids.length) return;
+      const go = document.getElementById('bulk-go');
+      const label = document.getElementById('bulk-count');
+      go.disabled = true;
+      let done = 0, failed = 0; const fails = [];
+      for (const id of ids) {
+        label.textContent = `Importing ${done + failed + 1}/${ids.length}…`;
+        try {
+          const res = await fetch('/expenses/splitwise/import/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _getCsrf() },
+            body: JSON.stringify({ expense_id: String(id) }),
+          });
+          const d = await res.json();
+          if (res.ok) { done++; S.imported.add(id); S.picks.delete(id); }
+          else { failed++; fails.push(`${id}: ${d.error || ('HTTP ' + res.status)}`); }
+        } catch (err) { failed++; fails.push(`${id}: ${err.message}`); }
+      }
+      go.disabled = false;
+      showToast(`${done} imported${failed ? `, ${failed} failed` : ''}`, failed ? 'error' : 'success');
+      if (failed) alert('Some imports failed:\n\n' + fails.join('\n'));
+      renderDetail();
+    }
+
+    document.getElementById('d-filters').addEventListener('click', e => {
+      const c = e.target.closest('.fchip');
+      if (!c) return;
+      S.filter = c.dataset.f;
+      document.querySelectorAll('#d-filters .fchip').forEach(x => x.classList.toggle('active', x === c));
+      renderDetail();
+    });
+    let _searchT;
+    document.getElementById('d-search').addEventListener('input', e => {
+      clearTimeout(_searchT);
+      _searchT = setTimeout(() => { S.search = e.target.value; renderDetail(); }, 180);
+    });
+    document.getElementById('d-sort').addEventListener('change', e => { S.sort = e.target.value; renderDetail(); });
+
+    document.getElementById('d-list').addEventListener('click', async e => {
+      const btn = e.target.closest('.import-btn');
+      if (!btn) return;
+      btn.disabled = true;
+      const orig = btn.textContent; btn.textContent = 'Importing…';
+      try {
+        const res = await fetch('/expenses/splitwise/import/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _getCsrf() },
+          body: JSON.stringify({ expense_id: btn.dataset.import }),
+        });
+        const d = await res.json();
+        if (!res.ok) { btn.disabled = false; btn.textContent = orig; showToast(d.error || 'Import failed', 'error'); return; }
+        S.imported.add(Number(btn.dataset.import));
+        btn.textContent = '✓ In Notion';
+        showToast(`Imported "${d.name}" (${fmt(d.amount, 'INR')})`, 'success');
+      } catch (err) {
+        btn.disabled = false; btn.textContent = orig;
+        showToast('Network error: ' + err.message, 'error');
+      }
+    });
+
+    _load();
+  </script>
+</body>
+</html>

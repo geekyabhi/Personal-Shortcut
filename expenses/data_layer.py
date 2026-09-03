@@ -1,5 +1,7 @@
 import os
+import threading
 import time
+from datetime import date
 
 import requests
 
@@ -11,7 +13,13 @@ class ExpensesDataLayer:
     NOTION_PAGE_URL = "https://api.notion.com/v1/pages/{page_id}"
     CACHE_TTL = 300  # seconds
 
+    SWID_TTL = 60  # seconds — cache for the tiny "already-imported ids" query
+
+    # Full dataset + a small "recent months" slice used for the fast first paint.
     _cache: dict = {"rows": None, "ts": 0.0}
+    _recent_cache: dict = {"rows": None, "ts": 0.0}
+    _swid_cache: dict = {"ids": None, "ts": 0.0, "exists": True}
+    _full_fetch_lock = threading.Lock()
 
     def __init__(self, token: str, db_id: str):
         self.token = token
@@ -56,21 +64,91 @@ class ExpensesDataLayer:
 
         return rows
 
-    def get_cached_rows(self, force: bool = False):
-        """Return (rows, cache_ts, from_cache). Uses class-level shared cache."""
+    @staticmethod
+    def _recent_since() -> str:
+        """First day of the previous calendar month (covers current + last month)."""
+        t = date.today()
+        y, m = (t.year, t.month - 1) if t.month > 1 else (t.year - 1, 12)
+        return date(y, m, 1).isoformat()
+
+    def fetch_recent_rows(self) -> list:
+        """Single filtered Notion query for rows dated on/after `_recent_since()`."""
+        return self.fetch_all_rows(
+            {"property": "Date", "date": {"on_or_after": self._recent_since()}}
+        )
+
+    def imported_splitwise_ids(self, prop_name: str):
+        """Return (set_of_ids, column_exists).
+
+        A narrow filtered query — only rows that already carry a Splitwise
+        id (a handful), never the whole table. Cached for `SWID_TTL`.
+        """
         now = time.time()
-        cache = self.__class__._cache
+        cache = self.__class__._swid_cache
+        if cache["ids"] is not None and (now - cache["ts"]) < self.SWID_TTL:
+            return set(cache["ids"]), cache["exists"]
+
+        try:
+            rows = self.fetch_all_rows(
+                {"property": prop_name, "number": {"is_not_empty": True}}
+            )
+        except requests.HTTPError as exc:
+            resp = exc.response
+            if resp is not None and resp.status_code == 400 and prop_name in (resp.text or ""):
+                cache.update(ids=[], ts=now, exists=False)  # column not added yet
+                return set(), False
+            raise
+
+        ids = set()
+        for row in rows:
+            num = (row.get("properties", {}).get(prop_name) or {}).get("number")
+            if num is not None:
+                ids.add(int(num))
+        cache.update(ids=list(ids), ts=now, exists=True)
+        return set(ids), True
+
+    def get_cached_rows(self, force: bool = False, partial: bool = False):
+        """Return (rows, cache_ts, from_cache, is_partial).
+
+        A fresh full cache always wins. Otherwise, when ``partial`` is set,
+        return just the current + previous month (fast, one filtered query)
+        and leave the full cache untouched so a later full call still
+        fetches everything.
+        """
+        now = time.time()
+        full = self.__class__._cache
         if (
             not force
-            and cache["rows"] is not None
-            and (now - cache["ts"]) < self.CACHE_TTL
+            and full["rows"] is not None
+            and (now - full["ts"]) < self.CACHE_TTL
         ):
-            return cache["rows"], cache["ts"], True
+            return full["rows"], full["ts"], True, False
 
-        rows = self.fetch_all_rows(None)
-        cache["rows"] = rows
-        cache["ts"] = time.time()
-        return rows, cache["ts"], False
+        if partial and not force:
+            recent = self.__class__._recent_cache
+            if (
+                recent["rows"] is not None
+                and (now - recent["ts"]) < self.CACHE_TTL
+            ):
+                return recent["rows"], recent["ts"], True, True
+            rows = self.fetch_recent_rows()
+            recent["rows"] = rows
+            recent["ts"] = time.time()
+            return rows, recent["ts"], False, True
+
+        # Full fetch — dedupe concurrent callers so a cold start crawls Notion once.
+        with self.__class__._full_fetch_lock:
+            now = time.time()
+            if (
+                not force
+                and full["rows"] is not None
+                and (now - full["ts"]) < self.CACHE_TTL
+            ):
+                return full["rows"], full["ts"], True, False
+            rows = self.fetch_all_rows(None)
+            full["rows"] = rows
+            full["ts"] = time.time()
+            return rows, full["ts"], False, False
 
     def create_page(self, properties: dict) -> dict:
         """POST a new page to the expenses database. Raises on HTTP error."""
@@ -95,5 +173,7 @@ class ExpensesDataLayer:
         return resp.json()
 
     def bust_cache(self) -> None:
-        """Invalidate the shared cache so the next request re-fetches."""
+        """Invalidate all caches so the next request re-fetches."""
         self.__class__._cache["ts"] = 0.0
+        self.__class__._recent_cache["ts"] = 0.0
+        self.__class__._swid_cache["ids"] = None

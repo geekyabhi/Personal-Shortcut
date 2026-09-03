@@ -313,22 +313,26 @@
 
     .expense-row {
       display: grid; grid-template-columns: 1fr auto;
-      gap: 0.4rem 0.75rem; padding: 0.75rem 0;
+      gap: 0.4rem 0.75rem; padding: 0.75rem 0.55rem;
       border-bottom: 1px solid #F3F4F6; align-items: start;
+      border-radius: 8px; transition: background 0.15s;
     }
     .expense-row:last-child { border-bottom: none; }
+    .expense-row.proc   { background: rgba(16,185,129,0.035); }
+    .expense-row.unproc { background: rgba(239,68,68,0.09); }
+    [data-theme="dark"] .expense-row.proc   { background: rgba(16,185,129,0.05); }
+    [data-theme="dark"] .expense-row.unproc { background: rgba(239,68,68,0.10); }
     .expense-title { font-size: 0.9rem; font-weight: 600; color: #111827; }
     .expense-meta  { font-size: 0.75rem; color: #9CA3AF; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
     .expense-amount { font-size: 0.95rem; font-weight: 700; color: var(--accent); text-align: right; white-space: nowrap; }
     .expense-date   { font-size: 0.72rem; color: #9CA3AF; text-align: right; }
 
-    /* Pagination */
-    .pagination {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;
-    }
-    .pagination-info { font-size: 0.78rem; color: #6B7280; font-weight: 500; }
-    .pagination-btns { display: flex; gap: 0.4rem; }
+    /* Scrollable browse list */
+    #browse-list { max-height: 620px; overflow-y: auto; overscroll-behavior: contain; padding-right: 0.35rem; }
+    #browse-list::-webkit-scrollbar { width: 9px; }
+    #browse-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.14); border-radius: 8px; }
+    [data-theme="dark"] #browse-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); }
+    #browse-more { text-align: center; padding: 0.9rem 0 0.2rem; font-size: 0.76rem; color: #9CA3AF; font-weight: 500; }
 
     .empty-state {
       text-align: center; padding: 2rem 1rem; color: #9CA3AF; font-size: 0.9rem; font-weight: 500;
@@ -503,19 +507,30 @@
     .ef-box {
       background: #fff; border-radius: 20px; padding: 1.75rem 1.5rem;
       width: 100%; max-width: 480px; margin: 1rem;
+      max-height: 88vh; overflow-y: auto;
       box-shadow: 0 24px 80px rgba(0,0,0,0.18);
     }
     .ef-title { font-size: 1.05rem; font-weight: 800; color: #111827; margin-bottom: 1.25rem; letter-spacing: -0.02em; }
     .ef-fields { display: flex; flex-direction: column; gap: 0.85rem; }
     .ef-field { display: flex; flex-direction: column; gap: 0.3rem; }
     .ef-field label { font-size: 0.72rem; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; }
-    .ef-field input, .ef-field select {
+    .ef-field input:not([type="checkbox"]), .ef-field select, .ef-field textarea {
       padding: 0.55rem 0.75rem; border-radius: 10px;
       border: 1.5px solid #E5E7EB; font-size: 0.9rem;
       font-family: inherit; color: #111827; background: #F9FAFB;
       transition: border-color 0.15s;
     }
-    .ef-field input:focus, .ef-field select:focus { outline: none; border-color: #6366F1; background: #fff; }
+    .ef-field input:not([type="checkbox"]):focus, .ef-field select:focus, .ef-field textarea:focus { outline: none; border-color: #6366F1; background: #fff; }
+    .ef-checks { display: flex; flex-wrap: wrap; gap: 0.7rem 1.2rem; padding-top: 0.15rem; }
+    .ef-checks label { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: #374151; cursor: pointer; }
+    .ef-checks input[type="checkbox"] {
+      -webkit-appearance: auto; appearance: auto;
+      width: 17px; height: 17px; margin: 0; padding: 0; border: none; background: none;
+      accent-color: #4F46E5; flex: none; cursor: pointer;
+    }
+    [data-theme="dark"] .ef-field textarea { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB; }
+    [data-theme="dark"] .ef-checks label { color: #E5E7EB; }
+    [data-theme="dark"] .ef-checks input[type="checkbox"] { accent-color: #818CF8; }
     .ef-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
     .ef-pill {
       padding: 0.28rem 0.65rem; border-radius: 100px; border: 1.5px solid #E5E7EB;
@@ -538,15 +553,24 @@
     }
     .ef-btn-save:disabled { opacity: 0.55; cursor: not-allowed; }
     .ef-error { font-size: 0.78rem; color: #EF4444; margin-top: 0.5rem; display: none; }
+    .expense-btn-row { display: flex; align-items: center; gap: 0.4rem; }
+    .expense-btn-row .proc-toggle {
+      -webkit-appearance: auto; appearance: auto;
+      width: 17px; height: 17px; margin: 0; padding: 0; border: none; background: none;
+      accent-color: #10B981; cursor: pointer; flex: none;
+    }
     .expense-edit-btn {
-      cursor: pointer; font-size: 0.72rem; font-weight: 600;
-      padding: 0.2rem 0.55rem; border-radius: 6px; font-family: inherit;
-      transition: color 0.15s, background 0.15s, border-color 0.15s;
+      cursor: pointer; line-height: 0;
+      width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 8px; font-family: inherit;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
       background: transparent; border: 1.5px solid #E5E7EB; color: #6B7280;
     }
-    .expense-edit-btn:hover { color: #4F46E5; background: #EEF2FF; border-color: #C7D2FE; }
-    .expense-del-btn        { border-color: #FECACA !important; color: #EF4444 !important; }
-    .expense-del-btn:hover  { background: #FEF2F2 !important; border-color: #FCA5A5 !important; }
+    .expense-edit-btn svg { width: 15px; height: 15px; display: block; }
+    .expense-edit-btn:hover  { background: #EEF2FF; border-color: #C7D2FE; color: #4F46E5; transform: translateY(-1px); }
+    .expense-edit-btn:active  { transform: scale(0.94); }
+    .expense-del-btn         { border-color: #FECACA !important; color: #EF4444 !important; }
+    .expense-del-btn:hover   { background: #FEF2F2 !important; border-color: #FCA5A5 !important; color: #DC2626 !important; }
     [data-theme="dark"] .ef-box { background: #1B1B28; }
     [data-theme="dark"] .ef-title { color: #F9FAFB; }
     [data-theme="dark"] .ef-field label { color: #6B7280; }
@@ -605,7 +629,7 @@
     [data-theme="dark"] .del-btn-cancel { border-color: rgba(255,255,255,0.12); color: #9CA3AF; }
     [data-theme="dark"] .del-btn-cancel:hover { background: rgba(255,255,255,0.06); }
 
-    [data-theme="dark"] .expense-edit-btn { color: #6B7280; border-color: rgba(255,255,255,0.12); }
+    [data-theme="dark"] .expense-edit-btn { color: #9CA3AF; border-color: rgba(255,255,255,0.14); }
     [data-theme="dark"] .expense-edit-btn:hover { color: #818CF8; background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.35); }
     [data-theme="dark"] .expense-del-btn        { border-color: rgba(239,68,68,0.35) !important; color: #F87171 !important; }
     [data-theme="dark"] .expense-del-btn:hover  { background: rgba(239,68,68,0.12) !important; }
@@ -631,6 +655,85 @@
     .skeleton-wrap { padding: 0.5rem 0; }
     .sk-line { border-radius: 8px; background: linear-gradient(90deg,rgba(0,0,0,0.06) 25%,rgba(0,0,0,0.10) 50%,rgba(0,0,0,0.06) 75%); background-size: 200% 100%; animation: _shimmer 1.4s infinite; }
     @keyframes _shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* ── Splitwise panel ── */
+    .sw-bal { flex:1; min-width:120px; background:rgba(0,0,0,0.03); border-radius:12px; padding:0.75rem 1rem; }
+    [data-theme="dark"] .sw-bal { background:rgba(255,255,255,0.05); }
+    .sw-bal-label { font-size:0.7rem; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.05em; }
+    .sw-bal-val { font-size:1.15rem; font-weight:700; margin-top:0.2rem; }
+    .sw-pos { color:#10B981; } .sw-neg { color:#EF4444; }
+    .sw-import-btn { font-size:0.72rem; padding:0.3rem 0.7rem; border-radius:8px; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-weight:600; }
+    .sw-import-btn:hover:not(:disabled) { background:var(--accent); color:#fff; }
+    .sw-import-btn:disabled { opacity:0.5; cursor:default; }
+    .ef-sw { margin-top:0.5rem; border-top:1px dashed rgba(0,0,0,0.12); padding-top:0.6rem; }
+    [data-theme="dark"] .ef-sw { border-top-color:rgba(255,255,255,0.12); }
+    .ef-sw summary { font-size:0.75rem; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.05em; cursor:pointer; }
+    .ef-sw-members { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem; }
+    .ef-sw-members label { display:flex; align-items:center; gap:0.3rem; font-size:0.8rem; background:rgba(0,0,0,0.04); padding:0.25rem 0.6rem; border-radius:999px; cursor:pointer; }
+    [data-theme="dark"] .ef-sw-members label { background:rgba(255,255,255,0.06); }
+
+    /* ── Split-from-row panel ── */
+    .split-badge { display:inline-block; font-size:0.6rem; font-weight:700; padding:0.1rem 0.45rem; border-radius:999px; letter-spacing:0.03em; text-transform:uppercase; vertical-align:middle; margin-left:0.4rem; }
+    .split-badge.pending { background:#FEF3C7; color:#92400E; }
+    .split-badge.done { background:#D1FAE5; color:#065F46; }
+    .split-badge.queued { background:rgba(79,70,229,0.14); color:#4F46E5; }
+    [data-theme="dark"] .split-badge.pending { background:rgba(251,191,36,0.18); color:#FCD34D; }
+    [data-theme="dark"] .split-badge.done { background:rgba(16,185,129,0.18); color:#6EE7B7; }
+    [data-theme="dark"] .split-badge.queued { background:rgba(129,140,248,0.22); color:#A5B4FC; }
+    .split-save { margin-top:0.55rem; margin-right:0.4rem; padding:0.5rem 0.9rem; border:none; border-radius:9px; background:var(--accent); color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer; }
+    .split-save:disabled { opacity:0.5; cursor:not-allowed; }
+    .split-pushnow { margin-top:0.55rem; margin-right:0.4rem; padding:0.5rem 0.9rem; border:1px solid var(--accent); border-radius:9px; background:transparent; color:var(--accent); font-weight:700; font-size:0.85rem; cursor:pointer; }
+    .split-pushnow:disabled { opacity:0.5; cursor:not-allowed; }
+    .split-remove { margin-top:0.55rem; padding:0.5rem 0.9rem; border:none; border-radius:9px; background:transparent; color:#EF4444; font-weight:700; font-size:0.8rem; cursor:pointer; }
+    /* ── Splitwise queue bar ── */
+    .bulk-q-badge { display:inline-flex; align-items:center; justify-content:center; min-width:1.4rem; height:1.4rem; padding:0 0.4rem; border-radius:999px; background:var(--accent); color:#fff; font-size:0.75rem; font-weight:800; flex:none; }
+    .bulk-prog-track { height:6px; border-radius:999px; background:rgba(0,0,0,0.12); overflow:hidden; }
+    [data-theme="dark"] .bulk-prog-track { background:rgba(255,255,255,0.15); }
+    .bulk-prog-fill { height:100%; width:0%; background:var(--accent); border-radius:999px; transition:width 0.3s ease; }
+    .bulk-prog-text { font-size:0.72rem; color:#6B7280; font-weight:600; margin-top:0.2rem; }
+    [data-theme="dark"] .bulk-prog-text { color:#9CA3AF; }
+    #bulk-push-btn:disabled, #bulk-clear-btn:disabled { opacity:0.45; cursor:not-allowed; box-shadow:none; }
+    .split-toggle { margin-top:0.45rem; font-size:0.72rem; font-weight:600; color:var(--accent); background:transparent; border:1px solid var(--accent); border-radius:8px; padding:0.25rem 0.7rem; cursor:pointer; }
+    .split-toggle:hover { background:var(--accent); color:#fff; }
+    .split-panel { margin-top:0.6rem; padding:0.75rem; border:1px dashed rgba(0,0,0,0.16); border-radius:12px; background:rgba(0,0,0,0.02); width:320px; max-width:100%; }
+    [data-theme="dark"] .split-panel { border-color:rgba(255,255,255,0.16); background:rgba(255,255,255,0.03); }
+    .split-panel select, .split-panel input[type=search] { width:100%; padding:0.4rem 0.55rem; border-radius:8px; border:1px solid rgba(0,0,0,0.16); background:#fff; font-size:0.82rem; }
+    .split-panel input[type=search] { margin-top:0.4rem; }
+    [data-theme="dark"] .split-panel select, [data-theme="dark"] .split-panel input[type=search] { background:#1B1B28; color:#F9FAFB; border-color:rgba(255,255,255,0.16); }
+    .split-people { max-height:168px; overflow-y:auto; margin-top:0.4rem; border:1px solid rgba(0,0,0,0.08); border-radius:8px; padding:0.15rem 0.4rem; }
+    [data-theme="dark"] .split-people { border-color:rgba(255,255,255,0.1); }
+    .split-people-empty { font-size:0.78rem; color:#9CA3AF; padding:0.4rem 0.2rem; }
+    .split-person { display:flex; align-items:center; gap:0.5rem; padding:0.24rem 0; }
+    .split-person[hidden] { display:none; }
+    .split-person label { flex:1; display:flex; align-items:center; gap:0.4rem; font-size:0.83rem; cursor:pointer; min-width:0; }
+    .split-person label span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .split-person input[type=number] { width:82px; flex:none; padding:0.28rem 0.45rem; border-radius:8px; border:1px solid rgba(0,0,0,0.16); font-size:0.8rem; text-align:right; }
+    [data-theme="dark"] .split-person input[type=number] { background:rgba(255,255,255,0.07); color:#F9FAFB; border-color:rgba(255,255,255,0.16); }
+    .expense-title-row { display: flex; align-items: flex-start; gap: 0.75rem; }
+    .expense-title-row .expense-title { flex: 1; min-width: 0; }
+    .expense-comment {
+      flex: none; max-width: 52%; text-align: right;
+      font-size: 0.72rem; color: #6B7280; font-style: italic; line-height: 1.3;
+    }
+    [data-theme="dark"] .expense-comment { color:#9CA3AF; }
+    .split-total { font-size:0.78rem; font-weight:600; margin-top:0.5rem; }
+    .split-total.ok { color:#10B981; } .split-total.bad { color:#EF4444; }
+    .split-push { margin-top:0.55rem; width:100%; padding:0.5rem; border:none; border-radius:9px; background:var(--accent); color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer; }
+    .split-push:disabled { opacity:0.5; cursor:not-allowed; }
+    .split-pick-lbl { display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem; font-weight:600; color:#6B7280; text-transform:uppercase; letter-spacing:0.04em; cursor:pointer; }
+    [data-theme="dark"] .split-pick-lbl { color:#9CA3AF; }
+
+    /* ── Background-sync markers ── */
+    .bg-markers { display:flex; flex-wrap:wrap; gap:0.4rem; margin:0.1rem 0 0.9rem; }
+    .bg-chip { display:inline-flex; align-items:center; gap:0.4rem; font-size:0.66rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; padding:0.22rem 0.6rem; border-radius:999px; background:rgba(0,0,0,0.06); }
+    [data-theme="dark"] .bg-chip { background:rgba(255,255,255,0.07); }
+    .bg-chip::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; flex:none; }
+    .bg-chip.idle    { color:#9CA3AF; }
+    .bg-chip.loading { color:#F59E0B; }
+    .bg-chip.loading::before { animation: bgpulse 1s ease-in-out infinite; }
+    .bg-chip.done    { color:#10B981; }
+    .bg-chip.error   { color:#EF4444; }
+    @keyframes bgpulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
   </style>
   <script>
     (function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
@@ -648,7 +751,14 @@
       <a href="/">Home</a>
       <a href="/expenses/" class="active">Dashboard</a>
       <a href="/expenses/charts/">Charts</a>
+      <a href="/expenses/splitwise/">Splitwise</a>
     </nav>
+
+    <div class="bg-markers">
+      <span class="bg-chip idle" id="bg-recent"    title="Current + previous month — loads first">Recent 2mo</span>
+      <span class="bg-chip idle" id="bg-full"      title="Complete expense history">All expenses</span>
+      <span class="bg-chip idle" id="bg-splitwise" title="Splitwise groups &amp; friends">Splitwise</span>
+    </div>
 
     <!-- Cache status bar -->
     <div class="cache-bar" id="cache-bar" style="display:none;">
@@ -793,6 +903,23 @@
       </div>
     </div>
 
+    <!-- ─── SECTION: SPLITWISE ──────────────────────────────────── -->
+    <div id="sw-section" style="display:none;margin-top:2rem;">
+      <div class="section-heading" style="margin-top:0;"><span>🤝</span> Splitwise</div>
+      <div class="card">
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+          <div class="sw-bal"><div class="sw-bal-label">You owe</div><div class="sw-bal-val" id="sw-you-owe">—</div></div>
+          <div class="sw-bal"><div class="sw-bal-label">You're owed</div><div class="sw-bal-val" id="sw-you-owed">—</div></div>
+          <div class="sw-bal"><div class="sw-bal-label">Net</div><div class="sw-bal-val" id="sw-net">—</div></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+          <h3 style="margin:0;">Recent activity</h3>
+          <button class="btn-ghost" style="font-size:0.8rem;padding:0.4rem 1rem;" onclick="_swInit(true)">↺ Refresh</button>
+        </div>
+        <div id="sw-expense-list"><div class="empty-state">Loading…</div></div>
+      </div>
+    </div>
+
     <!-- ─── SECTION 3: BROWSE ────────────────────────────────────── -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2rem;">
       <div class="section-heading" style="margin-top:0;cursor:default;user-select:none;" onclick="_titleClick()"><span>📋</span> Browse Expenses</div>
@@ -872,6 +999,16 @@
             <option value="amount_asc">Lowest amount</option>
           </select>
         </div>
+        <div>
+          <label for="b-split">Split status</label>
+          <select id="b-split">
+            <option value="">All</option>
+            <option value="flagged">Add to Split ✓</option>
+            <option value="needs">Add to Split — not pushed</option>
+            <option value="done">Split Added ✓</option>
+            <option value="unflagged">Not marked for split</option>
+          </select>
+        </div>
       </div>
 
       <div class="presets" id="b-wrap-presets">
@@ -901,8 +1038,18 @@
           <h2 style="margin-bottom:0;">Expenses</h2>
           <span id="browse-count-badge" class="period-badge" style="margin-bottom:0;"></span>
         </div>
+        <div id="bulk-split-bar" hidden style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:0.55rem 0.9rem;background:rgba(79,70,229,0.08);border:1px solid var(--accent);border-radius:12px;">
+          <span class="bulk-q-badge" id="bulk-q-badge">0</span>
+          <strong id="bulk-split-count" style="font-size:0.82rem;">Splitwise queue</strong>
+          <div id="bulk-progress" hidden style="flex:1 1 160px;min-width:120px;">
+            <div class="bulk-prog-track"><div class="bulk-prog-fill" id="bulk-prog-fill"></div></div>
+            <div class="bulk-prog-text" id="bulk-prog-text"></div>
+          </div>
+          <button class="btn-primary" id="bulk-push-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_pushQueue()">Push all queued</button>
+          <button class="btn-ghost" id="bulk-clear-btn" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_clearQueue()">Clear queue</button>
+        </div>
         <div id="browse-list"></div>
-        <div class="pagination" id="browse-pagination"></div>
+        <div id="browse-more"></div>
       </div>
     </div>
 
@@ -948,7 +1095,7 @@
     const bar = document.getElementById("cache-bar");
     document.getElementById("cache-dot").style.background = "#10B981";
     document.getElementById("cache-status").textContent =
-      `${_totalCachedRows} expenses loaded · ${data.from_cache ? "cached" : "fetched"} ${_ageFmt(_cacheTs)}`;
+      `${_totalCachedRows} expenses loaded${data.partial ? " (recent only)" : ""} · ${data.from_cache ? "cached" : "fetched"} ${_ageFmt(_cacheTs)}`;
     bar.style.display = "flex";
   }
 
@@ -995,6 +1142,336 @@
     if (!delBtn) return;
     _delOpen(delBtn.dataset.delId, delBtn.dataset.delTitle || "this expense");
   });
+
+  /* ── Split a flagged row straight to Splitwise ── */
+  let _splitMeta = undefined;  // {me, groups, friends} | null (not configured) | undefined (unloaded)
+  let _splitMetaPromise = null;
+
+  /* Staged split queue — per-expense config saved in the browser, pushed in bulk later.
+     Shape: { [page_id]: { mode, group_id, shares:{id:amount}, title, amount, ts } } */
+  function _queueLoad()  { try { return JSON.parse(localStorage.getItem("ps_split_queue")) || {}; } catch { return {}; } }
+  function _queueSaveAll(q) { try { localStorage.setItem("ps_split_queue", JSON.stringify(q)); } catch {} }
+  function _queueGet(id)    { return _queueLoad()[id] || null; }
+  function _queueSet(id, cfg) { const q = _queueLoad(); q[id] = cfg; _queueSaveAll(q); }
+  function _queueRemove(id) { const q = _queueLoad(); delete q[id]; _queueSaveAll(q); }
+
+  function _splitLoadPrefs() {
+    try { return JSON.parse(localStorage.getItem("ps_split_prefs")) || {}; } catch { return {}; }
+  }
+  function _splitSavePrefs(p) {
+    try { localStorage.setItem("ps_split_prefs", JSON.stringify(p)); } catch {}
+  }
+  function _splitRememberSelection(groupVal, otherIds) {
+    const p = _splitLoadPrefs();
+    p.lastGroup = groupVal;
+    p.members = p.members || {};
+    p.members[groupVal] = otherIds.map(String);
+    _splitSavePrefs(p);
+  }
+
+  async function _splitEnsureMeta() {
+    if (_splitMeta !== undefined) return _splitMeta;
+    if (_splitMetaPromise) return _splitMetaPromise;
+    _splitMetaPromise = (async () => {
+    try {
+      const r = await fetch("/expenses/splitwise/overview/");
+      const d = await r.json();
+      if (!d || d.configured === false) { _splitMeta = null; return null; }
+      _splitMeta = {
+        me: d.me,
+        groups: (d.groups || []).filter(g => g.id !== 0),
+        friends: (d.friends || []).map(f => ({ id: f.id, name: f.name })),
+      };
+    } catch { _splitMeta = null; }
+      return _splitMeta;
+    })();
+    return _splitMetaPromise;
+  }
+
+  document.getElementById("browse-list").addEventListener("click", async e => {
+    const tgl = e.target.closest("[data-split-toggle]");
+    if (!tgl) return;
+    const pageId = tgl.dataset.splitToggle;
+    const panel = document.querySelector(`.split-panel[data-split-page="${pageId}"]`);
+    if (!panel) return;
+    if (!panel.hidden) { panel.hidden = true; return; }
+    panel.hidden = false;
+    if (panel.dataset.built) return;
+
+    panel.innerHTML = '<div style="font-size:0.8rem;color:#9CA3AF;">Loading Splitwise…</div>';
+    const meta  = await _splitEnsureMeta();
+    const entry = _lastBrowse && (_lastBrowse.entries || []).find(x => x.page_id === pageId);
+    if (!meta)  { panel.innerHTML = '<div style="font-size:0.8rem;color:#EF4444;">Splitwise isn\'t configured.</div>'; return; }
+    if (!entry) { panel.innerHTML = '<div style="font-size:0.8rem;color:#EF4444;">Row not found — reload the list.</div>'; return; }
+    _splitBuildPanel(panel, entry, meta);
+    panel.dataset.built = "1";
+  });
+
+  function _stagedMatchesGroup(staged, grp) {
+    return grp === "__individual__" ? staged.mode === "individual"
+                                    : String(staged.group_id) === grp;
+  }
+
+  function _splitBuildPanel(panel, entry, meta) {
+    const staged = _queueGet(entry.page_id);
+    const grpOpts = ['<option value="__individual__">👤 Individual (friends, no group)</option>']
+      .concat(meta.groups.map(g => `<option value="${g.id}">${g.name}</option>`)).join("");
+    panel.innerHTML = `
+      <div style="font-size:0.72rem;color:#9CA3AF;margin-bottom:0.4rem;">Splitting <strong>${fmt(entry.amount)}</strong> · you paid the full amount</div>
+      <select data-split-group>${grpOpts}</select>
+      <input type="search" data-split-search placeholder="Search people…" autocomplete="off">
+      <div class="split-people" data-split-people></div>
+      <div class="split-total" data-split-total></div>
+      <div>
+        <button type="button" class="split-save"    data-split-save disabled>${staged ? "Update queue" : "Add to queue"}</button>
+        <button type="button" class="split-pushnow" data-split-push disabled>Push now</button>
+        ${staged ? '<button type="button" class="split-remove" data-split-remove>Remove</button>' : ""}
+      </div>
+      <div data-split-err style="font-size:0.75rem;color:#EF4444;margin-top:0.35rem;display:none;"></div>`;
+
+    const grpSel = panel.querySelector("[data-split-group]");
+    const prefs = _splitLoadPrefs();
+    const wantGroup = staged
+      ? (staged.mode === "individual" ? "__individual__" : String(staged.group_id))
+      : prefs.lastGroup;
+    if (wantGroup && [...grpSel.options].some(o => o.value === wantGroup)) grpSel.value = wantGroup;
+
+    grpSel.addEventListener("change", () => _splitRenderPeople(panel, entry, meta, null));
+    panel.querySelector("[data-split-search]").addEventListener("input", () => _splitApplyFilter(panel));
+    panel.querySelector("[data-split-save]").addEventListener("click", () => _splitSave(panel, entry));
+    panel.querySelector("[data-split-push]").addEventListener("click", () => _splitPush(panel, entry));
+    const rm = panel.querySelector("[data-split-remove]");
+    if (rm) rm.addEventListener("click", () => {
+      _queueRemove(entry.page_id);
+      showToast("Removed from queue", "info");
+      panel.hidden = true;
+      _splitRefreshRow(entry.page_id);
+    });
+
+    _splitRenderPeople(panel, entry, meta, staged);
+  }
+
+  function _splitRenderPeople(panel, entry, meta, staged) {
+    const grp = panel.querySelector("[data-split-group]").value;
+    const people = grp === "__individual__"
+      ? meta.friends
+      : ((meta.groups.find(g => String(g.id) === grp) || {}).members || []).filter(m => m.id !== meta.me.id);
+    const stagedShares = (staged && _stagedMatchesGroup(staged, grp)) ? staged.shares : null;
+    const remembered = (_splitLoadPrefs().members || {})[grp] || [];
+    const rows = [{ id: meta.me.id, name: "You", fixed: true }]
+      .concat(people.map(p => ({ id: p.id, name: p.name })));
+    panel.querySelector("[data-split-people]").innerHTML = rows.map(p => {
+      const sid = String(p.id);
+      const on  = p.fixed || (stagedShares ? sid in stagedShares : remembered.includes(sid));
+      const val = stagedShares && sid in stagedShares ? Number(stagedShares[sid]).toFixed(2) : "";
+      return `
+      <div class="split-person">
+        <label><input type="checkbox" data-split-check value="${p.id}" ${on ? "checked" : ""} ${p.fixed ? "disabled" : ""}> <span>${p.name}</span></label>
+        <input type="number" data-split-amt data-id="${p.id}" step="0.01" min="0" placeholder="0.00" value="${val}" ${on ? "" : "disabled"}>
+      </div>`;
+    }).join("");
+    panel.querySelectorAll("[data-split-amt]").forEach(inp => { if (inp.value.trim()) inp.dataset.locked = "1"; });
+    panel.querySelectorAll("[data-split-check]").forEach(cb =>
+      cb.addEventListener("change", () => _splitRecalc(panel, entry)));
+    panel.querySelectorAll("[data-split-amt]").forEach(inp =>
+      inp.addEventListener("input", () => { inp.dataset.locked = inp.value.trim() ? "1" : ""; _splitRecalc(panel, entry); }));
+    _splitApplyFilter(panel);
+    _splitRecalc(panel, entry);
+  }
+
+  function _splitApplyFilter(panel) {
+    const q = (panel.querySelector("[data-split-search]").value || "").trim().toLowerCase();
+    const box = panel.querySelector("[data-split-people]");
+    let shown = 0;
+    box.querySelectorAll(".split-person").forEach(row => {
+      const cb = row.querySelector("[data-split-check]");
+      const isYou = cb && cb.disabled;
+      const name = (row.querySelector("label span")?.textContent || "").toLowerCase();
+      const match = isYou || !q || name.includes(q);
+      row.hidden = !match;
+      if (match && !isYou) shown++;
+    });
+    let empty = box.querySelector(".split-people-empty");
+    if (q && shown === 0) {
+      if (!empty) {
+        empty = document.createElement("div");
+        empty.className = "split-people-empty";
+        empty.textContent = "No matching people";
+        box.appendChild(empty);
+      }
+    } else if (empty) {
+      empty.remove();
+    }
+  }
+
+  function _splitRecalc(panel, entry) {
+    const amount = Math.round(entry.amount * 100) / 100;
+    const checks = [...panel.querySelectorAll("[data-split-check]")];
+    const chosen = checks.filter(c => c.checked).map(c => c.value);
+    panel.querySelectorAll("[data-split-amt]").forEach(inp => {
+      const on = chosen.includes(inp.dataset.id);
+      inp.disabled = !on;
+      if (!on) { inp.value = ""; inp.dataset.locked = ""; }
+    });
+    const amts     = [...panel.querySelectorAll("[data-split-amt]")].filter(i => chosen.includes(i.dataset.id));
+    const locked   = amts.filter(i => i.dataset.locked === "1");
+    const unlocked = amts.filter(i => i.dataset.locked !== "1");
+    const lockedSum = locked.reduce((s, i) => s + (parseFloat(i.value) || 0), 0);
+    const remaining = Math.round((amount - lockedSum) * 100) / 100;
+    if (unlocked.length) {
+      const per = Math.floor((remaining / unlocked.length) * 100) / 100;
+      unlocked.forEach((i, idx) => {
+        i.value = (idx === 0
+          ? Math.round((remaining - per * (unlocked.length - 1)) * 100) / 100
+          : per).toFixed(2);
+      });
+    }
+    const sum = amts.reduce((s, i) => s + (parseFloat(i.value) || 0), 0);
+    const ok  = chosen.length >= 2 && Math.abs(sum - amount) < 0.01;
+    const totEl = panel.querySelector("[data-split-total]");
+    totEl.textContent = `Shares: ${fmt(sum)} / ${fmt(amount)}` +
+      (chosen.length < 2 ? "  ·  pick at least 1 other person" : (ok ? "  ✓" : "  ·  must match total"));
+    totEl.className = "split-total " + (ok ? "ok" : "bad");
+    panel.querySelector("[data-split-save]").disabled = !ok;
+    panel.querySelector("[data-split-push]").disabled = !ok;
+  }
+
+  function _splitGather(panel) {
+    const grp  = panel.querySelector("[data-split-group]").value;
+    const mode = grp === "__individual__" ? "individual" : "group";
+    const shares = {};
+    panel.querySelectorAll("[data-split-check]").forEach(cb => {
+      if (!cb.checked) return;
+      const inp = panel.querySelector(`[data-split-amt][data-id="${cb.value}"]`);
+      shares[cb.value] = parseFloat(inp.value) || 0;
+    });
+    return { grp, mode, group_id: mode === "group" ? grp : "", shares };
+  }
+
+  function _splitSave(panel, entry) {
+    const { grp, mode, group_id, shares } = _splitGather(panel);
+    _queueSet(entry.page_id, {
+      mode, group_id, shares,
+      title: entry.title, amount: entry.amount, ts: Date.now(),
+    });
+    _splitRememberSelection(grp, Object.keys(shares).filter(id => id !== String(_splitMeta.me.id)));
+    showToast("Added to Splitwise queue", "success");
+    panel.hidden = true;
+    _splitRefreshRow(entry.page_id);   // local only — no Notion round-trip
+  }
+
+  async function _splitPush(panel, entry) {
+    const saveBtn = panel.querySelector("[data-split-save]");
+    const btn     = panel.querySelector("[data-split-push]");
+    const errEl   = panel.querySelector("[data-split-err]");
+    const { grp, mode, group_id, shares } = _splitGather(panel);
+    errEl.style.display = "none";
+    btn.disabled = true; saveBtn.disabled = true; btn.textContent = "Pushing…";
+    try {
+      const res = await fetch(`/expenses/${entry.page_id}/push-split/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+        body: JSON.stringify({ mode, group_id, shares }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        errEl.textContent = d.error || "Push failed.";
+        errEl.style.display = "block";
+        btn.disabled = false; saveBtn.disabled = false; btn.textContent = "Push now";
+        return;
+      }
+      _splitRememberSelection(grp, Object.keys(shares).filter(id => id !== String(_splitMeta.me.id)));
+      _queueRemove(entry.page_id);
+      entry.split_added = true;   // push succeeded + Notion ticked server-side
+      showToast(d.warning || "Pushed to Splitwise", d.warning ? "info" : "success", d.warning ? 6000 : 3000);
+      panel.hidden = true;
+      _splitRefreshRow(entry.page_id);
+    } catch (err) {
+      errEl.textContent = "Network error: " + err.message;
+      errEl.style.display = "block";
+      btn.disabled = false; saveBtn.disabled = false; btn.textContent = "Push now";
+    }
+  }
+
+  /* ── Queue bar: push every staged split with its own saved config ── */
+  let _pushingQueue = false;
+
+  function _bulkBarSync() {
+    const ids = Object.keys(_queueLoad());
+    const total = ids.reduce((s, id) => s + (Number(_queueLoad()[id].amount) || 0), 0);
+    const empty = ids.length === 0;
+
+    document.getElementById("bulk-q-badge").textContent = String(ids.length);
+    if (!_pushingQueue) {
+      document.getElementById("bulk-split-count").textContent =
+        empty ? "queue empty" : `split${ids.length !== 1 ? "s" : ""} queued · ${fmt(total)}`;
+    }
+    document.getElementById("bulk-push-btn").disabled  = empty || _pushingQueue;
+    document.getElementById("bulk-clear-btn").disabled = empty || _pushingQueue;
+    // keep the bar up while a push is in flight, even as the queue drains to 0
+    document.getElementById("bulk-split-bar").hidden = empty && !_pushingQueue;
+  }
+
+  function _clearQueue() {
+    if (_pushingQueue || !Object.keys(_queueLoad()).length) return;
+    if (!confirm("Clear all queued splits? This doesn't touch Splitwise or Notion.")) return;
+    try { localStorage.removeItem("ps_split_queue"); } catch {}
+    _rerenderRows();   // drop the "● queued" badges locally
+  }
+
+  async function _pushQueue() {
+    const q = _queueLoad();
+    const ids = Object.keys(q);
+    if (!ids.length || _pushingQueue) return;
+
+    _pushingQueue = true;
+    _bulkBarSync();  // disable both buttons
+
+    const total = ids.length;
+    const prog  = document.getElementById("bulk-progress");
+    const fill  = document.getElementById("bulk-prog-fill");
+    const ptext = document.getElementById("bulk-prog-text");
+    const count = document.getElementById("bulk-split-count");
+    const badge = document.getElementById("bulk-q-badge");
+    prog.hidden = false;
+    fill.style.width = "0%";
+    count.textContent = "emptying queue…";
+
+    let done = 0, failed = 0; const fails = [];
+    for (const pageId of ids) {
+      const cfg = q[pageId];
+      ptext.textContent = `Pushing ${done + failed + 1} / ${total}  ·  ${total - done - failed} left`;
+      try {
+        const res = await fetch(`/expenses/${pageId}/push-split/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+          body: JSON.stringify({ mode: cfg.mode, group_id: cfg.mode === "group" ? cfg.group_id : "", shares: cfg.shares }),
+        });
+        const d = await res.json();
+        if (res.ok) {
+          done++; _queueRemove(pageId);
+          const en = _lastBrowse && (_lastBrowse.entries || []).find(x => x.page_id === pageId);
+          if (en) en.split_added = true;
+        } else { failed++; fails.push(`${cfg.title || pageId}: ${d.error || ("HTTP " + res.status)}`); }
+      } catch (err) { failed++; fails.push(`${cfg.title || pageId}: ${err.message}`); }
+      fill.style.width = Math.round(((done + failed) / total) * 100) + "%";
+      badge.textContent = String(total - done - failed);
+    }
+
+    ptext.textContent = `Done — ${done} pushed${failed ? `, ${failed} failed` : ""}`;
+    count.textContent = "done";
+    fill.style.width = "100%";
+    showToast(`${done} pushed${failed ? `, ${failed} failed` : ""}`, failed ? "info" : "success", 6000);
+    if (failed) alert("Some queued splits failed and stay in the queue:\n\n" + fails.join("\n"));
+
+    _rerenderRows();  // reflect ✓ split added locally — no Notion round-trip
+    // hold the "Done" state briefly, then reset the bar
+    setTimeout(() => {
+      _pushingQueue = false;
+      prog.hidden = true;
+      _bulkBarSync();
+    }, failed ? 2800 : 1100);
+  }
 
   /* ── 15-click secret (section heading area, kept as backup) ── */
   let _cc = 0, _ct = null;
@@ -1175,7 +1652,7 @@
 
   function buildBrowseParams(page) {
     const period = document.getElementById("b-period").value;
-    const p = new URLSearchParams({ period, page: String(page), page_size: "25" });
+    const p = new URLSearchParams({ period, page: String(page), page_size: "50" });
     if (period === "yearly")  p.set("year",  document.getElementById("b-year").value);
     if (period === "monthly") p.set("month", document.getElementById("b-month").value);
     if (period === "weekly")  p.set("week",  document.getElementById("b-week").value);
@@ -1190,11 +1667,13 @@
     const minAmt   = document.getElementById("b-min").value.trim();
     const maxAmt   = document.getElementById("b-max").value.trim();
     const sort     = document.getElementById("b-sort").value;
+    const split    = document.getElementById("b-split").value;
     if (search)   p.set("search", search);
     if (category) p.set("category", category);
     if (source)   p.set("source", source);
     if (minAmt)   p.set("min_amount", minAmt);
     if (maxAmt)   p.set("max_amount", maxAmt);
+    if (split)    p.set("split", split);
     p.set("sort", sort);
     return p.toString();
   }
@@ -1317,49 +1796,154 @@
   /* ── Render browse list ── */
   let currentBrowsePage = 1;
 
-  function renderBrowseList(data) {
-    _lastBrowse = data;
-    currentBrowsePage = data.page;
-    const badge = document.getElementById("browse-count-badge");
-    badge.textContent = `${data.total_count} result${data.total_count !== 1 ? "s" : ""}`;
+  let _browseHasMore = false, _browseLoadingMore = false;
 
+  // Inline SVG icons (Feather, MIT) — no external request, works offline.
+  const _ICON = {
+    edit:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
+  };
+
+  function _browseRow(e) {
+    const cats = _fTag(e.categories).map(c => `<span class="tag tag-cat">${c}</span>`).join("");
+    const src  = e.source ? `<span class="tag tag-src">${e.source}</span>` : "";
+    const pendingSplit = e.add_to_split && !e.split_added;
+    const staged = _queueGet(e.page_id);
+    const splitBadge = e.split_added
+      ? '<span class="split-badge done">✓ split added</span>'
+      : staged
+      ? '<span class="split-badge queued">● queued</span>'
+      : (e.add_to_split ? '<span class="split-badge pending">to split</span>' : '');
+    const splitUI = pendingSplit ? `
+          <button type="button" class="split-toggle" data-split-toggle="${e.page_id}">${staged ? "✏️ Edit queued split" : "🔗 Split on Splitwise"}</button>
+          <div class="split-panel" data-split-page="${e.page_id}" hidden></div>` : '';
+    const cmt = (e.add_to_split && e.comment)
+      ? `<div class="expense-comment">💬 ${e.comment.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\n/g, "<br>")}</div>`
+      : '';
+    return `
+      <div class="expense-row ${e.processed ? "proc" : "unproc"}">
+        <div>
+          <div class="expense-title-row">
+            <div class="expense-title">${e.title}${splitBadge}</div>
+            ${cmt}
+          </div>
+          <div class="expense-meta">${cats}${src}</div>${splitUI}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem;">
+          <div class="expense-amount">${fmt(e.amount)}</div>
+          <div class="expense-date">${e.date || ""}</div>
+          <div class="expense-btn-row">
+            <input type="checkbox" class="proc-toggle" data-proc-id="${e.page_id}" ${e.processed ? "checked" : ""}
+                   title="${e.processed ? "Processed in Notion — click to unmark" : "Mark as processed in Notion"}">
+            <button class="expense-edit-btn" data-entry-id="${e.page_id}" title="Edit" aria-label="Edit">${_ICON.edit}</button>
+            <button class="expense-edit-btn expense-del-btn" data-del-id="${e.page_id}" data-del-title="${e.title.replace(/"/g,'&quot;')}" title="Delete" aria-label="Delete">${_ICON.trash}</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderBrowseList(data, append) {
     const list = document.getElementById("browse-list");
-    if (!data.entries.length) {
+    const more = document.getElementById("browse-more");
+
+    if (append && _lastBrowse) {
+      _lastBrowse.entries = _lastBrowse.entries.concat(data.entries || []);
+      _lastBrowse.page = data.page;
+    } else {
+      _lastBrowse = data;
+    }
+    currentBrowsePage = data.page;
+    _browseHasMore = data.page < data.total_pages;
+
+    document.getElementById("browse-count-badge").textContent =
+      `${data.total_count} result${data.total_count !== 1 ? "s" : ""}`;
+
+    if (!_lastBrowse.entries.length) {
       list.innerHTML = '<div class="empty-state">No expenses match your filters.</div>';
-      document.getElementById("browse-pagination").innerHTML = "";
+      more.innerHTML = "";
+      _bulkBarSync();
       return;
     }
 
-    list.innerHTML = data.entries.map(e => {
-      const cats = _fTag(e.categories).map(c => `<span class="tag tag-cat">${c}</span>`).join("");
-      const src  = e.source ? `<span class="tag tag-src">${e.source}</span>` : "";
-      return `
-        <div class="expense-row">
-          <div>
-            <div class="expense-title">${e.title}</div>
-            <div class="expense-meta">${cats}${src}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;">
-            <div class="expense-amount">${fmt(e.amount)}</div>
-            <div class="expense-date">${e.date || ""}</div>
-            <div style="display:flex;gap:0.3rem;">
-              <button class="expense-edit-btn" data-entry-id="${e.page_id}">Edit</button>
-              <button class="expense-edit-btn expense-del-btn" data-del-id="${e.page_id}" data-del-title="${e.title.replace(/"/g,'&quot;')}">Delete</button>
-            </div>
-          </div>
-        </div>`;
-    }).join("");
+    const rowsHTML = (data.entries || []).map(_browseRow).join("");
+    if (append) {
+      list.insertAdjacentHTML("beforeend", rowsHTML);
+    } else {
+      list.innerHTML = rowsHTML;
+      list.scrollTop = 0;
+    }
 
-    const pg = document.getElementById("browse-pagination");
-    const start = (data.page - 1) * data.page_size + 1;
-    const end   = Math.min(data.page * data.page_size, data.total_count);
-    pg.innerHTML = `
-      <span class="pagination-info">${start}–${end} of ${data.total_count}</span>
-      <div class="pagination-btns">
-        <button class="btn-ghost" onclick="fetchList(${data.page - 1})" ${data.page <= 1 ? "disabled" : ""}>← Prev</button>
-        <button class="btn-ghost" onclick="fetchList(${data.page + 1})" ${data.page >= data.total_pages ? "disabled" : ""}>Next →</button>
-      </div>`;
+    const loaded = _lastBrowse.entries.length;
+    more.textContent = _browseHasMore
+      ? `${loaded} of ${data.total_count} loaded — scroll for more`
+      : `all ${data.total_count} shown`;
+
+    _bulkBarSync();  // reflect the staged-split queue
   }
+
+  // Re-render one row (or all loaded rows) from local state — no network.
+  function _splitRefreshRow(pageId) {
+    const entry = _lastBrowse && (_lastBrowse.entries || []).find(x => x.page_id === pageId);
+    const anchor = document.querySelector(`#browse-list [data-entry-id="${pageId}"]`);
+    const row = anchor && anchor.closest(".expense-row");
+    if (entry && row) row.outerHTML = _browseRow(entry);
+    _bulkBarSync();
+  }
+  function _rerenderRows() {
+    if (!_lastBrowse || !_lastBrowse.entries) return;
+    const list = document.getElementById("browse-list");
+    const st = list.scrollTop;
+    list.innerHTML = _lastBrowse.entries.map(_browseRow).join("");
+    list.scrollTop = st;
+    _bulkBarSync();
+  }
+
+  document.getElementById("browse-list").addEventListener("scroll", ev => {
+    const el = ev.target;
+    if (_browseLoadingMore || !_browseHasMore) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 140) {
+      _browseLoadingMore = true;
+      document.getElementById("browse-more").textContent = "Loading…";
+      fetchList(currentBrowsePage + 1, false, { append: true })
+        .finally(() => { _browseLoadingMore = false; });
+    }
+  });
+
+  // Toggle the Notion "Processed" checkbox straight from a row
+  document.getElementById("browse-list").addEventListener("change", async ev => {
+    const cb = ev.target.closest(".proc-toggle");
+    if (!cb) return;
+    const pageId = cb.dataset.procId;
+    const entry  = _lastBrowse && (_lastBrowse.entries || []).find(x => x.page_id === pageId);
+    if (!entry) { cb.checked = !cb.checked; return; }
+    const want = cb.checked;
+    cb.disabled = true;
+    try {
+      const res = await fetch(`/expenses/${pageId}/update/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+        body: JSON.stringify({
+          name: entry.title, amount: entry.amount, date: entry.date,
+          categories: entry.categories, source: entry.source,
+          comment: entry.comment, other_partner: entry.other_partner,
+          add_to_split: entry.add_to_split, from_split: entry.from_split,
+          split_added: entry.split_added, processed: want,
+          splitwise_id: entry.splitwise_id == null ? "" : entry.splitwise_id,
+        }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { cb.checked = !want; showToast(d.error || "Update failed", "error"); return; }
+      entry.processed = want;
+      const row = cb.closest(".expense-row");
+      if (row) { row.classList.toggle("proc", want); row.classList.toggle("unproc", !want); }
+      showToast(want ? "Marked processed" : "Unmarked processed", "success");
+    } catch (e) {
+      cb.checked = !want;
+      showToast("Network error: " + e.message, "error");
+    } finally {
+      cb.disabled = false;
+    }
+  });
 
   /* ── Fetch summary + insights ── */
   /* ── Top loader bar ── */
@@ -1380,15 +1964,23 @@
     _loaderTimer = setTimeout(() => { el.style.opacity = '0'; setTimeout(() => { el.style.width = '0%'; }, 400); }, 150);
   }
 
-  async function fetchAll(force = false) {
+  let _fetchAllGen = 0, _fetchListGen = 0;
+
+  async function fetchAll(force = false, opts = {}) {
+    const bg = !!opts.bg;
+    const gen = ++_fetchAllGen;
+    const chip = opts.partial ? "recent" : "full";
+    _bgMark(chip, "loading");
     const btn = document.getElementById("btn-summary");
     btn.disabled = true;
     _showLoader();
-    document.getElementById("loading-summary").style.display = "flex";
-    document.getElementById("results-summary").style.display = "none";
+    if (!bg && document.getElementById("results-summary").style.display === "none") {
+      document.getElementById("loading-summary").style.display = "flex";
+      document.getElementById("results-summary").style.display = "none";
+    }
     document.getElementById("error-summary").style.display   = "none";
 
-    const base = buildSummaryParams() + (force ? "&force=1" : "");
+    const base = buildSummaryParams() + (force ? "&force=1" : "") + (opts.partial ? "&partial=1" : "");
     const qsNoGroup = base.replace(/[&?]?group_by=[^&]*/g, "").replace(/^&/, "");
 
     try {
@@ -1400,11 +1992,15 @@
       const chart   = await chartRes.json();
       const insight = await insightRes.json();
 
+      if (gen !== _fetchAllGen) return;  // a newer fetchAll superseded this one
+
       if (!chartRes.ok) {
+        _bgMark(chip, "error");
         showError("error-summary", chart.error || "Something went wrong.");
         return;
       }
 
+      _bgMark(chip, "done", `${chart.total_rows ?? 0} rows`);
       updateCacheBar(chart);
 
       /* Summary */
@@ -1428,6 +2024,7 @@
 
       document.getElementById("results-summary").style.display = "block";
     } catch (e) {
+      _bgMark(chip, "error");
       showError("error-summary", "Network error: " + e.message);
     } finally {
       document.getElementById("loading-summary").style.display = "none";
@@ -1437,24 +2034,37 @@
   }
 
   /* ── Fetch browse list ── */
-  async function fetchList(page, force = false) {
+  async function fetchList(page, force = false, opts = {}) {
+    const bg = !!opts.bg;
+    const append = !!opts.append;
+    const gen = ++_fetchListGen;
+    const chip = opts.partial ? "recent" : "full";
+    if (!append) _bgMark(chip, "loading");
     const btn = document.getElementById("btn-browse");
     btn.disabled = true;
     _showLoader();
-    document.getElementById("loading-browse").style.display  = "flex";
-    document.getElementById("results-browse").style.display  = "none";
+    if (!bg && !append && document.getElementById("results-browse").style.display === "none") {
+      document.getElementById("loading-browse").style.display  = "flex";
+    }
     document.getElementById("error-browse").style.display    = "none";
 
     try {
-      const extra = force ? "&force=1" : "";
+      const extra = (force ? "&force=1" : "") + (opts.partial ? "&partial=1" : "");
       const res   = await fetch(`/expenses/list/?${buildBrowseParams(page)}${extra}`);
       const data  = await res.json();
-      if (!res.ok) { showError("error-browse", data.error || "Something went wrong."); return; }
+      if (gen !== _fetchListGen) return;  // a newer fetchList superseded this one
+      if (!res.ok) {
+        if (!append) _bgMark(chip, "error");
+        showError("error-browse", data.error || "Something went wrong.");
+        return;
+      }
+      if (!append) _bgMark(chip, "done", `${data.total_rows ?? 0} rows`);
       updateCacheBar(data);
-      renderBrowseList(data);
+      renderBrowseList(data, append);
       document.getElementById("results-browse").style.display = "block";
-      document.getElementById("results-browse").scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!bg && !append && !opts.partial) document.getElementById("results-browse").scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (e) {
+      if (!append) _bgMark(chip, "error");
       showError("error-browse", "Network error: " + e.message);
     } finally {
       document.getElementById("loading-browse").style.display = "none";
@@ -1472,7 +2082,7 @@
       await fetchAll(true);
       // If browse results are visible, refresh them too
       if (document.getElementById("results-browse").style.display !== "none") {
-        await fetchList(currentBrowsePage, true);
+        await fetchList(1,true);
       }
     } finally {
       btn.disabled = false;
@@ -1536,6 +2146,13 @@
     document.getElementById("ef-amount").value = entry ? entry.amount : "";
     document.getElementById("ef-date").value   = entry ? entry.date   : new Date().toISOString().slice(0, 10);
     document.getElementById("ef-source").value = entry ? (entry.source || "") : "";
+    document.getElementById("ef-comment").value = entry ? (entry.comment || "") : "";
+    document.getElementById("ef-other-partner").value = entry ? (entry.other_partner || "") : "";
+    document.getElementById("ef-add-to-split").checked = entry ? !!entry.add_to_split : false;
+    document.getElementById("ef-from-split").checked   = entry ? !!entry.from_split : false;
+    document.getElementById("ef-split-added").checked  = entry ? !!entry.split_added : false;
+    document.getElementById("ef-processed").checked    = entry ? !!entry.processed : false;
+    document.getElementById("ef-swid").value = (entry && entry.splitwise_id != null) ? entry.splitwise_id : "";
     // Category pills
     const selectedCats = entry ? (entry.categories || []) : [];
     document.querySelectorAll(".ef-pill").forEach(p => {
@@ -1571,7 +2188,17 @@
     saveBtn.disabled = true;
     saveBtn.textContent = "Saving…";
 
-    const payload = { name, amount: parseFloat(amount), date, categories: cats, source };
+    const swidRaw = document.getElementById("ef-swid").value.trim();
+    const payload = {
+      name, amount: parseFloat(amount), date, categories: cats, source,
+      comment: document.getElementById("ef-comment").value,
+      other_partner: document.getElementById("ef-other-partner").value,
+      add_to_split: document.getElementById("ef-add-to-split").checked,
+      from_split: document.getElementById("ef-from-split").checked,
+      split_added: document.getElementById("ef-split-added").checked,
+      processed: document.getElementById("ef-processed").checked,
+      splitwise_id: swidRaw === "" ? "" : Number(swidRaw),
+    };
     const url     = _efPageId ? `/expenses/${_efPageId}/update/` : "/expenses/create/";
     const method  = _efPageId ? "PATCH" : "POST";
 
@@ -1591,7 +2218,7 @@
       showToast('Expense added', 'success');
       // Refresh both the browse list and insights
       if (document.getElementById("results-browse").style.display !== "none") {
-        await fetchList(currentBrowsePage, true);
+        await fetchList(1,true);
       }
       await fetchAll(true);
       // Re-populate dropdowns with fresh data (new categories/sources may have been added)
@@ -1646,7 +2273,7 @@
       const data = await res.json();
       if (!res.ok) { btn.disabled = false; btn.textContent = "Delete"; alert(data.error || "Delete failed."); return; }
       _delClose();
-      await fetchList(currentBrowsePage, true);
+      await fetchList(1,true);
       await fetchAll(true);
     } catch (err) {
       btn.disabled = false; btn.textContent = "Delete";
@@ -1659,9 +2286,47 @@
       .find(c => c.startsWith("csrftoken="))?.split("=")[1] || "";
   }
 
-  // Auto-fetch on page load with default filters
-  fetchAll();
-  fetchList(1);
+  /* ── Progressive load + fetch-status markers ── */
+  const _BG_LABEL = { recent: "Recent 2mo", full: "All expenses", splitwise: "Splitwise" };
+  function _bgMark(id, state, detail) {
+    const el = document.getElementById("bg-" + id);
+    if (!el) return;
+    el.className = "bg-chip " + (state === "off" ? "idle" : state);
+    const base = _BG_LABEL[id] || id;
+    el.textContent = base + (
+      state === "loading" ? " · fetching…" :
+      state === "error"   ? " · failed" :
+      state === "off"     ? " · not connected" :
+      state === "done"    ? (detail ? " · " + detail : " · ready") : ""
+    );
+  }
+
+  async function _bootstrap() {
+    // The Recent / All-expenses chips are driven from fetchList/fetchAll themselves.
+    _bgMark("splitwise", "loading");
+    _splitEnsureMeta()
+      .then(m => m
+        ? _bgMark("splitwise", "done", `${m.groups.length} groups · ${m.friends.length} friends`)
+        : _bgMark("splitwise", "off"))
+      .catch(() => _bgMark("splitwise", "error"));
+
+    // Phase 1 — current + previous month only, for a fast first paint
+    try {
+      await Promise.all([
+        fetchAll(false, { partial: true }),
+        fetchList(1, false, { partial: true }),
+      ]);
+    } catch (e) {}
+    _bulkBarSync();  // show the queue bar even if the list failed to render
+
+    // Phase 2 — full dataset in the background, then silently overwrite the UI
+    Promise.all([
+      fetchAll(false, { bg: true }),
+      fetchList(1,false, { bg: true }),
+    ]).catch(() => {});
+  }
+
+  _bootstrap();
 
   /* ── Theme toggle ── */
   (function() {
@@ -1704,6 +2369,36 @@
         <label for="ef-source">Source</label>
         <select id="ef-source"><option value="">— None —</option></select>
       </div>
+      <div class="ef-field">
+        <label for="ef-comment">Comment</label>
+        <textarea id="ef-comment" rows="3" placeholder="Notes…" style="resize:vertical;"></textarea>
+      </div>
+      <div class="ef-field">
+        <label for="ef-other-partner">Other Partner</label>
+        <input type="text" id="ef-other-partner" autocomplete="off" />
+      </div>
+      <div class="ef-field">
+        <label>Flags</label>
+        <div class="ef-checks">
+          <label><input type="checkbox" id="ef-add-to-split"> Add to Split</label>
+          <label><input type="checkbox" id="ef-from-split"> From Split</label>
+          <label><input type="checkbox" id="ef-split-added"> Split Added</label>
+          <label><input type="checkbox" id="ef-processed"> Processed</label>
+        </div>
+      </div>
+      <div class="ef-field">
+        <label for="ef-swid" style="text-transform:none;font-weight:600;">Splitwise ID <span style="font-weight:400;color:#9CA3AF;">— advanced; clear to allow re-import</span></label>
+        <input type="number" id="ef-swid" step="1" autocomplete="off" />
+      </div>
+      <details class="ef-sw" id="ef-sw" style="display:none;">
+        <summary>Also split on Splitwise</summary>
+        <div class="ef-field" style="margin-top:0.5rem;">
+          <label for="ef-sw-group">Group</label>
+          <select id="ef-sw-group" onchange="_efSwRenderMembers()"><option value="">— Select group —</option></select>
+        </div>
+        <div class="ef-sw-members" id="ef-sw-members"></div>
+        <div style="font-size:0.72rem;color:#9CA3AF;margin-top:0.4rem;">Splits the amount equally between you and the people you tick. You are recorded as the payer.</div>
+      </details>
     </div>
     <div class="ef-error" id="ef-error"></div>
     <div class="ef-actions">
@@ -1724,6 +2419,7 @@
     </div>
   </div>
 </div>
+
 <script>
 /* Stagger + scroll-triggered card/section animations */
 (function(){

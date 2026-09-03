@@ -58,10 +58,12 @@ class ExpensesSummaryView(ExpensesBaseView):
         start    = request.GET.get("start", "")
         end      = request.GET.get("end", "")
         force    = request.GET.get("force", "") in ("1", "true")
+        partial  = request.GET.get("partial", "") in ("1", "true")
 
         try:
             result = self.service.get_summary(
-                period, group_by, year, month, week, day, start, end, force
+                period, group_by, year, month, week, day, start, end, force,
+                partial=partial,
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -86,9 +88,12 @@ class ExpensesTimeseriesView(ExpensesBaseView):
         start  = request.GET.get("start", "")
         end    = request.GET.get("end", "")
         force  = request.GET.get("force", "") in ("1", "true")
+        partial = request.GET.get("partial", "") in ("1", "true")
 
         try:
-            result = self.service.get_timeseries(period, year, month, week, day, start, end, force)
+            result = self.service.get_timeseries(
+                period, year, month, week, day, start, end, force, partial=partial
+            )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
         except requests.HTTPError as exc:
@@ -113,10 +118,12 @@ class ExpensesChartView(ExpensesBaseView):
         start    = request.GET.get("start", "")
         end      = request.GET.get("end", "")
         force    = request.GET.get("force", "") in ("1", "true")
+        partial  = request.GET.get("partial", "") in ("1", "true")
 
         try:
             result = self.service.get_chart(
-                period, group_by, year, month, week, day, start, end, force
+                period, group_by, year, month, week, day, start, end, force,
+                partial=partial,
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -141,10 +148,11 @@ class ExpensesCategoryTimeseriesView(ExpensesBaseView):
         start  = request.GET.get("start", "")
         end    = request.GET.get("end", "")
         force  = request.GET.get("force", "") in ("1", "true")
+        partial = request.GET.get("partial", "") in ("1", "true")
 
         try:
             result = self.service.get_category_timeseries(
-                period, year, month, week, day, start, end, force
+                period, year, month, week, day, start, end, force, partial=partial
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -169,9 +177,12 @@ class ExpensesInsightsView(ExpensesBaseView):
         start  = request.GET.get("start", "")
         end    = request.GET.get("end", "")
         force  = request.GET.get("force", "") in ("1", "true")
+        partial = request.GET.get("partial", "") in ("1", "true")
 
         try:
-            result = self.service.get_insights(period, year, month, week, day, start, end, force)
+            result = self.service.get_insights(
+                period, year, month, week, day, start, end, force, partial=partial
+            )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
         except requests.HTTPError as exc:
@@ -200,7 +211,9 @@ class ExpensesListView(ExpensesBaseView):
         max_amt  = request.GET.get("max_amount", "")
         sort     = request.GET.get("sort", "date_desc")
         search   = request.GET.get("search", "").strip().lower()
+        split    = request.GET.get("split", "").strip()
         force    = request.GET.get("force", "") in ("1", "true")
+        partial  = request.GET.get("partial", "") in ("1", "true")
 
         try:
             page      = max(1, int(request.GET.get("page", 1)))
@@ -215,7 +228,8 @@ class ExpensesListView(ExpensesBaseView):
             result = self.service.list_entries(
                 period, year, month, week, day, start, end,
                 category, source, min_amount, max_amount,
-                sort, search, force, page, page_size,
+                sort, search, force, page, page_size, split,
+                partial=partial,
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -240,9 +254,12 @@ class ExpensesHeatmapView(ExpensesBaseView):
         start  = request.GET.get("start", "")
         end    = request.GET.get("end", "")
         force  = request.GET.get("force", "") in ("1", "true")
+        partial = request.GET.get("partial", "") in ("1", "true")
 
         try:
-            result = self.service.get_heatmap(period, year, month, week, day, start, end, force)
+            result = self.service.get_heatmap(
+                period, year, month, week, day, start, end, force, partial=partial
+            )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
         except requests.HTTPError as exc:
@@ -251,6 +268,17 @@ class ExpensesHeatmapView(ExpensesBaseView):
             return JsonResponse({"error": f"Network error: {exc}"}, status=502)
 
         return JsonResponse(result)
+
+
+_EXTRA_KEYS = (
+    "comment", "other_partner", "add_to_split", "from_split",
+    "split_added", "processed", "splitwise_id",
+)
+
+
+def _extra_fields(data):
+    """Only the optional-column keys the client actually sent (absent = untouched)."""
+    return {k: data[k] for k in _EXTRA_KEYS if k in data}
 
 
 class ExpensesCreateView(ExpensesBaseView):
@@ -270,7 +298,9 @@ class ExpensesCreateView(ExpensesBaseView):
         source     = (data.get("source") or "").strip()
 
         try:
-            page_id = self.service.create_entry(name, amount, date_str, categories, source)
+            page_id = self.service.create_entry(
+                name, amount, date_str, categories, source, **_extra_fields(data)
+            )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
         except requests.HTTPError as exc:
@@ -298,7 +328,9 @@ class ExpensesUpdateView(ExpensesBaseView):
         source     = (data.get("source") or "").strip()
 
         try:
-            self.service.update_entry(page_id, name, amount, date_str, categories, source)
+            self.service.update_entry(
+                page_id, name, amount, date_str, categories, source, **_extra_fields(data)
+            )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
         except requests.HTTPError as exc:

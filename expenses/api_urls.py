@@ -7,6 +7,10 @@ from .views import (
     ExpensesChartView, ExpensesCategoryTimeseriesView, ExpensesHeatmapView,
     ExpensesInsightsView,
 )
+from .splitwise_views import (
+    SplitwiseCreateView, SplitwiseExpensesView, SplitwiseGroupsView,
+    SplitwiseImportView, SplitwiseOverviewView, SplitwisePushEntryView,
+)
 
 urlpatterns = [
     path("summary/",                   csrf_exempt(ExpensesSummaryView.as_view()),             name="api-expenses-summary"),
@@ -19,4 +23,10 @@ urlpatterns = [
     path("category-timeseries/",       csrf_exempt(ExpensesCategoryTimeseriesView.as_view()), name="api-expenses-category-timeseries"),
     path("heatmap/",                   csrf_exempt(ExpensesHeatmapView.as_view()),             name="api-expenses-heatmap"),
     path("insights/",                  csrf_exempt(ExpensesInsightsView.as_view()),            name="api-expenses-insights"),
+    path("splitwise/overview/",         csrf_exempt(SplitwiseOverviewView.as_view()),           name="api-expenses-splitwise-overview"),
+    path("splitwise/expenses/",         csrf_exempt(SplitwiseExpensesView.as_view()),           name="api-expenses-splitwise-expenses"),
+    path("splitwise/groups/",           csrf_exempt(SplitwiseGroupsView.as_view()),             name="api-expenses-splitwise-groups"),
+    path("splitwise/create/",           csrf_exempt(SplitwiseCreateView.as_view()),             name="api-expenses-splitwise-create"),
+    path("splitwise/import/",           csrf_exempt(SplitwiseImportView.as_view()),             name="api-expenses-splitwise-import"),
+    path("<str:page_id>/push-split/",   csrf_exempt(SplitwisePushEntryView.as_view()),          name="api-expenses-push-split"),
 ]

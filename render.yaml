@@ -40,6 +40,12 @@ services:
         sync: false
       - key: JIRA_PROJECT_KEY
         sync: false
+      - key: SPLITWISE_CONSUMER_KEY
+        sync: false
+      - key: SPLITWISE_CONSUMER_SECRET
+        sync: false
+      - key: SPLITWISE_API_KEY
+        sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
