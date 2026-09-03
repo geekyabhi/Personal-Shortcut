@@ -312,9 +312,7 @@
     .tag-src { background: rgba(16,185,129,0.1); color: #059669; }
 
     .expense-row {
-      display: grid; grid-template-columns: 1fr auto;
-      gap: 0.4rem 0.75rem; padding: 0.75rem 0.55rem;
-      border-bottom: 1px solid #F3F4F6; align-items: start;
+      padding: 0.75rem 0.55rem; border-bottom: 1px solid #F3F4F6;
       border-radius: 8px; transition: background 0.15s;
     }
     .expense-row:last-child { border-bottom: none; }
@@ -322,7 +320,17 @@
     .expense-row.unproc { background: rgba(239,68,68,0.09); }
     [data-theme="dark"] .expense-row.proc   { background: rgba(16,185,129,0.05); }
     [data-theme="dark"] .expense-row.unproc { background: rgba(239,68,68,0.10); }
-    .expense-title { font-size: 0.9rem; font-weight: 600; color: #111827; }
+    .er-head   { display: flex; align-items: flex-start; gap: 0.75rem; }
+    .er-head-l { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap; }
+    .er-head-l .expense-title { flex: 1 1 auto; min-width: 7rem; }
+    .er-head-r { flex: none; }
+    .er-toggle { display: none; }
+    .er-details { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; margin-top: 0.4rem; }
+    .er-details .expense-meta { flex: 1 1 auto; min-width: 0; margin-top: 0; }
+    .er-details .expense-btn-row { margin-left: auto; }
+    .er-details .split-toggle,
+    .er-details .split-panel { flex-basis: 100%; }
+    .expense-title { font-size: 0.9rem; font-weight: 600; color: #111827; overflow-wrap: anywhere; }
     .expense-meta  { font-size: 0.75rem; color: #9CA3AF; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
     .expense-amount { font-size: 0.95rem; font-weight: 700; color: var(--accent); text-align: right; white-space: nowrap; }
     .expense-date   { font-size: 0.72rem; color: #9CA3AF; text-align: right; }
@@ -359,16 +367,34 @@
 
     /* ── Mobile fixes ── */
     @media (max-width: 600px) {
-      /* comment drops below the expense name instead of squeezing it */
-      .expense-title-row { flex-wrap: wrap; gap: 0.15rem 0.5rem; }
-      .expense-comment   { max-width: 100%; flex-basis: 100%; text-align: left; margin-top: 0.15rem; }
-      /* tighter rows so the action column always fits */
-      .expense-row     { padding: 0.7rem 0.35rem; gap: 0.35rem 0.5rem; }
-      .expense-btn-row { gap: 0.3rem; }
+      /* ── Collapsible expense rows ── */
+      .expense-row  { padding: 0.6rem 0.3rem; }
+      .er-head      { gap: 0.5rem; }
+      .er-head-l    { gap: 0.05rem 0.5rem; }
+      .er-head-l .expense-title { flex-basis: 100%; min-width: 0; }
+      .expense-comment { flex-basis: 100%; max-width: 100%; text-align: left; margin-left: 0; margin-top: 0.05rem; }
+      .expense-row:not(.open) .expense-comment {
+        display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+      }
+      .er-toggle {
+        display: inline-flex; align-items: center; justify-content: center; flex: none;
+        width: 26px; height: 26px; padding: 0; margin-top: -0.1rem;
+        border: none; background: transparent; color: #9CA3AF;
+        font-size: 0.8rem; cursor: pointer; transition: transform 0.15s;
+      }
+      .expense-row.open .er-toggle { transform: rotate(180deg); }
+      .er-details        { display: none; }
+      .expense-row.open .er-details { display: flex; }
+      .er-details .expense-btn-row { margin-left: auto; margin-top: 0.15rem; }
+      .expense-btn-row  { gap: 0.35rem; }
       .expense-edit-btn { width: 28px; height: 28px; }
-      /* status chips stay whole */
-      .bg-chip { white-space: nowrap; }
-      .bg-markers { gap: 0.35rem; }
+
+      /* status chips: one per line, full width, text wraps — never overflow */
+      .bg-markers { flex-direction: column; align-items: stretch; gap: 0.35rem; }
+      .bg-chip { align-items: flex-start; font-size: 0.62rem; line-height: 1.35; }
+      .bg-chip::before { margin-top: 0.3rem; }
+      /* cache bar wraps instead of overflowing */
+      .cache-bar { flex-wrap: wrap; row-gap: 0.35rem; border-radius: 16px; }
       /* queue bar: progress bar takes its own row while pushing */
       #bulk-split-bar { gap: 0.45rem; }
       #bulk-progress  { flex-basis: 100%; min-width: 0; }
@@ -730,10 +756,8 @@
     .split-person label span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .split-person input[type=number] { width:82px; flex:none; padding:0.28rem 0.45rem; border-radius:8px; border:1px solid rgba(0,0,0,0.16); font-size:0.8rem; text-align:right; }
     [data-theme="dark"] .split-person input[type=number] { background:rgba(255,255,255,0.07); color:#F9FAFB; border-color:rgba(255,255,255,0.16); }
-    .expense-title-row { display: flex; align-items: flex-start; gap: 0.75rem; }
-    .expense-title-row .expense-title { flex: 1; min-width: 0; }
     .expense-comment {
-      flex: none; max-width: 52%; text-align: right;
+      flex: 0 1 auto; max-width: 46%; text-align: right; margin-left: auto;
       font-size: 0.72rem; color: #6B7280; font-style: italic; line-height: 1.3;
     }
     [data-theme="dark"] .expense-comment { color:#9CA3AF; }
@@ -1843,16 +1867,20 @@
       : '';
     return `
       <div class="expense-row ${e.processed ? "proc" : "unproc"}">
-        <div>
-          <div class="expense-title-row">
+        <div class="er-head">
+          <div class="er-head-l">
             <div class="expense-title">${e.title}${splitBadge}</div>
             ${cmt}
           </div>
-          <div class="expense-meta">${cats}${src}</div>${splitUI}
+          <div class="er-head-r">
+            <div class="expense-amount">${fmt(e.amount)}</div>
+            <div class="expense-date">${e.date || ""}</div>
+          </div>
+          <button type="button" class="er-toggle" aria-label="Toggle details">▾</button>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem;">
-          <div class="expense-amount">${fmt(e.amount)}</div>
-          <div class="expense-date">${e.date || ""}</div>
+        <div class="er-details">
+          <div class="expense-meta">${cats}${src}</div>
+          ${splitUI}
           <div class="expense-btn-row">
             <input type="checkbox" class="proc-toggle" data-proc-id="${e.page_id}" ${e.processed ? "checked" : ""}
                    title="${e.processed ? "Processed in Notion — click to unmark" : "Mark as processed in Notion"}">
@@ -1907,9 +1935,21 @@
     const entry = _lastBrowse && (_lastBrowse.entries || []).find(x => x.page_id === pageId);
     const anchor = document.querySelector(`#browse-list [data-entry-id="${pageId}"]`);
     const row = anchor && anchor.closest(".expense-row");
-    if (entry && row) row.outerHTML = _browseRow(entry);
+    if (entry && row) {
+      const wasOpen = row.classList.contains("open");
+      row.outerHTML = _browseRow(entry);
+      if (wasOpen) document.querySelector(`#browse-list [data-entry-id="${pageId}"]`)
+        ?.closest(".expense-row")?.classList.add("open");
+    }
     _bulkBarSync();
   }
+
+  // Expand / collapse a row's details (mobile)
+  document.getElementById("browse-list").addEventListener("click", ev => {
+    const t = ev.target.closest(".er-toggle");
+    if (!t) return;
+    t.closest(".expense-row")?.classList.toggle("open");
+  });
   function _rerenderRows() {
     if (!_lastBrowse || !_lastBrowse.entries) return;
     const list = document.getElementById("browse-list");
