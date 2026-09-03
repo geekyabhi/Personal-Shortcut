@@ -152,7 +152,14 @@
     .toast { background: #111827; color: #fff; font-size: 0.82rem; font-weight: 600; padding: 0.6rem 1rem; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
     .toast.success { background: #059669; } .toast.error { background: #DC2626; }
 
-    @media (max-width: 760px) { .stat-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) {
+      .stat-grid { grid-template-columns: 1fr; }
+      .detail-controls input, .detail-controls select { flex-basis: 100%; min-width: 0; }
+      .bulk-bar { gap: 0.4rem; }
+      .bulk-bar button { flex: 1 1 auto; }
+      .row-title { white-space: normal; }
+      .container { max-width: 100%; }
+    }
 
     [data-theme="dark"] body { background: #0F0F14; color: #F9FAFB; }
     [data-theme="dark"] .card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
