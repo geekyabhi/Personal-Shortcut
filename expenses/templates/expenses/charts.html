@@ -56,7 +56,7 @@
     nav a:not(.active):hover { background: rgba(79,70,229,0.07); color: var(--accent); }
 
     /* Mobile nav dropdown (hidden on desktop) */
-    .nav-drop { display: none; position: relative; }
+    .nav-drop { display: none; position: relative; z-index: 60; }
     .nav-drop-btn {
       display: inline-flex; align-items: center; gap: 0.5rem;
       padding: 0.5rem 0.95rem; border-radius: 100px; cursor: pointer; font: inherit;
@@ -66,10 +66,11 @@
     }
     .nav-drop-btn svg { width: 17px; height: 17px; flex: none; }
     .nav-drop-menu {
-      position: absolute; top: calc(100% + 8px); left: 0; z-index: 400;
-      min-width: 190px; padding: 0.35rem; display: flex; flex-direction: column; gap: 0.12rem;
+      position: absolute; top: calc(100% + 8px); left: 0; z-index: 10;
+      min-width: 200px; max-height: 70vh; overflow-y: auto;
+      padding: 0.35rem; display: flex; flex-direction: column; gap: 0.12rem;
       background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 14px;
-      box-shadow: 0 14px 44px rgba(0,0,0,0.16);
+      box-shadow: 0 14px 44px rgba(0,0,0,0.18);
       animation: navDropIn 0.14s ease both;
     }
     @keyframes navDropIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
@@ -85,9 +86,10 @@
     [data-theme="dark"] .nav-drop-menu a { color: #9CA3AF; }
 
     @media (max-width: 640px) {
-      .topbar { padding-left: 1.9rem; margin-bottom: 1.5rem; }
+      .topbar { margin-bottom: 1.5rem; }
       nav { display: none; }
       .nav-drop { display: block; }
+      .corner-btn { display: none; }
       .theme-btn { width: 34px; height: 34px; }
     }
 
