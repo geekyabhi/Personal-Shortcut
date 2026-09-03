@@ -416,9 +416,17 @@
     }
     .corner-btn:hover { color: rgba(79,70,229,0.35); background: rgba(79,70,229,0.06); }
     .corner-btn.on    { color: rgba(16,185,129,0.45); }
-    /* on mobile indent the nav past the corner button so they don't overlap */
+    /* ── Mobile nav: single swipeable line, clear of the fixed buttons ── */
     @media (max-width: 640px) {
-      nav { margin-left: 2.5rem; }
+      nav {
+        display: flex; width: fit-content; max-width: 100%;
+        margin: 1.9rem 0 1.4rem;
+        flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch; scrollbar-width: none;
+      }
+      nav::-webkit-scrollbar { display: none; }
+      nav a { flex: none; white-space: nowrap; padding: 0.42rem 0.85rem; font-size: 0.82rem; }
+      .theme-btn { top: auto; bottom: 1rem; right: 1rem; }
     }
 
     /* ── Cache status bar ── */

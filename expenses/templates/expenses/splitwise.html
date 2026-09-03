@@ -38,6 +38,17 @@
     nav a { padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280; }
     nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
     nav a:not(.active):hover { background: rgba(79,70,229,0.07); color: var(--accent); }
+    @media (max-width: 640px) {
+      nav {
+        display: flex; width: fit-content; max-width: 100%;
+        margin: 0.4rem 0 1.4rem;
+        flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch; scrollbar-width: none;
+      }
+      nav::-webkit-scrollbar { display: none; }
+      nav a { flex: none; white-space: nowrap; padding: 0.42rem 0.85rem; font-size: 0.82rem; }
+      .theme-btn { top: auto; bottom: 1rem; right: 1rem; }
+    }
 
     .head-row { display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
     h1 {
