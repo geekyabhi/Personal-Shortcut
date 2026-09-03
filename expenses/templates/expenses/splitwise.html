@@ -29,25 +29,29 @@
     .container { max-width: 1000px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
     @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
 
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.75rem; margin-bottom: 2rem;
+    }
     nav {
       display: inline-flex; gap: 0.2rem; flex-wrap: wrap;
       background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
-      padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); margin-bottom: 2rem;
+      padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07);
     }
     nav a { padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280; }
     nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
     nav a:not(.active):hover { background: rgba(79,70,229,0.07); color: var(--accent); }
     @media (max-width: 640px) {
+      .topbar { margin-bottom: 1.5rem; }
       nav {
-        display: flex; width: fit-content; max-width: 100%;
-        margin: 0.4rem 0 1.4rem;
+        flex: 1 1 auto; min-width: 0;
         flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain;
         -webkit-overflow-scrolling: touch; scrollbar-width: none;
       }
       nav::-webkit-scrollbar { display: none; }
       nav a { flex: none; white-space: nowrap; padding: 0.42rem 0.85rem; font-size: 0.82rem; }
-      .theme-btn { top: auto; bottom: 1rem; right: 1rem; }
+      .theme-btn { width: 34px; height: 34px; }
     }
 
     .head-row { display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
@@ -156,8 +160,9 @@
     .banner { background: rgba(245,158,11,0.12); color: #92400E; border: 1px solid rgba(245,158,11,0.35); border-radius: 14px; padding: 0.9rem 1.1rem; font-size: 0.85rem; margin-bottom: 1.25rem; }
 
     .theme-btn {
-      position: fixed; top: 1rem; right: 1rem; z-index: 50; width: 40px; height: 40px; border-radius: 50%;
-      border: none; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.12); font-size: 1.1rem; cursor: pointer;
+      flex: none; width: 38px; height: 38px; border-radius: 50%;
+      border: none; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.12); font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
     }
     #toast-container { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 0.5rem; }
     .toast { background: #111827; color: #fff; font-size: 0.82rem; font-weight: 600; padding: 0.6rem 1rem; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
@@ -188,17 +193,19 @@
   <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
 </head>
 <body>
-  <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
 
   <div class="container">
-    <nav>
-      <a href="/">Home</a>
-      <a href="/expenses/">Dashboard</a>
-      <a href="/expenses/charts/">Charts</a>
-      <a href="/expenses/splitwise/" class="active">Splitwise</a>
-    </nav>
+    <div class="topbar">
+      <nav>
+        <a href="/">Home</a>
+        <a href="/expenses/">Dashboard</a>
+        <a href="/expenses/charts/">Charts</a>
+        <a href="/expenses/splitwise/" class="active">Splitwise</a>
+      </nav>
+      <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
+    </div>
 
     <div class="head-row">
       <h1>Splitwise</h1>
