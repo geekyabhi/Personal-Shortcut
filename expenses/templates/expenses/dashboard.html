@@ -373,6 +373,10 @@
       transition: border-color 0.15s, background 0.15s, opacity 0.15s;
     }
     .be-row:last-child { border-bottom-color: transparent; margin-bottom: 0; }
+    .be-row.proc   { background: rgba(16,185,129,0.035); }
+    .be-row.unproc { background: rgba(239,68,68,0.09); }
+    [data-theme="dark"] .be-row.proc   { background: rgba(16,185,129,0.05); }
+    [data-theme="dark"] .be-row.unproc { background: rgba(239,68,68,0.10); }
     .be-row.dirty { border-left-color: var(--accent); background: rgba(79,70,229,0.04); }
     .be-row.row-saving { opacity: 0.55; pointer-events: none; }
     [data-theme="dark"] .be-row { border-bottom-color: rgba(255,255,255,0.22); }
@@ -1783,8 +1787,8 @@
         : (e.add_to_split ? '<span class="tag tag-flag-off">○ split not added</span>' : "");
       extra = `<div class="expense-meta">${cats}${src}${other}${swid}${proc}${addSplit}${fromSplit}${splitAdded}</div>`;
     }
-    const rowClass = `expense-row ${e.processed ? "proc" : "unproc"}${_detailView ? " dv-clickable" : ""}`;
-    const rowAttrs = _detailView ? ` data-detail-id="${e.page_id}"` : "";
+    const rowClass = `expense-row ${e.processed ? "proc" : "unproc"} dv-clickable`;
+    const rowAttrs = ` data-detail-id="${e.page_id}"`;
     return `
       <div class="${rowClass}"${rowAttrs}>
         <div class="er-left">
@@ -1865,9 +1869,8 @@
   function _dvClose() { document.getElementById("dv-overlay").classList.remove("open"); }
   function _dvBgClick(ev) { if (ev.target === document.getElementById("dv-overlay")) _dvClose(); }
 
-  // Click a row (detail view only) to open the inspect modal — ignore clicks on controls.
+  // Click a row (any view, not just detail view) to open the inspect modal — ignore clicks on controls.
   document.getElementById("browse-list").addEventListener("click", ev => {
-    if (!_detailView) return;
     if (ev.target.closest("button, input, select, a, label, .split-panel")) return;
     const row = ev.target.closest(".expense-row[data-detail-id]");
     if (row) _dvOpen(row.dataset.detailId);
@@ -1916,7 +1919,7 @@
       .concat([...srcSet].map(n => `<option value="${_esc(n)}"${n === s.source ? " selected" : ""}>${_esc(n)}</option>`))
       .join("");
     return `
-      <div class="be-row" data-be-id="${e.page_id}">
+      <div class="be-row ${e.processed ? "proc" : "unproc"}" data-be-id="${e.page_id}">
         <input type="text" class="be-title" data-bef="name" value="${_esc(s.name)}" placeholder="Expense name">
         <div class="be-grid">
           <div class="be-field"><label>Amount</label><input type="number" step="0.01" data-bef="amount" value="${_esc(s.amount)}"></div>
