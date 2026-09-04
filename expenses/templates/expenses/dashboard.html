@@ -346,10 +346,18 @@
     .tag-src { background: rgba(16,185,129,0.1); color: #059669; }
 
     .expense-row {
+      position: relative;
       padding: 0.75rem 0.55rem; border-bottom: 1px solid #F3F4F6;
       border-radius: 8px; transition: background 0.15s;
     }
     .expense-row:last-child { border-bottom: none; }
+    .expense-row.row-saving { opacity: 0.55; }
+    .expense-row.row-saving::after {
+      content: ""; position: absolute; top: 8px; right: 8px;
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid rgba(79,70,229,0.25); border-top-color: var(--accent);
+      animation: spin 0.7s linear infinite;
+    }
     .expense-row.proc   { background: rgba(16,185,129,0.035); }
     .expense-row.unproc { background: rgba(239,68,68,0.09); }
     [data-theme="dark"] .expense-row.proc   { background: rgba(16,185,129,0.05); }
@@ -2045,22 +2053,23 @@
     if (e.target === document.getElementById("ef-overlay")) _efClose();
   }
 
-  async function _efSave() {
-    const name     = document.getElementById("ef-name").value.trim();
-    const amount   = document.getElementById("ef-amount").value;
-    const date     = document.getElementById("ef-date").value;
-    const source   = document.getElementById("ef-source").value;
-    const cats     = [...document.querySelectorAll(".ef-pill.on")].map(p => p.dataset.cat);
-    const errEl    = document.getElementById("ef-error");
-    const saveBtn  = document.getElementById("ef-save-btn");
+  function _rowSaving(pageId, on) {
+    document.querySelector(`#browse-list [data-entry-id="${pageId}"]`)
+      ?.closest(".expense-row")?.classList.toggle("row-saving", on);
+  }
+
+  function _efSave() {
+    const name   = document.getElementById("ef-name").value.trim();
+    const amount = document.getElementById("ef-amount").value;
+    const date   = document.getElementById("ef-date").value;
+    const source = document.getElementById("ef-source").value;
+    const cats   = [...document.querySelectorAll(".ef-pill.on")].map(p => p.dataset.cat);
+    const errEl  = document.getElementById("ef-error");
 
     if (!name)   { errEl.textContent = "Name is required.";   errEl.style.display = "block"; return; }
     if (!amount) { errEl.textContent = "Amount is required."; errEl.style.display = "block"; return; }
     if (!date)   { errEl.textContent = "Date is required.";   errEl.style.display = "block"; return; }
     errEl.style.display = "none";
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Saving…";
-    _showLoader();
 
     const swidRaw = document.getElementById("ef-swid").value.trim();
     const swid    = swidRaw === "" ? null : Number(swidRaw);
@@ -2074,9 +2083,38 @@
       processed: document.getElementById("ef-processed").checked,
       splitwise_id: swidRaw === "" ? "" : swid,
     };
-    const editId  = _efPageId;
-    const url     = editId ? `/expenses/${editId}/update/` : "/expenses/create/";
-    const method  = editId ? "PATCH" : "POST";
+    const fields = {
+      title: name, amount: payload.amount, date, categories: cats, source,
+      comment: payload.comment, other_partner: payload.other_partner,
+      add_to_split: payload.add_to_split, from_split: payload.from_split,
+      split_added: payload.split_added, processed: payload.processed,
+      splitwise_id: swid,
+    };
+    const editId = _efPageId;
+
+    // Close the modal now — the save runs in the background with a row loader.
+    _efClose();
+    _saveEntry(editId, payload, fields);
+  }
+
+  async function _saveEntry(editId, payload, fields) {
+    const url    = editId ? `/expenses/${editId}/update/` : "/expenses/create/";
+    const method = editId ? "PATCH" : "POST";
+
+    let rowId, prev = null;
+    if (editId) {
+      const en = (_lastBrowse?.entries || []).find(x => x.page_id === editId);
+      if (en) { prev = { ...en }; Object.assign(en, fields); }
+      _splitRefreshRow(editId);
+      rowId = editId;
+    } else {
+      rowId = "tmp-" + Date.now();
+      _browseFull.unshift({ page_id: rowId, ...fields });
+      _browseShown = Math.min(_browseFull.length, _browseShown + 1);
+      document.getElementById("results-browse").style.display = "block";
+      _paintBrowse(true);
+    }
+    _rowSaving(rowId, true);
 
     try {
       const res  = await fetch(url, {
@@ -2084,41 +2122,28 @@
         headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        errEl.textContent = data.error || "Something went wrong.";
-        errEl.style.display = "block";
-        return;
-      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Save failed");
 
-      // Patch local state — no full reload.
-      const fields = {
-        title: name, amount: payload.amount, date, categories: cats, source,
-        comment: payload.comment, other_partner: payload.other_partner,
-        add_to_split: payload.add_to_split, from_split: payload.from_split,
-        split_added: payload.split_added, processed: payload.processed,
-        splitwise_id: swid,
-      };
       if (editId) {
-        const en = (_lastBrowse?.entries || []).find(x => x.page_id === editId);
-        if (en) Object.assign(en, fields);
-        _splitRefreshRow(editId);
+        _rowSaving(rowId, false);
         showToast('Expense updated', 'success');
       } else {
-        _browseFull.unshift({ page_id: data.page_id, ...fields });
-        _browseShown = Math.min(_browseFull.length, _browseShown + 1);
-        document.getElementById("results-browse").style.display = "block";
-        _paintBrowse(true);
+        const tmp = _browseFull.find(e => e.page_id === rowId);
+        if (tmp) tmp.page_id = data.page_id;
+        _paintBrowse(true);   // fresh render drops the saving state
         showToast('Expense added', 'success');
       }
-      _efClose();
     } catch (e) {
-      errEl.textContent = "Network error: " + e.message;
-      errEl.style.display = "block";
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = "Save";
-      _hideLoader();
+      if (editId) {
+        const en = (_lastBrowse?.entries || []).find(x => x.page_id === editId);
+        if (en && prev) Object.assign(en, prev);
+        _splitRefreshRow(editId);
+      } else {
+        const i = _browseFull.findIndex(e => e.page_id === rowId);
+        if (i >= 0) { _browseFull.splice(i, 1); _paintBrowse(true); }
+      }
+      showToast(e.message || "Network error", "error", 5000);
     }
   }
 
