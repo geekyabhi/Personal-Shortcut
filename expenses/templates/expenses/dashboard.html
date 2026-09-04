@@ -1796,6 +1796,7 @@
     if (!entry) { cb.checked = !cb.checked; return; }
     const want = cb.checked;
     cb.disabled = true;
+    _showLoader();
     try {
       const res = await fetch(`/expenses/${pageId}/update/`, {
         method: "PATCH",
@@ -1820,6 +1821,7 @@
       showToast("Network error: " + e.message, "error");
     } finally {
       cb.disabled = false;
+      _hideLoader();
     }
   });
 
@@ -2058,8 +2060,10 @@
     errEl.style.display = "none";
     saveBtn.disabled = true;
     saveBtn.textContent = "Saving…";
+    _showLoader();
 
     const swidRaw = document.getElementById("ef-swid").value.trim();
+    const swid    = swidRaw === "" ? null : Number(swidRaw);
     const payload = {
       name, amount: parseFloat(amount), date, categories: cats, source,
       comment: document.getElementById("ef-comment").value,
@@ -2068,10 +2072,11 @@
       from_split: document.getElementById("ef-from-split").checked,
       split_added: document.getElementById("ef-split-added").checked,
       processed: document.getElementById("ef-processed").checked,
-      splitwise_id: swidRaw === "" ? "" : Number(swidRaw),
+      splitwise_id: swidRaw === "" ? "" : swid,
     };
-    const url     = _efPageId ? `/expenses/${_efPageId}/update/` : "/expenses/create/";
-    const method  = _efPageId ? "PATCH" : "POST";
+    const editId  = _efPageId;
+    const url     = editId ? `/expenses/${editId}/update/` : "/expenses/create/";
+    const method  = editId ? "PATCH" : "POST";
 
     try {
       const res  = await fetch(url, {
@@ -2085,35 +2090,35 @@
         errEl.style.display = "block";
         return;
       }
+
+      // Patch local state — no full reload.
+      const fields = {
+        title: name, amount: payload.amount, date, categories: cats, source,
+        comment: payload.comment, other_partner: payload.other_partner,
+        add_to_split: payload.add_to_split, from_split: payload.from_split,
+        split_added: payload.split_added, processed: payload.processed,
+        splitwise_id: swid,
+      };
+      if (editId) {
+        const en = (_lastBrowse?.entries || []).find(x => x.page_id === editId);
+        if (en) Object.assign(en, fields);
+        _splitRefreshRow(editId);
+        showToast('Expense updated', 'success');
+      } else {
+        _browseFull.unshift({ page_id: data.page_id, ...fields });
+        _browseShown = Math.min(_browseFull.length, _browseShown + 1);
+        document.getElementById("results-browse").style.display = "block";
+        _paintBrowse(true);
+        showToast('Expense added', 'success');
+      }
       _efClose();
-      showToast('Expense added', 'success');
-      // Refresh both the browse list and insights
-      if (document.getElementById("results-browse").style.display !== "none") {
-        await fetchList(true);
-      }
-      await fetchAll(true);
-      // Re-populate dropdowns with fresh data (new categories/sources may have been added)
-      const ins = await fetch("/expenses/insights/?period=all&force=1");
-      if (ins.ok) {
-        const d = await ins.json();
-        _allCats = (d.by_category || []).map(c => c.name);
-        _allSrcs = (d.by_source   || []).map(s => s.name);
-        _efBuildFormOptions();
-        const catSel = document.getElementById("b-category");
-        const srcSel = document.getElementById("b-source");
-        const curCat = catSel.value; const curSrc = srcSel.value;
-        catSel.innerHTML = '<option value="">All Categories</option>';
-        srcSel.innerHTML = '<option value="">All Sources</option>';
-        _allCats.forEach(n => { const o = new Option(n, n); catSel.appendChild(o); });
-        _allSrcs.forEach(n => { const o = new Option(n, n); srcSel.appendChild(o); });
-        catSel.value = curCat; srcSel.value = curSrc;
-      }
     } catch (e) {
       errEl.textContent = "Network error: " + e.message;
       errEl.style.display = "block";
     } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = "Save";
+      _hideLoader();
     }
   }
 
@@ -2136,19 +2141,29 @@
   async function _delConfirm() {
     if (!_delId) return;
     const btn = document.getElementById("del-confirm-btn");
+    const id  = _delId;
     btn.disabled = true; btn.textContent = "Deleting…";
+    _showLoader();
     try {
-      const res  = await fetch(`/expenses/${_delId}/delete/`, {
+      const res  = await fetch(`/expenses/${id}/delete/`, {
         method: "DELETE", headers: { "X-CSRFToken": _getCsrf() },
       });
       const data = await res.json();
       if (!res.ok) { btn.disabled = false; btn.textContent = "Delete"; alert(data.error || "Delete failed."); return; }
       _delClose();
-      await fetchList(true);
-      await fetchAll(true);
+      // Drop it from local state — no full reload.
+      const idx = _browseFull.findIndex(e => e.page_id === id);
+      if (idx >= 0) {
+        _browseFull.splice(idx, 1);
+        if (_browseShown > _browseFull.length) _browseShown = _browseFull.length;
+        _paintBrowse(true);
+      }
+      showToast('Expense deleted', 'success');
     } catch (err) {
       btn.disabled = false; btn.textContent = "Delete";
       alert("Network error: " + err.message);
+    } finally {
+      _hideLoader();
     }
   }
 
