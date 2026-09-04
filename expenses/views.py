@@ -212,6 +212,7 @@ class ExpensesListView(ExpensesBaseView):
         sort     = request.GET.get("sort", "date_desc")
         search   = request.GET.get("search", "").strip().lower()
         split    = request.GET.get("split", "").strip()
+        processed = request.GET.get("processed", "").strip()
         force    = request.GET.get("force", "") in ("1", "true")
         partial  = request.GET.get("partial", "") in ("1", "true")
         want_all = request.GET.get("all", "") in ("1", "true")
@@ -230,7 +231,7 @@ class ExpensesListView(ExpensesBaseView):
                 period, year, month, week, day, start, end,
                 category, source, min_amount, max_amount,
                 sort, search, force, page, page_size, split,
-                partial=partial, unpaginated=want_all,
+                partial=partial, unpaginated=want_all, processed=processed,
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)

@@ -806,6 +806,7 @@ class ExpensesService:
         split_filter: str = "",
         partial: bool = False,
         unpaginated: bool = False,
+        processed: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, sort=sort)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -841,6 +842,10 @@ class ExpensesService:
             if split_filter == "flagged" and not e["add_to_split"]:
                 continue
             if split_filter == "unflagged" and e["add_to_split"]:
+                continue
+            if processed == "true" and not e["processed"]:
+                continue
+            if processed == "false" and e["processed"]:
                 continue
 
             entries.append(e)

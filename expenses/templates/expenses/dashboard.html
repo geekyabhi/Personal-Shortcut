@@ -645,6 +645,38 @@
       color: #6B7280; background: transparent; transition: all 0.15s; font-family: inherit;
     }
     .ef-pill.on { background: #EEF2FF; border-color: #6366F1; color: #4F46E5; }
+    .be-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .be-pill {
+      padding: 0.22rem 0.6rem; border-radius: 100px; border: 1.5px solid #E5E7EB;
+      font-size: 0.72rem; font-weight: 600; cursor: pointer; user-select: none;
+      color: #6B7280; background: transparent; transition: all 0.15s; font-family: inherit;
+    }
+    .be-pill.on { background: #EEF2FF; border-color: #6366F1; color: #4F46E5; }
+    [data-theme="dark"] .be-pill { border-color: rgba(255,255,255,0.12); color: #9CA3AF; }
+    [data-theme="dark"] .be-pill.on { background: rgba(99,102,241,0.18); border-color: #6366F1; color: #818CF8; }
+    .be-pill-new, .ef-pill-new {
+      display: inline-flex; align-items: center; gap: 0.15rem; font-size: 0.75rem; font-weight: 600;
+      border: 1.5px dashed #C7D2FE; border-radius: 100px; padding: 0.15rem 0.3rem 0.15rem 0.6rem;
+    }
+    .be-pill-new-input, .ef-pill-new-input {
+      border: none; background: transparent; font: inherit; color: inherit;
+      width: 82px; min-width: 0; outline: none;
+    }
+    .be-pill-new-btn, .ef-pill-new-btn, .be-src-new-btn, .ef-src-new-btn {
+      border: none; background: transparent; color: var(--accent);
+      font-weight: 800; font-size: 0.85rem; line-height: 1; cursor: pointer;
+      width: 18px; height: 18px; border-radius: 50%; flex: none;
+    }
+    .be-pill-new-btn:hover, .ef-pill-new-btn:hover, .be-src-new-btn:hover, .ef-src-new-btn:hover { background: rgba(79,70,229,0.12); }
+    [data-theme="dark"] .be-pill-new, [data-theme="dark"] .ef-pill-new { border-color: rgba(99,102,241,0.4); }
+    .be-src-new, .ef-src-new {
+      display: flex; align-items: center; gap: 0.15rem; margin-top: 0.35rem; font-size: 0.78rem;
+      border: 1.5px dashed #E5E7EB; border-radius: 8px; padding: 0.15rem 0.15rem 0.15rem 0.5rem;
+    }
+    .be-src-new-input, .ef-src-new-input {
+      flex: 1; min-width: 0; border: none; background: transparent; font: inherit; color: inherit; outline: none;
+    }
+    [data-theme="dark"] .be-src-new, [data-theme="dark"] .ef-src-new { border-color: rgba(255,255,255,0.14); }
     .ef-actions { display: flex; gap: 0.6rem; margin-top: 1.5rem; }
     .ef-btn-cancel {
       flex: 1; padding: 0.6rem; border-radius: 10px; border: 1.5px solid #E5E7EB;
@@ -977,6 +1009,14 @@
             <option value="needs">Add to Split — not pushed</option>
             <option value="done">Split Added ✓</option>
             <option value="unflagged">Not marked for split</option>
+          </select>
+        </div>
+        <div>
+          <label for="b-processed">Processed status</label>
+          <select id="b-processed">
+            <option value="">All</option>
+            <option value="true">Processed</option>
+            <option value="false">Unprocessed</option>
           </select>
         </div>
       </div>
@@ -1688,12 +1728,14 @@
     const maxAmt   = document.getElementById("b-max").value.trim();
     const sort     = document.getElementById("b-sort").value;
     const split    = document.getElementById("b-split").value;
+    const processed = document.getElementById("b-processed").value;
     if (search)   p.set("search", search);
     if (category) p.set("category", category);
     if (source)   p.set("source", source);
     if (minAmt)   p.set("min_amount", minAmt);
     if (maxAmt)   p.set("max_amount", maxAmt);
     if (split)    p.set("split", split);
+    if (processed) p.set("processed", processed);
     p.set("sort", sort);
     return p.toString();
   }
@@ -1889,9 +1931,10 @@
 
   function _beRead(row) {
     const g = f => row.querySelector(`[data-bef="${f}"]`);
+    const catCats = [...g("categories").querySelectorAll(".be-pill.on")].map(p => p.dataset.cat);
     return {
       name: g("name").value.trim(), amount: g("amount").value.trim(), date: g("date").value,
-      source: g("source").value, categories: g("categories").value.trim(),
+      source: g("source").value, categories: catCats.join(", "),
       comment: g("comment").value, other_partner: g("other_partner").value,
       splitwise_id: g("splitwise_id").value.trim(),
       processed: g("processed").checked, add_to_split: g("add_to_split").checked,
@@ -1918,15 +1961,26 @@
     const srcOpts = ['<option value="">— None —</option>']
       .concat([...srcSet].map(n => `<option value="${_esc(n)}"${n === s.source ? " selected" : ""}>${_esc(n)}</option>`))
       .join("");
+    // Always include the row's own categories too, even if the all-time list hasn't loaded yet.
+    const catSet = new Set(_allCats);
+    (e.categories || []).forEach(c => catSet.add(c));
+    const selectedCats = new Set(e.categories || []);
+    const catPills = [...catSet]
+      .map(n => `<button type="button" class="be-pill${selectedCats.has(n) ? " on" : ""}" data-cat="${_esc(n)}">${_esc(n)}</button>`)
+      .join("") + `<span class="be-pill-new"><input type="text" class="be-pill-new-input" placeholder="+ new category"><button type="button" class="be-pill-new-btn" title="Add category">+</button></span>`;
     return `
       <div class="be-row ${e.processed ? "proc" : "unproc"}" data-be-id="${e.page_id}">
         <input type="text" class="be-title" data-bef="name" value="${_esc(s.name)}" placeholder="Expense name">
         <div class="be-grid">
           <div class="be-field"><label>Amount</label><input type="number" step="0.01" data-bef="amount" value="${_esc(s.amount)}"></div>
           <div class="be-field"><label>Date</label><input type="date" data-bef="date" value="${_esc(s.date)}"></div>
-          <div class="be-field"><label>Source</label><select data-bef="source">${srcOpts}</select></div>
+          <div class="be-field">
+            <label>Source</label>
+            <select data-bef="source">${srcOpts}</select>
+            <span class="be-src-new"><input type="text" class="be-src-new-input" placeholder="+ new source"><button type="button" class="be-src-new-btn" title="Add source">+</button></span>
+          </div>
           <div class="be-field"><label>Splitwise ID</label><input type="number" step="1" data-bef="splitwise_id" value="${_esc(s.splitwise_id)}"></div>
-          <div class="be-field wide"><label>Categories (comma-separated)</label><input type="text" data-bef="categories" value="${_esc(s.categories)}"></div>
+          <div class="be-field wide"><label>Categories</label><div class="be-pills" data-bef="categories">${catPills}</div></div>
           <div class="be-field wide"><label>Comment</label><input type="text" data-bef="comment" value="${_esc(s.comment)}"></div>
           <div class="be-field wide"><label>Other Partner</label><input type="text" data-bef="other_partner" value="${_esc(s.other_partner)}"></div>
           <div class="be-checks">
@@ -1956,6 +2010,56 @@
   document.getElementById("browse-list").addEventListener("change", ev => {
     if (!_bulkEdit || !ev.target.closest(".be-row")) return;
     ev.target.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  // "Type and push" a new category into one bulk-edit row (selected there immediately).
+  function _bePushNewCategory(input) {
+    const row = input.closest(".be-row");
+    const name = _registerNewCategory(input.value);
+    input.value = "";
+    if (!name || !row) return;
+    const container = row.querySelector('[data-bef="categories"]');
+    let pill = [...container.querySelectorAll(".be-pill")].find(p => p.dataset.cat === name);
+    if (!pill) {
+      pill = document.createElement("button");
+      pill.type = "button"; pill.className = "be-pill"; pill.dataset.cat = name; pill.textContent = name;
+      container.insertBefore(pill, container.querySelector(".be-pill-new"));
+    }
+    pill.classList.add("on");
+    row.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  // Same for a new source.
+  function _bePushNewSource(input) {
+    const row = input.closest(".be-row");
+    const name = _registerNewSource(input.value);
+    input.value = "";
+    if (!name || !row) return;
+    const select = row.querySelector('select[data-bef="source"]');
+    let opt = [...select.options].find(o => o.value === name);
+    if (!opt) {
+      opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      select.appendChild(opt);
+    }
+    select.value = name;
+    row.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  // Category pills in bulk edit are buttons, not inputs — toggle + report as a change.
+  document.getElementById("browse-list").addEventListener("click", ev => {
+    if (!_bulkEdit) return;
+    const newCatBtn = ev.target.closest(".be-pill-new-btn");
+    if (newCatBtn) { _bePushNewCategory(newCatBtn.previousElementSibling); return; }
+    const newSrcBtn = ev.target.closest(".be-src-new-btn");
+    if (newSrcBtn) { _bePushNewSource(newSrcBtn.previousElementSibling); return; }
+    const pill = ev.target.closest(".be-pill");
+    if (!pill) return;
+    pill.classList.toggle("on");
+    pill.closest(".be-row")?.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  document.getElementById("browse-list").addEventListener("keydown", ev => {
+    if (ev.key !== "Enter" || !_bulkEdit) return;
+    if (ev.target.classList.contains("be-pill-new-input")) { ev.preventDefault(); _bePushNewCategory(ev.target); }
+    else if (ev.target.classList.contains("be-src-new-input")) { ev.preventDefault(); _bePushNewSource(ev.target); }
   });
 
   function _bulkEditSave() {
@@ -2258,6 +2362,21 @@
 
   // Populate category/source dropdowns + form options from all-time data
   let _allCats = [], _allSrcs = [];
+
+  // "Type and push" a brand-new category/source name into the shared lists —
+  // Notion itself creates the option on save, this just makes it pickable now.
+  function _registerNewCategory(raw) {
+    const name = String(raw ?? "").trim();
+    if (!name) return null;
+    if (!_allCats.includes(name)) _allCats.push(name);
+    return name;
+  }
+  function _registerNewSource(raw) {
+    const name = String(raw ?? "").trim();
+    if (!name) return null;
+    if (!_allSrcs.includes(name)) _allSrcs.push(name);
+    return name;
+  }
   (async function populateFilterDropdowns() {
     try {
       const res  = await fetch("/expenses/insights/?period=all");
@@ -2291,12 +2410,57 @@
       btn.onclick = () => btn.classList.toggle("on");
       pills.appendChild(btn);
     });
+    // "Type and push" a brand-new category
+    const addWrap = document.createElement("span");
+    addWrap.className = "ef-pill-new";
+    addWrap.innerHTML = '<input type="text" class="ef-pill-new-input" placeholder="+ new category">'
+      + '<button type="button" class="ef-pill-new-btn" title="Add category">+</button>';
+    pills.appendChild(addWrap);
+    // These fire only once per page load (this function only runs once), so no dedup needed.
+    pills.addEventListener("click", ev => {
+      const btn = ev.target.closest(".ef-pill-new-btn");
+      if (btn) _efPushNewCategory(btn.previousElementSibling);
+    });
+    pills.addEventListener("keydown", ev => {
+      if (ev.key === "Enter" && ev.target.classList.contains("ef-pill-new-input")) {
+        ev.preventDefault();
+        _efPushNewCategory(ev.target);
+      }
+    });
     // Source select
     const src = document.getElementById("ef-source");
     src.innerHTML = '<option value="">— None —</option>';
     _allSrcs.forEach(name => {
       const o = document.createElement("option"); o.value = name; o.textContent = name; src.appendChild(o);
     });
+  }
+
+  function _efPushNewCategory(input) {
+    const name = _registerNewCategory(input.value);
+    input.value = "";
+    if (!name) return;
+    const pills = document.getElementById("ef-cats");
+    let pill = [...pills.querySelectorAll(".ef-pill")].find(p => p.dataset.cat === name);
+    if (!pill) {
+      pill = document.createElement("button");
+      pill.type = "button"; pill.className = "ef-pill"; pill.dataset.cat = name; pill.textContent = name;
+      pill.onclick = () => pill.classList.toggle("on");
+      pills.insertBefore(pill, pills.querySelector(".ef-pill-new"));
+    }
+    pill.classList.add("on");
+  }
+  function _efPushNewSource(input) {
+    const name = _registerNewSource(input.value);
+    input.value = "";
+    if (!name) return;
+    const select = document.getElementById("ef-source");
+    let opt = [...select.options].find(o => o.value === name);
+    if (!opt) {
+      opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      select.appendChild(opt);
+    }
+    select.value = name;
   }
 
   function _efOpen(entry) {
@@ -2318,6 +2482,9 @@
     document.querySelectorAll(".ef-pill").forEach(p => {
       p.classList.toggle("on", selectedCats.includes(p.dataset.cat));
     });
+    const efCatNew = document.querySelector(".ef-pill-new-input");
+    if (efCatNew) efCatNew.value = "";
+    document.getElementById("ef-src-new-input").value = "";
     document.getElementById("ef-error").style.display = "none";
     document.getElementById("ef-save-btn").disabled = false;
     document.getElementById("ef-overlay").classList.add("open");
@@ -2591,6 +2758,11 @@
       <div class="ef-field">
         <label for="ef-source">Source</label>
         <select id="ef-source"><option value="">— None —</option></select>
+        <span class="ef-src-new">
+          <input type="text" id="ef-src-new-input" placeholder="+ new source"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();_efPushNewSource(this);}">
+          <button type="button" class="ef-src-new-btn" title="Add source" onclick="_efPushNewSource(document.getElementById('ef-src-new-input'))">+</button>
+        </span>
       </div>
       <div class="ef-field">
         <label for="ef-comment">Comment</label>
