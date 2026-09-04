@@ -176,6 +176,10 @@
     .btn-ghost:active { transform: scale(0.97); }
     .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* Header toggle buttons (Detail view / Bulk edit) swap between .btn-ghost and .btn-primary
+       at runtime — neutralize .btn-primary's standalone-button layout so they don't jump. */
+    #dv-toggle, #be-toggle { margin-top: 0; display: inline-block; width: auto; }
+
     /* Period badge */
     .period-badge {
       display: inline-block; padding: 0.3rem 0.9rem; border-radius: 100px;
@@ -344,9 +348,12 @@
     .tag { display: inline-block; padding: 0.18rem 0.55rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; }
     .tag-cat { background: rgba(79,70,229,0.1); color: var(--accent); }
     .tag-src { background: rgba(16,185,129,0.1); color: #059669; }
+    .tag-flag-off { background: rgba(107,114,128,0.12); color: #6B7280; }
+    [data-theme="dark"] .tag-flag-off { background: rgba(255,255,255,0.08); color: #9CA3AF; }
 
     .expense-row {
       position: relative;
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
       padding: 0.75rem 0.55rem; border-bottom: 1px solid #F3F4F6;
       border-radius: 8px; transition: background 0.15s;
     }
@@ -361,20 +368,24 @@
 
     /* ── Inline bulk-edit rows ── */
     .be-row {
-      border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 0.7rem 0.75rem;
-      margin-bottom: 0.55rem; transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+      border: none; border-bottom: 2px solid #D1D5DB; border-left: 3px solid transparent;
+      padding: 0.7rem 0.75rem 1.75rem 0.6rem; margin-bottom: 1.75rem;
+      transition: border-color 0.15s, background 0.15s, opacity 0.15s;
     }
-    .be-row.dirty { border-color: var(--accent); background: rgba(79,70,229,0.04); }
+    .be-row:last-child { border-bottom-color: transparent; margin-bottom: 0; }
+    .be-row.dirty { border-left-color: var(--accent); background: rgba(79,70,229,0.04); }
     .be-row.row-saving { opacity: 0.55; pointer-events: none; }
-    [data-theme="dark"] .be-row { border-color: rgba(255,255,255,0.12); }
+    [data-theme="dark"] .be-row { border-bottom-color: rgba(255,255,255,0.22); }
     [data-theme="dark"] .be-row.dirty { background: rgba(129,140,248,0.1); }
     .be-title {
-      display: block; width: 100%; border: none; border-bottom: 1.5px dashed #E5E7EB;
+      display: block; width: 100%; border: none; border-bottom: 1.5px solid transparent;
       background: transparent; font-size: 1rem; font-weight: 800; color: #111827;
       font-family: inherit; padding: 0.1rem 0.1rem 0.45rem; margin-bottom: 0.6rem;
     }
+    .be-title:hover { border-bottom-color: #E5E7EB; }
     .be-title:focus { outline: none; border-bottom-color: var(--accent); }
-    [data-theme="dark"] .be-title { color: #F9FAFB; border-bottom-color: rgba(255,255,255,0.15); }
+    [data-theme="dark"] .be-title:hover { border-bottom-color: rgba(255,255,255,0.15); }
+    [data-theme="dark"] .be-title { color: #F9FAFB; }
     .be-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem 0.6rem; }
     .be-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
     .be-field.wide { grid-column: 1 / -1; }
@@ -394,20 +405,16 @@
     .expense-row.unproc { background: rgba(239,68,68,0.09); }
     [data-theme="dark"] .expense-row.proc   { background: rgba(16,185,129,0.05); }
     [data-theme="dark"] .expense-row.unproc { background: rgba(239,68,68,0.10); }
-    .er-head   { display: flex; align-items: flex-start; gap: 0.75rem; }
-    .er-head-l { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap; }
-    .er-head-l .expense-title { flex: 1 1 auto; min-width: 7rem; }
-    .er-head-r { flex: none; }
-    .er-toggle { display: none; }
-    .er-details { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; margin-top: 0.4rem; }
-    .er-details .expense-meta { flex: 1 1 auto; min-width: 0; margin-top: 0; }
-    .er-details .expense-btn-row { margin-left: auto; }
-    .er-details .split-panel { flex-basis: 100%; }
-    .er-details .split-toggle { flex: 0 0 auto; align-self: flex-start; margin-right: auto; }
+    .er-left  { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; }
     .expense-title { font-size: 0.9rem; font-weight: 600; color: #111827; overflow-wrap: anywhere; }
-    .expense-meta  { font-size: 0.75rem; color: #9CA3AF; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
-    .expense-amount { font-size: 0.95rem; font-weight: 700; color: var(--accent); text-align: right; white-space: nowrap; }
-    .expense-date   { font-size: 0.72rem; color: #9CA3AF; text-align: right; }
+    .expense-amount { font-size: 0.95rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
+    .expense-date   { font-size: 0.72rem; color: #9CA3AF; }
+    .expense-row .expense-btn-row { flex: none; flex-direction: column; gap: 0.35rem; }
+    .expense-meta { font-size: 0.72rem; color: #9CA3AF; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+    .expense-row.dv-clickable { cursor: pointer; }
+    .expense-row.dv-clickable:hover { background: rgba(79,70,229,0.06); }
+    [data-theme="dark"] .expense-row.dv-clickable:hover { background: rgba(129,140,248,0.08); }
+    [data-theme="dark"] .expense-meta { color: #9CA3AF; }
 
     /* Scrollable browse list */
     #browse-list { max-height: 620px; overflow-y: auto; overscroll-behavior: contain; padding-right: 0.35rem; }
@@ -441,25 +448,7 @@
 
     /* ── Mobile fixes ── */
     @media (max-width: 600px) {
-      /* ── Collapsible expense rows ── */
       .expense-row  { padding: 0.6rem 0.3rem; }
-      .er-head      { gap: 0.5rem; }
-      .er-head-l    { gap: 0.05rem 0.5rem; }
-      .er-head-l .expense-title { flex-basis: 100%; min-width: 0; }
-      .expense-comment { flex-basis: 100%; max-width: 100%; text-align: left; margin-left: 0; margin-top: 0.05rem; }
-      .expense-row:not(.open) .expense-comment {
-        display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
-      }
-      .er-toggle {
-        display: inline-flex; align-items: center; justify-content: center; flex: none;
-        width: 26px; height: 26px; padding: 0; margin-top: -0.1rem;
-        border: none; background: transparent; color: #9CA3AF;
-        font-size: 0.8rem; cursor: pointer; transition: transform 0.15s;
-      }
-      .expense-row.open .er-toggle { transform: rotate(180deg); }
-      .er-details        { display: none; }
-      .expense-row.open .er-details { display: flex; }
-      .er-details .expense-btn-row { margin-left: auto; margin-top: 0.15rem; }
       .expense-btn-row  { gap: 0.35rem; }
       .expense-edit-btn { width: 28px; height: 28px; }
 
@@ -609,7 +598,6 @@
     [data-theme="dark"] .insight-hero-sub { color: #6B7280; }
     [data-theme="dark"] .expense-row { border-bottom-color: rgba(255,255,255,0.07); }
     [data-theme="dark"] .expense-title { color: #F9FAFB; }
-    [data-theme="dark"] .expense-meta { color: #9CA3AF; }
     [data-theme="dark"] .expense-date { color: #6B7280; }
 
     /* ── Expense form modal ── */
@@ -668,6 +656,38 @@
     }
     .ef-btn-save:disabled { opacity: 0.55; cursor: not-allowed; }
     .ef-error { font-size: 0.78rem; color: #EF4444; margin-top: 0.5rem; display: none; }
+    /* ── Expense detail modal ── */
+    .dv-overlay {
+      display: none; position: fixed; inset: 0; z-index: 850;
+      background: rgba(10,10,20,0.55); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .dv-overlay.open { display: flex; }
+    .dv-box {
+      background: #fff; border-radius: 20px; padding: 1.75rem 1.5rem;
+      width: 100%; max-width: 440px; margin: 1rem;
+      max-height: 88vh; overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.18);
+      position: relative;
+    }
+    .dv-close {
+      position: absolute; top: 1rem; right: 1rem; width: 28px; height: 28px;
+      border: none; background: transparent; color: #9CA3AF; font-size: 1rem;
+      cursor: pointer; border-radius: 8px; line-height: 1;
+    }
+    .dv-close:hover { background: #F3F4F6; color: #374151; }
+    .dv-title { font-size: 1.1rem; font-weight: 800; color: #111827; letter-spacing: -0.02em; padding-right: 1.75rem; overflow-wrap: anywhere; }
+    .dv-amount { font-size: 1.4rem; font-weight: 800; color: var(--accent); margin: 0.3rem 0 1.1rem; }
+    .dv-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+    .dv-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid #F3F4F6; }
+    .dv-k { font-size: 0.72rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.04em; flex: none; }
+    .dv-v { font-size: 0.85rem; font-weight: 600; color: #111827; text-align: right; overflow-wrap: anywhere; }
+    .dv-actions { display: flex; gap: 0.6rem; margin-top: 1.5rem; }
+    [data-theme="dark"] .dv-box { background: #1B1B28; }
+    [data-theme="dark"] .dv-close:hover { background: rgba(255,255,255,0.08); color: #E5E7EB; }
+    [data-theme="dark"] .dv-title { color: #F9FAFB; }
+    [data-theme="dark"] .dv-row { border-bottom-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] .dv-v { color: #F9FAFB; }
     .expense-btn-row { display: flex; align-items: center; gap: 0.4rem; }
     .expense-btn-row .proc-toggle {
       -webkit-appearance: auto; appearance: auto;
@@ -825,7 +845,6 @@
     .split-person input[type=number] { width:82px; flex:none; padding:0.28rem 0.45rem; border-radius:8px; border:1px solid rgba(0,0,0,0.16); font-size:0.8rem; text-align:right; }
     [data-theme="dark"] .split-person input[type=number] { background:rgba(255,255,255,0.07); color:#F9FAFB; border-color:rgba(255,255,255,0.16); }
     .expense-comment {
-      flex: 0 1 auto; max-width: 46%; text-align: right; margin-left: auto;
       font-size: 0.72rem; color: #6B7280; font-style: italic; line-height: 1.3;
     }
     [data-theme="dark"] .expense-comment { color:#9CA3AF; }
@@ -973,6 +992,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;gap:0.5rem;flex-wrap:wrap;">
       <div class="section-heading" style="margin-top:0;cursor:default;user-select:none;" onclick="_titleClick()"><span>📋</span> Browse Expenses</div>
       <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <button class="btn-ghost" id="dv-toggle" onclick="_detailViewToggle()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Show extra details per row, click a row to inspect">🔍 Detail view</button>
         <button class="btn-ghost" id="be-toggle" onclick="_bulkEditToggle()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Edit multiple rows inline">✎ Bulk edit</button>
         <button class="btn-ghost" onclick="_exportCSV()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Export current list to CSV">↓ CSV</button>
         <button class="btn-primary" onclick="_efOpen(null)" style="margin-top:0;">+ Add Expense</button>
@@ -1005,10 +1025,12 @@
           <button class="btn-primary" id="bulk-push-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_pushQueue()">Push all queued</button>
           <button class="btn-ghost" id="bulk-clear-btn" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_clearQueue()">Clear queue</button>
         </div>
-        <div id="be-bar" hidden style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:0.55rem 0.9rem;background:rgba(79,70,229,0.08);border:1px solid var(--accent);border-radius:12px;">
-          <strong id="be-count" style="font-size:0.82rem;">Bulk edit — 0 changed</strong>
-          <button class="btn-primary" id="be-save-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_bulkEditSave()" disabled>Save changed</button>
-          <button class="btn-ghost" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_bulkEditToggle()">Exit</button>
+        <div id="be-bar" hidden style="display:flex;align-items:center;justify-content:space-between;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+          <strong id="be-count" style="font-size:1.05rem;font-weight:700;letter-spacing:-0.01em;">Bulk edit — 0 changed</strong>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <button class="btn-primary" id="be-save-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_bulkEditSave()" disabled>Save changed</button>
+            <button class="btn-ghost" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_bulkEditToggle()">Exit</button>
+          </div>
         </div>
         <div id="browse-list"></div>
         <div id="browse-more"></div>
@@ -1734,8 +1756,6 @@
   };
 
   function _browseRow(e) {
-    const cats = _fTag(e.categories).map(c => `<span class="tag tag-cat">${c}</span>`).join("");
-    const src  = e.source ? `<span class="tag tag-src">${e.source}</span>` : "";
     const pendingSplit = e.add_to_split && !e.split_added;
     const staged = _queueGet(e.page_id);
     const splitBadge = e.split_added
@@ -1746,31 +1766,40 @@
     const splitUI = pendingSplit ? `
           <button type="button" class="split-toggle" data-split-toggle="${e.page_id}">${staged ? "✏️ Edit queued split" : "🔗 Split on Splitwise"}</button>
           <div class="split-panel" data-split-page="${e.page_id}" hidden></div>` : '';
-    const cmt = (e.add_to_split && e.comment)
+    const cmt = ((_detailView || e.add_to_split) && e.comment)
       ? `<div class="expense-comment">💬 ${e.comment.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\n/g, "<br>")}</div>`
       : '';
+    let extra = '';
+    if (_detailView) {
+      const cats = _fTag(e.categories).map(c => `<span class="tag tag-cat">${c}</span>`).join("");
+      const src  = e.source ? `<span class="tag tag-src">${e.source}</span>` : "";
+      const other = e.other_partner ? `<span class="tag tag-src">👤 ${_esc(e.other_partner)}</span>` : "";
+      const swid  = (e.splitwise_id != null && e.splitwise_id !== "") ? `<span class="tag tag-src">Splitwise ID #${e.splitwise_id}</span>` : "";
+      const proc  = `<span class="tag ${e.processed ? "tag-cat" : "tag-flag-off"}">${e.processed ? "✓ processed" : "○ unprocessed"}</span>`;
+      const addSplit   = e.add_to_split ? '<span class="tag tag-cat">➕ add to split</span>' : "";
+      const fromSplit  = e.from_split   ? '<span class="tag tag-cat">⇦ from split</span>'   : "";
+      const splitAdded = e.split_added
+        ? '<span class="tag tag-cat">✓ split added</span>'
+        : (e.add_to_split ? '<span class="tag tag-flag-off">○ split not added</span>' : "");
+      extra = `<div class="expense-meta">${cats}${src}${other}${swid}${proc}${addSplit}${fromSplit}${splitAdded}</div>`;
+    }
+    const rowClass = `expense-row ${e.processed ? "proc" : "unproc"}${_detailView ? " dv-clickable" : ""}`;
+    const rowAttrs = _detailView ? ` data-detail-id="${e.page_id}"` : "";
     return `
-      <div class="expense-row ${e.processed ? "proc" : "unproc"}">
-        <div class="er-head">
-          <div class="er-head-l">
-            <div class="expense-title">${e.title}${splitBadge}</div>
-            ${cmt}
-          </div>
-          <div class="er-head-r">
-            <div class="expense-amount">${fmt(e.amount)}</div>
-            <div class="expense-date">${e.date || ""}</div>
-          </div>
-          <button type="button" class="er-toggle" aria-label="Toggle details">▾</button>
-        </div>
-        <div class="er-details">
-          <div class="expense-meta">${cats}${src}</div>
+      <div class="${rowClass}"${rowAttrs}>
+        <div class="er-left">
+          <div class="expense-title">${e.title}${splitBadge}</div>
+          <div class="expense-amount">${fmt(e.amount)}</div>
+          <div class="expense-date">${e.date || ""}</div>
+          ${extra}
+          ${cmt}
           ${splitUI}
-          <div class="expense-btn-row">
-            <input type="checkbox" class="proc-toggle" data-proc-id="${e.page_id}" ${e.processed ? "checked" : ""}
-                   title="${e.processed ? "Processed in Notion — click to unmark" : "Mark as processed in Notion"}">
-            <button class="expense-edit-btn" data-entry-id="${e.page_id}" title="Edit" aria-label="Edit">${_ICON.edit}</button>
-            <button class="expense-edit-btn expense-del-btn" data-del-id="${e.page_id}" data-del-title="${e.title.replace(/"/g,'&quot;')}" title="Delete" aria-label="Delete">${_ICON.trash}</button>
-          </div>
+        </div>
+        <div class="expense-btn-row">
+          <input type="checkbox" class="proc-toggle" data-proc-id="${e.page_id}" ${e.processed ? "checked" : ""}
+                 title="${e.processed ? "Processed in Notion — click to unmark" : "Mark as processed in Notion"}">
+          <button class="expense-edit-btn" data-entry-id="${e.page_id}" title="Edit" aria-label="Edit">${_ICON.edit}</button>
+          <button class="expense-edit-btn expense-del-btn" data-del-id="${e.page_id}" data-del-title="${e.title.replace(/"/g,'&quot;')}" title="Delete" aria-label="Delete">${_ICON.trash}</button>
         </div>
       </div>`;
   }
@@ -1781,6 +1810,7 @@
 
   function _bulkEditToggle() {
     _bulkEdit = !_bulkEdit;
+    if (_bulkEdit && _detailView) _detailViewToggle();  // the two modes don't mix
     const btn = document.getElementById("be-toggle");
     btn.textContent = _bulkEdit ? "✕ Exit bulk edit" : "✎ Bulk edit";
     btn.classList.toggle("btn-primary", _bulkEdit);
@@ -1788,6 +1818,60 @@
     document.getElementById("be-bar").hidden = !_bulkEdit;
     _paintBrowse(true);
   }
+
+  /* ── Detail view: extra per-row info + click-to-inspect modal ── */
+  let _detailView = false;
+
+  function _detailViewToggle() {
+    _detailView = !_detailView;
+    if (_detailView && _bulkEdit) _bulkEditToggle();  // the two modes don't mix
+    const btn = document.getElementById("dv-toggle");
+    btn.textContent = _detailView ? "✕ Exit detail view" : "🔍 Detail view";
+    btn.classList.toggle("btn-primary", _detailView);
+    btn.classList.toggle("btn-ghost", !_detailView);
+    _paintBrowse(true);
+  }
+
+  function _dvOpen(pageId) {
+    const e = _lastBrowse && (_lastBrowse.entries || []).find(x => x.page_id === pageId);
+    if (!e) return;
+    const staged = _queueGet(e.page_id);
+    const splitBadge = e.split_added
+      ? '<span class="split-badge done">✓ split added</span>'
+      : staged
+      ? '<span class="split-badge queued">● queued</span>'
+      : (e.add_to_split ? '<span class="split-badge pending">to split</span>' : '');
+    document.getElementById("dv-title").innerHTML = `${_esc(e.title)}${splitBadge}`;
+    document.getElementById("dv-amount").textContent = fmt(e.amount);
+    const rows = [
+      ["Date", e.date || "—"],
+      ["Source", e.source || "—"],
+      ["Categories", (e.categories || []).join(", ") || "—"],
+      ["Comment", e.comment || "—"],
+      ["Other Partner", e.other_partner || "—"],
+      ["Splitwise ID", (e.splitwise_id == null || e.splitwise_id === "") ? "—" : e.splitwise_id],
+      ["Processed", e.processed ? "Yes" : "No"],
+      ["Add to Split", e.add_to_split ? "Yes" : "No"],
+      ["From Split", e.from_split ? "Yes" : "No"],
+      ["Split Added", e.split_added ? "Yes" : "No"],
+    ];
+    document.getElementById("dv-grid").innerHTML = rows.map(([k, v]) =>
+      `<div class="dv-row"><span class="dv-k">${k}</span><span class="dv-v">${_esc(String(v))}</span></div>`
+    ).join("");
+    document.getElementById("dv-edit-btn").onclick = () => { _dvClose(); _efOpen(e); };
+    document.getElementById("dv-del-btn").onclick  = () => { _dvClose(); _delOpen(e.page_id, e.title); };
+    document.getElementById("dv-overlay").classList.add("open");
+  }
+  function _dvClose() { document.getElementById("dv-overlay").classList.remove("open"); }
+  function _dvBgClick(ev) { if (ev.target === document.getElementById("dv-overlay")) _dvClose(); }
+
+  // Click a row (detail view only) to open the inspect modal — ignore clicks on controls.
+  document.getElementById("browse-list").addEventListener("click", ev => {
+    if (!_detailView) return;
+    if (ev.target.closest("button, input, select, a, label, .split-panel")) return;
+    const row = ev.target.closest(".expense-row[data-detail-id]");
+    if (row) _dvOpen(row.dataset.detailId);
+  });
 
   function _beSnap(e) {
     return {
@@ -1972,21 +2056,9 @@
     const entry = _lastBrowse && (_lastBrowse.entries || []).find(x => x.page_id === pageId);
     const anchor = document.querySelector(`#browse-list [data-entry-id="${pageId}"]`);
     const row = anchor && anchor.closest(".expense-row");
-    if (entry && row) {
-      const wasOpen = row.classList.contains("open");
-      row.outerHTML = _browseRow(entry);
-      if (wasOpen) document.querySelector(`#browse-list [data-entry-id="${pageId}"]`)
-        ?.closest(".expense-row")?.classList.add("open");
-    }
+    if (entry && row) row.outerHTML = _browseRow(entry);
     _bulkBarSync();
   }
-
-  // Expand / collapse a row's details (mobile)
-  document.getElementById("browse-list").addEventListener("click", ev => {
-    const t = ev.target.closest(".er-toggle");
-    if (!t) return;
-    t.closest(".expense-row")?.classList.toggle("open");
-  });
   function _rerenderRows() { _paintBrowse(true); }
 
   // Reveal the next chunk on scroll — pure client-side, no request.
@@ -2564,6 +2636,20 @@
     <div class="del-actions">
       <button class="del-btn-cancel" onclick="_delClose()">Cancel</button>
       <button class="del-btn-confirm" id="del-confirm-btn" onclick="_delConfirm()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="dv-overlay" id="dv-overlay" onclick="_dvBgClick(event)">
+  <div class="dv-box">
+    <button class="dv-close" onclick="_dvClose()" aria-label="Close">✕</button>
+    <div class="dv-title" id="dv-title"></div>
+    <div class="dv-amount" id="dv-amount"></div>
+    <div class="dv-grid" id="dv-grid"></div>
+    <div class="dv-actions">
+      <button class="ef-btn-cancel" onclick="_dvClose()">Close</button>
+      <button class="ef-btn-save" id="dv-edit-btn">Edit</button>
+      <button class="del-btn-confirm" id="dv-del-btn" style="flex:none;padding:0.6rem 1rem;">Delete</button>
     </div>
   </div>
 </div>
