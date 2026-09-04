@@ -1810,7 +1810,7 @@
         method: "PATCH",
         headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
         body: JSON.stringify({
-          name: entry.title, amount: entry.amount, date: entry.date,
+          name: entry.title, amount: entry.amount, date: "",  // "" = leave Notion's date untouched
           categories: entry.categories, source: entry.source,
           comment: entry.comment, other_partner: entry.other_partner,
           add_to_split: entry.add_to_split, from_split: entry.from_split,
@@ -2066,15 +2066,22 @@
     const cats   = [...document.querySelectorAll(".ef-pill.on")].map(p => p.dataset.cat);
     const errEl  = document.getElementById("ef-error");
 
-    if (!name)   { errEl.textContent = "Name is required.";   errEl.style.display = "block"; return; }
-    if (!amount) { errEl.textContent = "Amount is required."; errEl.style.display = "block"; return; }
-    if (!date)   { errEl.textContent = "Date is required.";   errEl.style.display = "block"; return; }
+    const editId = _efPageId;
+    if (!name)          { errEl.textContent = "Name is required.";   errEl.style.display = "block"; return; }
+    if (!amount)        { errEl.textContent = "Amount is required."; errEl.style.display = "block"; return; }
+    if (!date && !editId) { errEl.textContent = "Date is required.";   errEl.style.display = "block"; return; }
     errEl.style.display = "none";
+
+    // Only send Date if it's a new expense or the user actually changed it —
+    // otherwise Notion's stored date/time is left as-is.
+    const origDate  = editId ? ((_lastBrowse?.entries || []).find(x => x.page_id === editId)?.date || "") : "";
+    const sendDate  = (!editId || date !== origDate) ? date : "";
+    const finalDate = editId ? (date || origDate) : date;
 
     const swidRaw = document.getElementById("ef-swid").value.trim();
     const swid    = swidRaw === "" ? null : Number(swidRaw);
     const payload = {
-      name, amount: parseFloat(amount), date, categories: cats, source,
+      name, amount: parseFloat(amount), date: sendDate, categories: cats, source,
       comment: document.getElementById("ef-comment").value,
       other_partner: document.getElementById("ef-other-partner").value,
       add_to_split: document.getElementById("ef-add-to-split").checked,
@@ -2084,13 +2091,12 @@
       splitwise_id: swidRaw === "" ? "" : swid,
     };
     const fields = {
-      title: name, amount: payload.amount, date, categories: cats, source,
+      title: name, amount: payload.amount, date: finalDate, categories: cats, source,
       comment: payload.comment, other_partner: payload.other_partner,
       add_to_split: payload.add_to_split, from_split: payload.from_split,
       split_added: payload.split_added, processed: payload.processed,
       splitwise_id: swid,
     };
-    const editId = _efPageId;
 
     // Close the modal now — the save runs in the background with a row loader.
     _efClose();

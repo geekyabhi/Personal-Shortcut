@@ -232,9 +232,12 @@ class ExpensesService:
         props = {
             title_prop: {"title": [{"text": {"content": name}}]},
             "Amount": {"number": float(amount)},
-            "Date": {"date": {"start": date_str}},
             "Category": {"multi_select": [{"name": c} for c in categories]},
         }
+        # Only touch Date when a value is given — an empty date_str leaves the
+        # existing Notion date (time + timezone) untouched on update.
+        if date_str:
+            props["Date"] = {"date": {"start": date_str}}
         if source_type == "multi_select":
             props["Source"] = {"multi_select": [{"name": source}] if source else []}
         else:
@@ -1052,15 +1055,13 @@ class ExpensesService:
         source: str,
         **extra,
     ) -> None:
-        """Validates fields, patches the Notion page, busts cache.
-        ``extra`` may carry comment / other_partner / add_to_split / from_split /
-        split_added / splitwise_id."""
+        """Patches the Notion page, busts cache. An empty ``date_str`` leaves
+        the page's existing Date untouched. ``extra`` may carry comment /
+        other_partner / add_to_split / from_split / split_added / splitwise_id."""
         if not name:
             raise ValueError("Name is required")
         if amount is None:
             raise ValueError("Amount is required")
-        if not date_str:
-            raise ValueError("Date is required")
 
         cached_rows, _, _, _ = self.dl.get_cached_rows()
         title_prop = self._detect_title_prop(cached_rows)
