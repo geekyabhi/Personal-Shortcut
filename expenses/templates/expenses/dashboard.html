@@ -929,6 +929,48 @@
       <button class="btn-primary" id="btn-apply" onclick="_applyFilters()">Apply Filters</button>
     </div>
 
+    <!-- ─── BROWSE EXPENSES (right below the filter) ─────────────── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;gap:0.5rem;flex-wrap:wrap;">
+      <div class="section-heading" style="margin-top:0;cursor:default;user-select:none;" onclick="_titleClick()"><span>📋</span> Browse Expenses</div>
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <button class="btn-ghost" onclick="_exportCSV()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Export current list to CSV">↓ CSV</button>
+        <button class="btn-primary" onclick="_efOpen(null)" style="margin-top:0;">+ Add Expense</button>
+      </div>
+    </div>
+
+    <div id="loading-browse" class="spinner" style="display:none;">
+      <div class="skeleton-wrap">
+        <div class="sk-line" style="width:100%;height:3.5rem;margin-bottom:0.5rem;border-radius:12px;"></div>
+        <div class="sk-line" style="width:100%;height:3.5rem;margin-bottom:0.5rem;border-radius:12px;"></div>
+        <div class="sk-line" style="width:100%;height:3.5rem;margin-bottom:0.5rem;border-radius:12px;"></div>
+        <div class="sk-line" style="width:70%;height:3.5rem;border-radius:12px;"></div>
+      </div>
+    </div>
+    <div id="error-browse" class="error-box" style="display:none;"></div>
+
+    <div id="results-browse" style="display:none;">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+          <h2 style="margin-bottom:0;">Expenses</h2>
+          <span id="browse-count-badge" class="period-badge" style="margin-bottom:0;"></span>
+        </div>
+        <div id="bulk-split-bar" hidden style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:0.55rem 0.9rem;background:rgba(79,70,229,0.08);border:1px solid var(--accent);border-radius:12px;">
+          <span class="bulk-q-badge" id="bulk-q-badge">0</span>
+          <strong id="bulk-split-count" style="font-size:0.82rem;">Splitwise queue</strong>
+          <div id="bulk-progress" hidden style="flex:1 1 160px;min-width:120px;">
+            <div class="bulk-prog-track"><div class="bulk-prog-fill" id="bulk-prog-fill"></div></div>
+            <div class="bulk-prog-text" id="bulk-prog-text"></div>
+          </div>
+          <button class="btn-primary" id="bulk-push-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_pushQueue()">Push all queued</button>
+          <button class="btn-ghost" id="bulk-clear-btn" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_clearQueue()">Clear queue</button>
+        </div>
+        <div id="browse-list"></div>
+        <div id="browse-more"></div>
+      </div>
+    </div>
+
+    <div class="section-heading" style="margin-top:2rem;"><span>📊</span> Summary</div>
+
     <div id="loading-summary" class="spinner" style="display:none;">
       <div class="skeleton-wrap">
         <div class="sk-line" style="width:40%;height:1.2rem;margin-bottom:1rem;"></div>
@@ -1006,46 +1048,6 @@
           <button class="btn-ghost" style="font-size:0.8rem;padding:0.4rem 1rem;" onclick="_swInit(true)">↺ Refresh</button>
         </div>
         <div id="sw-expense-list"><div class="empty-state">Loading…</div></div>
-      </div>
-    </div>
-
-    <!-- ─── SECTION 3: BROWSE ────────────────────────────────────── -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2rem;gap:0.5rem;flex-wrap:wrap;">
-      <div class="section-heading" style="margin-top:0;cursor:default;user-select:none;" onclick="_titleClick()"><span>📋</span> Browse Expenses</div>
-      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-        <button class="btn-ghost" onclick="_exportCSV()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Export current list to CSV">↓ CSV</button>
-        <button class="btn-primary" onclick="_efOpen(null)" style="margin-top:0;">+ Add Expense</button>
-      </div>
-    </div>
-
-    <div id="loading-browse" class="spinner" style="display:none;">
-      <div class="skeleton-wrap">
-        <div class="sk-line" style="width:100%;height:3.5rem;margin-bottom:0.5rem;border-radius:12px;"></div>
-        <div class="sk-line" style="width:100%;height:3.5rem;margin-bottom:0.5rem;border-radius:12px;"></div>
-        <div class="sk-line" style="width:100%;height:3.5rem;margin-bottom:0.5rem;border-radius:12px;"></div>
-        <div class="sk-line" style="width:70%;height:3.5rem;border-radius:12px;"></div>
-      </div>
-    </div>
-    <div id="error-browse" class="error-box" style="display:none;"></div>
-
-    <div id="results-browse" style="display:none;">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
-          <h2 style="margin-bottom:0;">Expenses</h2>
-          <span id="browse-count-badge" class="period-badge" style="margin-bottom:0;"></span>
-        </div>
-        <div id="bulk-split-bar" hidden style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:0.55rem 0.9rem;background:rgba(79,70,229,0.08);border:1px solid var(--accent);border-radius:12px;">
-          <span class="bulk-q-badge" id="bulk-q-badge">0</span>
-          <strong id="bulk-split-count" style="font-size:0.82rem;">Splitwise queue</strong>
-          <div id="bulk-progress" hidden style="flex:1 1 160px;min-width:120px;">
-            <div class="bulk-prog-track"><div class="bulk-prog-fill" id="bulk-prog-fill"></div></div>
-            <div class="bulk-prog-text" id="bulk-prog-text"></div>
-          </div>
-          <button class="btn-primary" id="bulk-push-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_pushQueue()">Push all queued</button>
-          <button class="btn-ghost" id="bulk-clear-btn" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_clearQueue()">Clear queue</button>
-        </div>
-        <div id="browse-list"></div>
-        <div id="browse-more"></div>
       </div>
     </div>
 
