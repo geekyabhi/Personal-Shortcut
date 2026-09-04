@@ -368,6 +368,13 @@
     .be-row.row-saving { opacity: 0.55; pointer-events: none; }
     [data-theme="dark"] .be-row { border-color: rgba(255,255,255,0.12); }
     [data-theme="dark"] .be-row.dirty { background: rgba(129,140,248,0.1); }
+    .be-title {
+      display: block; width: 100%; border: none; border-bottom: 1.5px dashed #E5E7EB;
+      background: transparent; font-size: 1rem; font-weight: 800; color: #111827;
+      font-family: inherit; padding: 0.1rem 0.1rem 0.45rem; margin-bottom: 0.6rem;
+    }
+    .be-title:focus { outline: none; border-bottom-color: var(--accent); }
+    [data-theme="dark"] .be-title { color: #F9FAFB; border-bottom-color: rgba(255,255,255,0.15); }
     .be-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem 0.6rem; }
     .be-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
     .be-field.wide { grid-column: 1 / -1; }
@@ -1000,7 +1007,6 @@
         </div>
         <div id="be-bar" hidden style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:0.55rem 0.9rem;background:rgba(79,70,229,0.08);border:1px solid var(--accent);border-radius:12px;">
           <strong id="be-count" style="font-size:0.82rem;">Bulk edit — 0 changed</strong>
-          <span id="be-progress" style="font-size:0.75rem;color:#6B7280;"></span>
           <button class="btn-primary" id="be-save-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_bulkEditSave()" disabled>Save changed</button>
           <button class="btn-ghost" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_bulkEditToggle()">Exit</button>
         </div>
@@ -1780,7 +1786,6 @@
     btn.classList.toggle("btn-primary", _bulkEdit);
     btn.classList.toggle("btn-ghost", !_bulkEdit);
     document.getElementById("be-bar").hidden = !_bulkEdit;
-    document.getElementById("be-progress").textContent = "";
     _paintBrowse(true);
   }
 
@@ -1828,8 +1833,8 @@
       .join("");
     return `
       <div class="be-row" data-be-id="${e.page_id}">
+        <input type="text" class="be-title" data-bef="name" value="${_esc(s.name)}" placeholder="Expense name">
         <div class="be-grid">
-          <div class="be-field wide"><label>Name</label><input type="text" data-bef="name" value="${_esc(s.name)}"></div>
           <div class="be-field"><label>Amount</label><input type="number" step="0.01" data-bef="amount" value="${_esc(s.amount)}"></div>
           <div class="be-field"><label>Date</label><input type="date" data-bef="date" value="${_esc(s.date)}"></div>
           <div class="be-field"><label>Source</label><select data-bef="source">${srcOpts}</select></div>
@@ -1866,23 +1871,19 @@
     ev.target.dispatchEvent(new Event("input", { bubbles: true }));
   });
 
-  async function _bulkEditSave() {
+  function _bulkEditSave() {
     const dirtyRows = [...document.querySelectorAll("#browse-list .be-row.dirty")];
     if (!dirtyRows.length) return;
-    const btn  = document.getElementById("be-save-btn");
-    const prog = document.getElementById("be-progress");
-    btn.disabled = true;
-    let done = 0, failed = 0; const fails = [];
 
+    // Snapshot + optimistically apply every dirty row *before* leaving edit mode,
+    // so the normal row view we drop back into already shows the new values.
+    const jobs = [];
     for (const row of dirtyRows) {
       const id = row.dataset.beId;
       const entry = _browseFull.find(x => x.page_id === id);
       if (!entry) continue;
       const before = _beSnap(entry);
       const cur = _beRead(row);
-      prog.textContent = `Saving ${done + failed + 1}/${dirtyRows.length}…`;
-      row.classList.add("row-saving");
-
       const cats = cur.categories.split(",").map(c => c.trim()).filter(Boolean);
       const dateChanged = cur.date !== before.date;
       const swid = cur.splitwise_id === "" ? "" : Number(cur.splitwise_id);
@@ -1895,37 +1896,48 @@
         split_added: cur.split_added, processed: cur.processed,
         splitwise_id: swid,
       };
+      const prevSnapshot = { ...entry };
+      Object.assign(entry, {
+        title: cur.name, amount: payload.amount,
+        date: dateChanged ? cur.date : entry.date,
+        categories: cats, source: cur.source, comment: cur.comment,
+        other_partner: cur.other_partner, processed: cur.processed,
+        add_to_split: cur.add_to_split, from_split: cur.from_split, split_added: cur.split_added,
+        splitwise_id: swid === "" ? null : swid,
+      });
+      jobs.push({ id, name: cur.name, payload, prevSnapshot });
+    }
+    if (!jobs.length) return;
+
+    // Back to the normal row view immediately — saves continue in the background.
+    _bulkEditToggle();
+    jobs.forEach(j => _rowSaving(j.id, true));
+    _bulkEditRunJobs(jobs);
+  }
+
+  async function _bulkEditRunJobs(jobs) {
+    let done = 0, failed = 0; const fails = [];
+    await Promise.all(jobs.map(async job => {
       try {
-        const res = await fetch(`/expenses/${id}/update/`, {
+        const res = await fetch(`/expenses/${job.id}/update/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(job.payload),
         });
         const d = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(d.error || "Save failed");
-        Object.assign(entry, {
-          title: cur.name, amount: payload.amount,
-          date: dateChanged ? cur.date : entry.date,
-          categories: cats, source: cur.source, comment: cur.comment,
-          other_partner: cur.other_partner, processed: cur.processed,
-          add_to_split: cur.add_to_split, from_split: cur.from_split, split_added: cur.split_added,
-          splitwise_id: swid === "" ? null : swid,
-        });
         done++;
-        row.classList.remove("dirty");
+        _rowSaving(job.id, false);
       } catch (err) {
         failed++;
-        fails.push(`${cur.name || id}: ${err.message}`);
-      } finally {
-        row.classList.remove("row-saving");
+        fails.push(`${job.name || job.id}: ${err.message}`);
+        const entry = _browseFull.find(x => x.page_id === job.id);
+        if (entry) Object.assign(entry, job.prevSnapshot);
+        _splitRefreshRow(job.id);  // repaint reverted, also clears row-saving
       }
-    }
-
-    prog.textContent = "";
+    }));
     showToast(`${done} saved${failed ? `, ${failed} failed` : ""}`, failed ? "info" : "success", 5000);
-    if (failed) alert("Some rows failed and stay editable:\n\n" + fails.join("\n"));
-    _beRefreshCount();
-    if (!failed) _bulkEditToggle();  // all clean — drop back to the normal view
+    if (failed) alert("Some bulk edits failed and were reverted:\n\n" + fails.join("\n"));
   }
 
   // Paint the currently-revealed slice of the fully-loaded list — no network.

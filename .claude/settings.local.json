@@ -26,7 +26,20 @@
       "Bash(xargs sed *)",
       "Bash(xargs ls *)",
       "Bash(awk '{print $NF}')",
-      "Bash(xargs cat *)"
+      "Bash(xargs cat *)",
+      "Bash(pkill -f \"runserver\")",
+      "Bash(python manage.py runserver)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8000/)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -n -P)",
+      "Bash(docker stop 5edcc0a5a780 *)",
+      "Bash(lsof -ti:8000)",
+      "Bash(xargs kill -9)",
+      "Bash(curl -s \"http://127.0.0.1:8000/blogs/write/list/\")",
+      "Bash(curl -v \"http://127.0.0.1:8000/blogs/write/list/\")",
+      "Bash(curl -s \"http://127.0.0.1:8000/api/blogs/write/\")",
+      "Bash(curl -s \"http://127.0.0.1:8000/api/blogs/write/list/\")",
+      "Bash(DJANGO_SETTINGS_MODULE=core.settings python3)",
+      "Bash(pip3 install *)"
     ]
   }
 }
