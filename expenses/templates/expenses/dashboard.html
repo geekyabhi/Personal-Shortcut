@@ -439,24 +439,14 @@
       .ef-box { margin: 0.6rem; padding: 1.4rem 1.1rem; max-height: 92vh; }
     }
 
-    /* ── Corner menu dot ── */
-    .corner-btn {
-      position: fixed; top: 0.7rem; left: 0.7rem; z-index: 200;
-      width: 28px; height: 28px; border-radius: 6px;
-      background: transparent; border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: rgba(111,114,133,0.22); font-size: 1.1rem; letter-spacing: 0.05em;
-      transition: color 0.2s, background 0.2s;
-      user-select: none; font-family: inherit;
-    }
-    .corner-btn:hover { color: rgba(79,70,229,0.35); background: rgba(79,70,229,0.06); }
-    .corner-btn.on    { color: rgba(16,185,129,0.45); }
+    /* subtle ring on the theme toggle while hidden expenses are unlocked */
+    .theme-btn.secret-on { box-shadow: 0 0 0 2px rgba(16,185,129,0.55), 0 2px 12px rgba(0,0,0,0.10); }
+
     /* ── Mobile: nav pill → dropdown ── */
     @media (max-width: 640px) {
       .topbar { margin-bottom: 1.5rem; }
       nav { display: none; }
       .nav-drop { display: block; }
-      .corner-btn { display: none; }   /* free the top-left for the menu button */
       .theme-btn { width: 34px; height: 34px; }
     }
 
@@ -827,7 +817,6 @@
   <div id="top-loader"></div>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
-  <button id="corner-btn" class="corner-btn" onclick="_cornerClick()" aria-label="" title="">···</button>
 
   <div class="container">
     <div class="topbar">
@@ -1211,16 +1200,7 @@
   const _fTag = arr => (arr || []).filter(c   => !_hid(c));
 
   function _updateLockIcon() {
-    document.getElementById("corner-btn")?.classList.toggle("on", _showHidden);
-  }
-
-  /* ── 15-click corner button ── */
-  let _cic = 0, _cit = null;
-  function _cornerClick() {
-    _cic++;
-    clearTimeout(_cit);
-    _cit = setTimeout(() => { _cic = 0; }, 3000);
-    if (_cic >= 15) { _cic = 0; _showHidden ? _lock() : _openModal(); }
+    document.getElementById("theme-btn")?.classList.toggle("secret-on", _showHidden);
   }
 
   /* ── Data cache for re-render on toggle ── */
@@ -2442,16 +2422,22 @@
 
   _bootstrap();
 
-  /* ── Theme toggle ── */
+  /* ── Theme toggle (+ 15-rapid-tap hidden-expenses secret) ── */
   (function() {
     const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
     const btn = document.getElementById('theme-btn');
     if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+    let _tc = 0, _tct = null;
     window._toggleTheme = function() {
       const dark = !isDark();
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
       localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
       if (btn) btn.textContent = dark ? '🌙' : '☀️';
+
+      _tc++;
+      clearTimeout(_tct);
+      _tct = setTimeout(() => { _tc = 0; }, 3000);
+      if (_tc >= 15) { _tc = 0; _showHidden ? _lock() : _openModal(); }
     };
   })();
 
