@@ -802,6 +802,7 @@ class ExpensesService:
         page_size: int,
         split_filter: str = "",
         partial: bool = False,
+        unpaginated: bool = False,
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, sort=sort)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -851,16 +852,21 @@ class ExpensesService:
             entries.sort(key=lambda x: x["amount"])
 
         total_count = len(entries)
-        total_pages = max(1, (total_count + page_size - 1) // page_size)
-        page = min(page, total_pages)
-        start_idx = (page - 1) * page_size
+
+        if unpaginated:
+            page_out, total_pages, page_entries = 1, 1, entries
+        else:
+            total_pages = max(1, (total_count + page_size - 1) // page_size)
+            page_out = min(page, total_pages)
+            start_idx = (page_out - 1) * page_size
+            page_entries = entries[start_idx: start_idx + page_size]
 
         return {
             "total_count": total_count,
-            "page": page,
+            "page": page_out,
             "page_size": page_size,
             "total_pages": total_pages,
-            "entries": entries[start_idx: start_idx + page_size],
+            "entries": page_entries,
             "cache_ts": cache_ts,
             "from_cache": from_cache,
             "partial": is_partial,

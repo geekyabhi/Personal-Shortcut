@@ -14,7 +14,6 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { overflow-x: hidden; }
@@ -873,12 +872,12 @@
       </div>
     </div>
 
-    <!-- ─── SECTION 1: SUMMARY ─────────────────────────────────── -->
+    <!-- ─── FILTERS (single, drives summary + list) ─────────────── -->
     <div class="card">
-      <div class="filters">
+      <div class="browse-filters">
         <div>
-          <label for="period">Period</label>
-          <select id="period" onchange="onPeriodChange()">
+          <label for="b-period">Period</label>
+          <select id="b-period" onchange="onBPeriodChange()">
             <option value="all">All Time</option>
             <option value="yearly">Yearly</option>
             <option value="monthly" selected>Monthly</option>
@@ -887,31 +886,47 @@
             <option value="custom">Custom Range</option>
           </select>
         </div>
+        <div id="b-wrap-month" class="date-input visible"><label for="b-month">Month</label><input type="month" id="b-month" /></div>
+        <div id="b-wrap-year"  class="date-input"><label for="b-year">Year</label><input type="number" id="b-year" min="2000" max="2099" placeholder="e.g. 2026" /></div>
+        <div id="b-wrap-week"  class="date-input"><label for="b-week">Week</label><input type="week" id="b-week" /></div>
+        <div id="b-wrap-day"   class="date-input"><label for="b-day">Day</label><input type="date" id="b-day" /></div>
+        <div id="b-wrap-start" class="date-input"><label for="b-start">Start Date</label><input type="date" id="b-start" /></div>
+        <div id="b-wrap-end"   class="date-input"><label for="b-end">End Date</label><input type="date" id="b-end" /></div>
+        <div><label for="b-search">Search name</label><input type="text" id="b-search" placeholder="e.g. Amazon…" /></div>
+        <div><label for="b-category">Category</label><select id="b-category"><option value="">All Categories</option></select></div>
+        <div><label for="b-source">Source</label><select id="b-source"><option value="">All Sources</option></select></div>
+        <div><label for="b-min">Min Amount</label><input type="number" id="b-min" placeholder="0" min="0" /></div>
+        <div><label for="b-max">Max Amount</label><input type="number" id="b-max" placeholder="∞" min="0" /></div>
         <div>
-          <label for="group_by">Group By</label>
-          <select id="group_by">
-            <option value="">None</option>
-            <option value="category">Category</option>
-            <option value="source">Source</option>
+          <label for="b-sort">Sort By</label>
+          <select id="b-sort">
+            <option value="date_desc">Newest first</option>
+            <option value="date_asc">Oldest first</option>
+            <option value="amount_desc">Highest amount</option>
+            <option value="amount_asc">Lowest amount</option>
           </select>
         </div>
-        <div id="wrap-year"  class="date-input"><label for="year">Year</label><input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" /></div>
-        <div id="wrap-month" class="date-input visible"><label for="month">Month</label><input type="month" id="month" /></div>
-        <div id="wrap-week"  class="date-input"><label for="week">Week</label><input type="week" id="week" /></div>
-        <div id="wrap-day"   class="date-input"><label for="day">Day</label><input type="date" id="day" /></div>
-        <div id="wrap-start" class="date-input"><label for="start-date">Start Date</label><input type="date" id="start-date" /></div>
-        <div id="wrap-end"   class="date-input"><label for="end-date">End Date</label><input type="date" id="end-date" /></div>
+        <div>
+          <label for="b-split">Split status</label>
+          <select id="b-split">
+            <option value="">All</option>
+            <option value="flagged">Add to Split ✓</option>
+            <option value="needs">Add to Split — not pushed</option>
+            <option value="done">Split Added ✓</option>
+            <option value="unflagged">Not marked for split</option>
+          </select>
+        </div>
       </div>
 
-      <div class="presets" id="wrap-presets">
-        <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
-        <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
-        <button type="button" class="preset-btn" onclick="setPreset('3m')">Last 3 months</button>
-        <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
-        <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
+      <div class="presets" id="b-wrap-presets">
+        <button type="button" class="preset-btn" onclick="setBPreset('7d')">Last 7 days</button>
+        <button type="button" class="preset-btn" onclick="setBPreset('30d')">Last 30 days</button>
+        <button type="button" class="preset-btn" onclick="setBPreset('3m')">Last 3 months</button>
+        <button type="button" class="preset-btn" onclick="setBPreset('6m')">Last 6 months</button>
+        <button type="button" class="preset-btn" onclick="setBPreset('ytd')">Year to date</button>
       </div>
 
-      <button class="btn-primary" id="btn-summary" onclick="fetchAll()">Apply Filters</button>
+      <button class="btn-primary" id="btn-apply" onclick="_applyFilters()">Apply Filters</button>
     </div>
 
     <div id="loading-summary" class="spinner" style="display:none;">
@@ -930,19 +945,6 @@
         <div class="stat-row">
           <span class="stat-label">Grand Total</span>
           <span class="stat-value" id="grand-total"></span>
-        </div>
-      </div>
-
-      <div class="card" id="trend-card">
-        <h2>Expense Trend</h2>
-        <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
-      </div>
-
-      <div class="card" id="breakdown-card" style="display:none;">
-        <h2 id="breakdown-title"></h2>
-        <div class="breakdown-layout">
-          <div class="breakdown-list-wrap"><div id="breakdown-list"></div></div>
-          <div class="donut-wrap"><canvas id="donut-chart"></canvas></div>
         </div>
       </div>
 
@@ -1016,99 +1018,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="browse-filters">
-        <div>
-          <label for="b-period">Period</label>
-          <select id="b-period" onchange="onBPeriodChange()">
-            <option value="all">All Time</option>
-            <option value="yearly">Yearly</option>
-            <option value="monthly" selected>Monthly</option>
-            <option value="weekly">Weekly</option>
-            <option value="daily">Daily</option>
-            <option value="custom">Custom Range</option>
-          </select>
-        </div>
-        <div id="b-wrap-month" class="date-input visible">
-          <label for="b-month">Month</label>
-          <input type="month" id="b-month" />
-        </div>
-        <div id="b-wrap-year" class="date-input">
-          <label for="b-year">Year</label>
-          <input type="number" id="b-year" min="2000" max="2099" placeholder="e.g. 2026" />
-        </div>
-        <div id="b-wrap-week" class="date-input">
-          <label for="b-week">Week</label>
-          <input type="week" id="b-week" />
-        </div>
-        <div id="b-wrap-day" class="date-input">
-          <label for="b-day">Day</label>
-          <input type="date" id="b-day" />
-        </div>
-        <div id="b-wrap-start" class="date-input">
-          <label for="b-start">Start Date</label>
-          <input type="date" id="b-start" />
-        </div>
-        <div id="b-wrap-end" class="date-input">
-          <label for="b-end">End Date</label>
-          <input type="date" id="b-end" />
-        </div>
-        <div>
-          <label for="b-search">Search name</label>
-          <input type="text" id="b-search" placeholder="e.g. Amazon…" />
-        </div>
-        <div>
-          <label for="b-category">Category</label>
-          <select id="b-category">
-            <option value="">All Categories</option>
-          </select>
-        </div>
-        <div>
-          <label for="b-source">Source</label>
-          <select id="b-source">
-            <option value="">All Sources</option>
-          </select>
-        </div>
-        <div>
-          <label for="b-min">Min Amount</label>
-          <input type="number" id="b-min" placeholder="0" min="0" />
-        </div>
-        <div>
-          <label for="b-max">Max Amount</label>
-          <input type="number" id="b-max" placeholder="∞" min="0" />
-        </div>
-        <div>
-          <label for="b-sort">Sort By</label>
-          <select id="b-sort">
-            <option value="date_desc">Newest first</option>
-            <option value="date_asc">Oldest first</option>
-            <option value="amount_desc">Highest amount</option>
-            <option value="amount_asc">Lowest amount</option>
-          </select>
-        </div>
-        <div>
-          <label for="b-split">Split status</label>
-          <select id="b-split">
-            <option value="">All</option>
-            <option value="flagged">Add to Split ✓</option>
-            <option value="needs">Add to Split — not pushed</option>
-            <option value="done">Split Added ✓</option>
-            <option value="unflagged">Not marked for split</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="presets" id="b-wrap-presets">
-        <button type="button" class="preset-btn" onclick="setBPreset('7d')">Last 7 days</button>
-        <button type="button" class="preset-btn" onclick="setBPreset('30d')">Last 30 days</button>
-        <button type="button" class="preset-btn" onclick="setBPreset('3m')">Last 3 months</button>
-        <button type="button" class="preset-btn" onclick="setBPreset('6m')">Last 6 months</button>
-        <button type="button" class="preset-btn" onclick="setBPreset('ytd')">Year to date</button>
-      </div>
-
-      <button class="btn-primary" id="btn-browse" onclick="fetchList(1)">Browse Expenses</button>
-    </div>
-
     <div id="loading-browse" class="spinner" style="display:none;">
       <div class="skeleton-wrap">
         <div class="sk-line" style="width:100%;height:3.5rem;margin-bottom:0.5rem;border-radius:12px;"></div>
@@ -1157,13 +1066,6 @@
     }, duration);
   }
 
-  const CHART_COLORS = [
-    "#4F46E5","#7C3AED","#059669","#F59E0B","#EF4444",
-    "#0891B2","#EC4899","#8B5CF6","#10B981","#F97316","#6366F1","#14B8A6",
-  ];
-
-  let trendChart = null, donutChart = null;
-
   /* ── Cache status ── */
   let _cacheTs = null, _totalCachedRows = 0;
 
@@ -1204,7 +1106,9 @@
   }
 
   /* ── Data cache for re-render on toggle ── */
-  let _lastInsight = null, _lastBrowse = null, _lastChart = null;
+  let _lastInsight = null, _lastBrowse = null;
+  let _browseFull = [], _browseShown = 0;
+  const BROWSE_CHUNK = 40;
 
   // Edit / Delete button delegation on browse list
   document.getElementById("browse-list").addEventListener("click", async e => {
@@ -1606,9 +1510,8 @@
   if (_showHidden) document.getElementById("unlock-badge").classList.add("visible");
   _updateLockIcon();
   function _rerender() {
-    if (_lastInsight || _lastChart) {
-      if (_lastInsight) renderInsights(_lastInsight);
-      if (_lastChart)   renderBreakdown(_lastChart);
+    if (_lastInsight) {
+      renderInsights(_lastInsight);
       document.getElementById("results-summary").style.display = "block";
       setTimeout(() => {
         document.getElementById("insights-body").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1616,8 +1519,8 @@
     } else {
       fetchAll();
     }
-    if (_lastBrowse) {
-      renderBrowseList(_lastBrowse);
+    if (_browseFull.length) {
+      _paintBrowse();
       document.getElementById("results-browse").style.display = "block";
     }
   }
@@ -1627,13 +1530,6 @@
   const todayStr  = today.toISOString().slice(0, 10);
   const monthStr  = today.toISOString().slice(0, 7);
   const weekStr   = isoWeekString(today);
-
-  document.getElementById("year").value        = today.getFullYear();
-  document.getElementById("month").value       = monthStr;
-  document.getElementById("week").value        = weekStr;
-  document.getElementById("day").value         = todayStr;
-  document.getElementById("end-date").value    = todayStr;
-  document.getElementById("start-date").value  = monthsAgo(1).toISOString().slice(0, 10);
 
   document.getElementById("b-year").value      = today.getFullYear();
   document.getElementById("b-month").value     = monthStr;
@@ -1654,44 +1550,25 @@
     return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  /* ── Summary period controls ── */
-  function setPreset(key) {
-    const end = new Date(), start = new Date();
-    if (key === "7d")  start.setDate(start.getDate() - 6);
-    if (key === "30d") start.setDate(start.getDate() - 29);
-    if (key === "3m")  start.setMonth(start.getMonth() - 3);
-    if (key === "6m")  start.setMonth(start.getMonth() - 6);
-    if (key === "ytd") start.setMonth(0, 1);
-    document.getElementById("start-date").value = start.toISOString().slice(0, 10);
-    document.getElementById("end-date").value   = end.toISOString().slice(0, 10);
-  }
+  /* ── One filter set drives both the summary and the list ── */
+  function _applyFilters() { fetchAll(); fetchList(); }
 
-  function onPeriodChange() {
-    const p = document.getElementById("period").value;
-    ["year","month","week","day"].forEach(id => {
-      const map = { year:"yearly", month:"monthly", week:"weekly", day:"daily" };
-      document.getElementById(`wrap-${id}`).className = "date-input" + (p === map[id] ? " visible" : "");
-    });
-    ["start","end"].forEach(id => {
-      document.getElementById(`wrap-${id}`).className = "date-input" + (p === "custom" ? " visible" : "");
-    });
-    document.getElementById("wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
+  function _periodParams() {
+    const period = document.getElementById("b-period").value;
+    const p = new URLSearchParams({ period });
+    if (period === "yearly")  p.set("year",  document.getElementById("b-year").value);
+    if (period === "monthly") p.set("month", document.getElementById("b-month").value);
+    if (period === "weekly")  p.set("week",  document.getElementById("b-week").value);
+    if (period === "daily")   p.set("day",   document.getElementById("b-day").value);
+    if (period === "custom") {
+      p.set("start", document.getElementById("b-start").value);
+      p.set("end",   document.getElementById("b-end").value);
+    }
+    return p;
   }
 
   function buildSummaryParams() {
-    const period = document.getElementById("period").value;
-    const groupBy = document.getElementById("group_by").value;
-    const p = new URLSearchParams({ period });
-    if (groupBy) p.set("group_by", groupBy);
-    if (period === "yearly")  p.set("year",  document.getElementById("year").value);
-    if (period === "monthly") p.set("month", document.getElementById("month").value);
-    if (period === "weekly")  p.set("week",  document.getElementById("week").value);
-    if (period === "daily")   p.set("day",   document.getElementById("day").value);
-    if (period === "custom") {
-      p.set("start", document.getElementById("start-date").value);
-      p.set("end",   document.getElementById("end-date").value);
-    }
-    return p.toString();
+    return _periodParams().toString();
   }
 
   function periodLabel(data) {
@@ -1728,17 +1605,8 @@
     document.getElementById("b-wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
   }
 
-  function buildBrowseParams(page) {
-    const period = document.getElementById("b-period").value;
-    const p = new URLSearchParams({ period, page: String(page), page_size: "50" });
-    if (period === "yearly")  p.set("year",  document.getElementById("b-year").value);
-    if (period === "monthly") p.set("month", document.getElementById("b-month").value);
-    if (period === "weekly")  p.set("week",  document.getElementById("b-week").value);
-    if (period === "daily")   p.set("day",   document.getElementById("b-day").value);
-    if (period === "custom") {
-      p.set("start", document.getElementById("b-start").value);
-      p.set("end",   document.getElementById("b-end").value);
-    }
+  function buildBrowseParams() {
+    const p = _periodParams();
     const search   = document.getElementById("b-search").value.trim();
     const category = document.getElementById("b-category").value.trim();
     const source   = document.getElementById("b-source").value.trim();
@@ -1754,42 +1622,6 @@
     if (split)    p.set("split", split);
     p.set("sort", sort);
     return p.toString();
-  }
-
-  /* ── Charts ── */
-  function renderTrendChart(labels, values) {
-    if (trendChart) trendChart.destroy();
-    trendChart = new Chart(document.getElementById("trend-chart").getContext("2d"), {
-      type: "bar",
-      data: { labels, datasets: [{ data: values, backgroundColor: "rgba(79,70,229,0.85)", borderRadius: 8, borderSkipped: false, hoverBackgroundColor: "#7C3AED" }] },
-      options: {
-        responsive: true, maintainAspectRatio: true,
-        aspectRatio: window.innerWidth < 480 ? 1.6 : 2.4,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: ctx => " " + fmt(ctx.parsed.y) }, cornerRadius: 10 }
-        },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11, family: "Inter" }, maxRotation: 45 } },
-          y: { beginAtZero: true, grid: { color: "#F3F4F6" }, ticks: { font: { size: 11, family: "Inter" }, callback: v => fmt(v) } }
-        }
-      }
-    });
-  }
-
-  function renderDonutChart(labels, values) {
-    if (donutChart) donutChart.destroy();
-    donutChart = new Chart(document.getElementById("donut-chart").getContext("2d"), {
-      type: "doughnut",
-      data: { labels, datasets: [{ data: values, backgroundColor: CHART_COLORS.slice(0, labels.length), borderWidth: 3, borderColor: "#fff", hoverOffset: 8 }] },
-      options: {
-        responsive: true, maintainAspectRatio: true,
-        plugins: {
-          legend: { position: "bottom", labels: { boxWidth: 10, padding: 12, font: { size: 11, family: "Inter" } } },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.parsed)}` }, cornerRadius: 10 }
-        }
-      }
-    });
   }
 
   /* ── Render insights ── */
@@ -1845,36 +1677,7 @@
     }).join("");
   }
 
-  /* ── Breakdown re-render helper ── */
-  function renderBreakdown(chart) {
-    _lastChart = chart;
-    const breakdownCard = document.getElementById("breakdown-card");
-    if (!chart?.breakdown?.labels?.length) { breakdownCard.style.display = "none"; return; }
-    let bdLabels = chart.breakdown.labels;
-    let bdValues = chart.breakdown.values;
-    if (chart.group_by === "category") {
-      const pairs = bdLabels.map((l, i) => ({ l, v: bdValues[i] })).filter(p => !_hid(p.l));
-      bdLabels = pairs.map(p => p.l);
-      bdValues = pairs.map(p => p.v);
-    }
-    if (!bdLabels.length) { breakdownCard.style.display = "none"; return; }
-    const maxVal = Math.max(...bdValues);
-    document.getElementById("breakdown-title").textContent =
-      `By ${chart.group_by.charAt(0).toUpperCase() + chart.group_by.slice(1)}`;
-    document.getElementById("breakdown-list").innerHTML = bdLabels.map((label, i) => `
-      <div class="breakdown-item">
-        <span class="breakdown-name">${label}</span>
-        <div class="bar-wrap"><div class="bar" style="width:${(bdValues[i]/maxVal*100).toFixed(1)}%"></div></div>
-        <span class="breakdown-amount">${fmt(bdValues[i])}</span>
-      </div>`).join("");
-    renderDonutChart(bdLabels, bdValues);
-    breakdownCard.style.display = "block";
-  }
-
   /* ── Render browse list ── */
-  let currentBrowsePage = 1;
-
-  let _browseHasMore = false, _browseLoadingMore = false;
 
   // Inline SVG icons (Feather, MIT) — no external request, works offline.
   const _ICON = {
@@ -1924,41 +1727,28 @@
       </div>`;
   }
 
-  function renderBrowseList(data, append) {
+  // Paint the currently-revealed slice of the fully-loaded list — no network.
+  function _paintBrowse(keepScroll) {
     const list = document.getElementById("browse-list");
     const more = document.getElementById("browse-more");
-
-    if (append && _lastBrowse) {
-      _lastBrowse.entries = _lastBrowse.entries.concat(data.entries || []);
-      _lastBrowse.page = data.page;
-    } else {
-      _lastBrowse = data;
-    }
-    currentBrowsePage = data.page;
-    _browseHasMore = data.page < data.total_pages;
+    const st = list.scrollTop;
 
     document.getElementById("browse-count-badge").textContent =
-      `${data.total_count} result${data.total_count !== 1 ? "s" : ""}`;
+      `${_browseFull.length} result${_browseFull.length !== 1 ? "s" : ""}`;
 
-    if (!_lastBrowse.entries.length) {
+    if (!_browseFull.length) {
       list.innerHTML = '<div class="empty-state">No expenses match your filters.</div>';
-      more.innerHTML = "";
+      more.textContent = "";
       _bulkBarSync();
       return;
     }
 
-    const rowsHTML = (data.entries || []).map(_browseRow).join("");
-    if (append) {
-      list.insertAdjacentHTML("beforeend", rowsHTML);
-    } else {
-      list.innerHTML = rowsHTML;
-      list.scrollTop = 0;
-    }
+    list.innerHTML = _browseFull.slice(0, _browseShown).map(_browseRow).join("");
+    list.scrollTop = keepScroll ? st : 0;
 
-    const loaded = _lastBrowse.entries.length;
-    more.textContent = _browseHasMore
-      ? `${loaded} of ${data.total_count} loaded — scroll for more`
-      : `all ${data.total_count} shown`;
+    more.textContent = _browseShown < _browseFull.length
+      ? `${_browseShown} of ${_browseFull.length} shown — scroll for more`
+      : `all ${_browseFull.length} shown`;
 
     _bulkBarSync();  // reflect the staged-split queue
   }
@@ -1983,23 +1773,15 @@
     if (!t) return;
     t.closest(".expense-row")?.classList.toggle("open");
   });
-  function _rerenderRows() {
-    if (!_lastBrowse || !_lastBrowse.entries) return;
-    const list = document.getElementById("browse-list");
-    const st = list.scrollTop;
-    list.innerHTML = _lastBrowse.entries.map(_browseRow).join("");
-    list.scrollTop = st;
-    _bulkBarSync();
-  }
+  function _rerenderRows() { _paintBrowse(true); }
 
+  // Reveal the next chunk on scroll — pure client-side, no request.
   document.getElementById("browse-list").addEventListener("scroll", ev => {
+    if (_browseShown >= _browseFull.length) return;
     const el = ev.target;
-    if (_browseLoadingMore || !_browseHasMore) return;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 140) {
-      _browseLoadingMore = true;
-      document.getElementById("browse-more").textContent = "Loading…";
-      fetchList(currentBrowsePage + 1, false, { append: true })
-        .finally(() => { _browseLoadingMore = false; });
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 400) {
+      _browseShown = Math.min(_browseFull.length, _browseShown + BROWSE_CHUNK);
+      _paintBrowse(true);
     }
   });
 
@@ -2065,7 +1847,7 @@
     const gen = ++_fetchAllGen;
     const chip = opts.partial ? "recent" : "full";
     _bgMark(chip, "loading");
-    const btn = document.getElementById("btn-summary");
+    const btn = document.getElementById("btn-apply");
     btn.disabled = true;
     _showLoader();
     if (!bg && document.getElementById("results-summary").style.display === "none") {
@@ -2075,12 +1857,11 @@
     document.getElementById("error-summary").style.display   = "none";
 
     const base = buildSummaryParams() + (force ? "&force=1" : "") + (opts.partial ? "&partial=1" : "");
-    const qsNoGroup = base.replace(/[&?]?group_by=[^&]*/g, "").replace(/^&/, "");
 
     try {
       const [chartRes, insightRes] = await Promise.all([
         fetch(`/expenses/chart/?${base}`),
-        fetch(`/expenses/insights/?${qsNoGroup}`),
+        fetch(`/expenses/insights/?${base}`),
       ]);
 
       const chart   = await chartRes.json();
@@ -2102,15 +1883,6 @@
       document.getElementById("grand-total").textContent  = fmt(chart.grand_total);
       document.getElementById("display-text").textContent = chart.display || "";
 
-      if (chart.trend?.labels?.length) {
-        renderTrendChart(chart.trend.labels, chart.trend.values);
-        document.getElementById("trend-card").style.display = "block";
-      } else {
-        document.getElementById("trend-card").style.display = "none";
-      }
-
-      renderBreakdown(chart);
-
       /* Insights */
       if (insightRes.ok) {
         renderInsights(insight);
@@ -2127,38 +1899,41 @@
     }
   }
 
-  /* ── Fetch browse list ── */
-  async function fetchList(page, force = false, opts = {}) {
+  /* ── Fetch browse list — one request, then paginate client-side ── */
+  async function fetchList(force = false, opts = {}) {
     const bg = !!opts.bg;
-    const append = !!opts.append;
     const gen = ++_fetchListGen;
     const chip = opts.partial ? "recent" : "full";
-    if (!append) _bgMark(chip, "loading");
-    const btn = document.getElementById("btn-browse");
+    _bgMark(chip, "loading");
+    const btn = document.getElementById("btn-apply");
     btn.disabled = true;
     _showLoader();
-    if (!bg && !append && document.getElementById("results-browse").style.display === "none") {
-      document.getElementById("loading-browse").style.display  = "flex";
+    if (!bg && document.getElementById("results-browse").style.display === "none") {
+      document.getElementById("loading-browse").style.display = "flex";
     }
-    document.getElementById("error-browse").style.display    = "none";
+    document.getElementById("error-browse").style.display = "none";
 
     try {
-      const extra = (force ? "&force=1" : "") + (opts.partial ? "&partial=1" : "");
-      const res   = await fetch(`/expenses/list/?${buildBrowseParams(page)}${extra}`);
+      const extra = "&all=1" + (force ? "&force=1" : "") + (opts.partial ? "&partial=1" : "");
+      const res   = await fetch(`/expenses/list/?${buildBrowseParams()}${extra}`);
       const data  = await res.json();
-      if (gen !== _fetchListGen) return;  // a newer fetchList superseded this one
+      if (gen !== _fetchListGen) return;  // superseded
       if (!res.ok) {
-        if (!append) _bgMark(chip, "error");
+        _bgMark(chip, "error");
         showError("error-browse", data.error || "Something went wrong.");
         return;
       }
-      if (!append) _bgMark(chip, "done", `${data.total_rows ?? 0} rows`);
+      _bgMark(chip, "done", `${data.total_rows ?? 0} rows`);
       updateCacheBar(data);
-      renderBrowseList(data, append);
+
+      _browseFull  = data.entries || [];
+      _browseShown = Math.min(_browseFull.length, BROWSE_CHUNK);
+      _lastBrowse  = Object.assign({}, data, { entries: _browseFull });  // full set for lookups
+      _paintBrowse();
       document.getElementById("results-browse").style.display = "block";
-      if (!bg && !append && !opts.partial) document.getElementById("results-browse").scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!bg && !opts.partial) document.getElementById("results-browse").scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (e) {
-      if (!append) _bgMark(chip, "error");
+      _bgMark(chip, "error");
       showError("error-browse", "Network error: " + e.message);
     } finally {
       document.getElementById("loading-browse").style.display = "none";
@@ -2176,7 +1951,7 @@
       await fetchAll(true);
       // If browse results are visible, refresh them too
       if (document.getElementById("results-browse").style.display !== "none") {
-        await fetchList(1,true);
+        await fetchList(true);
       }
     } finally {
       btn.disabled = false;
@@ -2312,7 +2087,7 @@
       showToast('Expense added', 'success');
       // Refresh both the browse list and insights
       if (document.getElementById("results-browse").style.display !== "none") {
-        await fetchList(1,true);
+        await fetchList(true);
       }
       await fetchAll(true);
       // Re-populate dropdowns with fresh data (new categories/sources may have been added)
@@ -2367,7 +2142,7 @@
       const data = await res.json();
       if (!res.ok) { btn.disabled = false; btn.textContent = "Delete"; alert(data.error || "Delete failed."); return; }
       _delClose();
-      await fetchList(1,true);
+      await fetchList(true);
       await fetchAll(true);
     } catch (err) {
       btn.disabled = false; btn.textContent = "Delete";
@@ -2408,7 +2183,7 @@
     try {
       await Promise.all([
         fetchAll(false, { partial: true }),
-        fetchList(1, false, { partial: true }),
+        fetchList(false, { partial: true }),
       ]);
     } catch (e) {}
     _bulkBarSync();  // show the queue bar even if the list failed to render
@@ -2416,7 +2191,7 @@
     // Phase 2 — full dataset in the background, then silently overwrite the UI
     Promise.all([
       fetchAll(false, { bg: true }),
-      fetchList(1,false, { bg: true }),
+      fetchList(false, { bg: true }),
     ]).catch(() => {});
   }
 
