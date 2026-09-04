@@ -358,6 +358,31 @@
       border: 2px solid rgba(79,70,229,0.25); border-top-color: var(--accent);
       animation: spin 0.7s linear infinite;
     }
+
+    /* ── Inline bulk-edit rows ── */
+    .be-row {
+      border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 0.7rem 0.75rem;
+      margin-bottom: 0.55rem; transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+    }
+    .be-row.dirty { border-color: var(--accent); background: rgba(79,70,229,0.04); }
+    .be-row.row-saving { opacity: 0.55; pointer-events: none; }
+    [data-theme="dark"] .be-row { border-color: rgba(255,255,255,0.12); }
+    [data-theme="dark"] .be-row.dirty { background: rgba(129,140,248,0.1); }
+    .be-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem 0.6rem; }
+    .be-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+    .be-field.wide { grid-column: 1 / -1; }
+    .be-field label { font-size: 0.6rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.04em; }
+    .be-field input, .be-field select {
+      padding: 0.4rem 0.55rem; border-radius: 8px; border: 1px solid #E5E7EB;
+      font-size: 0.82rem; font-family: inherit; color: #111827; background: #F9FAFB; min-width: 0;
+    }
+    [data-theme="dark"] .be-field input, [data-theme="dark"] .be-field select {
+      background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
+    }
+    .be-checks { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; grid-column: 1 / -1; margin-top: 0.1rem; }
+    .be-checks label { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: #374151; cursor: pointer; }
+    .be-checks input[type="checkbox"] { -webkit-appearance: auto; appearance: auto; width: 15px; height: 15px; accent-color: #4F46E5; }
+    [data-theme="dark"] .be-checks label { color: #D1D5DB; }
     .expense-row.proc   { background: rgba(16,185,129,0.035); }
     .expense-row.unproc { background: rgba(239,68,68,0.09); }
     [data-theme="dark"] .expense-row.proc   { background: rgba(16,185,129,0.05); }
@@ -941,6 +966,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;gap:0.5rem;flex-wrap:wrap;">
       <div class="section-heading" style="margin-top:0;cursor:default;user-select:none;" onclick="_titleClick()"><span>📋</span> Browse Expenses</div>
       <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <button class="btn-ghost" id="be-toggle" onclick="_bulkEditToggle()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Edit multiple rows inline">✎ Bulk edit</button>
         <button class="btn-ghost" onclick="_exportCSV()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Export current list to CSV">↓ CSV</button>
         <button class="btn-primary" onclick="_efOpen(null)" style="margin-top:0;">+ Add Expense</button>
       </div>
@@ -971,6 +997,12 @@
           </div>
           <button class="btn-primary" id="bulk-push-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_pushQueue()">Push all queued</button>
           <button class="btn-ghost" id="bulk-clear-btn" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_clearQueue()">Clear queue</button>
+        </div>
+        <div id="be-bar" hidden style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:0.55rem 0.9rem;background:rgba(79,70,229,0.08);border:1px solid var(--accent);border-radius:12px;">
+          <strong id="be-count" style="font-size:0.82rem;">Bulk edit — 0 changed</strong>
+          <span id="be-progress" style="font-size:0.75rem;color:#6B7280;"></span>
+          <button class="btn-primary" id="be-save-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_bulkEditSave()" disabled>Save changed</button>
+          <button class="btn-ghost" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_bulkEditToggle()">Exit</button>
         </div>
         <div id="browse-list"></div>
         <div id="browse-more"></div>
@@ -1737,6 +1769,165 @@
       </div>`;
   }
 
+  /* ── Inline bulk edit ── */
+  let _bulkEdit = false;
+  const _esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
+
+  function _bulkEditToggle() {
+    _bulkEdit = !_bulkEdit;
+    const btn = document.getElementById("be-toggle");
+    btn.textContent = _bulkEdit ? "✕ Exit bulk edit" : "✎ Bulk edit";
+    btn.classList.toggle("btn-primary", _bulkEdit);
+    btn.classList.toggle("btn-ghost", !_bulkEdit);
+    document.getElementById("be-bar").hidden = !_bulkEdit;
+    document.getElementById("be-progress").textContent = "";
+    _paintBrowse(true);
+  }
+
+  function _beSnap(e) {
+    return {
+      name: e.title || "", amount: String(e.amount ?? ""), date: e.date || "",
+      source: e.source || "", categories: (e.categories || []).join(", "),
+      comment: e.comment || "", other_partner: e.other_partner || "",
+      splitwise_id: e.splitwise_id == null ? "" : String(e.splitwise_id),
+      processed: !!e.processed, add_to_split: !!e.add_to_split,
+      from_split: !!e.from_split, split_added: !!e.split_added,
+    };
+  }
+
+  function _beRead(row) {
+    const g = f => row.querySelector(`[data-bef="${f}"]`);
+    return {
+      name: g("name").value.trim(), amount: g("amount").value.trim(), date: g("date").value,
+      source: g("source").value, categories: g("categories").value.trim(),
+      comment: g("comment").value, other_partner: g("other_partner").value,
+      splitwise_id: g("splitwise_id").value.trim(),
+      processed: g("processed").checked, add_to_split: g("add_to_split").checked,
+      from_split: g("from_split").checked, split_added: g("split_added").checked,
+    };
+  }
+
+  function _beDirty(a, b) {
+    if ((parseFloat(a.amount) || 0) !== (parseFloat(b.amount) || 0)) return true;
+    for (const k of ["name", "date", "source", "categories", "comment", "other_partner", "splitwise_id"]) {
+      if (a[k] !== b[k]) return true;
+    }
+    for (const k of ["processed", "add_to_split", "from_split", "split_added"]) {
+      if (!!a[k] !== !!b[k]) return true;
+    }
+    return false;
+  }
+
+  function _bulkEditRow(e) {
+    const s = _beSnap(e);
+    // Always include the row's current source, even if the dropdown list hasn't loaded yet.
+    const srcSet = new Set(_allSrcs);
+    if (s.source) srcSet.add(s.source);
+    const srcOpts = ['<option value="">— None —</option>']
+      .concat([...srcSet].map(n => `<option value="${_esc(n)}"${n === s.source ? " selected" : ""}>${_esc(n)}</option>`))
+      .join("");
+    return `
+      <div class="be-row" data-be-id="${e.page_id}">
+        <div class="be-grid">
+          <div class="be-field wide"><label>Name</label><input type="text" data-bef="name" value="${_esc(s.name)}"></div>
+          <div class="be-field"><label>Amount</label><input type="number" step="0.01" data-bef="amount" value="${_esc(s.amount)}"></div>
+          <div class="be-field"><label>Date</label><input type="date" data-bef="date" value="${_esc(s.date)}"></div>
+          <div class="be-field"><label>Source</label><select data-bef="source">${srcOpts}</select></div>
+          <div class="be-field"><label>Splitwise ID</label><input type="number" step="1" data-bef="splitwise_id" value="${_esc(s.splitwise_id)}"></div>
+          <div class="be-field wide"><label>Categories (comma-separated)</label><input type="text" data-bef="categories" value="${_esc(s.categories)}"></div>
+          <div class="be-field wide"><label>Comment</label><input type="text" data-bef="comment" value="${_esc(s.comment)}"></div>
+          <div class="be-field wide"><label>Other Partner</label><input type="text" data-bef="other_partner" value="${_esc(s.other_partner)}"></div>
+          <div class="be-checks">
+            <label><input type="checkbox" data-bef="processed" ${s.processed ? "checked" : ""}> Processed</label>
+            <label><input type="checkbox" data-bef="add_to_split" ${s.add_to_split ? "checked" : ""}> Add to Split</label>
+            <label><input type="checkbox" data-bef="from_split" ${s.from_split ? "checked" : ""}> From Split</label>
+            <label><input type="checkbox" data-bef="split_added" ${s.split_added ? "checked" : ""}> Split Added</label>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function _beRefreshCount() {
+    const n = document.querySelectorAll("#browse-list .be-row.dirty").length;
+    document.getElementById("be-count").textContent = `Bulk edit — ${n} changed`;
+    document.getElementById("be-save-btn").disabled = n === 0;
+  }
+
+  document.getElementById("browse-list").addEventListener("input", ev => {
+    if (!_bulkEdit) return;
+    const row = ev.target.closest(".be-row");
+    if (!row) return;
+    const entry = _browseFull.find(x => x.page_id === row.dataset.beId);
+    if (entry) row.classList.toggle("dirty", _beDirty(_beSnap(entry), _beRead(row)));
+    _beRefreshCount();
+  });
+  document.getElementById("browse-list").addEventListener("change", ev => {
+    if (!_bulkEdit || !ev.target.closest(".be-row")) return;
+    ev.target.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+
+  async function _bulkEditSave() {
+    const dirtyRows = [...document.querySelectorAll("#browse-list .be-row.dirty")];
+    if (!dirtyRows.length) return;
+    const btn  = document.getElementById("be-save-btn");
+    const prog = document.getElementById("be-progress");
+    btn.disabled = true;
+    let done = 0, failed = 0; const fails = [];
+
+    for (const row of dirtyRows) {
+      const id = row.dataset.beId;
+      const entry = _browseFull.find(x => x.page_id === id);
+      if (!entry) continue;
+      const before = _beSnap(entry);
+      const cur = _beRead(row);
+      prog.textContent = `Saving ${done + failed + 1}/${dirtyRows.length}…`;
+      row.classList.add("row-saving");
+
+      const cats = cur.categories.split(",").map(c => c.trim()).filter(Boolean);
+      const dateChanged = cur.date !== before.date;
+      const swid = cur.splitwise_id === "" ? "" : Number(cur.splitwise_id);
+      const payload = {
+        name: cur.name, amount: parseFloat(cur.amount) || 0,
+        date: dateChanged ? cur.date : "",
+        categories: cats, source: cur.source,
+        comment: cur.comment, other_partner: cur.other_partner,
+        add_to_split: cur.add_to_split, from_split: cur.from_split,
+        split_added: cur.split_added, processed: cur.processed,
+        splitwise_id: swid,
+      };
+      try {
+        const res = await fetch(`/expenses/${id}/update/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+          body: JSON.stringify(payload),
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.error || "Save failed");
+        Object.assign(entry, {
+          title: cur.name, amount: payload.amount,
+          date: dateChanged ? cur.date : entry.date,
+          categories: cats, source: cur.source, comment: cur.comment,
+          other_partner: cur.other_partner, processed: cur.processed,
+          add_to_split: cur.add_to_split, from_split: cur.from_split, split_added: cur.split_added,
+          splitwise_id: swid === "" ? null : swid,
+        });
+        done++;
+        row.classList.remove("dirty");
+      } catch (err) {
+        failed++;
+        fails.push(`${cur.name || id}: ${err.message}`);
+      } finally {
+        row.classList.remove("row-saving");
+      }
+    }
+
+    prog.textContent = "";
+    showToast(`${done} saved${failed ? `, ${failed} failed` : ""}`, failed ? "info" : "success", 5000);
+    if (failed) alert("Some rows failed and stay editable:\n\n" + fails.join("\n"));
+    _beRefreshCount();
+    if (!failed) _bulkEditToggle();  // all clean — drop back to the normal view
+  }
+
   // Paint the currently-revealed slice of the fully-loaded list — no network.
   function _paintBrowse(keepScroll) {
     const list = document.getElementById("browse-list");
@@ -1753,14 +1944,15 @@
       return;
     }
 
-    list.innerHTML = _browseFull.slice(0, _browseShown).map(_browseRow).join("");
+    list.innerHTML = _browseFull.slice(0, _browseShown).map(_bulkEdit ? _bulkEditRow : _browseRow).join("");
     list.scrollTop = keepScroll ? st : 0;
 
-    more.textContent = _browseShown < _browseFull.length
-      ? `${_browseShown} of ${_browseFull.length} shown — scroll for more`
-      : `all ${_browseFull.length} shown`;
+    more.textContent = _bulkEdit
+      ? (_browseShown < _browseFull.length ? `editing first ${_browseShown} of ${_browseFull.length} — exit bulk edit to load more` : `editing all ${_browseFull.length}`)
+      : (_browseShown < _browseFull.length ? `${_browseShown} of ${_browseFull.length} shown — scroll for more` : `all ${_browseFull.length} shown`);
 
     _bulkBarSync();  // reflect the staged-split queue
+    if (_bulkEdit) _beRefreshCount();
   }
 
   // Re-render one row (or all loaded rows) from local state — no network.
@@ -1787,7 +1979,7 @@
 
   // Reveal the next chunk on scroll — pure client-side, no request.
   document.getElementById("browse-list").addEventListener("scroll", ev => {
-    if (_browseShown >= _browseFull.length) return;
+    if (_bulkEdit || _browseShown >= _browseFull.length) return;
     const el = ev.target;
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 400) {
       _browseShown = Math.min(_browseFull.length, _browseShown + BROWSE_CHUNK);
