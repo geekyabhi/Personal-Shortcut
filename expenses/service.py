@@ -1091,6 +1091,92 @@ class ExpensesService:
                 return self._row_to_entry(row)
         raise ValueError("Expense not found")
 
+    def split_entry(self, page_id: str, splits: list) -> list:
+        """Break one mixed-category purchase into several single-category rows
+        so per-category analytics stop double-counting (today, a row tagged
+        with N categories has its full amount added to every one of them).
+
+        ``splits`` is a list of {"category": str, "amount": number, "name": str?,
+        "source"?, "comment"?, "other_partner"?, "add_to_split"?, "from_split"?,
+        "split_added"?, "processed"?}. Amounts must add up to the original
+        entry's amount. Every field besides category/amount/name is optional
+        per split — an omitted one falls back to the original entry's value,
+        so a caller that only sends category/amount/name keeps today's
+        inherit-everything behavior. Creates one new Notion page per split
+        (never carrying over the Splitwise ID — it can only belong to one
+        row), then archives the original. Returns the new
+        page_ids. Raises ValueError before creating anything if the splits
+        don't validate, but a failure partway through creation leaves any
+        already-created rows in place and does NOT touch the original."""
+        if not splits or len(splits) < 2:
+            raise ValueError("Provide at least two splits")
+
+        original = self.get_entry(page_id)
+
+        # `original["date"]` is truncated to YYYY-MM-DD by `_row_to_entry` (that's
+        # all the rest of the UI ever needs), which would silently drop the
+        # purchase's actual time-of-day/timezone on every split row. Pull the
+        # untouched "start" value straight off the raw Notion row instead, so
+        # the splits land on the exact same instant as the original.
+        raw_rows, _, _, _ = self.dl.get_cached_rows()
+        raw_row = next((r for r in raw_rows if r.get("id") == page_id), None)
+        if raw_row is None:
+            raise ValueError("Expense not found")
+        original_date = (
+            ((raw_row.get("properties", {}).get("Date") or {}).get("date") or {}).get("start")
+            or original["date"]
+        )
+
+        total = 0.0
+        for s in splits:
+            if not (s.get("category") or "").strip():
+                raise ValueError("Every split needs a category")
+            amount = s.get("amount")
+            if amount is None or amount == "":
+                raise ValueError("Every split needs an amount")
+            amount = float(amount)
+            if amount <= 0:
+                raise ValueError("Split amounts must be greater than 0")
+            total += amount
+
+        if round(total, 2) != round(original["amount"], 2):
+            raise ValueError(
+                f"Split amounts add up to {total:.2f}, but the original "
+                f"expense is {original['amount']:.2f}"
+            )
+
+        new_ids = []
+        for i, s in enumerate(splits, start=1):
+            name = (s.get("name") or "").strip() or original["title"]
+            # Ties this row back to the purchase it came from, since the original
+            # page is archived and won't otherwise show up anywhere.
+            trace_note = (
+                f"Split {i}/{len(splits)} of \"{original['title']}\" — "
+                f"total {original['amount']:.2f} on {original['date']}"
+            )
+            # Every other field is optional per split — omitted means "same as the
+            # original" (so old callers that only send category/amount/name still
+            # work); anything the caller does send (comment included) overrides it.
+            row_comment = s.get("comment", original["comment"])
+            comment = f"{trace_note}\n{row_comment}" if row_comment else trace_note
+            source = s.get("source", original["source"])
+            other_partner = s.get("other_partner", original["other_partner"])
+            add_to_split = s.get("add_to_split", original["add_to_split"])
+            from_split = s.get("from_split", original["from_split"])
+            split_added = s.get("split_added", original["split_added"])
+            processed = s.get("processed", original["processed"])
+            new_id = self.create_entry(
+                name, float(s["amount"]), original_date,
+                [s["category"].strip()], source,
+                comment=comment, other_partner=other_partner,
+                add_to_split=add_to_split, from_split=from_split,
+                split_added=split_added, processed=processed,
+            )
+            new_ids.append(new_id)
+
+        self.delete_entry(page_id)
+        return new_ids
+
     def mark_split_added(self, page_id: str, value: bool = True) -> None:
         """Tick / untick the Notion 'Split Added' checkbox and bust cache."""
         self.dl.patch_page(

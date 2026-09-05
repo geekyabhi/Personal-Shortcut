@@ -662,21 +662,21 @@
       border: none; background: transparent; font: inherit; color: inherit;
       width: 82px; min-width: 0; outline: none;
     }
-    .be-pill-new-btn, .ef-pill-new-btn, .be-src-new-btn, .ef-src-new-btn {
+    .be-pill-new-btn, .ef-pill-new-btn, .be-src-new-btn, .ef-src-new-btn, .sp-src-new-btn {
       border: none; background: transparent; color: var(--accent);
       font-weight: 800; font-size: 0.85rem; line-height: 1; cursor: pointer;
       width: 18px; height: 18px; border-radius: 50%; flex: none;
     }
-    .be-pill-new-btn:hover, .ef-pill-new-btn:hover, .be-src-new-btn:hover, .ef-src-new-btn:hover { background: rgba(79,70,229,0.12); }
+    .be-pill-new-btn:hover, .ef-pill-new-btn:hover, .be-src-new-btn:hover, .ef-src-new-btn:hover, .sp-src-new-btn:hover { background: rgba(79,70,229,0.12); }
     [data-theme="dark"] .be-pill-new, [data-theme="dark"] .ef-pill-new { border-color: rgba(99,102,241,0.4); }
-    .be-src-new, .ef-src-new {
+    .be-src-new, .ef-src-new, .sp-src-new {
       display: flex; align-items: center; gap: 0.15rem; margin-top: 0.35rem; font-size: 0.78rem;
       border: 1.5px dashed #E5E7EB; border-radius: 8px; padding: 0.15rem 0.15rem 0.15rem 0.5rem;
     }
-    .be-src-new-input, .ef-src-new-input {
+    .be-src-new-input, .ef-src-new-input, .sp-src-new-input {
       flex: 1; min-width: 0; border: none; background: transparent; font: inherit; color: inherit; outline: none;
     }
-    [data-theme="dark"] .be-src-new, [data-theme="dark"] .ef-src-new { border-color: rgba(255,255,255,0.14); }
+    [data-theme="dark"] .be-src-new, [data-theme="dark"] .ef-src-new, [data-theme="dark"] .sp-src-new { border-color: rgba(255,255,255,0.14); }
     .ef-actions { display: flex; gap: 0.6rem; margin-top: 1.5rem; }
     .ef-btn-cancel {
       flex: 1; padding: 0.6rem; border-radius: 10px; border: 1.5px solid #E5E7EB;
@@ -719,6 +719,87 @@
     .dv-k { font-size: 0.72rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.04em; flex: none; }
     .dv-v { font-size: 0.85rem; font-weight: 600; color: #111827; text-align: right; overflow-wrap: anywhere; }
     .dv-actions { display: flex; gap: 0.6rem; margin-top: 1.5rem; }
+    .dv-split-link {
+      display: block; width: 100%; text-align: center; margin-top: 0.7rem;
+      background: transparent; border: none; color: var(--accent);
+      font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: inherit; padding: 0.3rem;
+    }
+    .dv-split-link:hover { text-decoration: underline; }
+    /* ── Split-expense modal ── */
+    .sp-sub { font-size: 0.82rem; color: #6B7280; margin: -0.6rem 0 1.1rem; }
+    .sp-sub strong { color: #111827; font-weight: 700; }
+    .sp-rows { display: flex; flex-direction: column; gap: 0.6rem; }
+    .sp-row { display: grid; grid-template-columns: 0.85fr 1.15fr 85px auto; gap: 0.5rem; align-items: start; }
+    /* Only the split row's own three fields — NOT `.sp-row input` (which would
+       also style the More-fields and Splitwise sub-widgets nested inside). */
+    .sp-name, .sp-amount, .sp-cat-input {
+      padding: 0.5rem 0.6rem; border-radius: 8px; border: 1.5px solid #E5E7EB;
+      font-size: 0.85rem; font-family: inherit; color: #111827; background: #F9FAFB; min-width: 0; width: 100%;
+    }
+    .sp-name:focus, .sp-amount:focus, .sp-cat-input:focus { outline: none; border-color: #6366F1; background: #fff; }
+    .sp-name, .sp-amount { margin-top: 0; }
+    .sp-cat-wrap { position: relative; min-width: 0; }
+    .sp-cat-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+      max-height: 180px; overflow-y: auto;
+      background: #fff; border: 1.5px solid #E5E7EB; border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+      /* Forces its own compositing layer — an absolutely-positioned element sitting
+         above a `backdrop-filter` ancestor (the modal overlay) can otherwise paint
+         with the wrong background in some rendering paths. */
+      transform: translateZ(0);
+    }
+    /* When the input sits near the bottom of the (scrollable) modal, drop the list
+       upward instead — otherwise it renders past the modal edge and gets clipped. */
+    .sp-cat-dropdown.sp-cat-dropdown--up {
+      top: auto; bottom: calc(100% + 4px);
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.14);
+    }
+    .sp-cat-opt { padding: 0.45rem 0.65rem; font-size: 0.82rem; color: #111827; cursor: pointer; }
+    .sp-cat-opt:hover { background: rgba(79,70,229,0.08); }
+    .sp-cat-opt--cur { background: rgba(79,70,229,0.1); font-weight: 600; }
+    [data-theme="dark"] .sp-cat-opt--cur { background: rgba(129,140,248,0.18); }
+    .sp-cat-opt-new { color: var(--accent); font-weight: 600; border-top: 1px solid #F3F4F6; }
+    .sp-cat-empty { padding: 0.5rem 0.65rem; font-size: 0.78rem; color: #9CA3AF; }
+    [data-theme="dark"] .sp-cat-dropdown { background: #232330; border-color: rgba(255,255,255,0.14); }
+    [data-theme="dark"] .sp-cat-opt { color: #F9FAFB; }
+    [data-theme="dark"] .sp-cat-opt:hover { background: rgba(129,140,248,0.16); }
+    [data-theme="dark"] .sp-cat-opt-new { border-top-color: rgba(255,255,255,0.1); }
+    .sp-more-toggle {
+      grid-column: 1 / -1; justify-self: start; margin-top: 0.1rem;
+      background: transparent; border: none; color: var(--accent);
+      font-size: 0.76rem; font-weight: 600; cursor: pointer; font-family: inherit; padding: 0.1rem 0;
+    }
+    .sp-more-toggle:hover { text-decoration: underline; }
+    .sp-more-fields {
+      grid-column: 1 / -1; margin-top: 0.5rem; padding-top: 0.6rem;
+      border-top: 1px dashed #E5E7EB;
+    }
+    .sp-more-fields[hidden] { display: none; }
+    /* Two classes so `width` beats `.split-panel`'s fixed 320px further down the sheet. */
+    .sp-more-fields .sp-sw-panel { grid-column: 1 / -1; width: 100%; margin-top: 0.5rem; box-sizing: border-box; }
+    .sp-sw-panel[hidden] { display: none; }
+    [data-theme="dark"] .sp-more-fields { border-top-color: rgba(255,255,255,0.12); }
+    .sp-row-remove {
+      width: 28px; height: 28px; flex: none; border-radius: 8px; border: 1.5px solid #FECACA;
+      background: transparent; color: #EF4444; cursor: pointer; font-size: 0.9rem; line-height: 1;
+      margin-top: 0.05rem;
+    }
+    .sp-row-remove:hover { background: #FEF2F2; }
+    .sp-add-row {
+      margin-top: 0.7rem; align-self: flex-start; border: 1.5px dashed #C7D2FE; border-radius: 8px;
+      background: transparent; color: var(--accent); font-size: 0.8rem; font-weight: 600;
+      padding: 0.4rem 0.8rem; cursor: pointer; font-family: inherit;
+    }
+    .sp-add-row:hover { background: rgba(79,70,229,0.06); }
+    .sp-remaining { font-size: 0.8rem; font-weight: 700; margin-top: 0.9rem; }
+    .sp-remaining.ok { color: #059669; }
+    .sp-remaining.off { color: #EF4444; }
+    [data-theme="dark"] .sp-sub strong { color: #F9FAFB; }
+    [data-theme="dark"] .sp-name, [data-theme="dark"] .sp-amount, [data-theme="dark"] .sp-cat-input { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB; }
+    [data-theme="dark"] .sp-name:focus, [data-theme="dark"] .sp-amount:focus, [data-theme="dark"] .sp-cat-input:focus { background: rgba(255,255,255,0.10); }
+    [data-theme="dark"] .sp-row-remove { border-color: rgba(239,68,68,0.35); color: #F87171; }
+    [data-theme="dark"] .sp-add-row { border-color: rgba(99,102,241,0.4); }
     [data-theme="dark"] .dv-box { background: #1B1B28; }
     [data-theme="dark"] .dv-close:hover { background: rgba(255,255,255,0.08); color: #E5E7EB; }
     [data-theme="dark"] .dv-title { color: #F9FAFB; }
@@ -876,8 +957,9 @@
     .split-people-empty { font-size:0.78rem; color:#9CA3AF; padding:0.4rem 0.2rem; }
     .split-person { display:flex; align-items:center; gap:0.5rem; padding:0.24rem 0; }
     .split-person[hidden] { display:none; }
-    .split-person label { flex:1; display:flex; align-items:center; gap:0.4rem; font-size:0.83rem; cursor:pointer; min-width:0; }
-    .split-person label span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .split-person label { flex:1; display:flex; align-items:center; gap:0.4rem; font-size:0.83rem; font-weight:400; cursor:pointer; min-width:0; margin-bottom:0; text-transform:none; letter-spacing:normal; color:inherit; }
+    .split-person label input[type=checkbox] { flex:none; width:15px; height:15px; margin:0; padding:0; border:none; border-radius:0; background:none; -webkit-appearance:auto; appearance:auto; }
+    .split-person label span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; }
     .split-person input[type=number] { width:82px; flex:none; padding:0.28rem 0.45rem; border-radius:8px; border:1px solid rgba(0,0,0,0.16); font-size:0.8rem; text-align:right; }
     [data-theme="dark"] .split-person input[type=number] { background:rgba(255,255,255,0.07); color:#F9FAFB; border-color:rgba(255,255,255,0.16); }
     .expense-comment {
@@ -1354,15 +1436,20 @@
       : ((meta.groups.find(g => String(g.id) === grp) || {}).members || []).filter(m => m.id !== meta.me.id);
     const stagedShares = (staged && _stagedMatchesGroup(staged, grp)) ? staged.shares : null;
     const remembered = (_splitLoadPrefs().members || {})[grp] || [];
-    const rows = [{ id: meta.me.id, name: "You", fixed: true }]
+    // `isMe` marks the "You" row: it's checked by default and takes a share like
+    // anyone else, but can now be UNCHECKED to record "I paid the full amount and
+    // owe nothing" (the others cover the whole cost).
+    const rows = [{ id: meta.me.id, name: "You", isMe: true }]
       .concat(people.map(p => ({ id: p.id, name: p.name })));
     panel.querySelector("[data-split-people]").innerHTML = rows.map(p => {
       const sid = String(p.id);
-      const on  = p.fixed || (stagedShares ? sid in stagedShares : remembered.includes(sid));
+      const on  = p.isMe
+        ? (stagedShares ? sid in stagedShares : true)
+        : (stagedShares ? sid in stagedShares : remembered.includes(sid));
       const val = stagedShares && sid in stagedShares ? Number(stagedShares[sid]).toFixed(2) : "";
       return `
       <div class="split-person">
-        <label><input type="checkbox" data-split-check value="${p.id}" ${on ? "checked" : ""} ${p.fixed ? "disabled" : ""}> <span>${p.name}</span></label>
+        <label><input type="checkbox" data-split-check value="${p.id}" ${on ? "checked" : ""}> <span>${p.name}</span></label>
         <input type="number" data-split-amt data-id="${p.id}" step="0.01" min="0" placeholder="0.00" value="${val}" ${on ? "" : "disabled"}>
       </div>`;
     }).join("");
@@ -1423,10 +1510,16 @@
       });
     }
     const sum = amts.reduce((s, i) => s + (parseFloat(i.value) || 0), 0);
-    const ok  = chosen.length >= 2 && Math.abs(sum - amount) < 0.01;
+    const meId = String((_splitMeta && _splitMeta.me && _splitMeta.me.id) || "");
+    const youIn = chosen.includes(meId);
+    // Splitwise (and our backend) still needs ≥2 participants total; when you opt
+    // out, "You" is sent with a 0 share, so 1 other person is enough here.
+    const enoughPeople = youIn ? chosen.length >= 2 : chosen.length >= 1;
+    const ok  = enoughPeople && Math.abs(sum - amount) < 0.01;
     const totEl = panel.querySelector("[data-split-total]");
+    const need = youIn ? "pick at least 1 other person" : "pick at least 1 person";
     totEl.textContent = `Shares: ${fmt(sum)} / ${fmt(amount)}` +
-      (chosen.length < 2 ? "  ·  pick at least 1 other person" : (ok ? "  ✓" : "  ·  must match total"));
+      (!enoughPeople ? `  ·  ${need}` : (ok ? (youIn ? "  ✓" : "  ✓ (you owe nothing)") : "  ·  must match total"));
     totEl.className = "split-total " + (ok ? "ok" : "bad");
     panel.querySelector("[data-split-save]").disabled = !ok;
     panel.querySelector("[data-split-push]").disabled = !ok;
@@ -1441,6 +1534,10 @@
       const inp = panel.querySelector(`[data-split-amt][data-id="${cb.value}"]`);
       shares[cb.value] = parseFloat(inp.value) || 0;
     });
+    // The backend always wants "you" in the shares map (recorded as having paid
+    // the full amount); if you opted out of taking a share, send yours as 0.
+    const meId = String((_splitMeta && _splitMeta.me && _splitMeta.me.id) || "");
+    if (meId && !(meId in shares)) shares[meId] = 0;
     return { grp, mode, group_id: mode === "group" ? grp : "", shares };
   }
 
@@ -1906,10 +2003,399 @@
     ).join("");
     document.getElementById("dv-edit-btn").onclick = () => { _dvClose(); _efOpen(e); };
     document.getElementById("dv-del-btn").onclick  = () => { _dvClose(); _delOpen(e.page_id, e.title); };
+    document.getElementById("dv-split-btn").onclick = () => { _dvClose(); _spOpen(e); };
     document.getElementById("dv-overlay").classList.add("open");
   }
   function _dvClose() { document.getElementById("dv-overlay").classList.remove("open"); }
   function _dvBgClick(ev) { if (ev.target === document.getElementById("dv-overlay")) _dvClose(); }
+
+  /* ── Split expense into per-category rows ── */
+  let _spEntry = null;
+
+  /* Searchable, scrollable category combobox (plain text input + a fixed-height
+     dropdown panel filtered as you type) — replaces a plain <select>, which can't
+     be searched and whose native popup can't be size-constrained. */
+  // Flip the dropdown above the input when it would otherwise render past the
+  // bottom edge of the scrollable modal (and get clipped).
+  function _spCatFlip(input) {
+    const panel = input.closest(".sp-cat-wrap").querySelector(".sp-cat-dropdown");
+    if (panel.hidden) return;
+    const r = input.getBoundingClientRect();
+    const box = input.closest(".ef-box");
+    const boxBottom = box ? box.getBoundingClientRect().bottom : window.innerHeight;
+    panel.classList.toggle("sp-cat-dropdown--up", (boxBottom - r.bottom) < 190 && r.top > 190);
+  }
+  // `showAll` (set on focus) lists every category regardless of the field's current
+  // value — otherwise a row pre-filled with its existing category would open showing
+  // only that one match. Typing (no showAll) filters normally.
+  function _spCatRenderDropdown(input, showAll) {
+    const wrap = input.closest(".sp-cat-wrap");
+    const panel = wrap.querySelector(".sp-cat-dropdown");
+    // Categories load in the background after page load; if this opens before that
+    // finishes, show a loading state instead of a false "nothing matches"/"add new".
+    if (!_catsLoaded) {
+      panel.innerHTML = `<div class="sp-cat-empty">Loading categories…</div>`;
+      panel.hidden = false;
+      _spCatFlip(input);
+      return;
+    }
+    const raw = input.value.trim();
+    const q = showAll ? "" : raw.toLowerCase();
+    const matches = _allCats.filter(c => c.toLowerCase().includes(q));
+    let html = matches.length
+      ? matches.map(c => `<div class="sp-cat-opt${(raw && c.toLowerCase() === raw.toLowerCase()) ? " sp-cat-opt--cur" : ""}" data-cat="${_esc(c)}">${_esc(c)}</div>`).join("")
+      : `<div class="sp-cat-empty">No matching categories</div>`;
+    const exact = _allCats.some(c => c.toLowerCase() === raw.toLowerCase());
+    if (!showAll && raw && !exact) {
+      html += `<div class="sp-cat-opt sp-cat-opt-new" data-new-cat="${_esc(raw)}">+ Add "${_esc(raw)}" as new category</div>`;
+    }
+    panel.innerHTML = html;
+    panel.hidden = false;
+    const cur = panel.querySelector(".sp-cat-opt--cur");
+    if (cur) cur.scrollIntoView({ block: "nearest" });
+    _spCatFlip(input);
+  }
+  function _spCatClose(input) {
+    input.closest(".sp-cat-wrap").querySelector(".sp-cat-dropdown").hidden = true;
+  }
+  // Re-evaluate flip direction while the modal is scrolled with a list open.
+  document.addEventListener("scroll", () => {
+    document.querySelectorAll(".sp-cat-dropdown:not([hidden])").forEach(panel => {
+      const inp = panel.closest(".sp-cat-wrap").querySelector(".sp-cat-input");
+      if (inp) _spCatFlip(inp);
+    });
+  }, true);
+  function _spCatChoose(input, name) {
+    input.value = name;
+    _spCatClose(input);
+  }
+  document.addEventListener("input", ev => {
+    if (ev.target.classList.contains("sp-cat-input")) _spCatRenderDropdown(ev.target);
+  });
+  document.addEventListener("focusin", ev => {
+    if (!ev.target.classList.contains("sp-cat-input")) return;
+    ev.target.select();                    // first keystroke replaces the pre-filled value
+    _spCatRenderDropdown(ev.target, true); // show the whole list on focus
+  });
+  document.addEventListener("focusout", ev => {
+    if (ev.target.classList.contains("sp-cat-input")) setTimeout(() => _spCatClose(ev.target), 150);
+  });
+  // Categories can finish loading *after* a dropdown was already opened (showing
+  // "Loading categories…") — refresh any panel that's still open once they arrive.
+  document.addEventListener("expenses:categories-ready", () => {
+    document.querySelectorAll(".sp-cat-wrap").forEach(wrap => {
+      const inp = wrap.querySelector(".sp-cat-input");
+      const panel = wrap.querySelector(".sp-cat-dropdown");
+      // If it's still focused, treat this like the focus render (full list).
+      if (panel && !panel.hidden) _spCatRenderDropdown(inp, document.activeElement === inp);
+    });
+  });
+  // mousedown (not click) so it fires before the input's blur/focusout closes the panel.
+  document.addEventListener("mousedown", ev => {
+    const opt = ev.target.closest(".sp-cat-opt");
+    if (!opt) return;
+    ev.preventDefault();
+    const input = opt.closest(".sp-cat-wrap").querySelector(".sp-cat-input");
+    if (opt.dataset.newCat != null) {
+      const name = _registerNewCategory(opt.dataset.newCat);
+      if (name) _spCatChoose(input, name);
+    } else {
+      _spCatChoose(input, opt.dataset.cat);
+    }
+  });
+  document.addEventListener("keydown", ev => {
+    if (!ev.target.classList.contains("sp-cat-input")) return;
+    if (ev.key === "Escape") { _spCatClose(ev.target); return; }
+    if (ev.key !== "Enter") return;
+    ev.preventDefault();
+    const first = ev.target.closest(".sp-cat-wrap").querySelector(".sp-cat-dropdown .sp-cat-opt");
+    if (!first) return;
+    if (first.dataset.newCat != null) {
+      const name = _registerNewCategory(first.dataset.newCat);
+      if (name) _spCatChoose(ev.target, name);
+    } else {
+      _spCatChoose(ev.target, first.dataset.cat);
+    }
+  });
+
+  function _spSrcOptions(selected) {
+    const set = new Set(_allSrcs);
+    if (selected) set.add(selected);
+    return ['<option value="">— None —</option>']
+      .concat([...set].map(n => `<option value="${_esc(n)}"${n === selected ? " selected" : ""}>${_esc(n)}</option>`))
+      .join("");
+  }
+  function _spPushNewSource(input) {
+    const row = input.closest("[data-sp-row]");
+    const name = _registerNewSource(input.value);
+    input.value = "";
+    if (!name || !row) return;
+    const select = row.querySelector(".sp-src-select");
+    let opt = [...select.options].find(o => o.value === name);
+    if (!opt) {
+      opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      select.appendChild(opt);
+    }
+    select.value = name;
+  }
+  document.addEventListener("click", ev => {
+    const btn = ev.target.closest(".sp-src-new-btn");
+    if (btn) _spPushNewSource(btn.previousElementSibling);
+  });
+  document.addEventListener("keydown", ev => {
+    if (ev.key === "Enter" && ev.target.classList.contains("sp-src-new-input")) {
+      ev.preventDefault();
+      _spPushNewSource(ev.target);
+    }
+  });
+
+  function _spToggleMore(btn) {
+    const panel = btn.closest("[data-sp-row]").querySelector(".sp-more-fields");
+    const opening = panel.hidden;
+    panel.hidden = !opening;
+    btn.textContent = opening ? "▴ Fewer fields" : "▾ More fields";
+  }
+
+  /* Inline Splitwise picker per split row — reuses the same group/people/share
+     helpers as the browse-list "Split on Splitwise" flow, driven off a synthetic
+     entry whose amount tracks this row's amount input. The actual push happens
+     after the split is saved (each new row has a page_id by then). */
+  async function _spSwBuild(row) {
+    const panel = row.querySelector(".sp-sw-panel");
+    panel.innerHTML = '<div style="font-size:0.8rem;color:#9CA3AF;">Loading Splitwise…</div>';
+    const meta = await _splitEnsureMeta();
+    if (!meta) {
+      panel.innerHTML = '<div style="font-size:0.78rem;color:#EF4444;">Splitwise isn\'t configured — untick "Add to Split" to continue.</div>';
+      return;
+    }
+    const synth = { amount: parseFloat(row.querySelector(".sp-amount").value) || 0 };
+    const grpOpts = ['<option value="__individual__">👤 Individual (friends, no group)</option>']
+      .concat(meta.groups.map(g => `<option value="${g.id}">${_esc(g.name)}</option>`)).join("");
+    panel.innerHTML = `
+      <div style="font-size:0.72rem;color:#9CA3AF;margin-bottom:0.4rem;">Splitting <strong data-sw-amt>${fmt(synth.amount)}</strong> · you paid the full amount</div>
+      <select data-split-group>${grpOpts}</select>
+      <input type="search" data-split-search placeholder="Search people…" autocomplete="off">
+      <div class="split-people" data-split-people></div>
+      <div class="split-total" data-split-total></div>
+      <button type="button" data-split-save hidden></button>
+      <button type="button" data-split-push hidden></button>`;
+    const grpSel = panel.querySelector("[data-split-group]");
+    const prefs = _splitLoadPrefs();
+    if (prefs.lastGroup && [...grpSel.options].some(o => o.value === prefs.lastGroup)) grpSel.value = prefs.lastGroup;
+    grpSel.addEventListener("change", () => _splitRenderPeople(panel, synth, meta, null));
+    panel.querySelector("[data-split-search]").addEventListener("input", () => _splitApplyFilter(panel));
+    _splitRenderPeople(panel, synth, meta, null);
+    panel._synth = synth;
+    panel.dataset.built = "1";
+  }
+
+  // Show/build the Splitwise sub-panel when "Add to Split" is ticked for a row.
+  document.addEventListener("change", ev => {
+    if (!ev.target.classList.contains("sp-add-to-split")) return;
+    const row = ev.target.closest("[data-sp-row]");
+    const panel = row && row.querySelector(".sp-sw-panel");
+    if (!panel) return;
+    if (ev.target.checked) {
+      panel.hidden = false;
+      if (!panel.dataset.built) _spSwBuild(row);
+    } else {
+      panel.hidden = true;
+    }
+  });
+
+  // `extra` supplies the pre-filled defaults for the "More fields" panel (source,
+  // comment, other partner, the four checkboxes) — falls back to whatever's
+  // currently open in the split modal (_spEntry) so callers don't have to pass
+  // it explicitly for every row.
+  function _spRowHtml(name, category, amount, extra) {
+    const e = extra || _spEntry || {};
+    return `
+      <div class="sp-row" data-sp-row>
+        <input type="text" class="sp-name" placeholder="Name" value="${_esc(name || "")}">
+        <div class="sp-cat-wrap">
+          <input type="text" class="sp-cat-input" placeholder="Search category…" autocomplete="off" value="${_esc(category || "")}">
+          <div class="sp-cat-dropdown" hidden></div>
+        </div>
+        <input type="number" class="sp-amount" step="0.01" placeholder="Amount" value="${amount != null ? _esc(amount) : ""}">
+        <button type="button" class="sp-row-remove" onclick="_spRemoveRow(this)" title="Remove">✕</button>
+        <button type="button" class="sp-more-toggle" onclick="_spToggleMore(this)">▾ More fields</button>
+        <div class="sp-more-fields be-grid" hidden>
+          <div class="be-field">
+            <label>Source</label>
+            <select class="sp-src-select">${_spSrcOptions(e.source || "")}</select>
+            <span class="sp-src-new">
+              <input type="text" class="sp-src-new-input" placeholder="+ new source">
+              <button type="button" class="sp-src-new-btn" title="Add source">+</button>
+            </span>
+          </div>
+          <div class="be-field wide"><label>Comment</label><input type="text" class="sp-comment" value="${_esc(e.comment || "")}"></div>
+          <div class="be-field wide"><label>Other Partner</label><input type="text" class="sp-other-partner" value="${_esc(e.other_partner || "")}"></div>
+          <div class="be-checks">
+            <label><input type="checkbox" class="sp-processed" ${e.processed ? "checked" : ""}> Processed</label>
+            <label><input type="checkbox" class="sp-add-to-split" ${e.add_to_split ? "checked" : ""}> Add to Split</label>
+            <label><input type="checkbox" class="sp-from-split" ${e.from_split ? "checked" : ""}> From Split</label>
+            <label><input type="checkbox" class="sp-split-added" ${e.split_added ? "checked" : ""}> Split Added</label>
+          </div>
+          <div class="split-panel sp-sw-panel" hidden></div>
+        </div>
+      </div>`;
+  }
+
+  function _spOpen(entry) {
+    _spEntry = entry;
+    document.getElementById("sp-name").textContent = entry.title;
+    document.getElementById("sp-total").textContent = fmt(entry.amount);
+    const rows = document.getElementById("sp-rows");
+    // Pre-fill row 1 with the original name/category so a partial split is quick to finish.
+    rows.innerHTML =
+      _spRowHtml(entry.title, (entry.categories || [])[0] || "", "") +
+      _spRowHtml("", "", "");
+    document.getElementById("sp-error").style.display = "none";
+    document.getElementById("sp-save-btn").disabled = false;
+    document.getElementById("sp-save-btn").textContent = "Split";
+    _spRecalc();
+    document.getElementById("sp-overlay").classList.add("open");
+  }
+  function _spAddRow() {
+    document.getElementById("sp-rows").insertAdjacentHTML("beforeend", _spRowHtml("", "", ""));
+    _spRecalc();
+  }
+  function _spRemoveRow(btn) {
+    const rows = document.getElementById("sp-rows");
+    if (rows.children.length <= 2) return;  // always keep at least 2 splits
+    btn.closest("[data-sp-row]").remove();
+    _spRecalc();
+  }
+  function _spRecalc() {
+    if (!_spEntry) return;
+    const amounts = [...document.querySelectorAll("#sp-rows .sp-amount")]
+      .map(i => parseFloat(i.value) || 0);
+    const sum = amounts.reduce((a, b) => a + b, 0);
+    const remaining = Math.round((_spEntry.amount - sum) * 100) / 100;
+    const el = document.getElementById("sp-remaining");
+    if (remaining === 0) {
+      el.textContent = "✓ Fully allocated";
+      el.className = "sp-remaining ok";
+    } else {
+      el.textContent = remaining > 0
+        ? `${fmt(remaining)} left to allocate`
+        : `${fmt(-remaining)} over the original amount`;
+      el.className = "sp-remaining off";
+    }
+  }
+  // Delegated on `document` (not the #sp-overlay element itself) because that element
+  // is defined later in the page than this script block runs.
+  document.addEventListener("input", ev => {
+    if (!ev.target.classList.contains("sp-amount")) return;
+    _spRecalc();
+    // Keep an open Splitwise sub-panel's shares balanced against the new row amount.
+    const row = ev.target.closest("[data-sp-row]");
+    const swPanel = row && row.querySelector(".sp-sw-panel");
+    if (swPanel && !swPanel.hidden && swPanel.dataset.built && swPanel._synth) {
+      swPanel._synth.amount = parseFloat(ev.target.value) || 0;
+      const amtEl = swPanel.querySelector("[data-sw-amt]");
+      if (amtEl) amtEl.textContent = fmt(swPanel._synth.amount);
+      _splitRecalc(swPanel, swPanel._synth);
+    }
+  });
+  function _spClose() { document.getElementById("sp-overlay").classList.remove("open"); _spEntry = null; }
+  function _spBgClick(ev) { if (ev.target === document.getElementById("sp-overlay")) _spClose(); }
+
+  async function _spSave() {
+    if (!_spEntry) return;
+    const errEl = document.getElementById("sp-error");
+    errEl.style.display = "none";
+    const rowEls = [...document.querySelectorAll("#sp-rows [data-sp-row]")];
+    const splits = [];
+    for (const row of rowEls) {
+      const name = row.querySelector(".sp-name").value.trim();
+      const category = row.querySelector(".sp-cat-input").value.trim();
+      const amount = row.querySelector(".sp-amount").value.trim();
+      if (!name || !category || !amount) {
+        errEl.textContent = "Every split needs a name, category, and amount.";
+        errEl.style.display = "block";
+        return;
+      }
+      const addToSplit = row.querySelector(".sp-add-to-split").checked;
+      const split = {
+        name, category, amount: parseFloat(amount),
+        source: row.querySelector(".sp-src-select").value,
+        comment: row.querySelector(".sp-comment").value,
+        other_partner: row.querySelector(".sp-other-partner").value,
+        processed: row.querySelector(".sp-processed").checked,
+        add_to_split: addToSplit,
+        from_split: row.querySelector(".sp-from-split").checked,
+        split_added: row.querySelector(".sp-split-added").checked,
+      };
+      // If the row's inline Splitwise picker was opened and filled in, capture its
+      // config so we can push it to Splitwise right after this split row is created.
+      const swPanel = row.querySelector(".sp-sw-panel");
+      if (addToSplit && swPanel && swPanel.dataset.built) {
+        const saveBtn = swPanel.querySelector("[data-split-save]");
+        if (!saveBtn || saveBtn.disabled) {
+          errEl.textContent = `Split "${name}": finish the Splitwise shares so they total ${fmt(split.amount)}, or untick "Add to Split".`;
+          errEl.style.display = "block";
+          return;
+        }
+        const g = _splitGather(swPanel);
+        split.splitwise = { mode: g.mode, group_id: g.group_id, shares: g.shares };
+      }
+      splits.push(split);
+    }
+    const sum = Math.round(splits.reduce((a, b) => a + b.amount, 0) * 100) / 100;
+    if (sum !== Math.round(_spEntry.amount * 100) / 100) {
+      errEl.textContent = `Splits add up to ${fmt(sum)}, but the original expense is ${fmt(_spEntry.amount)}.`;
+      errEl.style.display = "block";
+      return;
+    }
+    splits.forEach(s => _registerNewCategory(s.category));
+
+    // Close now — Notion has to be hit once per split row plus an archive call,
+    // which is too slow to hold the modal open for. It runs in the background
+    // with a row loader instead, same as edit/delete/bulk-edit already do.
+    const entry = _spEntry;
+    _spClose();
+    _spRunSplit(entry, splits);
+  }
+
+  async function _spRunSplit(entry, splits) {
+    _rowSaving(entry.page_id, true);
+    try {
+      const res = await fetch(`/expenses/${entry.page_id}/split/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+        body: JSON.stringify({ splits }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Split failed");
+
+      // Push any rows that had an inline Splitwise config, now that each has a page_id.
+      const newIds = data.page_ids || [];
+      let swOk = 0, swFail = 0;
+      for (let i = 0; i < splits.length; i++) {
+        if (!splits[i].splitwise || !newIds[i]) continue;
+        try {
+          const pr = await fetch(`/expenses/${newIds[i]}/push-split/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+            body: JSON.stringify(splits[i].splitwise),
+          });
+          if (pr.ok) swOk++; else swFail++;
+        } catch { swFail++; }
+      }
+
+      await fetchList(true);
+      await fetchAll(true);
+      let msg = `Split into ${splits.length} expenses`;
+      if (swOk)   msg += ` · ${swOk} pushed to Splitwise`;
+      if (swFail) msg += ` · ${swFail} Splitwise push${swFail > 1 ? "es" : ""} failed (retry from the list)`;
+      showToast(msg, swFail ? "info" : "success", swFail ? 6500 : 3500);
+    } catch (ex) {
+      _rowSaving(entry.page_id, false);
+      showToast(ex.message || "Split failed", "error", 5000);
+    }
+  }
 
   // Click a row (any view, not just detail view) to open the inspect modal — ignore clicks on controls.
   document.getElementById("browse-list").addEventListener("click", ev => {
@@ -2361,7 +2847,7 @@
   }
 
   // Populate category/source dropdowns + form options from all-time data
-  let _allCats = [], _allSrcs = [];
+  let _allCats = [], _allSrcs = [], _catsLoaded = false;
 
   // "Type and push" a brand-new category/source name into the shared lists —
   // Notion itself creates the option on save, this just makes it pickable now.
@@ -2393,7 +2879,13 @@
         const o = document.createElement("option"); o.value = name; o.textContent = name; srcSel.appendChild(o);
       });
       _efBuildFormOptions();
-    } catch {}
+    } catch {
+    } finally {
+      // Fires even if the fetch failed — otherwise a split modal opened before this
+      // resolves would be stuck showing "Loading categories…" forever.
+      _catsLoaded = true;
+      document.dispatchEvent(new Event("expenses:categories-ready"));
+    }
   })();
 
   /* ── Expense form modal ── */
@@ -2825,6 +3317,22 @@
       <button class="ef-btn-cancel" onclick="_dvClose()">Close</button>
       <button class="ef-btn-save" id="dv-edit-btn">Edit</button>
       <button class="del-btn-confirm" id="dv-del-btn" style="flex:none;padding:0.6rem 1rem;">Delete</button>
+    </div>
+    <button type="button" class="dv-split-link" id="dv-split-btn">✂️ Split across categories</button>
+  </div>
+</div>
+
+<div class="ef-overlay" id="sp-overlay" onclick="_spBgClick(event)">
+  <div class="ef-box">
+    <div class="ef-title">Split “<span id="sp-name"></span>”</div>
+    <div class="sp-sub">Total to allocate: <strong id="sp-total"></strong> — every split needs a name, category, and amount, and they must add up to the total.</div>
+    <div class="sp-rows" id="sp-rows"></div>
+    <button type="button" class="sp-add-row" id="sp-add-row-btn" onclick="_spAddRow()">+ Add another category</button>
+    <div class="sp-remaining" id="sp-remaining"></div>
+    <div class="ef-error" id="sp-error"></div>
+    <div class="ef-actions">
+      <button class="ef-btn-cancel" onclick="_spClose()">Cancel</button>
+      <button class="ef-btn-save" id="sp-save-btn" onclick="_spSave()">Split</button>
     </div>
   </div>
 </div>

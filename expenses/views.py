@@ -356,3 +356,27 @@ class ExpensesDeleteView(ExpensesBaseView):
             return JsonResponse({"error": f"Network error: {exc}"}, status=502)
 
         return JsonResponse({"ok": True})
+
+
+class ExpensesSplitView(ExpensesBaseView):
+    def post(self, request, page_id):
+        if not self.service:
+            return self._creds_error()
+
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        splits = data.get("splits") or []
+
+        try:
+            new_ids = self.service.split_entry(page_id, splits)
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        except requests.HTTPError as exc:
+            return self._api_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Network error: {exc}"}, status=502)
+
+        return JsonResponse({"ok": True, "page_ids": new_ids})

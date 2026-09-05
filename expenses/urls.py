@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     ChartsView, DashboardView, ExpensesChartView, ExpensesCategoryTimeseriesView,
     ExpensesCreateView, ExpensesDeleteView, ExpensesHeatmapView, ExpensesInsightsView,
-    ExpensesListView, ExpensesSummaryView, ExpensesTimeseriesView, ExpensesUpdateView,
+    ExpensesListView, ExpensesSplitView, ExpensesSummaryView, ExpensesTimeseriesView,
+    ExpensesUpdateView,
 )
 from .splitwise_views import (
     SplitwiseCreateView, SplitwiseDashboardView, SplitwiseExpensesView,
@@ -30,4 +31,5 @@ urlpatterns = [
     path("<str:page_id>/push-split/", SplitwisePushEntryView.as_view(), name="expenses-push-split"),
     path("<str:page_id>/update/", ExpensesUpdateView.as_view(), name="expenses-update"),
     path("<str:page_id>/delete/", ExpensesDeleteView.as_view(), name="expenses-delete"),
+    path("<str:page_id>/split/", ExpensesSplitView.as_view(), name="expenses-split"),
 ]
