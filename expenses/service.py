@@ -1,5 +1,5 @@
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from .data_layer import ExpensesDataLayer
 
@@ -171,6 +171,24 @@ class ExpensesService:
                     return text
         return "—"
 
+    _EPOCH = datetime.min.replace(tzinfo=timezone.utc)
+
+    def _entry_dt_key(self, e) -> datetime:
+        """Chronologically-sortable, timezone-aware value for an entry — uses the
+        full recorded datetime when there is one, else the day at midnight UTC.
+        Entries with no date sort earliest."""
+        raw = (e.get("datetime") or e.get("date") or "").strip()
+        if not raw:
+            return self._EPOCH
+        try:
+            d = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            try:
+                d = datetime.fromisoformat(raw[:10])
+            except ValueError:
+                return self._EPOCH
+        return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
     def _row_to_entry(self, row) -> dict:
         props = row.get("properties", {})
         amount = (props.get("Amount") or {}).get("number") or 0.0
@@ -181,7 +199,12 @@ class ExpensesService:
         else:
             srcs = [opt["name"] for opt in src_prop.get("multi_select", [])]
             src = srcs[0] if srcs else ""
-        date_val = ((props.get("Date") or {}).get("date") or {}).get("start", "")[:10]
+        # Notion's Date "start" is either a bare date ("2026-07-01") or a full
+        # datetime ("2026-07-01T14:23:00.000+05:30"). Keep both: `datetime` is the
+        # raw value (has the time when Notion recorded one), `date` stays the
+        # day-only form everything else in the app already relies on.
+        date_start = ((props.get("Date") or {}).get("date") or {}).get("start", "")
+        date_val = date_start[:10]
         comment = "".join(
             t.get("plain_text", "") for t in (props.get("Comment") or {}).get("rich_text", [])
         ).strip()
@@ -193,6 +216,7 @@ class ExpensesService:
             "title": self._extract_title(props),
             "amount": round(amount, 2),
             "date": date_val,
+            "datetime": date_start,
             "categories": cats,
             "source": src,
             "comment": comment,
@@ -851,9 +875,9 @@ class ExpensesService:
             entries.append(e)
 
         if sort == "date_desc":
-            entries.sort(key=lambda x: x["date"] or "", reverse=True)
+            entries.sort(key=self._entry_dt_key, reverse=True)
         elif sort == "date_asc":
-            entries.sort(key=lambda x: x["date"] or "")
+            entries.sort(key=self._entry_dt_key)
         elif sort == "amount_desc":
             entries.sort(key=lambda x: -x["amount"])
         elif sort == "amount_asc":

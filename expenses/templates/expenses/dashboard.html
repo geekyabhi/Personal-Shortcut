@@ -1761,6 +1761,23 @@
     return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  // "2:19 AM" from a Notion datetime like "2026-07-16T02:19:00.000+05:30";
+  // "" when the entry only has a date (no time recorded). Reads HH:MM straight
+  // off the string so it shows the time as Notion stored it, not the browser's tz.
+  function _fmtTime(dt) {
+    const m = /T(\d{2}):(\d{2})/.exec(dt || "");
+    if (!m) return "";
+    let h = +m[1]; const min = m[2];
+    const ap = h < 12 ? "AM" : "PM";
+    h = h % 12 || 12;
+    return `${h}:${min} ${ap}`;
+  }
+  // "2026-07-16 · 2:19 AM" (drops the " · time" when there's no time).
+  function _fmtDateTime(e) {
+    const t = _fmtTime(e && e.datetime);
+    return (e && e.date || "") + (t ? ` · ${t}` : "");
+  }
+
   /* ── One filter set drives both the summary and the list ── */
   function _applyFilters() { fetchAll(); fetchList(); }
 
@@ -1883,7 +1900,7 @@
         <div class="top-entry">
           <div class="top-entry-left">
             <div class="top-entry-title">${e.title}</div>
-            <div class="top-entry-meta">${e.date || ""}${cats}${src}</div>
+            <div class="top-entry-meta">${_fmtDateTime(e)}${cats}${src}</div>
           </div>
           <div class="top-entry-amt">${fmt(e.amount)}</div>
         </div>`;
@@ -1933,7 +1950,7 @@
         <div class="er-left">
           <div class="expense-title">${e.title}${splitBadge}</div>
           <div class="expense-amount">${fmt(e.amount)}</div>
-          <div class="expense-date">${e.date || ""}</div>
+          <div class="expense-date">${_fmtDateTime(e)}</div>
           ${extra}
           ${cmt}
           ${splitUI}
@@ -1987,7 +2004,7 @@
     document.getElementById("dv-title").innerHTML = `${_esc(e.title)}${splitBadge}`;
     document.getElementById("dv-amount").textContent = fmt(e.amount);
     const rows = [
-      ["Date", e.date || "—"],
+      ["Date", _fmtDateTime(e) || "—"],
       ["Source", e.source || "—"],
       ["Categories", (e.categories || []).join(", ") || "—"],
       ["Comment", e.comment || "—"],
@@ -3371,9 +3388,9 @@ function _exportCSV() {
   }
   var rows = _lastBrowse.entries.map(function(e) {
     var cats = (e.categories || []).join('; ');
-    return [e.title||'', String(e.amount||''), e.date||'', cats, e.source||''];
+    return [e.title||'', String(e.amount||''), e.date||'', _fmtTime(e.datetime)||'', cats, e.source||''];
   });
-  var csv = ['Title,Amount,Date,Categories,Source'].concat(
+  var csv = ['Title,Amount,Date,Time,Categories,Source'].concat(
     rows.map(function(r){ return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(','); })
   ).join('\r\n');
   var blob = new Blob([csv], {type:'text/csv'});
