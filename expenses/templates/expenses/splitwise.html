@@ -367,6 +367,7 @@
             <option value="cost_desc">Cost: high → low</option>
             <option value="myshare_desc">My share: high → low</option>
           </select>
+          <input type="text" id="d-mode" placeholder="Mode (optional, e.g. UPI)" autocomplete="off" title="Applied to the Notion row for whatever you import next">
         </div>
         <div class="detail-summary" id="d-summary"></div>
         <div class="bulk-bar" id="bulk-bar" hidden>
@@ -889,13 +890,14 @@
       const label = document.getElementById('bulk-count');
       go.disabled = true;
       let done = 0, failed = 0; const fails = [];
+      const mode = document.getElementById('d-mode').value.trim();
       for (const id of ids) {
         label.textContent = `Importing ${done + failed + 1}/${ids.length}…`;
         try {
           const res = await fetch('/expenses/splitwise/import/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _getCsrf() },
-            body: JSON.stringify({ expense_id: String(id) }),
+            body: JSON.stringify({ expense_id: String(id), mode }),
           });
           const d = await res.json();
           if (res.ok) { done++; S.imported.add(id); S.picks.delete(id); }
@@ -940,10 +942,11 @@
       btn.disabled = true;
       const orig = btn.textContent; btn.textContent = 'Importing…';
       try {
+        const mode = document.getElementById('d-mode').value.trim();
         const res = await fetch('/expenses/splitwise/import/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _getCsrf() },
-          body: JSON.stringify({ expense_id: btn.dataset.import }),
+          body: JSON.stringify({ expense_id: btn.dataset.import, mode }),
         });
         const d = await res.json();
         if (!res.ok) { btn.disabled = false; btn.textContent = orig; showToast(d.error || 'Import failed', 'error'); return; }

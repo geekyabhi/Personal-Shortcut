@@ -187,7 +187,7 @@ class SplitwiseService:
             "note": "\n".join(note_lines),
         }
 
-    def import_to_notion(self, expense_id, expenses_service) -> dict:
+    def import_to_notion(self, expense_id, expenses_service, mode: str = "") -> dict:
         """Copy the current user's share of a Splitwise expense into Notion.
 
         Amount = your owed share only. Category = ``Splitwise``. Source =
@@ -223,7 +223,7 @@ class SplitwiseService:
 
         page_id = expenses_service.create_from_split(
             name, my_share, date_str, payers or ["Splitwise"], "\n".join(lines),
-            splitwise_id=e["id"],
+            splitwise_id=e["id"], mode=mode,
         )
         return {
             "page_id": page_id,

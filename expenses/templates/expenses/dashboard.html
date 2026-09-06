@@ -2460,6 +2460,13 @@
               <div class="src-cbx-list" hidden></div>
             </div>
           </div>
+          <div class="be-field">
+            <label>Mode</label>
+            <div class="src-cbx" data-cbx="mode">
+              <input type="text" class="sp-mode src-cbx-input" value="${_esc(e.mode || "")}" placeholder="— None —" autocomplete="off">
+              <div class="src-cbx-list" hidden></div>
+            </div>
+          </div>
           <div class="be-field wide"><label>Comment</label><input type="text" class="sp-comment" value="${_esc(e.comment || "")}"></div>
           <div class="be-field wide"><label>Other Partner</label><input type="text" class="sp-other-partner" value="${_esc(e.other_partner || "")}"></div>
           <div class="be-checks">
@@ -2552,6 +2559,7 @@
       const split = {
         name, category, amount: parseFloat(amount),
         source: row.querySelector(".sp-src-select").value,
+        mode: row.querySelector(".sp-mode").value.trim(),
         comment: row.querySelector(".sp-comment").value,
         other_partner: row.querySelector(".sp-other-partner").value,
         processed: row.querySelector(".sp-processed").checked,
@@ -2580,7 +2588,7 @@
       errEl.style.display = "block";
       return;
     }
-    splits.forEach(s => _registerNewCategory(s.category));
+    splits.forEach(s => { _registerNewCategory(s.category); if (s.mode) _registerNewMode(s.mode); });
 
     // Close now — Notion has to be hit once per split row plus an archive call,
     // which is too slow to hold the modal open for. It runs in the background
@@ -2692,7 +2700,13 @@
               <div class="src-cbx-list" hidden></div>
             </div>
           </div>
-          <div class="be-field"><label>Mode</label><input type="text" data-bef="mode" list="ps-modes" value="${_esc(s.mode)}" placeholder="— None —" autocomplete="off"></div>
+          <div class="be-field">
+            <label>Mode</label>
+            <div class="src-cbx" data-cbx="mode">
+              <input type="text" data-bef="mode" class="src-cbx-input" value="${_esc(s.mode)}" placeholder="— None —" autocomplete="off">
+              <div class="src-cbx-list" hidden></div>
+            </div>
+          </div>
           <div class="be-field"><label>Splitwise ID</label><input type="number" step="1" data-bef="splitwise_id" value="${_esc(s.splitwise_id)}"></div>
           <div class="be-field wide"><label>Categories</label><div class="be-pills" data-bef="categories">${catPills}</div></div>
           <div class="be-field wide"><label>Comment</label><input type="text" data-bef="comment" value="${_esc(s.comment)}"></div>
@@ -2703,6 +2717,7 @@
             <label><input type="checkbox" data-bef="from_split" ${s.from_split ? "checked" : ""}> From Split</label>
             <label><input type="checkbox" data-bef="split_added" ${s.split_added ? "checked" : ""}> Split Added</label>
           </div>
+          <button type="button" class="dv-split-link be-split-btn" style="grid-column:1/-1;">✂️ Split across categories</button>
         </div>
       </div>`;
   }
@@ -2745,6 +2760,17 @@
   // Category pills in bulk edit are buttons, not inputs — toggle + report as a change.
   document.getElementById("browse-list").addEventListener("click", ev => {
     if (!_bulkEdit) return;
+    const splitBtn = ev.target.closest(".be-split-btn");
+    if (splitBtn) {
+      const row = splitBtn.closest(".be-row");
+      if (row.classList.contains("dirty")) {
+        showToast("Save or discard this row's changes before splitting it.", "error");
+        return;
+      }
+      const entry = _browseFull.find(x => x.page_id === row.dataset.beId);
+      if (entry) _spOpen(entry);
+      return;
+    }
     const newCatBtn = ev.target.closest(".be-pill-new-btn");
     if (newCatBtn) { _bePushNewCategory(newCatBtn.previousElementSibling); return; }
     const pill = ev.target.closest(".be-pill");
@@ -3130,10 +3156,20 @@
     }
   })();
 
-  /* ── Reusable searchable/scrollable Source combobox ──
+  /* ── Reusable searchable/scrollable combobox (Source and Mode) ──
      A plain <input> (keeps its original id / data-bef, so `.value` reads still
-     work) wrapped in `.src-cbx`, with a filtered fixed-height dropdown. Used by
-     the filter bar, the Add/Edit modal, bulk-edit rows and the split modal. */
+     work) wrapped in `.src-cbx[data-cbx]`, with a filtered fixed-height dropdown
+     and a "+ Add …" row for anything typed that isn't in the list yet. Used by
+     the filter bar, the Add/Edit modal, bulk-edit rows and the split modal.
+     `data-cbx` picks which backing list/registrar to use ("source", the
+     default, or "mode") so both fields share one implementation. */
+  const _CBX_KINDS = {
+    source: { list: () => _allSrcs, loaded: () => _srcsLoaded, loadingLabel: "Loading sources…", noun: "source", register: raw => _registerNewSource(raw) },
+    mode:   { list: () => _allModes, loaded: () => true, loadingLabel: "Loading modes…", noun: "mode", register: raw => _registerNewMode(raw) },
+  };
+  function _cbxKindOf(input) {
+    return _CBX_KINDS[input.closest(".src-cbx").dataset.cbx] || _CBX_KINDS.source;
+  }
   function _srcCbxFlip(input) {
     const panel = input.closest(".src-cbx").querySelector(".src-cbx-list");
     if (panel.hidden) return;
@@ -3145,19 +3181,21 @@
   function _srcCbxRender(input, showAll) {
     const wrap = input.closest(".src-cbx");
     const panel = wrap.querySelector(".src-cbx-list");
-    if (!_srcsLoaded) {
-      panel.innerHTML = `<div class="src-cbx-empty">Loading sources…</div>`;
+    const kind = _cbxKindOf(input);
+    if (!kind.loaded()) {
+      panel.innerHTML = `<div class="src-cbx-empty">${_esc(kind.loadingLabel)}</div>`;
       panel.hidden = false; _srcCbxFlip(input); return;
     }
     const emptyLabel = wrap.dataset.srcEmpty || "— None —";
     const raw = input.value.trim();
     const q = showAll ? "" : raw.toLowerCase();
-    const list = _allSrcs.filter(s => s.toLowerCase().includes(q));
+    const all = kind.list();
+    const list = all.filter(s => s.toLowerCase().includes(q));
     let html = `<div class="src-cbx-opt${raw ? "" : " src-cbx-opt--cur"}" data-src="">${_esc(emptyLabel)}</div>`;
     html += list.map(s => `<div class="src-cbx-opt${s.toLowerCase() === raw.toLowerCase() ? " src-cbx-opt--cur" : ""}" data-src="${_esc(s)}">${_esc(s)}</div>`).join("");
-    const exact = _allSrcs.some(s => s.toLowerCase() === raw.toLowerCase());
+    const exact = all.some(s => s.toLowerCase() === raw.toLowerCase());
     if (!showAll && raw && !exact) {
-      html += `<div class="src-cbx-opt src-cbx-opt-new" data-new-src="${_esc(raw)}">+ Add "${_esc(raw)}" as new source</div>`;
+      html += `<div class="src-cbx-opt src-cbx-opt-new" data-new-src="${_esc(raw)}">+ Add "${_esc(raw)}" as new ${kind.noun}</div>`;
     }
     panel.innerHTML = html;
     panel.hidden = false;
@@ -3187,7 +3225,7 @@
     if (!opt) return;
     ev.preventDefault();
     const input = opt.closest(".src-cbx").querySelector(".src-cbx-input");
-    if (opt.dataset.newSrc != null) _srcCbxChoose(input, _registerNewSource(opt.dataset.newSrc) || "");
+    if (opt.dataset.newSrc != null) _srcCbxChoose(input, _cbxKindOf(input).register(opt.dataset.newSrc) || "");
     else _srcCbxChoose(input, opt.dataset.src);
   });
   document.addEventListener("keydown", ev => {
@@ -3197,7 +3235,7 @@
     ev.preventDefault();
     const first = ev.target.closest(".src-cbx").querySelector(".src-cbx-list .src-cbx-opt");
     if (!first) return;
-    if (first.dataset.newSrc != null) _srcCbxChoose(ev.target, _registerNewSource(first.dataset.newSrc) || "");
+    if (first.dataset.newSrc != null) _srcCbxChoose(ev.target, _cbxKindOf(ev.target).register(first.dataset.newSrc) || "");
     else _srcCbxChoose(ev.target, first.dataset.src);
   });
   document.addEventListener("scroll", () => {
@@ -3207,7 +3245,7 @@
     });
   }, true);
   document.addEventListener("expenses:sources-ready", () => {
-    document.querySelectorAll(".src-cbx").forEach(w => {
+    document.querySelectorAll('.src-cbx:not([data-cbx="mode"])').forEach(w => {
       const inp = w.querySelector(".src-cbx-input");
       const p = w.querySelector(".src-cbx-list");
       if (p && !p.hidden) _srcCbxRender(inp, document.activeElement === inp);
@@ -3571,7 +3609,10 @@
         </div>
         <div class="ef-field">
           <label for="ef-mode">Mode</label>
-          <input type="text" id="ef-mode" list="ps-modes" placeholder="— None —" autocomplete="off">
+          <div class="src-cbx" data-cbx="mode">
+            <input type="text" id="ef-mode" class="src-cbx-input" placeholder="— None —" autocomplete="off">
+            <div class="src-cbx-list" hidden></div>
+          </div>
         </div>
       </div>
       <div class="ef-field">

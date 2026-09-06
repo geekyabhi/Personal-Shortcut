@@ -1181,6 +1181,7 @@ class ExpensesService:
         sources: list,
         comment: str,
         splitwise_id=None,
+        mode: str = "",
     ) -> str:
         """Create a Notion row from a Splitwise import: Category fixed to
         'Splitwise', 'From Split' ticked, Source = the payer(s), the
@@ -1196,6 +1197,7 @@ class ExpensesService:
         cached_rows, _, _, _ = self.dl.get_cached_rows()
         title_prop = self._detect_title_prop(cached_rows)
         source_type = self._detect_source_type(cached_rows)
+        mode_type = self._detect_prop_type(cached_rows, "Mode")
         sources = [s for s in (sources or []) if s]
 
         properties = {
@@ -1210,6 +1212,10 @@ class ExpensesService:
             properties["Source"] = {"multi_select": [{"name": s} for s in sources]}
         else:
             properties["Source"] = {"select": {"name": sources[0]} if sources else None}
+        if mode_type == "select":
+            properties["Mode"] = {"select": {"name": mode} if mode else None}
+        else:
+            properties["Mode"] = {"multi_select": [{"name": mode}] if mode else []}
 
         if splitwise_id is not None:
             _, has_swid = self.dl.imported_splitwise_ids(self.SPLITWISE_ID_PROP)

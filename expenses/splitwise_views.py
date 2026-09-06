@@ -231,8 +231,10 @@ class SplitwiseImportView(SplitwiseBaseView):
                 status=500,
             )
 
+        mode = (data.get("mode") or "").strip()
+
         try:
-            result = self.svc.import_to_notion(expense_id, expenses_service)
+            result = self.svc.import_to_notion(expense_id, expenses_service, mode=mode)
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
         except SplitwiseNotConfigured:
