@@ -117,8 +117,8 @@
     .dir-item:hover { background: rgba(79,70,229,0.05); border-radius: 10px; }
     .dir-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--grad); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex: none; }
     .dir-body { flex: 1; min-width: 0; }
-    .dir-name { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dir-sub { font-size: 0.76rem; color: #9CA3AF; margin-top: 0.1rem; }
+    .dir-name { display: block; font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dir-sub { display: block; font-size: 0.76rem; color: #9CA3AF; margin-top: 0.2rem; }
     .dir-chev { color: #C4C7D0; font-size: 1.1rem; flex: none; }
 
     /* ── Group detail ── */
@@ -135,7 +135,23 @@
       border: 1px solid rgba(0,0,0,0.12); background: rgba(255,255,255,0.6); color: #6B7280; cursor: pointer;
     }
     .fchip:hover { border-color: var(--accent); color: var(--accent); }
-    .fchip.active { background: var(--grad); border-color: transparent; color: #fff; }
+    .fchip.active {
+      background: var(--grad); border-color: transparent; color: #fff;
+      box-shadow: 0 2px 14px rgba(124,58,237,0.55), 0 0 0 3px rgba(124,58,237,0.22);
+    }
+    /* "All" is the no-filter state — show it selected, but don't make it "glow". */
+    .fchip.active[data-f="all"] { box-shadow: none; }
+    /* Search / sort light up when they're narrowing the list. */
+    .detail-controls input.is-active, .detail-controls select.is-active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.18);
+    }
+    .sel-all {
+      display: flex; align-items: center; gap: 0.45rem; font-size: 0.8rem; font-weight: 600;
+      color: #6B7280; cursor: pointer; padding: 0.3rem 0.2rem 0.6rem; user-select: none;
+    }
+    .sel-all input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+    [data-theme="dark"] .sel-all { color: #9CA3AF; }
     .detail-controls { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
     .detail-controls input, .detail-controls select, #dir-search {
       flex: 1; min-width: 140px; padding: 0.45rem 0.7rem; border-radius: 10px;
@@ -285,6 +301,8 @@
         </div>
         <div class="filter-row" id="d-filters">
           <button class="fchip active" data-f="all">All</button>
+          <button class="fchip" data-f="not-imported">Not in Notion</button>
+          <button class="fchip" data-f="imported">In Notion</button>
           <button class="fchip" data-f="i-paid">I paid</button>
           <button class="fchip" data-f="other-paid">Someone else paid</button>
           <button class="fchip" data-f="i-owe">I owe on this</button>
@@ -368,22 +386,38 @@
     }
 
     const S = {
-      currency: 'INR', groups: [], friends: [], gnet: {},
+      currency: 'INR', me: null, groups: [], friends: [], gnet: {},
       groupId: null, groupName: '', expenses: [], offset: 0, hasMore: false, pageSize: 100,
-      filter: 'all', search: '', sort: 'date_desc',
+      filters: new Set(), search: '', sort: 'date_desc',
       imported: new Set(), dedupe: false,
       picks: new Set(), shown: [],
     };
 
+    // Each filter is an independent toggle; an expense must pass EVERY active one.
     const FILT = {
-      all: () => true,
-      'i-paid': e => e.my_paid_share > 0.005,
-      'other-paid': e => e.my_paid_share <= 0.005 && !e.is_payment,
-      'i-owe': e => e.my_net < -0.005,
-      'i-owed': e => e.my_net > 0.005,
-      'uncat': e => !e.category && !e.is_payment,
-      payments: e => e.is_payment,
+      'not-imported': e => !e.is_payment && !S.imported.has(Number(e.id)),
+      'imported':     e => S.imported.has(Number(e.id)),
+      'i-paid':      e => !e.is_payment && e.my_paid_share > 0.005,
+      'other-paid':  e => !e.is_payment && e.my_paid_share <= 0.005,
+      'i-owe':       e => !e.is_payment && e.my_net < -0.005,
+      'i-owed':      e => !e.is_payment && e.my_net > 0.005,
+      'uncat':       e => !e.is_payment && !e.category,
+      'payments':    e => e.is_payment,
     };
+    // Turning one filter on clears any that would contradict it.
+    const FILT_EXCL = {
+      'i-paid': ['other-paid', 'payments'], 'other-paid': ['i-paid', 'payments'],
+      'i-owe': ['i-owed', 'payments'], 'i-owed': ['i-owe', 'payments'],
+      'uncat': ['payments'],
+      'imported': ['not-imported', 'payments'],
+      'not-imported': ['imported', 'payments'],
+      'payments': ['imported', 'not-imported', 'i-paid', 'other-paid', 'i-owe', 'i-owed', 'uncat'],
+    };
+    function _syncFilterChips() {
+      document.querySelectorAll('#d-filters .fchip').forEach(x => {
+        x.classList.toggle('active', x.dataset.f === 'all' ? S.filters.size === 0 : S.filters.has(x.dataset.f));
+      });
+    }
 
     async function _load(force) {
       const rb = document.getElementById('refresh-btn');
@@ -400,6 +434,7 @@
         }
         document.getElementById('banner').hidden = true;
         S.currency = (ov.me && ov.me.currency) || 'INR';
+        S.me = ov.me || null;
         S.groups = ov.groups || [];
         S.friends = ov.friends || [];
         document.getElementById('as-who').textContent = ov.me ? 'as ' + ov.me.name : '';
@@ -491,10 +526,10 @@
       document.getElementById('d-name').textContent = gname;
       if (reset) {
         S.expenses = []; S.offset = 0; S.hasMore = false; S.picks.clear();
-        S.filter = 'all'; S.search = ''; S.sort = 'date_desc';
-        document.getElementById('d-search').value = '';
-        document.getElementById('d-sort').value = 'date_desc';
-        document.querySelectorAll('#d-filters .fchip').forEach(c => c.classList.toggle('active', c.dataset.f === 'all'));
+        S.filters.clear(); S.search = ''; S.sort = 'date_desc';
+        const ds = document.getElementById('d-search'); ds.value = ''; ds.classList.remove('is-active');
+        const dso = document.getElementById('d-sort'); dso.value = 'date_desc'; dso.classList.remove('is-active');
+        _syncFilterChips();
         document.getElementById('d-list').innerHTML = '<div class="muted-note">Loading…</div>';
         document.getElementById('d-summary').textContent = '';
       }
@@ -529,7 +564,7 @@
       const g = S.groups.find(x => String(x.id) === String(S.groupId));
       meta.textContent = g && g.members ? `${g.members.length} members` : '';
 
-      let list = S.expenses.filter(FILT[S.filter] || FILT.all);
+      let list = S.expenses.filter(e => [...S.filters].every(k => (FILT[k] || (() => true))(e)));
       const q = S.search.trim().toLowerCase();
       if (q) list = list.filter(e => (e.description || '').toLowerCase().includes(q));
 
@@ -545,8 +580,14 @@
       const totNet = list.reduce((s, e) => s + (e.my_net || 0), 0);
       const netTxt = totNet > 0.005 ? `you lent ${fmt(totNet, S.currency)}`
         : totNet < -0.005 ? `you owe ${fmt(-totNet, S.currency)}` : 'settled';
+      const filtNote = S.filters.size
+        ? ` · ${[...S.filters].map(k => {
+            const b = document.querySelector(`#d-filters .fchip[data-f="${k}"]`);
+            return b ? b.textContent : k;
+          }).join(' + ')}`
+        : '';
       document.getElementById('d-summary').textContent =
-        `${list.length} expense${list.length !== 1 ? 's' : ''} · ${fmt(totCost, S.currency)} total · ${netTxt}`;
+        `${list.length} expense${list.length !== 1 ? 's' : ''} · ${fmt(totCost, S.currency)} total · ${netTxt}${filtNote}`;
 
       const importable = e => !e.is_payment && !S.imported.has(Number(e.id));
       S.shown = list.filter(importable).map(e => Number(e.id));
@@ -556,13 +597,22 @@
       else {
         const hint = S.dedupe ? '' :
           '<div class="muted-note" style="margin-bottom:0.6rem;">Add a <strong>Splitwise ID</strong> (Number) column in Notion to block duplicate imports.</div>';
-        el.innerHTML = hint + list.map(e => {
+        // "Select all" over every importable row currently shown.
+        const allPicked = S.shown.length > 0 && S.shown.every(id => S.picks.has(id));
+        const selAll = S.shown.length
+          ? `<label class="sel-all"><input type="checkbox" id="d-selall" ${allPicked ? 'checked' : ''}> Select all ${S.shown.length} importable</label>`
+          : '';
+        const meId = S.me && S.me.id;
+        el.innerHTML = hint + selAll + list.map(e => {
           const grp = (e.group_name && String(S.groupId) !== String(e.group_id)) ? `<span class="chip">${esc(e.group_name)}</span>` : '';
           const cat = e.category ? `<span class="chip muted">${esc(e.category)}</span>` : '';
           const pay = e.is_payment ? '<span class="chip pay">settle-up</span>' : '';
           const net = e.my_net;
+          const payers = (e.users || []).filter(u => (u.paid || 0) > 0.005)
+            .map(u => (meId != null && u.id === meId) ? 'You' : (u.name || '?'));
+          const payerTxt = payers.length > 3 ? payers.slice(0, 3).join(', ') + ' +' + (payers.length - 3) : payers.join(', ');
           const who = e.is_payment ? '' :
-            (e.my_paid_share > 0.005 ? '<span class="chip muted">you paid</span>' : '<span class="chip muted">someone else paid</span>');
+            (payerTxt ? `<span class="chip muted">${esc(payerTxt)} paid</span>` : '');
           const netTxt = net > 0.005 ? `you lent ${fmt(net, e.currency)}`
             : net < -0.005 ? `you owe ${fmt(-net, e.currency)}` : 'not involved';
           const done = S.imported.has(Number(e.id));
@@ -618,10 +668,18 @@
     }
 
     document.getElementById('d-list').addEventListener('change', e => {
+      if (e.target.id === 'd-selall') {
+        S.shown.forEach(id => e.target.checked ? S.picks.add(id) : S.picks.delete(id));
+        document.querySelectorAll('.imp-pick').forEach(c => { c.checked = e.target.checked; });
+        _bulkSync();
+        return;
+      }
       const cb = e.target.closest('.imp-pick');
       if (!cb) return;
       const id = Number(cb.dataset.pick);
       if (cb.checked) S.picks.add(id); else S.picks.delete(id);
+      const sa = document.getElementById('d-selall');
+      if (sa) sa.checked = S.shown.length > 0 && S.shown.every(x => S.picks.has(x));
       _bulkSync();
     });
 
@@ -654,16 +712,28 @@
     document.getElementById('d-filters').addEventListener('click', e => {
       const c = e.target.closest('.fchip');
       if (!c) return;
-      S.filter = c.dataset.f;
-      document.querySelectorAll('#d-filters .fchip').forEach(x => x.classList.toggle('active', x === c));
+      const f = c.dataset.f;
+      if (f === 'all') {
+        S.filters.clear();
+      } else if (S.filters.has(f)) {
+        S.filters.delete(f);
+      } else {
+        S.filters.add(f);
+        (FILT_EXCL[f] || []).forEach(x => S.filters.delete(x));
+      }
+      _syncFilterChips();
       renderDetail();
     });
     let _searchT;
     document.getElementById('d-search').addEventListener('input', e => {
+      e.target.classList.toggle('is-active', !!e.target.value.trim());
       clearTimeout(_searchT);
       _searchT = setTimeout(() => { S.search = e.target.value; renderDetail(); }, 180);
     });
-    document.getElementById('d-sort').addEventListener('change', e => { S.sort = e.target.value; renderDetail(); });
+    document.getElementById('d-sort').addEventListener('change', e => {
+      e.target.classList.toggle('is-active', e.target.value !== 'date_desc');
+      S.sort = e.target.value; renderDetail();
+    });
 
     document.getElementById('d-list').addEventListener('click', async e => {
       const btn = e.target.closest('.import-btn');

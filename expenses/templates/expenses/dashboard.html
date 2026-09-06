@@ -662,21 +662,13 @@
       border: none; background: transparent; font: inherit; color: inherit;
       width: 82px; min-width: 0; outline: none;
     }
-    .be-pill-new-btn, .ef-pill-new-btn, .be-src-new-btn, .ef-src-new-btn, .sp-src-new-btn {
+    .be-pill-new-btn, .ef-pill-new-btn {
       border: none; background: transparent; color: var(--accent);
       font-weight: 800; font-size: 0.85rem; line-height: 1; cursor: pointer;
       width: 18px; height: 18px; border-radius: 50%; flex: none;
     }
-    .be-pill-new-btn:hover, .ef-pill-new-btn:hover, .be-src-new-btn:hover, .ef-src-new-btn:hover, .sp-src-new-btn:hover { background: rgba(79,70,229,0.12); }
+    .be-pill-new-btn:hover, .ef-pill-new-btn:hover { background: rgba(79,70,229,0.12); }
     [data-theme="dark"] .be-pill-new, [data-theme="dark"] .ef-pill-new { border-color: rgba(99,102,241,0.4); }
-    .be-src-new, .ef-src-new, .sp-src-new {
-      display: flex; align-items: center; gap: 0.15rem; margin-top: 0.35rem; font-size: 0.78rem;
-      border: 1.5px dashed #E5E7EB; border-radius: 8px; padding: 0.15rem 0.15rem 0.15rem 0.5rem;
-    }
-    .be-src-new-input, .ef-src-new-input, .sp-src-new-input {
-      flex: 1; min-width: 0; border: none; background: transparent; font: inherit; color: inherit; outline: none;
-    }
-    [data-theme="dark"] .be-src-new, [data-theme="dark"] .ef-src-new, [data-theme="dark"] .sp-src-new { border-color: rgba(255,255,255,0.14); }
     .ef-actions { display: flex; gap: 0.6rem; margin-top: 1.5rem; }
     .ef-btn-cancel {
       flex: 1; padding: 0.6rem; border-radius: 10px; border: 1.5px solid #E5E7EB;
@@ -765,6 +757,27 @@
     [data-theme="dark"] .sp-cat-opt { color: #F9FAFB; }
     [data-theme="dark"] .sp-cat-opt:hover { background: rgba(129,140,248,0.16); }
     [data-theme="dark"] .sp-cat-opt-new { border-top-color: rgba(255,255,255,0.1); }
+
+    /* ── Reusable Source combobox ── */
+    .src-cbx { position: relative; display: block; min-width: 0; }
+    .src-cbx-list {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 40;
+      max-height: 180px; overflow-y: auto;
+      background: #fff; border: 1.5px solid #E5E7EB; border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14); transform: translateZ(0);
+    }
+    .src-cbx-list.src-cbx-list--up { top: auto; bottom: calc(100% + 4px); box-shadow: 0 -8px 24px rgba(0,0,0,0.14); }
+    .src-cbx-opt { padding: 0.45rem 0.65rem; font-size: 0.82rem; color: #111827; cursor: pointer; }
+    .src-cbx-opt:hover { background: rgba(79,70,229,0.08); }
+    .src-cbx-opt--cur { background: rgba(79,70,229,0.1); font-weight: 600; }
+    .src-cbx-opt-new { color: var(--accent); font-weight: 600; border-top: 1px solid #F3F4F6; }
+    .src-cbx-empty { padding: 0.5rem 0.65rem; font-size: 0.78rem; color: #9CA3AF; }
+    [data-theme="dark"] .src-cbx-list { background: #232330; border-color: rgba(255,255,255,0.14); }
+    [data-theme="dark"] .src-cbx-opt { color: #F9FAFB; }
+    [data-theme="dark"] .src-cbx-opt:hover { background: rgba(129,140,248,0.16); }
+    [data-theme="dark"] .src-cbx-opt--cur { background: rgba(129,140,248,0.18); }
+    [data-theme="dark"] .src-cbx-opt-new { border-top-color: rgba(255,255,255,0.1); }
+
     .sp-more-toggle {
       grid-column: 1 / -1; justify-self: start; margin-top: 0.1rem;
       background: transparent; border: none; color: var(--accent);
@@ -1071,7 +1084,12 @@
         <div id="b-wrap-end"   class="date-input"><label for="b-end">End Date</label><input type="date" id="b-end" /></div>
         <div><label for="b-search">Search name</label><input type="text" id="b-search" placeholder="e.g. Amazon…" /></div>
         <div><label for="b-category">Category</label><select id="b-category"><option value="">All Categories</option></select></div>
-        <div><label for="b-source">Source</label><select id="b-source"><option value="">All Sources</option></select></div>
+        <div><label for="b-source">Source</label>
+          <div class="src-cbx" data-src-cbx data-src-empty="All sources">
+            <input type="text" id="b-source" class="src-cbx-input" placeholder="All sources" autocomplete="off">
+            <div class="src-cbx-list" hidden></div>
+          </div>
+        </div>
         <div><label for="b-min">Min Amount</label><input type="number" id="b-min" placeholder="0" min="0" /></div>
         <div><label for="b-max">Max Amount</label><input type="number" id="b-max" placeholder="∞" min="0" /></div>
         <div>
@@ -1778,6 +1796,30 @@
     return (e && e.date || "") + (t ? ` · ${t}` : "");
   }
 
+  const _pad2 = n => String(n).padStart(2, "0");
+  // Value for an <input type="datetime-local">: "YYYY-MM-DDTHH:MM".
+  function _nowLocalInput() {
+    const d = new Date();
+    return `${d.getFullYear()}-${_pad2(d.getMonth() + 1)}-${_pad2(d.getDate())}T${_pad2(d.getHours())}:${_pad2(d.getMinutes())}`;
+  }
+  // Notion datetime ("2026-07-16T02:19:00.000+05:30") or bare date → datetime-local value.
+  function _toLocalInput(s) {
+    if (!s) return "";
+    const m = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}):(\d{2}))?/.exec(s);
+    if (!m) return "";
+    return `${m[1]}T${m[2] || "00"}:${m[3] || "00"}`;
+  }
+  // datetime-local value → full ISO with the browser's local offset for that date,
+  // e.g. "2026-07-16T02:19" → "2026-07-16T02:19:00+05:30".
+  function _localInputToNotion(v) {
+    if (!v) return "";
+    const off = -new Date(v).getTimezoneOffset();       // minutes east of UTC
+    const sign = off >= 0 ? "+" : "-";
+    const oa = Math.abs(off);
+    const sec = v.length === 16 ? ":00" : "";
+    return `${v}${sec}${sign}${_pad2(Math.floor(oa / 60))}:${_pad2(oa % 60)}`;
+  }
+
   /* ── One filter set drives both the summary and the list ── */
   function _applyFilters() { fetchAll(); fetchList(); }
 
@@ -2135,38 +2177,6 @@
     }
   });
 
-  function _spSrcOptions(selected) {
-    const set = new Set(_allSrcs);
-    if (selected) set.add(selected);
-    return ['<option value="">— None —</option>']
-      .concat([...set].map(n => `<option value="${_esc(n)}"${n === selected ? " selected" : ""}>${_esc(n)}</option>`))
-      .join("");
-  }
-  function _spPushNewSource(input) {
-    const row = input.closest("[data-sp-row]");
-    const name = _registerNewSource(input.value);
-    input.value = "";
-    if (!name || !row) return;
-    const select = row.querySelector(".sp-src-select");
-    let opt = [...select.options].find(o => o.value === name);
-    if (!opt) {
-      opt = document.createElement("option");
-      opt.value = name; opt.textContent = name;
-      select.appendChild(opt);
-    }
-    select.value = name;
-  }
-  document.addEventListener("click", ev => {
-    const btn = ev.target.closest(".sp-src-new-btn");
-    if (btn) _spPushNewSource(btn.previousElementSibling);
-  });
-  document.addEventListener("keydown", ev => {
-    if (ev.key === "Enter" && ev.target.classList.contains("sp-src-new-input")) {
-      ev.preventDefault();
-      _spPushNewSource(ev.target);
-    }
-  });
-
   function _spToggleMore(btn) {
     const panel = btn.closest("[data-sp-row]").querySelector(".sp-more-fields");
     const opening = panel.hidden;
@@ -2240,11 +2250,10 @@
         <div class="sp-more-fields be-grid" hidden>
           <div class="be-field">
             <label>Source</label>
-            <select class="sp-src-select">${_spSrcOptions(e.source || "")}</select>
-            <span class="sp-src-new">
-              <input type="text" class="sp-src-new-input" placeholder="+ new source">
-              <button type="button" class="sp-src-new-btn" title="Add source">+</button>
-            </span>
+            <div class="src-cbx" data-src-cbx>
+              <input type="text" class="sp-src-select src-cbx-input" value="${_esc(e.source || "")}" placeholder="— None —" autocomplete="off">
+              <div class="src-cbx-list" hidden></div>
+            </div>
           </div>
           <div class="be-field wide"><label>Comment</label><input type="text" class="sp-comment" value="${_esc(e.comment || "")}"></div>
           <div class="be-field wide"><label>Other Partner</label><input type="text" class="sp-other-partner" value="${_esc(e.other_partner || "")}"></div>
@@ -2458,12 +2467,6 @@
 
   function _bulkEditRow(e) {
     const s = _beSnap(e);
-    // Always include the row's current source, even if the dropdown list hasn't loaded yet.
-    const srcSet = new Set(_allSrcs);
-    if (s.source) srcSet.add(s.source);
-    const srcOpts = ['<option value="">— None —</option>']
-      .concat([...srcSet].map(n => `<option value="${_esc(n)}"${n === s.source ? " selected" : ""}>${_esc(n)}</option>`))
-      .join("");
     // Always include the row's own categories too, even if the all-time list hasn't loaded yet.
     const catSet = new Set(_allCats);
     (e.categories || []).forEach(c => catSet.add(c));
@@ -2479,8 +2482,10 @@
           <div class="be-field"><label>Date</label><input type="date" data-bef="date" value="${_esc(s.date)}"></div>
           <div class="be-field">
             <label>Source</label>
-            <select data-bef="source">${srcOpts}</select>
-            <span class="be-src-new"><input type="text" class="be-src-new-input" placeholder="+ new source"><button type="button" class="be-src-new-btn" title="Add source">+</button></span>
+            <div class="src-cbx" data-src-cbx>
+              <input type="text" data-bef="source" class="src-cbx-input" value="${_esc(s.source)}" placeholder="— None —" autocomplete="off">
+              <div class="src-cbx-list" hidden></div>
+            </div>
           </div>
           <div class="be-field"><label>Splitwise ID</label><input type="number" step="1" data-bef="splitwise_id" value="${_esc(s.splitwise_id)}"></div>
           <div class="be-field wide"><label>Categories</label><div class="be-pills" data-bef="categories">${catPills}</div></div>
@@ -2530,30 +2535,12 @@
     pill.classList.add("on");
     row.dispatchEvent(new Event("input", { bubbles: true }));
   }
-  // Same for a new source.
-  function _bePushNewSource(input) {
-    const row = input.closest(".be-row");
-    const name = _registerNewSource(input.value);
-    input.value = "";
-    if (!name || !row) return;
-    const select = row.querySelector('select[data-bef="source"]');
-    let opt = [...select.options].find(o => o.value === name);
-    if (!opt) {
-      opt = document.createElement("option");
-      opt.value = name; opt.textContent = name;
-      select.appendChild(opt);
-    }
-    select.value = name;
-    row.dispatchEvent(new Event("input", { bubbles: true }));
-  }
 
   // Category pills in bulk edit are buttons, not inputs — toggle + report as a change.
   document.getElementById("browse-list").addEventListener("click", ev => {
     if (!_bulkEdit) return;
     const newCatBtn = ev.target.closest(".be-pill-new-btn");
     if (newCatBtn) { _bePushNewCategory(newCatBtn.previousElementSibling); return; }
-    const newSrcBtn = ev.target.closest(".be-src-new-btn");
-    if (newSrcBtn) { _bePushNewSource(newSrcBtn.previousElementSibling); return; }
     const pill = ev.target.closest(".be-pill");
     if (!pill) return;
     pill.classList.toggle("on");
@@ -2562,7 +2549,6 @@
   document.getElementById("browse-list").addEventListener("keydown", ev => {
     if (ev.key !== "Enter" || !_bulkEdit) return;
     if (ev.target.classList.contains("be-pill-new-input")) { ev.preventDefault(); _bePushNewCategory(ev.target); }
-    else if (ev.target.classList.contains("be-src-new-input")) { ev.preventDefault(); _bePushNewSource(ev.target); }
   });
 
   function _bulkEditSave() {
@@ -2864,7 +2850,7 @@
   }
 
   // Populate category/source dropdowns + form options from all-time data
-  let _allCats = [], _allSrcs = [], _catsLoaded = false;
+  let _allCats = [], _allSrcs = [], _catsLoaded = false, _srcsLoaded = false;
 
   // "Type and push" a brand-new category/source name into the shared lists —
   // Notion itself creates the option on save, this just makes it pickable now.
@@ -2888,22 +2874,103 @@
       _allCats = (data.by_category || []).map(c => c.name);
       _allSrcs = (data.by_source   || []).map(s => s.name);
       const catSel = document.getElementById("b-category");
-      const srcSel = document.getElementById("b-source");
       _allCats.forEach(name => {
         const o = document.createElement("option"); o.value = name; o.textContent = name; catSel.appendChild(o);
-      });
-      _allSrcs.forEach(name => {
-        const o = document.createElement("option"); o.value = name; o.textContent = name; srcSel.appendChild(o);
       });
       _efBuildFormOptions();
     } catch {
     } finally {
-      // Fires even if the fetch failed — otherwise a split modal opened before this
-      // resolves would be stuck showing "Loading categories…" forever.
-      _catsLoaded = true;
+      // Fires even if the fetch failed — otherwise a combobox opened before this
+      // resolves would be stuck showing "Loading…" forever.
+      _catsLoaded = _srcsLoaded = true;
       document.dispatchEvent(new Event("expenses:categories-ready"));
+      document.dispatchEvent(new Event("expenses:sources-ready"));
     }
   })();
+
+  /* ── Reusable searchable/scrollable Source combobox ──
+     A plain <input> (keeps its original id / data-bef, so `.value` reads still
+     work) wrapped in `.src-cbx`, with a filtered fixed-height dropdown. Used by
+     the filter bar, the Add/Edit modal, bulk-edit rows and the split modal. */
+  function _srcCbxFlip(input) {
+    const panel = input.closest(".src-cbx").querySelector(".src-cbx-list");
+    if (panel.hidden) return;
+    const r = input.getBoundingClientRect();
+    const box = input.closest(".ef-box");
+    const bottom = box ? box.getBoundingClientRect().bottom : window.innerHeight;
+    panel.classList.toggle("src-cbx-list--up", (bottom - r.bottom) < 190 && r.top > 190);
+  }
+  function _srcCbxRender(input, showAll) {
+    const wrap = input.closest(".src-cbx");
+    const panel = wrap.querySelector(".src-cbx-list");
+    if (!_srcsLoaded) {
+      panel.innerHTML = `<div class="src-cbx-empty">Loading sources…</div>`;
+      panel.hidden = false; _srcCbxFlip(input); return;
+    }
+    const emptyLabel = wrap.dataset.srcEmpty || "— None —";
+    const raw = input.value.trim();
+    const q = showAll ? "" : raw.toLowerCase();
+    const list = _allSrcs.filter(s => s.toLowerCase().includes(q));
+    let html = `<div class="src-cbx-opt${raw ? "" : " src-cbx-opt--cur"}" data-src="">${_esc(emptyLabel)}</div>`;
+    html += list.map(s => `<div class="src-cbx-opt${s.toLowerCase() === raw.toLowerCase() ? " src-cbx-opt--cur" : ""}" data-src="${_esc(s)}">${_esc(s)}</div>`).join("");
+    const exact = _allSrcs.some(s => s.toLowerCase() === raw.toLowerCase());
+    if (!showAll && raw && !exact) {
+      html += `<div class="src-cbx-opt src-cbx-opt-new" data-new-src="${_esc(raw)}">+ Add "${_esc(raw)}" as new source</div>`;
+    }
+    panel.innerHTML = html;
+    panel.hidden = false;
+    const cur = panel.querySelector(".src-cbx-opt--cur");
+    if (cur) cur.scrollIntoView({ block: "nearest" });
+    _srcCbxFlip(input);
+  }
+  function _srcCbxClose(input) { input.closest(".src-cbx").querySelector(".src-cbx-list").hidden = true; }
+  function _srcCbxChoose(input, val) {
+    input.value = val;
+    input.dispatchEvent(new Event("input", { bubbles: true }));  // untrusted — lets bulk-edit's dirty check react
+    _srcCbxClose(input);
+  }
+  document.addEventListener("input", ev => {
+    if (ev.target.classList.contains("src-cbx-input") && ev.isTrusted) _srcCbxRender(ev.target);
+  });
+  document.addEventListener("focusin", ev => {
+    if (!ev.target.classList.contains("src-cbx-input")) return;
+    ev.target.select();
+    _srcCbxRender(ev.target, true);
+  });
+  document.addEventListener("focusout", ev => {
+    if (ev.target.classList.contains("src-cbx-input")) setTimeout(() => _srcCbxClose(ev.target), 150);
+  });
+  document.addEventListener("mousedown", ev => {
+    const opt = ev.target.closest(".src-cbx-opt");
+    if (!opt) return;
+    ev.preventDefault();
+    const input = opt.closest(".src-cbx").querySelector(".src-cbx-input");
+    if (opt.dataset.newSrc != null) _srcCbxChoose(input, _registerNewSource(opt.dataset.newSrc) || "");
+    else _srcCbxChoose(input, opt.dataset.src);
+  });
+  document.addEventListener("keydown", ev => {
+    if (!ev.target.classList.contains("src-cbx-input")) return;
+    if (ev.key === "Escape") { _srcCbxClose(ev.target); return; }
+    if (ev.key !== "Enter") return;
+    ev.preventDefault();
+    const first = ev.target.closest(".src-cbx").querySelector(".src-cbx-list .src-cbx-opt");
+    if (!first) return;
+    if (first.dataset.newSrc != null) _srcCbxChoose(ev.target, _registerNewSource(first.dataset.newSrc) || "");
+    else _srcCbxChoose(ev.target, first.dataset.src);
+  });
+  document.addEventListener("scroll", () => {
+    document.querySelectorAll(".src-cbx-list:not([hidden])").forEach(p => {
+      const inp = p.closest(".src-cbx").querySelector(".src-cbx-input");
+      if (inp) _srcCbxFlip(inp);
+    });
+  }, true);
+  document.addEventListener("expenses:sources-ready", () => {
+    document.querySelectorAll(".src-cbx").forEach(w => {
+      const inp = w.querySelector(".src-cbx-input");
+      const p = w.querySelector(".src-cbx-list");
+      if (p && !p.hidden) _srcCbxRender(inp, document.activeElement === inp);
+    });
+  });
 
   /* ── Expense form modal ── */
   let _efPageId = null; // null = create mode, string = edit mode
@@ -2936,12 +3003,7 @@
         _efPushNewCategory(ev.target);
       }
     });
-    // Source select
-    const src = document.getElementById("ef-source");
-    src.innerHTML = '<option value="">— None —</option>';
-    _allSrcs.forEach(name => {
-      const o = document.createElement("option"); o.value = name; o.textContent = name; src.appendChild(o);
-    });
+    // Source is the reusable `.src-cbx` combobox — nothing to populate here.
   }
 
   function _efPushNewCategory(input) {
@@ -2958,26 +3020,12 @@
     }
     pill.classList.add("on");
   }
-  function _efPushNewSource(input) {
-    const name = _registerNewSource(input.value);
-    input.value = "";
-    if (!name) return;
-    const select = document.getElementById("ef-source");
-    let opt = [...select.options].find(o => o.value === name);
-    if (!opt) {
-      opt = document.createElement("option");
-      opt.value = name; opt.textContent = name;
-      select.appendChild(opt);
-    }
-    select.value = name;
-  }
-
   function _efOpen(entry) {
     _efPageId = entry ? entry.page_id : null;
     document.getElementById("ef-title").textContent = entry ? "Edit Expense" : "Add Expense";
     document.getElementById("ef-name").value   = entry ? entry.title  : "";
     document.getElementById("ef-amount").value = entry ? entry.amount : "";
-    document.getElementById("ef-date").value   = entry ? entry.date   : new Date().toISOString().slice(0, 10);
+    document.getElementById("ef-date").value   = entry ? _toLocalInput(entry.datetime || entry.date) : _nowLocalInput();
     document.getElementById("ef-source").value = entry ? (entry.source || "") : "";
     document.getElementById("ef-comment").value = entry ? (entry.comment || "") : "";
     document.getElementById("ef-other-partner").value = entry ? (entry.other_partner || "") : "";
@@ -2993,7 +3041,6 @@
     });
     const efCatNew = document.querySelector(".ef-pill-new-input");
     if (efCatNew) efCatNew.value = "";
-    document.getElementById("ef-src-new-input").value = "";
     document.getElementById("ef-error").style.display = "none";
     document.getElementById("ef-save-btn").disabled = false;
     document.getElementById("ef-overlay").classList.add("open");
@@ -3029,9 +3076,11 @@
 
     // Only send Date if it's a new expense or the user actually changed it —
     // otherwise Notion's stored date/time is left as-is.
-    const origDate  = editId ? ((_lastBrowse?.entries || []).find(x => x.page_id === editId)?.date || "") : "";
-    const sendDate  = (!editId || date !== origDate) ? date : "";
-    const finalDate = editId ? (date || origDate) : date;
+    const origEntry = editId ? (_lastBrowse?.entries || []).find(x => x.page_id === editId) : null;
+    const origDate  = origEntry ? _toLocalInput(origEntry.datetime || origEntry.date) : "";
+    const changed   = !editId || date !== origDate;
+    const sendDate  = changed ? _localInputToNotion(date) : "";
+    const finalDate = changed ? date : origDate;   // datetime-local string for optimistic paint
 
     const swidRaw = document.getElementById("ef-swid").value.trim();
     const swid    = swidRaw === "" ? null : Number(swidRaw);
@@ -3046,7 +3095,10 @@
       splitwise_id: swidRaw === "" ? "" : swid,
     };
     const fields = {
-      title: name, amount: payload.amount, date: finalDate, categories: cats, source,
+      title: name, amount: payload.amount,
+      date: (finalDate || "").slice(0, 10),
+      datetime: changed ? _localInputToNotion(finalDate) : (origEntry ? origEntry.datetime : ""),
+      categories: cats, source,
       comment: payload.comment, other_partner: payload.other_partner,
       add_to_split: payload.add_to_split, from_split: payload.from_split,
       split_added: payload.split_added, processed: payload.processed,
@@ -3256,8 +3308,8 @@
           <input type="number" id="ef-amount" placeholder="0.00" min="0" step="0.01" />
         </div>
         <div class="ef-field">
-          <label for="ef-date">Date</label>
-          <input type="date" id="ef-date" />
+          <label for="ef-date">Date &amp; time</label>
+          <input type="datetime-local" id="ef-date" />
         </div>
       </div>
       <div class="ef-field">
@@ -3266,12 +3318,10 @@
       </div>
       <div class="ef-field">
         <label for="ef-source">Source</label>
-        <select id="ef-source"><option value="">— None —</option></select>
-        <span class="ef-src-new">
-          <input type="text" id="ef-src-new-input" placeholder="+ new source"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault();_efPushNewSource(this);}">
-          <button type="button" class="ef-src-new-btn" title="Add source" onclick="_efPushNewSource(document.getElementById('ef-src-new-input'))">+</button>
-        </span>
+        <div class="src-cbx" data-src-cbx>
+          <input type="text" id="ef-source" class="src-cbx-input" placeholder="— None —" autocomplete="off">
+          <div class="src-cbx-list" hidden></div>
+        </div>
       </div>
       <div class="ef-field">
         <label for="ef-comment">Comment</label>
