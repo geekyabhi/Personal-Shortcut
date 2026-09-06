@@ -1862,6 +1862,7 @@
     { key: "date",          label: "Date",          type: "date"   },
     { key: "categories",    label: "Category",      type: "multi"  },
     { key: "source",        label: "Source",        type: "select" },
+    { key: "mode",          label: "Mode",          type: "select" },
     { key: "comment",       label: "Comment",       type: "text"   },
     { key: "other_partner", label: "Other partner", type: "text"   },
     { key: "splitwise_id",  label: "Splitwise ID",  type: "number" },
@@ -1953,8 +1954,12 @@
   function _fbValueField(r, i) {
     const type = _fbType(r.field);
     if (_fbNoValue(r.op)) return '<span class="fb-vwrap fb-none"></span>';
+    if (r.field === "mode") {
+      return `<span class="fb-vwrap"><input type="text" list="ps-modes" data-i="${i}" data-k="value" value="${_esc(r.value ?? "")}" placeholder="value"></span>`;
+    }
     if (type === "multi" || type === "select") {
-      const opts = (type === "multi" ? _allCats : _allSrcs)
+      const src = type === "multi" ? _allCats : _allSrcs;
+      const opts = src
         .map(o => `<option value="${_esc(o)}"${String(o) === String(r.value || "") ? " selected" : ""}>${_esc(o)}</option>`).join("");
       return `<span class="fb-vwrap"><select data-i="${i}" data-k="value"><option value="">— pick —</option>${opts}</select></span>`;
     }
@@ -2173,6 +2178,7 @@
     if (_detailView) {
       const cats = _fTag(e.categories).map(c => `<span class="tag tag-cat">${c}</span>`).join("");
       const src  = e.source ? `<span class="tag tag-src">${e.source}</span>` : "";
+      const mode = e.mode ? `<span class="tag tag-src">💳 ${_esc(e.mode)}</span>` : "";
       const other = e.other_partner ? `<span class="tag tag-src">👤 ${_esc(e.other_partner)}</span>` : "";
       const swid  = (e.splitwise_id != null && e.splitwise_id !== "") ? `<span class="tag tag-src">Splitwise ID #${e.splitwise_id}</span>` : "";
       const proc  = `<span class="tag ${e.processed ? "tag-cat" : "tag-flag-off"}">${e.processed ? "✓ processed" : "○ unprocessed"}</span>`;
@@ -2181,7 +2187,7 @@
       const splitAdded = e.split_added
         ? '<span class="tag tag-cat">✓ split added</span>'
         : (e.add_to_split ? '<span class="tag tag-flag-off">○ split not added</span>' : "");
-      extra = `<div class="expense-meta">${cats}${src}${other}${swid}${proc}${addSplit}${fromSplit}${splitAdded}</div>`;
+      extra = `<div class="expense-meta">${cats}${src}${mode}${other}${swid}${proc}${addSplit}${fromSplit}${splitAdded}</div>`;
     }
     const rowClass = `expense-row ${e.processed ? "proc" : "unproc"} dv-clickable`;
     const rowAttrs = ` data-detail-id="${e.page_id}"`;
@@ -2246,6 +2252,7 @@
     const rows = [
       ["Date", _fmtDateTime(e) || "—"],
       ["Source", e.source || "—"],
+      ["Mode", e.mode || "—"],
       ["Categories", (e.categories || []).join(", ") || "—"],
       ["Comment", e.comment || "—"],
       ["Other Partner", e.other_partner || "—"],
@@ -2631,7 +2638,7 @@
   function _beSnap(e) {
     return {
       name: e.title || "", amount: String(e.amount ?? ""), date: e.date || "",
-      source: e.source || "", categories: (e.categories || []).join(", "),
+      source: e.source || "", mode: e.mode || "", categories: (e.categories || []).join(", "),
       comment: e.comment || "", other_partner: e.other_partner || "",
       splitwise_id: e.splitwise_id == null ? "" : String(e.splitwise_id),
       processed: !!e.processed, add_to_split: !!e.add_to_split,
@@ -2644,7 +2651,7 @@
     const catCats = [...g("categories").querySelectorAll(".be-pill.on")].map(p => p.dataset.cat);
     return {
       name: g("name").value.trim(), amount: g("amount").value.trim(), date: g("date").value,
-      source: g("source").value, categories: catCats.join(", "),
+      source: g("source").value, mode: g("mode").value.trim(), categories: catCats.join(", "),
       comment: g("comment").value, other_partner: g("other_partner").value,
       splitwise_id: g("splitwise_id").value.trim(),
       processed: g("processed").checked, add_to_split: g("add_to_split").checked,
@@ -2654,7 +2661,7 @@
 
   function _beDirty(a, b) {
     if ((parseFloat(a.amount) || 0) !== (parseFloat(b.amount) || 0)) return true;
-    for (const k of ["name", "date", "source", "categories", "comment", "other_partner", "splitwise_id"]) {
+    for (const k of ["name", "date", "source", "mode", "categories", "comment", "other_partner", "splitwise_id"]) {
       if (a[k] !== b[k]) return true;
     }
     for (const k of ["processed", "add_to_split", "from_split", "split_added"]) {
@@ -2685,6 +2692,7 @@
               <div class="src-cbx-list" hidden></div>
             </div>
           </div>
+          <div class="be-field"><label>Mode</label><input type="text" data-bef="mode" list="ps-modes" value="${_esc(s.mode)}" placeholder="— None —" autocomplete="off"></div>
           <div class="be-field"><label>Splitwise ID</label><input type="number" step="1" data-bef="splitwise_id" value="${_esc(s.splitwise_id)}"></div>
           <div class="be-field wide"><label>Categories</label><div class="be-pills" data-bef="categories">${catPills}</div></div>
           <div class="be-field wide"><label>Comment</label><input type="text" data-bef="comment" value="${_esc(s.comment)}"></div>
@@ -2763,12 +2771,13 @@
       const before = _beSnap(entry);
       const cur = _beRead(row);
       const cats = cur.categories.split(",").map(c => c.trim()).filter(Boolean);
+      if (cur.mode) _registerNewMode(cur.mode);
       const dateChanged = cur.date !== before.date;
       const swid = cur.splitwise_id === "" ? "" : Number(cur.splitwise_id);
       const payload = {
         name: cur.name, amount: parseFloat(cur.amount) || 0,
         date: dateChanged ? cur.date : "",
-        categories: cats, source: cur.source,
+        categories: cats, source: cur.source, mode: cur.mode,
         comment: cur.comment, other_partner: cur.other_partner,
         add_to_split: cur.add_to_split, from_split: cur.from_split,
         split_added: cur.split_added, processed: cur.processed,
@@ -2778,7 +2787,7 @@
       Object.assign(entry, {
         title: cur.name, amount: payload.amount,
         date: dateChanged ? cur.date : entry.date,
-        categories: cats, source: cur.source, comment: cur.comment,
+        categories: cats, source: cur.source, mode: cur.mode, comment: cur.comment,
         other_partner: cur.other_partner, processed: cur.processed,
         add_to_split: cur.add_to_split, from_split: cur.from_split, split_added: cur.split_added,
         splitwise_id: swid === "" ? null : swid,
@@ -2888,7 +2897,7 @@
         headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
         body: JSON.stringify({
           name: entry.title, amount: entry.amount, date: "",  // "" = leave Notion's date untouched
-          categories: entry.categories, source: entry.source,
+          categories: entry.categories, source: entry.source, mode: entry.mode || "",
           comment: entry.comment, other_partner: entry.other_partner,
           add_to_split: entry.add_to_split, from_split: entry.from_split,
           split_added: entry.split_added, processed: want,
@@ -3018,6 +3027,8 @@
       _browseFull  = data.entries || [];
       _browseShown = Math.min(_browseFull.length, BROWSE_CHUNK);
       _lastBrowse  = Object.assign({}, data, { entries: _browseFull });  // full set for lookups
+      _learnModes(_browseFull);
+      if (typeof _fbRender === "function") _fbRender();  // mode filter picker may have new options
       _paintBrowse();
       document.getElementById("results-browse").style.display = "block";
       if (!bg && !opts.partial) document.getElementById("results-browse").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3055,7 +3066,35 @@
   }
 
   // Populate category/source dropdowns + form options from all-time data
-  let _allCats = [], _allSrcs = [], _catsLoaded = false, _srcsLoaded = false;
+  let _allCats = [], _allSrcs = [], _allModes = [], _catsLoaded = false, _srcsLoaded = false;
+
+  // "Mode" (UPI / Card / Cash …) — single value like Source, but backed by a
+  // native <datalist> so it works identically in the filter builder, the
+  // Add/Edit modal and bulk-edit rows with no bespoke combobox JS. The option
+  // list is discovered from whatever the loaded expenses already use.
+  function _syncModeDatalist() {
+    let dl = document.getElementById("ps-modes");
+    if (!dl) {
+      dl = document.createElement("datalist");
+      dl.id = "ps-modes";
+      document.body.appendChild(dl);
+    }
+    dl.innerHTML = _allModes.map(m => `<option value="${_esc(m)}"></option>`).join("");
+  }
+  function _learnModes(entries) {
+    let changed = false;
+    (entries || []).forEach(e => {
+      const m = (e.mode || "").trim();
+      if (m && !_allModes.includes(m)) { _allModes.push(m); changed = true; }
+    });
+    if (changed) { _allModes.sort((a, b) => a.localeCompare(b)); _syncModeDatalist(); }
+  }
+  function _registerNewMode(raw) {
+    const name = String(raw ?? "").trim();
+    if (!name) return null;
+    if (!_allModes.includes(name)) { _allModes.push(name); _allModes.sort((a, b) => a.localeCompare(b)); _syncModeDatalist(); }
+    return name;
+  }
 
   // "Type and push" a brand-new category/source name into the shared lists —
   // Notion itself creates the option on save, this just makes it pickable now.
@@ -3078,6 +3117,7 @@
       const data = await res.json();
       _allCats = (data.by_category || []).map(c => c.name);
       _allSrcs = (data.by_source   || []).map(s => s.name);
+      _syncModeDatalist();
       _efBuildFormOptions();
       if (typeof _fbRender === "function") _fbRender();  // repopulate value dropdowns
     } catch {
@@ -3229,6 +3269,7 @@
     document.getElementById("ef-amount").value = entry ? entry.amount : "";
     document.getElementById("ef-date").value   = entry ? _toLocalInput(entry.datetime || entry.date) : _nowLocalInput();
     document.getElementById("ef-source").value = entry ? (entry.source || "") : "";
+    document.getElementById("ef-mode").value = entry ? (entry.mode || "") : "";
     document.getElementById("ef-comment").value = entry ? (entry.comment || "") : "";
     document.getElementById("ef-other-partner").value = entry ? (entry.other_partner || "") : "";
     document.getElementById("ef-add-to-split").checked = entry ? !!entry.add_to_split : false;
@@ -3267,6 +3308,7 @@
     const amount = document.getElementById("ef-amount").value;
     const date   = document.getElementById("ef-date").value;
     const source = document.getElementById("ef-source").value;
+    const mode   = document.getElementById("ef-mode").value.trim();
     const cats   = [...document.querySelectorAll(".ef-pill.on")].map(p => p.dataset.cat);
     const errEl  = document.getElementById("ef-error");
 
@@ -3287,7 +3329,7 @@
     const swidRaw = document.getElementById("ef-swid").value.trim();
     const swid    = swidRaw === "" ? null : Number(swidRaw);
     const payload = {
-      name, amount: parseFloat(amount), date: sendDate, categories: cats, source,
+      name, amount: parseFloat(amount), date: sendDate, categories: cats, source, mode,
       comment: document.getElementById("ef-comment").value,
       other_partner: document.getElementById("ef-other-partner").value,
       add_to_split: document.getElementById("ef-add-to-split").checked,
@@ -3300,13 +3342,14 @@
       title: name, amount: payload.amount,
       date: (finalDate || "").slice(0, 10),
       datetime: changed ? _localInputToNotion(finalDate) : (origEntry ? origEntry.datetime : ""),
-      categories: cats, source,
+      categories: cats, source, mode,
       comment: payload.comment, other_partner: payload.other_partner,
       add_to_split: payload.add_to_split, from_split: payload.from_split,
       split_added: payload.split_added, processed: payload.processed,
       splitwise_id: swid,
     };
 
+    if (mode) _registerNewMode(mode);
     // Close the modal now — the save runs in the background with a row loader.
     _efClose();
     _saveEntry(editId, payload, fields);
@@ -3518,11 +3561,17 @@
         <label>Categories</label>
         <div class="ef-pills" id="ef-cats"></div>
       </div>
-      <div class="ef-field">
-        <label for="ef-source">Source</label>
-        <div class="src-cbx" data-src-cbx>
-          <input type="text" id="ef-source" class="src-cbx-input" placeholder="— None —" autocomplete="off">
-          <div class="src-cbx-list" hidden></div>
+      <div class="ef-field" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <div class="ef-field">
+          <label for="ef-source">Source</label>
+          <div class="src-cbx" data-src-cbx>
+            <input type="text" id="ef-source" class="src-cbx-input" placeholder="— None —" autocomplete="off">
+            <div class="src-cbx-list" hidden></div>
+          </div>
+        </div>
+        <div class="ef-field">
+          <label for="ef-mode">Mode</label>
+          <input type="text" id="ef-mode" list="ps-modes" placeholder="— None —" autocomplete="off">
         </div>
       </div>
       <div class="ef-field">
@@ -3641,9 +3690,9 @@ function _exportCSV() {
   var src = _fbFilter(_lastBrowse.entries);   // export what the filters actually show
   var rows = src.map(function(e) {
     var cats = (e.categories || []).join('; ');
-    return [e.title||'', String(e.amount||''), e.date||'', _fmtTime(e.datetime)||'', cats, e.source||''];
+    return [e.title||'', String(e.amount||''), e.date||'', _fmtTime(e.datetime)||'', cats, e.source||'', e.mode||''];
   });
-  var csv = ['Title,Amount,Date,Time,Categories,Source'].concat(
+  var csv = ['Title,Amount,Date,Time,Categories,Source,Mode'].concat(
     rows.map(function(r){ return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(','); })
   ).join('\r\n');
   var blob = new Blob([csv], {type:'text/csv'});

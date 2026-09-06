@@ -298,10 +298,11 @@ class ExpensesCreateView(ExpensesBaseView):
         date_str   = (data.get("date") or "").strip()
         categories = [c for c in (data.get("categories") or []) if c]
         source     = (data.get("source") or "").strip()
+        mode       = (data.get("mode") or "").strip()
 
         try:
             page_id = self.service.create_entry(
-                name, amount, date_str, categories, source, **_extra_fields(data)
+                name, amount, date_str, categories, source, mode, **_extra_fields(data)
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -328,10 +329,11 @@ class ExpensesUpdateView(ExpensesBaseView):
         date_str   = (data.get("date") or "").strip()
         categories = [c for c in (data.get("categories") or []) if c]
         source     = (data.get("source") or "").strip()
+        mode       = (data.get("mode") or "").strip()
 
         try:
             self.service.update_entry(
-                page_id, name, amount, date_str, categories, source, **_extra_fields(data)
+                page_id, name, amount, date_str, categories, source, mode, **_extra_fields(data)
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)

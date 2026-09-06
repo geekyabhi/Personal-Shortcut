@@ -306,6 +306,14 @@ class ExpensesService:
         else:
             srcs = [opt["name"] for opt in src_prop.get("multi_select", [])]
             src = srcs[0] if srcs else ""
+        # "Mode" (how the money moved — UPI / Card / Cash …). Notion type is
+        # multi_select, but the app treats it as a single value like Source.
+        mode_prop = props.get("Mode") or {}
+        if mode_prop.get("select"):
+            mode = mode_prop["select"]["name"]
+        else:
+            modes = [opt["name"] for opt in mode_prop.get("multi_select", [])]
+            mode = modes[0] if modes else ""
         # Notion's Date "start" is either a bare date ("2026-07-01") or a full
         # datetime ("2026-07-01T14:23:00.000+05:30"). Keep both: `datetime` is the
         # raw value (has the time when Notion recorded one), `date` stays the
@@ -326,6 +334,7 @@ class ExpensesService:
             "datetime": date_start,
             "categories": cats,
             "source": src,
+            "mode": mode,
             "comment": comment,
             "other_partner": other_partner,
             "add_to_split": bool((props.get("Add to Split") or {}).get("checkbox")),
@@ -350,6 +359,14 @@ class ExpensesService:
                 return t
         return "select"
 
+    def _detect_prop_type(self, rows, prop_name: str, default: str = "multi_select") -> str:
+        for row in rows:
+            p = (row.get("properties") or {}).get(prop_name) or {}
+            t = p.get("type")
+            if t in ("select", "multi_select"):
+                return t
+        return default
+
     def _build_page_properties(
         self,
         name: str,
@@ -359,6 +376,8 @@ class ExpensesService:
         source: str,
         title_prop: str,
         source_type: str,
+        mode: str = "",
+        mode_type: str = "multi_select",
     ) -> dict:
         props = {
             title_prop: {"title": [{"text": {"content": name}}]},
@@ -373,6 +392,10 @@ class ExpensesService:
             props["Source"] = {"multi_select": [{"name": source}] if source else []}
         else:
             props["Source"] = {"select": {"name": source} if source else None}
+        if mode_type == "select":
+            props["Mode"] = {"select": {"name": mode} if mode else None}
+        else:
+            props["Mode"] = {"multi_select": [{"name": mode}] if mode else []}
         return props
 
     def _extract_groups(self, props, group_by) -> list:
@@ -1112,6 +1135,7 @@ class ExpensesService:
         date_str: str,
         categories: list,
         source: str,
+        mode: str = "",
         **extra,
     ) -> str:
         """Validates fields, creates the Notion page, busts cache. Returns page_id.
@@ -1127,8 +1151,10 @@ class ExpensesService:
         cached_rows, _, _, _ = self.dl.get_cached_rows()
         title_prop = self._detect_title_prop(cached_rows)
         source_type = self._detect_source_type(cached_rows)
+        mode_type = self._detect_prop_type(cached_rows, "Mode")
         properties = self._build_page_properties(
-            name, amount, date_str, categories, source, title_prop, source_type
+            name, amount, date_str, categories, source, title_prop, source_type,
+            mode=mode, mode_type=mode_type,
         )
         properties.update(self._extra_props(**extra))
         result = self.dl.create_page(properties)
@@ -1202,6 +1228,7 @@ class ExpensesService:
         date_str: str,
         categories: list,
         source: str,
+        mode: str = "",
         **extra,
     ) -> None:
         """Patches the Notion page, busts cache. An empty ``date_str`` leaves
@@ -1215,8 +1242,10 @@ class ExpensesService:
         cached_rows, _, _, _ = self.dl.get_cached_rows()
         title_prop = self._detect_title_prop(cached_rows)
         source_type = self._detect_source_type(cached_rows)
+        mode_type = self._detect_prop_type(cached_rows, "Mode")
         properties = self._build_page_properties(
-            name, amount, date_str, categories, source, title_prop, source_type
+            name, amount, date_str, categories, source, title_prop, source_type,
+            mode=mode, mode_type=mode_type,
         )
         properties.update(self._extra_props(**extra))
         self.dl.patch_page(page_id, {"properties": properties})
@@ -1304,6 +1333,7 @@ class ExpensesService:
             row_comment = s.get("comment", original["comment"])
             comment = f"{trace_note}\n{row_comment}" if row_comment else trace_note
             source = s.get("source", original["source"])
+            mode = s.get("mode", original.get("mode", ""))
             other_partner = s.get("other_partner", original["other_partner"])
             add_to_split = s.get("add_to_split", original["add_to_split"])
             from_split = s.get("from_split", original["from_split"])
@@ -1311,7 +1341,7 @@ class ExpensesService:
             processed = s.get("processed", original["processed"])
             new_id = self.create_entry(
                 name, float(s["amount"]), original_date,
-                [s["category"].strip()], source,
+                [s["category"].strip()], source, mode,
                 comment=comment, other_partner=other_partner,
                 add_to_split=add_to_split, from_split=from_split,
                 split_added=split_added, processed=processed,
