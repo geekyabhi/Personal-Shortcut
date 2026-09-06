@@ -646,6 +646,9 @@
       font-family: inherit;
     }
     .theme-btn:hover { transform: scale(1.12); box-shadow: 0 4px 18px rgba(0,0,0,0.16); }
+    /* Generic inline SVG icon — replaces ad-hoc emoji. */
+    .ic { width: 1em; height: 1em; display: inline-block; flex: none; vertical-align: -0.15em; stroke: currentColor; margin-right: 0.35em; }
+    .theme-btn .ic { width: 1.1rem; height: 1.1rem; margin-right: 0; }
     [data-theme="dark"] .theme-btn {
       background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10);
       box-shadow: 0 2px 12px rgba(0,0,0,0.40);
@@ -767,7 +770,7 @@
           <a href="/expenses/splitwise/">Splitwise</a>
         </div>
       </div>
-      <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
+      <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
     </div>
 
     <!-- Unlock modal -->
@@ -791,7 +794,7 @@
         <div class="cache-dot" id="cache-dot" style="background:#D1D5DB;"></div>
         <span id="cache-status">Loading…</span>
       </div>
-      <button id="cache-refresh-btn" onclick="forceRefresh()">↺ Refresh</button>
+      <button id="cache-refresh-btn" onclick="forceRefresh()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh</button>
     </div>
 
     <h1>Expense Charts</h1>
@@ -907,7 +910,7 @@
 
         <!-- Header + toolbar -->
         <div class="panel-header">
-          <span class="panel-title">📊 Spend by Category</span>
+          <span class="panel-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Spend by Category</span>
           <div class="panel-controls">
 
             <!-- View -->
@@ -1314,9 +1317,9 @@
     { key: 'title',         label: 'Name',          type: 'text'   },
     { key: 'amount',        label: 'Amount',        type: 'number' },
     { key: 'date',          label: 'Date',          type: 'date'   },
-    { key: 'categories',    label: 'Category',      type: 'text'   },
-    { key: 'source',        label: 'Source',        type: 'text'   },
-    { key: 'mode',          label: 'Mode',          type: 'text'   },
+    { key: 'categories',    label: 'Category',      type: 'multi'  },
+    { key: 'source',        label: 'Source',        type: 'select' },
+    { key: 'mode',          label: 'Mode',          type: 'select' },
     { key: 'comment',       label: 'Comment',       type: 'text'   },
     { key: 'other_partner', label: 'Other partner', type: 'text'   },
     { key: 'splitwise_id',  label: 'Splitwise ID',  type: 'number' },
@@ -1330,7 +1333,23 @@
     number: [['eq','='],['ne','≠'],['gt','>'],['lt','<'],['gte','≥'],['lte','≤'],['between','between'],['empty','is empty'],['nempty','is not empty']],
     date:   [['on','is on'],['before','is before'],['after','is after'],['between','is between'],['empty','is empty'],['nempty','is not empty']],
     bool:   [['true','is checked'],['false','is unchecked']],
+    multi:  [['has','includes'],['nhas',"doesn't include"],['only','is only'],['empty','is empty'],['nempty','is not empty']],
   };
+  // Category/Source/Mode value pickers — populated once from all-time data so
+  // the filter builder offers real dropdowns instead of free-text guessing.
+  let _allCats = [], _allSrcs = [], _allModes = [], _fbOptsLoaded = false;
+  (async function _fbLoadOptions() {
+    try {
+      const res = await fetch('/expenses/insights/?period=all');
+      if (!res.ok) return;
+      const data = await res.json();
+      _allCats  = (data.by_category || []).map(c => c.name);
+      _allSrcs  = (data.by_source   || []).map(s => s.name);
+      _allModes = (data.by_mode     || []).map(m => m.name);
+    } catch {}
+    _fbOptsLoaded = true;
+    _fbRender();
+  })();
   const _fbNoValue = op => op === 'empty' || op === 'nempty' || op === 'true' || op === 'false';
   const _fbField = k => FB_FIELDS.find(f => f.key === k) || {};
   const _fbType = k => _fbField(k).type || 'text';
@@ -1347,6 +1366,12 @@
   function _fbValueField(r, i) {
     if (_fbNoValue(r.op)) return '<span class="fb-vwrap fb-none"></span>';
     const t = _fbType(r.field);
+    if (t === 'multi' || t === 'select') {
+      const src = t === 'multi' ? _allCats : (r.field === 'mode' ? _allModes : _allSrcs);
+      const opts = src
+        .map(o => `<option value="${esc(o)}"${String(o) === String(r.value || '') ? ' selected' : ''}>${esc(o)}</option>`).join('');
+      return `<span class="fb-vwrap"><select data-i="${i}" data-k="value"><option value="">${_fbOptsLoaded ? '— pick —' : 'Loading…'}</option>${opts}</select></span>`;
+    }
     const inType = t === 'date' ? 'date' : t === 'number' ? 'number' : 'text';
     if (r.op === 'between') {
       return `<span class="fb-vwrap">
@@ -2729,20 +2754,22 @@
     btn.textContent = "…";
     await loadCharts(true).catch(() => {});
     btn.disabled = false;
-    btn.textContent = "↺ Refresh";
+    btn.innerHTML = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh';
   }
 
   /* ── Theme toggle (+ 15-rapid-tap hidden-expenses secret) ── */
   (function() {
     const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
     const btn = document.getElementById('theme-btn');
-    if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+    const ICON_SUN = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+    const ICON_MOON = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    if (btn) btn.innerHTML = isDark() ? ICON_MOON : ICON_SUN;
     let _tc = 0, _tct = null;
     window._toggleTheme = function() {
       const dark = !isDark();
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
       localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
-      if (btn) btn.textContent = dark ? '🌙' : '☀️';
+      if (btn) btn.innerHTML = dark ? ICON_MOON : ICON_SUN;
 
       _tc++;
       clearTimeout(_tct);

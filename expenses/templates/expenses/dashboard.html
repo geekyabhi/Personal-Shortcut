@@ -566,6 +566,8 @@
       font-family: inherit;
     }
     .theme-btn:hover { transform: scale(1.12); box-shadow: 0 4px 18px rgba(0,0,0,0.16); }
+    .theme-btn .ic { width: 1.1rem; height: 1.1rem; margin-right: 0; }
+    #unlock-badge .ic { margin-right: 0.3em; }
     [data-theme="dark"] .theme-btn {
       background: rgba(28,28,40,0.92); border-color: rgba(255,255,255,0.10);
       box-shadow: 0 2px 12px rgba(0,0,0,0.40);
@@ -887,6 +889,14 @@
     .expense-edit-btn:active  { transform: scale(0.94); }
     .expense-del-btn         { border-color: #FECACA !important; color: #EF4444 !important; }
     .expense-del-btn:hover   { background: #FEF2F2 !important; border-color: #FCA5A5 !important; color: #DC2626 !important; }
+    /* Generic inline SVG icon — replaces ad-hoc emoji throughout the dashboard.
+       Sits at 1em so it scales with whatever text it's next to. */
+    .ic {
+      width: 1em; height: 1em; display: inline-block; flex: none;
+      vertical-align: -0.15em; stroke: currentColor; margin-right: 0.35em;
+    }
+    .section-heading .ic { margin-right: 0.5em; }
+    .del-icon .ic { width: 1.6rem; height: 1.6rem; stroke-width: 1.75; color: #EF4444; margin-right: 0; }
     [data-theme="dark"] .ef-box { background: #1B1B28; }
     [data-theme="dark"] .ef-title { color: #F9FAFB; }
     [data-theme="dark"] .ef-field label { color: #6B7280; }
@@ -1078,7 +1088,7 @@
           <a href="/expenses/splitwise/">Splitwise</a>
         </div>
       </div>
-      <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
+      <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
     </div>
 
     <div class="bg-markers">
@@ -1093,10 +1103,10 @@
         <div class="cache-dot" id="cache-dot" style="background:#D1D5DB;"></div>
         <span id="cache-status">Loading…</span>
       </div>
-      <button id="cache-refresh-btn" onclick="forceRefresh()">↺ Refresh</button>
+      <button id="cache-refresh-btn" onclick="forceRefresh()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh</button>
     </div>
 
-    <h1 id="page-title" style="cursor:default;user-select:none;">Expenses Dashboard<span id="unlock-badge" onclick="_lock(event)" title="Click to lock">🔓 unlocked</span></h1>
+    <h1 id="page-title" style="cursor:default;user-select:none;">Expenses Dashboard<span id="unlock-badge" onclick="_lock(event)" title="Click to lock"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>unlocked</span></h1>
 
     <!-- unlock modal -->
     <div class="modal-overlay" id="unlock-modal" onclick="_modalBgClick(event)">
@@ -1160,10 +1170,10 @@
 
     <!-- ─── BROWSE EXPENSES (right below the filter) ─────────────── -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;gap:0.5rem;flex-wrap:wrap;">
-      <div class="section-heading" style="margin-top:0;cursor:default;user-select:none;" onclick="_titleClick()"><span>📋</span> Browse Expenses</div>
+      <div class="section-heading" style="margin-top:0;cursor:default;user-select:none;" onclick="_titleClick()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Browse Expenses</div>
       <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-        <button class="btn-ghost" id="dv-toggle" onclick="_detailViewToggle()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Show extra details per row, click a row to inspect">🔍 Detail view</button>
-        <button class="btn-ghost" id="be-toggle" onclick="_bulkEditToggle()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Edit multiple rows inline">✎ Bulk edit</button>
+        <button class="btn-ghost" id="dv-toggle" onclick="_detailViewToggle()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Show extra details per row, click a row to inspect"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Detail view</button>
+        <button class="btn-ghost" id="be-toggle" onclick="_bulkEditToggle()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Edit multiple rows inline"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bulk edit</button>
         <button class="btn-ghost" onclick="_exportCSV()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Export current list to CSV">↓ CSV</button>
         <button class="btn-primary" onclick="_efOpen(null)" style="margin-top:0;">+ Add Expense</button>
       </div>
@@ -1207,7 +1217,7 @@
       </div>
     </div>
 
-    <div class="section-heading" style="margin-top:2rem;"><span>📊</span> Summary</div>
+    <div class="section-heading" style="margin-top:2rem;"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Summary</div>
 
     <div id="loading-summary" class="spinner" style="display:none;">
       <div class="skeleton-wrap">
@@ -1234,7 +1244,7 @@
       </div>
 
       <!-- ─── SECTION 2: INSIGHTS (rendered alongside summary) ─── -->
-      <div class="section-heading"><span>🔍</span> Insights</div>
+      <div class="section-heading"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Insights</div>
 
       <div id="insights-body">
         <!-- hero concentration bar -->
@@ -1274,7 +1284,7 @@
 
     <!-- ─── SECTION: SPLITWISE ──────────────────────────────────── -->
     <div id="sw-section" style="display:none;margin-top:2rem;">
-      <div class="section-heading" style="margin-top:0;"><span>🤝</span> Splitwise</div>
+      <div class="section-heading" style="margin-top:0;"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Splitwise</div>
       <div class="card">
         <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
           <div class="sw-bal"><div class="sw-bal-label">You owe</div><div class="sw-bal-val" id="sw-you-owe">—</div></div>
@@ -1283,7 +1293,7 @@
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
           <h3 style="margin:0;">Recent activity</h3>
-          <button class="btn-ghost" style="font-size:0.8rem;padding:0.4rem 1rem;" onclick="_swInit(true)">↺ Refresh</button>
+          <button class="btn-ghost" style="font-size:0.8rem;padding:0.4rem 1rem;" onclick="_swInit(true)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh</button>
         </div>
         <div id="sw-expense-list"><div class="empty-state">Loading…</div></div>
       </div>
@@ -1436,7 +1446,7 @@
 
   function _splitBuildPanel(panel, entry, meta) {
     const staged = _queueGet(entry.page_id);
-    const grpOpts = ['<option value="__individual__">👤 Individual (friends, no group)</option>']
+    const grpOpts = ['<option value="__individual__">Individual (friends, no group)</option>']
       .concat(meta.groups.map(g => `<option value="${g.id}">${g.name}</option>`)).join("");
     panel.innerHTML = `
       <div style="font-size:0.72rem;color:#9CA3AF;margin-bottom:0.4rem;">Splitting <strong>${fmt(entry.amount)}</strong> · you paid the full amount</div>
@@ -2159,6 +2169,29 @@
     edit:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
   };
+  // Same Feather-style stroke icons, sized generically via the shared `.ic`
+  // class — used wherever an emoji used to stand in (headings, tags, toggle
+  // buttons, comments…) rather than one-off styling per spot.
+  const _IC = {
+    edit:     '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+    sun:      '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+    moon:     '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+    refresh:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+    lock:     '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    unlock:   '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>',
+    list:     '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+    search:   '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+    barChart: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+    users:    '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    link:     '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+    comment:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+    card:     '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
+    user:     '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    plus:     '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+    scissors: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>',
+    x:        '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    trash:    '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
+  };
 
   function _browseRow(e) {
     const pendingSplit = e.add_to_split && !e.split_added;
@@ -2169,20 +2202,20 @@
       ? '<span class="split-badge queued">● queued</span>'
       : (e.add_to_split ? '<span class="split-badge pending">to split</span>' : '');
     const splitUI = pendingSplit ? `
-          <button type="button" class="split-toggle" data-split-toggle="${e.page_id}">${staged ? "✏️ Edit queued split" : "🔗 Split on Splitwise"}</button>
+          <button type="button" class="split-toggle" data-split-toggle="${e.page_id}">${staged ? _IC.edit + "Edit queued split" : _IC.link + "Split on Splitwise"}</button>
           <div class="split-panel" data-split-page="${e.page_id}" hidden></div>` : '';
     const cmt = ((_detailView || e.add_to_split) && e.comment)
-      ? `<div class="expense-comment">💬 ${e.comment.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\n/g, "<br>")}</div>`
+      ? `<div class="expense-comment">${_IC.comment}${e.comment.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\n/g, "<br>")}</div>`
       : '';
     let extra = '';
     if (_detailView) {
       const cats = _fTag(e.categories).map(c => `<span class="tag tag-cat">${c}</span>`).join("");
       const src  = e.source ? `<span class="tag tag-src">${e.source}</span>` : "";
-      const mode = e.mode ? `<span class="tag tag-src">💳 ${_esc(e.mode)}</span>` : "";
-      const other = e.other_partner ? `<span class="tag tag-src">👤 ${_esc(e.other_partner)}</span>` : "";
+      const mode = e.mode ? `<span class="tag tag-src">${_IC.card}${_esc(e.mode)}</span>` : "";
+      const other = e.other_partner ? `<span class="tag tag-src">${_IC.user}${_esc(e.other_partner)}</span>` : "";
       const swid  = (e.splitwise_id != null && e.splitwise_id !== "") ? `<span class="tag tag-src">Splitwise ID #${e.splitwise_id}</span>` : "";
       const proc  = `<span class="tag ${e.processed ? "tag-cat" : "tag-flag-off"}">${e.processed ? "✓ processed" : "○ unprocessed"}</span>`;
-      const addSplit   = e.add_to_split ? '<span class="tag tag-cat">➕ add to split</span>' : "";
+      const addSplit   = e.add_to_split ? `<span class="tag tag-cat">${_IC.plus}add to split</span>` : "";
       const fromSplit  = e.from_split   ? '<span class="tag tag-cat">⇦ from split</span>'   : "";
       const splitAdded = e.split_added
         ? '<span class="tag tag-cat">✓ split added</span>'
@@ -2218,7 +2251,7 @@
     _bulkEdit = !_bulkEdit;
     if (_bulkEdit && _detailView) _detailViewToggle();  // the two modes don't mix
     const btn = document.getElementById("be-toggle");
-    btn.textContent = _bulkEdit ? "✕ Exit bulk edit" : "✎ Bulk edit";
+    btn.innerHTML = _bulkEdit ? _IC.x + "Exit bulk edit" : _IC.edit + "Bulk edit";
     btn.classList.toggle("btn-primary", _bulkEdit);
     btn.classList.toggle("btn-ghost", !_bulkEdit);
     document.getElementById("be-bar").hidden = !_bulkEdit;
@@ -2232,7 +2265,7 @@
     _detailView = !_detailView;
     if (_detailView && _bulkEdit) _bulkEditToggle();  // the two modes don't mix
     const btn = document.getElementById("dv-toggle");
-    btn.textContent = _detailView ? "✕ Exit detail view" : "🔍 Detail view";
+    btn.innerHTML = _detailView ? _IC.x + "Exit detail view" : _IC.search + "Detail view";
     btn.classList.toggle("btn-primary", _detailView);
     btn.classList.toggle("btn-ghost", !_detailView);
     _paintBrowse(true);
@@ -2402,7 +2435,7 @@
       return;
     }
     const synth = { amount: parseFloat(row.querySelector(".sp-amount").value) || 0 };
-    const grpOpts = ['<option value="__individual__">👤 Individual (friends, no group)</option>']
+    const grpOpts = ['<option value="__individual__">Individual (friends, no group)</option>']
       .concat(meta.groups.map(g => `<option value="${g.id}">${_esc(g.name)}</option>`)).join("");
     panel.innerHTML = `
       <div style="font-size:0.72rem;color:#9CA3AF;margin-bottom:0.4rem;">Splitting <strong data-sw-amt>${fmt(synth.amount)}</strong> · you paid the full amount</div>
@@ -2717,7 +2750,7 @@
             <label><input type="checkbox" data-bef="from_split" ${s.from_split ? "checked" : ""}> From Split</label>
             <label><input type="checkbox" data-bef="split_added" ${s.split_added ? "checked" : ""}> Split Added</label>
           </div>
-          <button type="button" class="dv-split-link be-split-btn" style="grid-column:1/-1;">✂️ Split across categories</button>
+          <button type="button" class="dv-split-link be-split-btn" style="grid-column:1/-1;">${_IC.scissors}Split across categories</button>
         </div>
       </div>`;
   }
@@ -3081,7 +3114,7 @@
       }
     } finally {
       btn.disabled = false;
-      btn.textContent = "↺ Refresh";
+      btn.innerHTML = _IC.refresh + "Refresh";
     }
   }
 
@@ -3254,6 +3287,7 @@
 
   /* ── Expense form modal ── */
   let _efPageId = null; // null = create mode, string = edit mode
+  let _efEntry = null;  // full entry object backing the modal, when editing
 
   function _efBuildFormOptions() {
     // Category pills
@@ -3302,6 +3336,8 @@
   }
   function _efOpen(entry) {
     _efPageId = entry ? entry.page_id : null;
+    _efEntry = entry || null;
+    document.getElementById("ef-split-btn").hidden = !entry;
     document.getElementById("ef-title").textContent = entry ? "Edit Expense" : "Add Expense";
     document.getElementById("ef-name").value   = entry ? entry.title  : "";
     document.getElementById("ef-amount").value = entry ? entry.amount : "";
@@ -3334,6 +3370,13 @@
 
   function _efBgClick(e) {
     if (e.target === document.getElementById("ef-overlay")) _efClose();
+  }
+
+  function _efOpenSplit() {
+    if (!_efEntry) return;
+    const entry = _efEntry;
+    _efClose();
+    _spOpen(entry);
   }
 
   function _rowSaving(pageId, on) {
@@ -3539,13 +3582,13 @@
   (function() {
     const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
     const btn = document.getElementById('theme-btn');
-    if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+    if (btn) btn.innerHTML = isDark() ? _IC.moon : _IC.sun;
     let _tc = 0, _tct = null;
     window._toggleTheme = function() {
       const dark = !isDark();
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
       localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
-      if (btn) btn.textContent = dark ? '🌙' : '☀️';
+      if (btn) btn.innerHTML = dark ? _IC.moon : _IC.sun;
 
       _tc++;
       clearTimeout(_tct);
@@ -3645,6 +3688,7 @@
         <div class="ef-sw-members" id="ef-sw-members"></div>
         <div style="font-size:0.72rem;color:#9CA3AF;margin-top:0.4rem;">Splits the amount equally between you and the people you tick. You are recorded as the payer.</div>
       </details>
+      <button type="button" class="dv-split-link" id="ef-split-btn" onclick="_efOpenSplit()" hidden><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>Split across categories</button>
     </div>
     <div class="ef-error" id="ef-error"></div>
     <div class="ef-actions">
@@ -3656,7 +3700,7 @@
 
 <div class="del-overlay" id="del-overlay" onclick="_delBgClick(event)">
   <div class="del-box">
-    <div class="del-icon">🗑️</div>
+    <div class="del-icon"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></div>
     <div class="del-heading">Delete Expense?</div>
     <div class="del-sub">You're about to delete <strong id="del-name"></strong>.<br>This will archive it in Notion and cannot be undone.</div>
     <div class="del-actions">
@@ -3677,7 +3721,7 @@
       <button class="ef-btn-save" id="dv-edit-btn">Edit</button>
       <button class="del-btn-confirm" id="dv-del-btn" style="flex:none;padding:0.6rem 1rem;">Delete</button>
     </div>
-    <button type="button" class="dv-split-link" id="dv-split-btn">✂️ Split across categories</button>
+    <button type="button" class="dv-split-link" id="dv-split-btn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>Split across categories</button>
   </div>
 </div>
 

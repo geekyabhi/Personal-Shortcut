@@ -116,6 +116,7 @@
     .dir-item:last-child { border-bottom: none; }
     .dir-item:hover { background: rgba(79,70,229,0.05); border-radius: 10px; }
     .dir-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--grad); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex: none; }
+    .dir-icon .ic { width: 1.05rem; height: 1.05rem; margin-right: 0; }
     .dir-body { flex: 1; min-width: 0; }
     .dir-name { display: block; font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .dir-sub { display: block; font-size: 0.76rem; color: #9CA3AF; margin-top: 0.2rem; }
@@ -255,6 +256,10 @@
       border: none; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.12); font-size: 1rem; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
     }
+    /* Generic inline SVG icon — replaces ad-hoc emoji. */
+    .ic { width: 1em; height: 1em; display: inline-block; flex: none; vertical-align: -0.15em; stroke: currentColor; margin-right: 0.35em; }
+    .theme-btn .ic { width: 1.1rem; height: 1.1rem; margin-right: 0; }
+    .section-heading .ic { margin-right: 0.5em; }
     #toast-container { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 0.5rem; }
     .toast { background: #111827; color: #fff; font-size: 0.82rem; font-weight: 600; padding: 0.6rem 1rem; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
     .toast.success { background: #059669; } .toast.error { background: #DC2626; }
@@ -307,13 +312,13 @@
           <a href="/expenses/splitwise/" class="active">Splitwise</a>
         </div>
       </div>
-      <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
+      <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
     </div>
 
     <div class="head-row">
       <h1>Splitwise</h1>
       <span class="as-who" id="as-who"></span>
-      <button class="refresh-btn" id="refresh-btn" onclick="_load(true)">↺ Refresh</button>
+      <button class="refresh-btn" id="refresh-btn" onclick="_load(true)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh</button>
     </div>
 
     <div id="banner" class="banner" hidden></div>
@@ -388,12 +393,14 @@
     (function () {
       const btn = document.getElementById('theme-btn');
       const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
-      if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+      const ICON_SUN = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+      const ICON_MOON = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+      if (btn) btn.innerHTML = isDark() ? ICON_MOON : ICON_SUN;
       window._toggleTheme = function () {
         const dark = !isDark();
         document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
         localStorage.setItem('ps_theme', dark ? 'dark' : 'light');
-        if (btn) btn.textContent = dark ? '🌙' : '☀️';
+        if (btn) btn.innerHTML = dark ? ICON_MOON : ICON_SUN;
       };
     })();
 
@@ -643,7 +650,7 @@
       } catch (e) {
         showToast('Failed to load Splitwise: ' + e.message, 'error');
       } finally {
-        rb.disabled = false; rb.textContent = '↺ Refresh';
+        rb.disabled = false; rb.innerHTML = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh';
       }
     }
 
@@ -660,10 +667,13 @@
       const q = (document.getElementById('dir-search').value || '').trim().toLowerCase();
       const real = S.groups.filter(g => g.id !== 0).sort((a, b) => a.name.localeCompare(b.name));
 
+      const ICON_LIST = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
+      const ICON_USER = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+      const ICON_USERS = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
       let entries = [
-        { id: '', name: 'All activity', sub: 'every recent expense', icon: '📋' },
-        { id: '0', name: 'Individual / non-group', sub: 'expenses not in any group', icon: '👤' },
-        ...real.map(g => ({ id: String(g.id), name: g.name, sub: `${(g.members || []).length} members`, icon: '👥' })),
+        { id: '', name: 'All activity', sub: 'every recent expense', icon: ICON_LIST },
+        { id: '0', name: 'Individual / non-group', sub: 'expenses not in any group', icon: ICON_USER },
+        ...real.map(g => ({ id: String(g.id), name: g.name, sub: `${(g.members || []).length} members`, icon: ICON_USERS })),
       ];
       if (q) entries = entries.filter(x => x.name.toLowerCase().includes(q));
       el.innerHTML = entries.length

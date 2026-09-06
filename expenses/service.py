@@ -881,6 +881,7 @@ class ExpensesService:
 
         cat_totals: dict[str, dict] = {}
         src_totals: dict[str, dict] = {}
+        modes_seen: set[str] = set()
         grand_total = 0.0
         entries = []
 
@@ -899,6 +900,9 @@ class ExpensesService:
             rec = src_totals.setdefault(src, {"total": 0.0, "count": 0})
             rec["total"] += e["amount"]
             rec["count"] += 1
+
+            if e["mode"]:
+                modes_seen.add(e["mode"])
 
         cat_list = sorted(
             [
@@ -924,6 +928,7 @@ class ExpensesService:
             ],
             key=lambda x: -x["total"],
         )
+        mode_list = [{"name": m} for m in sorted(modes_seen)]
         top_entries = sorted(entries, key=lambda x: -x["amount"])[:10]
         top3_pct = (
             round(sum(c["total"] for c in cat_list[:3]) / grand_total * 100, 1)
@@ -937,6 +942,7 @@ class ExpensesService:
             "entry_count": len(rows),
             "by_category": cat_list,
             "by_source": src_list,
+            "by_mode": mode_list,
             "top_entries": top_entries,
             "concentration": {
                 "top1_name": cat_list[0]["name"] if cat_list else "",
