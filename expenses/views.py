@@ -63,7 +63,7 @@ class ExpensesSummaryView(ExpensesBaseView):
         try:
             result = self.service.get_summary(
                 period, group_by, year, month, week, day, start, end, force,
-                partial=partial,
+                partial=partial, filters=request.GET.get("filters", ""),
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -92,7 +92,7 @@ class ExpensesTimeseriesView(ExpensesBaseView):
 
         try:
             result = self.service.get_timeseries(
-                period, year, month, week, day, start, end, force, partial=partial
+                period, year, month, week, day, start, end, force, partial=partial, filters=request.GET.get("filters", "")
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -123,7 +123,7 @@ class ExpensesChartView(ExpensesBaseView):
         try:
             result = self.service.get_chart(
                 period, group_by, year, month, week, day, start, end, force,
-                partial=partial,
+                partial=partial, filters=request.GET.get("filters", ""),
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -152,7 +152,7 @@ class ExpensesCategoryTimeseriesView(ExpensesBaseView):
 
         try:
             result = self.service.get_category_timeseries(
-                period, year, month, week, day, start, end, force, partial=partial
+                period, year, month, week, day, start, end, force, partial=partial, filters=request.GET.get("filters", "")
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -181,7 +181,7 @@ class ExpensesInsightsView(ExpensesBaseView):
 
         try:
             result = self.service.get_insights(
-                period, year, month, week, day, start, end, force, partial=partial
+                period, year, month, week, day, start, end, force, partial=partial, filters=request.GET.get("filters", "")
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -260,7 +260,7 @@ class ExpensesHeatmapView(ExpensesBaseView):
 
         try:
             result = self.service.get_heatmap(
-                period, year, month, week, day, start, end, force, partial=partial
+                period, year, month, week, day, start, end, force, partial=partial, filters=request.GET.get("filters", "")
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)

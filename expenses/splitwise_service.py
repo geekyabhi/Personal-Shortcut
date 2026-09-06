@@ -125,6 +125,10 @@ class SplitwiseService:
         ``title``, ``amount``, ``date``). ``shares`` maps ``user_id -> owed
         amount`` and must include the current user; the current user is
         always recorded as having paid the full amount.
+
+        Returns ``{id, cost, description, total, my_share, note}`` — ``my_share``
+        is what the caller should reduce the Notion Amount to, and ``note`` is a
+        ready-made breakdown line for the Notion Comment.
         """
         me = self.client.me()
         amount = round(float(entry.get("amount") or 0), 2)
@@ -154,7 +158,7 @@ class SplitwiseService:
         }
         gid = None if mode == "individual" else (group_id or None)
 
-        return self.client.create_expense(
+        created = self.client.create_expense(
             description=entry.get("title") or "Expense",
             cost=amount,
             group_id=gid,
@@ -162,6 +166,26 @@ class SplitwiseService:
             currency=me.get("currency") or "",
             shares=shares_full,
         )
+
+        my_share = round(owed[me["id"]], 2)
+        # Best-effort: pull the created expense back to name the other participants
+        # for the Notion comment. Never fail the push over this.
+        note_lines = [f"Split — total {amount:.2f}, my share {my_share:.2f}"]
+        try:
+            for u in (self.client.get_expense(created["id"]) or {}).get("users", []):
+                if u["id"] != me["id"] and (u.get("owed") or 0) > 0.005:
+                    note_lines.append(f"{u['name']}: {round(u.get('owed') or 0.0, 2):.2f}")
+        except Exception:
+            pass
+
+        return {
+            "id": created.get("id"),
+            "cost": created.get("cost"),
+            "description": created.get("description"),
+            "total": amount,
+            "my_share": my_share,
+            "note": "\n".join(note_lines),
+        }
 
     def import_to_notion(self, expense_id, expenses_service) -> dict:
         """Copy the current user's share of a Splitwise expense into Notion.

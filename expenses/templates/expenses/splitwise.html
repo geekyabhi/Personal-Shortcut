@@ -152,6 +152,54 @@
     }
     .sel-all input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
     [data-theme="dark"] .sel-all { color: #9CA3AF; }
+
+    /* ── Filter builder ── */
+    .fb { margin-bottom: 0.8rem; }
+    .fb-title {
+      display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.68rem; font-weight: 700;
+      color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.45rem;
+    }
+    .fb-title .fb-clear {
+      text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 0.72rem;
+      color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; font-family: inherit;
+    }
+    .fb-title .fb-clear:hover { text-decoration: underline; }
+    .fb-rules { display: flex; flex-direction: column; gap: 0.45rem; }
+    .fb-rule {
+      display: grid;
+      grid-template-columns: minmax(110px, 0.9fr) minmax(110px, 0.9fr) minmax(120px, 1.3fr) 32px;
+      gap: 0.4rem; align-items: center;
+    }
+    .fb-rule > .fb-and {
+      grid-column: 1 / -1; font-size: 0.64rem; font-weight: 700; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.08em; margin: 0.1rem 0 -0.15rem;
+    }
+    .fb-rule select, .fb-rule input {
+      padding: 0.42rem 0.55rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.14);
+      font-size: 0.8rem; font-family: inherit; background: #fff; color: inherit; min-width: 0; width: 100%; flex: none;
+    }
+    [data-theme="dark"] .fb-rule select, [data-theme="dark"] .fb-rule input {
+      background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #E5E7EB;
+    }
+    .fb-vwrap { display: flex; gap: 0.3rem; align-items: center; min-width: 0; }
+    .fb-vwrap.fb-none::after { content: "—"; color: #9CA3AF; font-size: 0.85rem; padding-left: 0.2rem; }
+    .fb-rm {
+      width: 32px; height: 32px; flex: none; border-radius: 8px; border: 1px solid rgba(239,68,68,0.4);
+      background: transparent; color: #EF4444; cursor: pointer; font-size: 0.9rem; line-height: 1;
+    }
+    .fb-rm:hover { background: rgba(239,68,68,0.08); }
+    .fb-add {
+      margin-top: 0.5rem; border: 1px dashed rgba(124,58,237,0.4); border-radius: 8px; background: transparent;
+      color: var(--accent); font-size: 0.78rem; font-weight: 600; padding: 0.38rem 0.85rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .fb-add:hover { background: rgba(124,58,237,0.08); }
+    @media (max-width: 560px) {
+      .fb-rule { grid-template-columns: 1fr 1fr; }
+      .fb-rule .fb-vwrap { grid-column: 1 / 2; }
+      .fb-rule .fb-rm { grid-column: 2 / 3; justify-self: end; }
+    }
+
     .detail-controls { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
     .detail-controls input, .detail-controls select, #dir-search {
       flex: 1; min-width: 140px; padding: 0.45rem 0.7rem; border-radius: 10px;
@@ -310,6 +358,7 @@
           <button class="fchip" data-f="uncat">Uncategorised</button>
           <button class="fchip" data-f="payments">Settle-ups</button>
         </div>
+        <div class="fb" id="fb"></div>
         <div class="detail-controls">
           <input type="search" id="d-search" placeholder="Search description…" autocomplete="off">
           <select id="d-sort">
@@ -418,6 +467,154 @@
         x.classList.toggle('active', x.dataset.f === 'all' ? S.filters.size === 0 : S.filters.has(x.dataset.f));
       });
     }
+
+    /* ══ Notion-style filter builder (client-side, AND-combined, on top of the chips) ══ */
+    let _fbRules = [];
+    try { _fbRules = JSON.parse(localStorage.getItem('ps_sw_filters')) || []; } catch { _fbRules = []; }
+
+    const FB_FIELDS = [
+      { key: 'description',   label: 'Name',           type: 'text'   },
+      { key: 'cost',          label: 'Amount',         type: 'number' },
+      { key: 'date',          label: 'Date',           type: 'date'   },
+      { key: 'category',      label: 'Category',       type: 'select', opts: () => [...new Set(S.expenses.map(e => e.category).filter(Boolean))].sort() },
+      { key: 'group_name',    label: 'Group',          type: 'select', opts: () => [...new Set(S.expenses.map(e => e.group_name).filter(Boolean))].sort() },
+      { key: 'paid_by',       label: 'Paid by',        type: 'text'   },
+      { key: 'my_net',        label: 'My net (+lent / −owe)', type: 'number' },
+      { key: 'my_paid_share', label: 'I paid (amount)', type: 'number' },
+      { key: 'my_owed_share', label: 'My owed share',  type: 'number' },
+      { key: 'is_payment',    label: 'Is settle-up',   type: 'bool'   },
+      { key: 'in_notion',     label: 'In Notion',      type: 'bool'   },
+    ];
+    const FB_OPS = {
+      text:   [['contains','contains'],['ncontains',"doesn't contain"],['is','is'],['isnot','is not'],['empty','is empty'],['nempty','is not empty']],
+      number: [['eq','='],['ne','≠'],['gt','>'],['lt','<'],['gte','≥'],['lte','≤'],['between','between'],['empty','is empty'],['nempty','is not empty']],
+      date:   [['on','is on'],['before','is before'],['after','is after'],['between','is between'],['empty','is empty'],['nempty','is not empty']],
+      bool:   [['true','is checked'],['false','is unchecked']],
+      select: [['is','is'],['isnot','is not'],['contains','contains'],['empty','is empty'],['nempty','is not empty']],
+    };
+    const _fbNoValue = op => op === 'empty' || op === 'nempty' || op === 'true' || op === 'false';
+    const _fbField = k => FB_FIELDS.find(f => f.key === k) || {};
+    const _fbType = k => _fbField(k).type || 'text';
+    function _fbGet(e, field) {
+      if (field === 'in_notion') return S.imported.has(Number(e.id));
+      if (field === 'paid_by') return (e.users || []).filter(u => (u.paid || 0) > 0.005).map(u => u.name).join(', ');
+      if (field === 'date') return (e.date || '').slice(0, 10);
+      return e[field];
+    }
+    function _fbMatch(e, r) {
+      const type = _fbType(r.field);
+      const v = _fbGet(e, r.field);
+      const a = r.value, b = r.value2;
+      if (type === 'bool') return r.op === 'true' ? !!v : !v;
+      if (type === 'number') {
+        const n = (v === '' || v == null) ? null : Number(v);
+        if (r.op === 'empty')  return n == null;
+        if (r.op === 'nempty') return n != null;
+        if (n == null || a === '' || a == null) return false;
+        const x = Number(a), y = Number(b);
+        if (r.op === 'eq') return n === x;
+        if (r.op === 'ne') return n !== x;
+        if (r.op === 'gt') return n > x;
+        if (r.op === 'lt') return n < x;
+        if (r.op === 'gte') return n >= x;
+        if (r.op === 'lte') return n <= x;
+        if (r.op === 'between') return n >= Math.min(x, y) && n <= Math.max(x, y);
+        return true;
+      }
+      if (type === 'date') {
+        const d = v || '';
+        if (r.op === 'empty')  return !d;
+        if (r.op === 'nempty') return !!d;
+        if (!d || !a) return false;
+        if (r.op === 'on')     return d === a;
+        if (r.op === 'before') return d < a;
+        if (r.op === 'after')  return d > a;
+        if (r.op === 'between') return b ? (d >= a && d <= b) : d >= a;
+        return true;
+      }
+      const s = (v == null ? '' : String(v)).toLowerCase();
+      const t = (a || '').toLowerCase();
+      if (r.op === 'empty')     return !s;
+      if (r.op === 'nempty')    return !!s;
+      if (r.op === 'contains')  return s.includes(t);
+      if (r.op === 'ncontains') return !s.includes(t);
+      if (r.op === 'is')        return s === t;
+      if (r.op === 'isnot')     return s !== t;
+      return true;
+    }
+    function _fbComplete(r) {
+      if (_fbNoValue(r.op)) return true;
+      if (r.value == null || r.value === '') return false;
+      if (r.op === 'between' && (r.value2 == null || r.value2 === '')) return false;
+      return true;
+    }
+    function _fbFilter(list) {
+      const active = _fbRules.filter(r => r.field && r.op && _fbComplete(r));
+      return active.length ? list.filter(e => active.every(r => _fbMatch(e, r))) : list;
+    }
+    function _fbValueField(r, i) {
+      if (_fbNoValue(r.op)) return '<span class="fb-vwrap fb-none"></span>';
+      const f = _fbField(r.field);
+      if ((f.type === 'select') && f.opts) {
+        const opts = f.opts().map(o => `<option value="${esc(o)}"${String(o) === String(r.value || '') ? ' selected' : ''}>${esc(o)}</option>`).join('');
+        return `<span class="fb-vwrap"><select data-i="${i}" data-k="value"><option value="">— pick —</option>${opts}</select></span>`;
+      }
+      const inType = f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text';
+      if (r.op === 'between') {
+        return `<span class="fb-vwrap">
+          <input type="${inType}" data-i="${i}" data-k="value"  value="${esc(r.value ?? '')}">
+          <input type="${inType}" data-i="${i}" data-k="value2" value="${esc(r.value2 ?? '')}"></span>`;
+      }
+      return `<span class="fb-vwrap"><input type="${inType}" data-i="${i}" data-k="value" value="${esc(r.value ?? '')}" placeholder="value"></span>`;
+    }
+    function _fbRender() {
+      const host = document.getElementById('fb');
+      if (!host) return;
+      const rows = _fbRules.map((r, i) => {
+        const fOpts = FB_FIELDS.map(f => `<option value="${f.key}"${f.key === r.field ? ' selected' : ''}>${f.label}</option>`).join('');
+        const ops = FB_OPS[_fbType(r.field)] || FB_OPS.text;
+        const oOpts = ops.map(([k, lbl]) => `<option value="${k}"${k === r.op ? ' selected' : ''}>${lbl}</option>`).join('');
+        return `<div class="fb-rule">
+          ${i > 0 ? '<span class="fb-and">and</span>' : ''}
+          <select data-i="${i}" data-k="field">${fOpts}</select>
+          <select data-i="${i}" data-k="op">${oOpts}</select>
+          ${_fbValueField(r, i)}
+          <button type="button" class="fb-rm" data-i="${i}" title="Remove">✕</button>
+        </div>`;
+      }).join('');
+      host.innerHTML = `
+        <div class="fb-title">Filters${_fbRules.length ? ' <button type="button" class="fb-clear">clear all</button>' : ''}</div>
+        <div class="fb-rules">${rows}</div>
+        <button type="button" class="fb-add">+ Add filter</button>`;
+    }
+    function _fbApply() {
+      try { localStorage.setItem('ps_sw_filters', JSON.stringify(_fbRules)); } catch {}
+      if (S.groupId !== null || S.expenses.length) renderDetail();
+    }
+    document.getElementById('fb').addEventListener('click', ev => {
+      if (ev.target.closest('.fb-add')) { _fbRules.push({ field: 'cost', op: 'gt', value: '', value2: '' }); _fbRender(); _fbApply(); return; }
+      if (ev.target.closest('.fb-clear')) { _fbRules = []; _fbRender(); _fbApply(); return; }
+      const rm = ev.target.closest('.fb-rm');
+      if (rm) { _fbRules.splice(+rm.dataset.i, 1); _fbRender(); _fbApply(); }
+    });
+    document.getElementById('fb').addEventListener('change', ev => {
+      const el = ev.target;
+      if (el.dataset.i == null) return;
+      const r = _fbRules[+el.dataset.i]; if (!r) return;
+      if (el.dataset.k === 'field') {
+        r.field = el.value; r.op = (FB_OPS[_fbType(r.field)] || FB_OPS.text)[0][0]; r.value = r.value2 = ''; _fbRender();
+      } else if (el.dataset.k === 'op') {
+        r.op = el.value; if (_fbNoValue(r.op)) r.value = r.value2 = ''; _fbRender();
+      } else { r[el.dataset.k] = el.value; }
+      _fbApply();
+    });
+    document.getElementById('fb').addEventListener('input', ev => {
+      const el = ev.target;
+      if (el.dataset.i == null || (el.dataset.k !== 'value' && el.dataset.k !== 'value2') || el.tagName === 'SELECT') return;
+      const r = _fbRules[+el.dataset.i]; if (!r) return;
+      r[el.dataset.k] = el.value; _fbApply();
+    });
+    _fbRender();
 
     async function _load(force) {
       const rb = document.getElementById('refresh-btn');
@@ -548,6 +745,7 @@
         S.hasMore = !!d.has_more;
         S.dedupe = !!d.dedupe_enabled;
         (d.already_imported || []).forEach(id => S.imported.add(Number(id)));
+        _fbRender();  // refresh the Category / Group value dropdowns for the loaded set
         // remember this group's net for the directory
         const gnet = S.expenses.reduce((s, e) => s + (e.my_net || 0), 0);
         S.gnet[S.groupId == null ? '' : String(S.groupId)] = Math.round(gnet * 100) / 100;
@@ -565,6 +763,7 @@
       meta.textContent = g && g.members ? `${g.members.length} members` : '';
 
       let list = S.expenses.filter(e => [...S.filters].every(k => (FILT[k] || (() => true))(e)));
+      list = _fbFilter(list);
       const q = S.search.trim().toLowerCase();
       if (q) list = list.filter(e => (e.description || '').toLowerCase().includes(q));
 

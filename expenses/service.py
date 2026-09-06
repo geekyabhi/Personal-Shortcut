@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import date, datetime, timedelta, timezone
 
@@ -135,6 +136,112 @@ class ExpensesService:
             if range_start <= d <= range_end:
                 result.append(row)
         return result
+
+    # ------------------------------------------------------------------ #
+    #  Generic row-filter rules (the client-side "filter builder")        #
+    # ------------------------------------------------------------------ #
+
+    _RULE_NOVALUE_OPS = {"empty", "nempty", "true", "false"}
+    _RULE_BOOL_FIELDS = {"processed", "add_to_split", "from_split", "split_added"}
+    _RULE_NUM_FIELDS  = {"amount", "splitwise_id"}
+    _RULE_DATE_FIELDS = {"date"}
+    _RULE_MULTI_FIELDS = {"categories"}
+
+    def _rule_complete(self, r: dict) -> bool:
+        if r.get("op") in self._RULE_NOVALUE_OPS:
+            return True
+        if r.get("value") in ("", None):
+            return False
+        if r.get("op") == "between" and r.get("value2") in ("", None):
+            return False
+        return True
+
+    def _rule_field_value(self, e: dict, field: str):
+        if field == "date":
+            return e.get("date") or (e.get("datetime") or "")[:10]
+        return e.get(field)
+
+    def _rule_match(self, e: dict, r: dict) -> bool:
+        field, op = r["field"], r["op"]
+        v = self._rule_field_value(e, field)
+        a, b = r.get("value", ""), r.get("value2", "")
+
+        if field in self._RULE_BOOL_FIELDS:
+            return bool(v) if op == "true" else not bool(v)
+
+        if field in self._RULE_MULTI_FIELDS:
+            arr = [str(x).lower() for x in (v or [])]
+            t = str(a).lower()
+            if op == "empty":  return not arr
+            if op == "nempty": return bool(arr)
+            if op == "has":    return t in arr
+            if op == "nhas":   return t not in arr
+            if op == "only":   return arr == [t]
+            return True
+
+        if field in self._RULE_NUM_FIELDS:
+            try:
+                n = None if v in ("", None) else float(v)
+            except (TypeError, ValueError):
+                n = None
+            if op == "empty":  return n is None
+            if op == "nempty": return n is not None
+            if n is None:
+                return False
+            try:
+                x = float(a)
+                y = float(b) if b not in ("", None) else x
+            except (TypeError, ValueError):
+                return True
+            return {
+                "eq": n == x, "ne": n != x, "gt": n > x, "lt": n < x,
+                "gte": n >= x, "lte": n <= x,
+                "between": min(x, y) <= n <= max(x, y),
+            }.get(op, True)
+
+        if field in self._RULE_DATE_FIELDS:
+            d = v or ""
+            if op == "empty":  return not d
+            if op == "nempty": return bool(d)
+            if not d:
+                return False
+            if op == "on":     return d == a
+            if op == "before": return d < a
+            if op == "after":  return d > a
+            if op == "between": return (a <= d <= b) if b else (d >= a)
+            return True
+
+        # text / select
+        s = ("" if v is None else str(v)).lower()
+        t = str(a).lower()
+        if op == "empty":     return not s
+        if op == "nempty":    return bool(s)
+        if op == "contains":  return t in s
+        if op == "ncontains": return t not in s
+        if op == "is":        return s == t
+        if op == "isnot":     return s != t
+        return True
+
+    def _filter_by_rules(self, rows: list, filters_raw: str) -> list:
+        """Apply the client-side filter builder's rule list (JSON) to raw Notion
+        rows. Unknown / half-built rules are ignored; all remaining rules are
+        ANDed. Returns ``rows`` unchanged when there's nothing to apply."""
+        if not filters_raw:
+            return rows
+        try:
+            rules = json.loads(filters_raw)
+        except (ValueError, TypeError):
+            return rows
+        rules = [
+            r for r in rules
+            if isinstance(r, dict) and r.get("field") and r.get("op") and self._rule_complete(r)
+        ]
+        if not rules:
+            return rows
+        return [
+            row for row in rows
+            if all(self._rule_match(self._row_to_entry(row), r) for r in rules)
+        ]
 
     def _row_date(self, row) -> str:
         return (
@@ -528,6 +635,7 @@ class ExpensesService:
         end: str,
         force: bool,
         partial: bool = False,
+        filters: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, group_by=group_by)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -539,6 +647,7 @@ class ExpensesService:
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
+        rows = self._filter_by_rules(rows, locals().get("filters", ""))
 
         group_totals: dict[str, float] = {}
         grand_total = 0.0
@@ -586,6 +695,7 @@ class ExpensesService:
         end: str,
         force: bool,
         partial: bool = False,
+        filters: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -597,6 +707,7 @@ class ExpensesService:
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
+        rows = self._filter_by_rules(rows, locals().get("filters", ""))
         labels, values = self._build_timeseries(period, year, rows, range_start, range_end)
         return {
             "labels": labels,
@@ -620,6 +731,7 @@ class ExpensesService:
         end: str,
         force: bool,
         partial: bool = False,
+        filters: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, group_by=group_by)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -631,6 +743,7 @@ class ExpensesService:
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
+        rows = self._filter_by_rules(rows, locals().get("filters", ""))
 
         grand_total = round(sum(
             (row.get("properties", {}).get("Amount") or {}).get("number") or 0.0
@@ -691,6 +804,7 @@ class ExpensesService:
         end: str,
         force: bool,
         partial: bool = False,
+        filters: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -702,6 +816,7 @@ class ExpensesService:
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
+        rows = self._filter_by_rules(rows, locals().get("filters", ""))
         labels, overall_values, category_series = self._build_category_timeseries(
             period, year, rows, range_start, range_end
         )
@@ -727,6 +842,7 @@ class ExpensesService:
         end: str,
         force: bool,
         partial: bool = False,
+        filters: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
         notion_filter, range_start, range_end = self._build_date_filter(
@@ -738,6 +854,7 @@ class ExpensesService:
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
+        rows = self._filter_by_rules(rows, locals().get("filters", ""))
 
         cat_totals: dict[str, dict] = {}
         src_totals: dict[str, dict] = {}
@@ -842,6 +959,7 @@ class ExpensesService:
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
+        rows = self._filter_by_rules(rows, locals().get("filters", ""))
 
         filter_cats = [c.strip() for c in category.split(",") if c.strip()] if category else []
 
@@ -916,6 +1034,7 @@ class ExpensesService:
         end: str,
         force: bool,
         partial: bool = False,
+        filters: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
         _, range_start, range_end = self._build_date_filter(
@@ -927,6 +1046,7 @@ class ExpensesService:
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
+        rows = self._filter_by_rules(rows, locals().get("filters", ""))
 
         daily: dict[str, float] = {}
         for row in rows:
@@ -1206,4 +1326,19 @@ class ExpensesService:
         self.dl.patch_page(
             page_id, {"properties": {"Split Added": {"checkbox": value}}}
         )
+        self.dl.bust_cache()
+
+    def finalize_split_push(
+        self, page_id: str, my_share, existing_comment: str, note: str
+    ) -> None:
+        """Run after a row is pushed to Splitwise: drop its Amount to the user's
+        own share, prepend ``note`` (the split breakdown) to the Comment, and
+        tick 'Split Added' — all in one patch, one cache bust."""
+        comment = f"{note}\n{existing_comment}" if existing_comment else note
+        props = {
+            "Amount": {"number": round(float(my_share or 0), 2)},
+            "Split Added": {"checkbox": True},
+        }
+        props.update(self._extra_props(comment=comment))
+        self.dl.patch_page(page_id, {"properties": props})
         self.dl.bust_cache()

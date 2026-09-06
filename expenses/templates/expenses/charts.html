@@ -131,6 +131,37 @@
     }
     .preset-btn:hover { background: var(--grad); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
 
+    /* ── Filter builder ── */
+    .fb { margin-top: 0.9rem; }
+    .fb-title { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.68rem; font-weight: 700;
+      color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.45rem; }
+    .fb-title .fb-clear { text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 0.72rem;
+      color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+    .fb-title .fb-clear:hover { text-decoration: underline; }
+    .fb-rules { display: flex; flex-direction: column; gap: 0.45rem; }
+    .fb-rule { display: grid;
+      grid-template-columns: minmax(110px, 0.9fr) minmax(110px, 0.9fr) minmax(120px, 1.3fr) 32px;
+      gap: 0.4rem; align-items: center; }
+    .fb-rule > .fb-and { grid-column: 1 / -1; font-size: 0.64rem; font-weight: 700; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.08em; margin: 0.1rem 0 -0.15rem; }
+    .fb-rule select, .fb-rule input { padding: 0.42rem 0.55rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.14);
+      font-size: 0.8rem; font-family: inherit; background: #fff; color: inherit; min-width: 0; width: 100%; }
+    [data-theme="dark"] .fb-rule select, [data-theme="dark"] .fb-rule input {
+      background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #E5E7EB; }
+    .fb-vwrap { display: flex; gap: 0.3rem; align-items: center; min-width: 0; }
+    .fb-vwrap.fb-none::after { content: "—"; color: #9CA3AF; font-size: 0.85rem; padding-left: 0.2rem; }
+    .fb-rm { width: 32px; height: 32px; flex: none; border-radius: 8px; border: 1px solid rgba(239,68,68,0.4);
+      background: transparent; color: #EF4444; cursor: pointer; font-size: 0.9rem; line-height: 1; }
+    .fb-rm:hover { background: rgba(239,68,68,0.08); }
+    .fb-add { margin-top: 0.5rem; border: 1px dashed rgba(124,58,237,0.4); border-radius: 8px; background: transparent;
+      color: var(--accent); font-size: 0.78rem; font-weight: 600; padding: 0.38rem 0.85rem; cursor: pointer; font-family: inherit; }
+    .fb-add:hover { background: rgba(124,58,237,0.08); }
+    @media (max-width: 560px) {
+      .fb-rule { grid-template-columns: 1fr 1fr; }
+      .fb-rule .fb-vwrap { grid-column: 1 / 2; }
+      .fb-rule .fb-rm { grid-column: 2 / 3; justify-self: end; }
+    }
+
     button.btn-load {
       margin-top: 1.1rem; padding: 0.55rem 1.75rem;
       display: block; width: fit-content;
@@ -801,6 +832,7 @@
         <button type="button" class="preset-btn" onclick="setPreset('6m')">Last 6 months</button>
         <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
       </div>
+      <div class="fb" id="fb"></div>
       <button id="btn" class="btn-load" onclick="loadCharts()">Apply Filters</button>
     </div>
 
@@ -1275,6 +1307,105 @@
     try { p.set("cat", btoa(JSON.stringify(catSettingsObj()))); } catch {}
     history.replaceState(null, "", "?" + p.toString());
   }
+  /* ══ Notion-style filter builder — applied server-side to the chart data ══ */
+  let _fbRules = [];
+  try { _fbRules = JSON.parse(localStorage.getItem('ps_charts_filters')) || []; } catch { _fbRules = []; }
+  const FB_FIELDS = [
+    { key: 'title',         label: 'Name',          type: 'text'   },
+    { key: 'amount',        label: 'Amount',        type: 'number' },
+    { key: 'date',          label: 'Date',          type: 'date'   },
+    { key: 'categories',    label: 'Category',      type: 'text'   },
+    { key: 'source',        label: 'Source',        type: 'text'   },
+    { key: 'comment',       label: 'Comment',       type: 'text'   },
+    { key: 'other_partner', label: 'Other partner', type: 'text'   },
+    { key: 'splitwise_id',  label: 'Splitwise ID',  type: 'number' },
+    { key: 'processed',     label: 'Processed',     type: 'bool'   },
+    { key: 'add_to_split',  label: 'Add to Split',  type: 'bool'   },
+    { key: 'from_split',    label: 'From Split',     type: 'bool'   },
+    { key: 'split_added',   label: 'Split Added',    type: 'bool'   },
+  ];
+  const FB_OPS = {
+    text:   [['contains','contains'],['ncontains',"doesn't contain"],['is','is'],['isnot','is not'],['empty','is empty'],['nempty','is not empty']],
+    number: [['eq','='],['ne','≠'],['gt','>'],['lt','<'],['gte','≥'],['lte','≤'],['between','between'],['empty','is empty'],['nempty','is not empty']],
+    date:   [['on','is on'],['before','is before'],['after','is after'],['between','is between'],['empty','is empty'],['nempty','is not empty']],
+    bool:   [['true','is checked'],['false','is unchecked']],
+  };
+  const _fbNoValue = op => op === 'empty' || op === 'nempty' || op === 'true' || op === 'false';
+  const _fbField = k => FB_FIELDS.find(f => f.key === k) || {};
+  const _fbType = k => _fbField(k).type || 'text';
+  function _fbComplete(r) {
+    if (_fbNoValue(r.op)) return true;
+    if (r.value == null || r.value === '') return false;
+    if (r.op === 'between' && (r.value2 == null || r.value2 === '')) return false;
+    return true;
+  }
+  function _fbQuery() {
+    const rules = _fbRules.filter(r => r.field && r.op && _fbComplete(r));
+    return rules.length ? JSON.stringify(rules) : '';
+  }
+  function _fbValueField(r, i) {
+    if (_fbNoValue(r.op)) return '<span class="fb-vwrap fb-none"></span>';
+    const t = _fbType(r.field);
+    const inType = t === 'date' ? 'date' : t === 'number' ? 'number' : 'text';
+    if (r.op === 'between') {
+      return `<span class="fb-vwrap">
+        <input type="${inType}" data-i="${i}" data-k="value"  value="${esc(r.value ?? '')}">
+        <input type="${inType}" data-i="${i}" data-k="value2" value="${esc(r.value2 ?? '')}"></span>`;
+    }
+    return `<span class="fb-vwrap"><input type="${inType}" data-i="${i}" data-k="value" value="${esc(r.value ?? '')}" placeholder="value"></span>`;
+  }
+  function _fbRender() {
+    const host = document.getElementById('fb');
+    if (!host) return;
+    const rows = _fbRules.map((r, i) => {
+      const fOpts = FB_FIELDS.map(f => `<option value="${f.key}"${f.key === r.field ? ' selected' : ''}>${f.label}</option>`).join('');
+      const ops = FB_OPS[_fbType(r.field)] || FB_OPS.text;
+      const oOpts = ops.map(([k, lbl]) => `<option value="${k}"${k === r.op ? ' selected' : ''}>${lbl}</option>`).join('');
+      return `<div class="fb-rule">
+        ${i > 0 ? '<span class="fb-and">and</span>' : ''}
+        <select data-i="${i}" data-k="field">${fOpts}</select>
+        <select data-i="${i}" data-k="op">${oOpts}</select>
+        ${_fbValueField(r, i)}
+        <button type="button" class="fb-rm" data-i="${i}" title="Remove">✕</button>
+      </div>`;
+    }).join('');
+    host.innerHTML = `
+      <div class="fb-title">Filters${_fbRules.length ? ' <button type="button" class="fb-clear">clear all</button>' : ''}</div>
+      <div class="fb-rules">${rows}</div>
+      <button type="button" class="fb-add">+ Add filter</button>`;
+  }
+  let _fbT;
+  function _fbApply(now) {
+    try { localStorage.setItem('ps_charts_filters', JSON.stringify(_fbRules)); } catch {}
+    clearTimeout(_fbT);                       // an immediate apply cancels any pending debounced one
+    if (now) loadCharts();
+    else _fbT = setTimeout(() => loadCharts(), 350);
+  }
+  document.getElementById('fb').addEventListener('click', ev => {
+    if (ev.target.closest('.fb-add')) { _fbRules.push({ field: 'amount', op: 'gt', value: '', value2: '' }); _fbRender(); _fbApply(true); return; }
+    if (ev.target.closest('.fb-clear')) { _fbRules = []; _fbRender(); _fbApply(true); return; }
+    const rm = ev.target.closest('.fb-rm');
+    if (rm) { _fbRules.splice(+rm.dataset.i, 1); _fbRender(); _fbApply(true); }
+  });
+  document.getElementById('fb').addEventListener('change', ev => {
+    const el = ev.target;
+    if (el.dataset.i == null) return;
+    const r = _fbRules[+el.dataset.i]; if (!r) return;
+    if (el.dataset.k === 'field') {
+      r.field = el.value; r.op = (FB_OPS[_fbType(r.field)] || FB_OPS.text)[0][0]; r.value = r.value2 = ''; _fbRender();
+    } else if (el.dataset.k === 'op') {
+      r.op = el.value; if (_fbNoValue(r.op)) r.value = r.value2 = ''; _fbRender();
+    } else { r[el.dataset.k] = el.value; }
+    _fbApply(true);
+  });
+  document.getElementById('fb').addEventListener('input', ev => {
+    const el = ev.target;
+    if (el.dataset.i == null || (el.dataset.k !== 'value' && el.dataset.k !== 'value2') || el.tagName === 'SELECT') return;
+    const r = _fbRules[+el.dataset.i]; if (!r) return;
+    r[el.dataset.k] = el.value; _fbApply(false);   // debounced — server round-trip
+  });
+  _fbRender();
+
   (function restoreState() {
     const p = new URLSearchParams(location.search);
     if (p.has("period")) {
@@ -1354,8 +1485,11 @@
     if (period === "weekly")  p.set("week",  document.getElementById("week").value);
     if (period === "daily")   p.set("day",   document.getElementById("day").value);
     if (period === "custom")  { p.set("start", document.getElementById("start-date").value); p.set("end", document.getElementById("end-date").value); }
+    const fq = _fbQuery();
+    if (fq) p.set("filters", fq);
     return p.toString();
   }
+
   function periodLabel(data) {
     if (data.period === "all")     return "All Time";
     if (data.period === "yearly")  return data.year;

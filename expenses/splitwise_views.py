@@ -182,16 +182,21 @@ class SplitwisePushEntryView(SplitwiseBaseView):
         except SplitwiseError as exc:
             return self._sw_error(exc)
 
+        my_share = created.get("my_share")
         try:
-            expenses_service.mark_split_added(page_id)
+            # Reduce the Notion Amount to just my share, note the breakdown, tick 'Split Added'.
+            expenses_service.finalize_split_push(
+                page_id, my_share, entry.get("comment", ""), created.get("note", "")
+            )
         except requests.RequestException as exc:
             return JsonResponse(
                 {
                     "ok": True,
                     "splitwise_expense_id": created.get("id"),
                     "split_added": False,
-                    "warning": "Pushed to Splitwise, but couldn't tick 'Split Added' "
-                    f"in Notion ({exc}). Please tick it manually.",
+                    "warning": "Pushed to Splitwise, but couldn't update the Notion "
+                    f"row ({exc}). Set its amount to your share and tick "
+                    "'Split Added' manually.",
                 },
                 status=201,
             )
@@ -201,6 +206,7 @@ class SplitwisePushEntryView(SplitwiseBaseView):
                 "ok": True,
                 "splitwise_expense_id": created.get("id"),
                 "split_added": True,
+                "amount": my_share,
             },
             status=201,
         )
