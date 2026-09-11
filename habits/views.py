@@ -80,6 +80,19 @@ class BackfillView(HabitsBaseView):
         return JsonResponse(result)
 
 
+class TodayHabitsView(HabitsBaseView):
+    def get(self, request):
+        if not self.service:
+            return self._creds_error()
+        try:
+            data = self.service.get_today()
+        except requests.HTTPError as exc:
+            return self._notion_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Network error: {exc}"}, status=502)
+        return JsonResponse(data)
+
+
 class CheckHabitsView(HabitsBaseView):
     def post(self, request):
         if not self.service:

@@ -119,11 +119,12 @@ class ExpensesChartView(ExpensesBaseView):
         end      = request.GET.get("end", "")
         force    = request.GET.get("force", "") in ("1", "true")
         partial  = request.GET.get("partial", "") in ("1", "true")
+        bucket   = request.GET.get("bucket", "")
 
         try:
             result = self.service.get_chart(
                 period, group_by, year, month, week, day, start, end, force,
-                partial=partial, filters=request.GET.get("filters", ""),
+                partial=partial, filters=request.GET.get("filters", ""), bucket=bucket,
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
@@ -149,10 +150,12 @@ class ExpensesCategoryTimeseriesView(ExpensesBaseView):
         end    = request.GET.get("end", "")
         force  = request.GET.get("force", "") in ("1", "true")
         partial = request.GET.get("partial", "") in ("1", "true")
+        bucket  = request.GET.get("bucket", "")
 
         try:
             result = self.service.get_category_timeseries(
-                period, year, month, week, day, start, end, force, partial=partial, filters=request.GET.get("filters", "")
+                period, year, month, week, day, start, end, force, partial=partial,
+                filters=request.GET.get("filters", ""), bucket=bucket,
             )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)

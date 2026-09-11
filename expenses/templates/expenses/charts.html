@@ -142,8 +142,6 @@
     .fb-rule { display: grid;
       grid-template-columns: minmax(110px, 0.9fr) minmax(110px, 0.9fr) minmax(120px, 1.3fr) 32px;
       gap: 0.4rem; align-items: center; }
-    .fb-rule > .fb-and { grid-column: 1 / -1; font-size: 0.64rem; font-weight: 700; color: #9CA3AF;
-      text-transform: uppercase; letter-spacing: 0.08em; margin: 0.1rem 0 -0.15rem; }
     .fb-rule select, .fb-rule input { padding: 0.42rem 0.55rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.14);
       font-size: 0.8rem; font-family: inherit; background: #fff; color: inherit; min-width: 0; width: 100%; }
     [data-theme="dark"] .fb-rule select, [data-theme="dark"] .fb-rule input {
@@ -153,9 +151,28 @@
     .fb-rm { width: 32px; height: 32px; flex: none; border-radius: 8px; border: 1px solid rgba(239,68,68,0.4);
       background: transparent; color: #EF4444; cursor: pointer; font-size: 0.9rem; line-height: 1; }
     .fb-rm:hover { background: rgba(239,68,68,0.08); }
-    .fb-add { margin-top: 0.5rem; border: 1px dashed rgba(124,58,237,0.4); border-radius: 8px; background: transparent;
+    .fb-add { border: 1px dashed rgba(124,58,237,0.4); border-radius: 8px; background: transparent;
       color: var(--accent); font-size: 0.78rem; font-weight: 600; padding: 0.38rem 0.85rem; cursor: pointer; font-family: inherit; }
     .fb-add:hover { background: rgba(124,58,237,0.08); }
+    .fb-joiner { margin: 0.1rem 0 -0.15rem; }
+    .fb-join-select { width: auto; padding: 0.15rem 0.55rem; border: none; border-radius: 100px;
+      font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--accent); background: rgba(124,58,237,0.1); cursor: pointer; }
+    [data-theme="dark"] .fb-join-select { background: rgba(124,58,237,0.18); color: #C4B5FD; }
+    .fb-group { margin: 0.3rem 0; padding: 0.6rem 0.65rem; border: 1.5px dashed rgba(124,58,237,0.35);
+      border-radius: 12px; background: rgba(124,58,237,0.04); }
+    [data-theme="dark"] .fb-group { border-color: rgba(124,58,237,0.35); background: rgba(124,58,237,0.06); }
+    .fb-group-inner { display: flex; align-items: flex-start; gap: 0.35rem; }
+    .fb-bracket { flex: none; font-size: 1.3rem; font-weight: 800; line-height: 1.5; color: var(--accent); opacity: 0.55; }
+    .fb-group-content { flex: 1; min-width: 0; }
+    .fb-group-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-top: 0.5rem; }
+    .fb-addgroup { border: 1px dashed rgba(124,58,237,0.4); border-radius: 8px; background: transparent;
+      color: var(--accent); font-size: 0.78rem; font-weight: 600; padding: 0.38rem 0.85rem; cursor: pointer; font-family: inherit; }
+    .fb-addgroup:hover { background: rgba(124,58,237,0.08); }
+    .fb-rmgroup { margin-left: auto; border: 1px solid rgba(239,68,68,0.4); border-radius: 8px; background: transparent;
+      color: #EF4444; font-size: 0.72rem; font-weight: 600; padding: 0.38rem 0.7rem; cursor: pointer; font-family: inherit; }
+    .fb-rmgroup:hover { background: rgba(239,68,68,0.08); }
+    .fb-empty-group { font-size: 0.76rem; color: #9CA3AF; padding: 0.2rem 0; }
     @media (max-width: 560px) {
       .fb-rule { grid-template-columns: 1fr 1fr; }
       .fb-rule .fb-vwrap { grid-column: 1 / 2; }
@@ -821,6 +838,16 @@
             <option value="source">Source</option>
           </select>
         </div>
+        <div>
+          <label for="bucket">Bucket by</label>
+          <select id="bucket" title="Chart granularity — independent of the period above, e.g. a Yearly period bucketed by Week">
+            <option value="">Auto</option>
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+            <option value="year">Year</option>
+          </select>
+        </div>
         <div id="wrap-year"  class="date-input"><label for="year">Year</label><input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" /></div>
         <div id="wrap-month" class="date-input visible"><label for="month">Month</label><input type="month" id="month" /></div>
         <div id="wrap-week"  class="date-input"><label for="week">Week</label><input type="week" id="week" /></div>
@@ -1310,9 +1337,17 @@
     try { p.set("cat", btoa(JSON.stringify(catSettingsObj()))); } catch {}
     history.replaceState(null, "", "?" + p.toString());
   }
-  /* ══ Notion-style filter builder — applied server-side to the chart data ══ */
-  let _fbRules = [];
-  try { _fbRules = JSON.parse(localStorage.getItem('ps_charts_filters')) || []; } catch { _fbRules = []; }
+  /* ══ Notion-style filter builder — applied server-side to the chart data ══
+     A node is either a leaf {field, op, value, value2} or a group
+     {join: 'and'|'or', rules: [node, ...]} — nested groups render as a
+     bracketed sub-clause so rules can mix AND/OR. The root is always a group;
+     `_fbQuery()` sends it to the backend, which understands the same shape. */
+  let _fbRoot = { join: 'and', rules: [] };
+  try {
+    const saved = JSON.parse(localStorage.getItem('ps_charts_filters'));
+    if (Array.isArray(saved)) _fbRoot = { join: 'and', rules: saved };        // migrate old flat format
+    else if (saved && Array.isArray(saved.rules)) _fbRoot = saved;
+  } catch {}
   const FB_FIELDS = [
     { key: 'title',         label: 'Name',          type: 'text'   },
     { key: 'amount',        label: 'Amount',        type: 'number' },
@@ -1360,63 +1395,132 @@
     return true;
   }
   function _fbQuery() {
-    const rules = _fbRules.filter(r => r.field && r.op && _fbComplete(r));
-    return rules.length ? JSON.stringify(rules) : '';
+    return _fbActive(_fbRoot) ? JSON.stringify(_fbRoot) : '';
   }
-  function _fbValueField(r, i) {
+  const _fbIsGroup = node => !!(node && Array.isArray(node.rules));
+  function _fbActive(node) {
+    if (_fbIsGroup(node)) return node.rules.some(_fbActive);
+    return !!(node.field && node.op && _fbComplete(node));
+  }
+  const _fbPath = s => (s === '' || s == null) ? [] : s.split('.').map(Number);
+  function _fbNodeAt(path) {
+    let node = _fbRoot;
+    for (const i of path) node = node.rules[i];
+    return node;
+  }
+  function _fbParentAt(path) {
+    let node = _fbRoot;
+    for (let k = 0; k < path.length - 1; k++) node = node.rules[path[k]];
+    return { parent: node, index: path[path.length - 1] };
+  }
+  function _fbValueField(r, pathStr) {
     if (_fbNoValue(r.op)) return '<span class="fb-vwrap fb-none"></span>';
     const t = _fbType(r.field);
     if (t === 'multi' || t === 'select') {
       const src = t === 'multi' ? _allCats : (r.field === 'mode' ? _allModes : _allSrcs);
       const opts = src
         .map(o => `<option value="${esc(o)}"${String(o) === String(r.value || '') ? ' selected' : ''}>${esc(o)}</option>`).join('');
-      return `<span class="fb-vwrap"><select data-i="${i}" data-k="value"><option value="">${_fbOptsLoaded ? '— pick —' : 'Loading…'}</option>${opts}</select></span>`;
+      return `<span class="fb-vwrap"><select data-path="${pathStr}" data-k="value"><option value="">${_fbOptsLoaded ? '— pick —' : 'Loading…'}</option>${opts}</select></span>`;
     }
     const inType = t === 'date' ? 'date' : t === 'number' ? 'number' : 'text';
     if (r.op === 'between') {
       return `<span class="fb-vwrap">
-        <input type="${inType}" data-i="${i}" data-k="value"  value="${esc(r.value ?? '')}">
-        <input type="${inType}" data-i="${i}" data-k="value2" value="${esc(r.value2 ?? '')}"></span>`;
+        <input type="${inType}" data-path="${pathStr}" data-k="value"  value="${esc(r.value ?? '')}">
+        <input type="${inType}" data-path="${pathStr}" data-k="value2" value="${esc(r.value2 ?? '')}"></span>`;
     }
-    return `<span class="fb-vwrap"><input type="${inType}" data-i="${i}" data-k="value" value="${esc(r.value ?? '')}" placeholder="value"></span>`;
+    return `<span class="fb-vwrap"><input type="${inType}" data-path="${pathStr}" data-k="value" value="${esc(r.value ?? '')}" placeholder="value"></span>`;
+  }
+  function _fbRenderRule(r, path) {
+    const pathStr = path.join('.');
+    const fOpts = FB_FIELDS.map(f => `<option value="${f.key}"${f.key === r.field ? ' selected' : ''}>${f.label}</option>`).join('');
+    const ops = FB_OPS[_fbType(r.field)] || FB_OPS.text;
+    const oOpts = ops.map(([k, lbl]) => `<option value="${k}"${k === r.op ? ' selected' : ''}>${lbl}</option>`).join('');
+    return `<div class="fb-rule">
+      <select data-path="${pathStr}" data-k="field">${fOpts}</select>
+      <select data-path="${pathStr}" data-k="op">${oOpts}</select>
+      ${_fbValueField(r, pathStr)}
+      <button type="button" class="fb-rm" data-path="${pathStr}" title="Remove">✕</button>
+    </div>`;
+  }
+  function _fbRenderGroup(group, path) {
+    const isRoot = path.length === 0;
+    const pathStr = path.join('.');
+    const items = group.rules.map((child, i) => {
+      const childPath = [...path, i];
+      const joiner = i > 0
+        ? `<div class="fb-joiner"><select class="fb-join-select" data-path="${pathStr}" data-k="join">
+             <option value="and"${group.join === 'and' ? ' selected' : ''}>and</option>
+             <option value="or"${group.join === 'or' ? ' selected' : ''}>or</option>
+           </select></div>`
+        : '';
+      return joiner + (_fbIsGroup(child) ? _fbRenderGroup(child, childPath) : _fbRenderRule(child, childPath));
+    }).join('');
+    const body = `
+      <div class="fb-rules">${items || '<div class="fb-empty-group">No conditions yet.</div>'}</div>
+      <div class="fb-group-actions">
+        <button type="button" class="fb-add" data-path="${pathStr}">+ Add filter</button>
+        <button type="button" class="fb-addgroup" data-path="${pathStr}">+ Add filter group</button>
+        ${!isRoot ? `<button type="button" class="fb-rmgroup" data-path="${pathStr}" title="Remove group">✕ Remove group</button>` : ''}
+      </div>`;
+    if (isRoot) return body;
+    return `<div class="fb-group">
+      <div class="fb-group-inner">
+        <span class="fb-bracket">(</span>
+        <div class="fb-group-content">${body}</div>
+        <span class="fb-bracket">)</span>
+      </div>
+    </div>`;
   }
   function _fbRender() {
     const host = document.getElementById('fb');
     if (!host) return;
-    const rows = _fbRules.map((r, i) => {
-      const fOpts = FB_FIELDS.map(f => `<option value="${f.key}"${f.key === r.field ? ' selected' : ''}>${f.label}</option>`).join('');
-      const ops = FB_OPS[_fbType(r.field)] || FB_OPS.text;
-      const oOpts = ops.map(([k, lbl]) => `<option value="${k}"${k === r.op ? ' selected' : ''}>${lbl}</option>`).join('');
-      return `<div class="fb-rule">
-        ${i > 0 ? '<span class="fb-and">and</span>' : ''}
-        <select data-i="${i}" data-k="field">${fOpts}</select>
-        <select data-i="${i}" data-k="op">${oOpts}</select>
-        ${_fbValueField(r, i)}
-        <button type="button" class="fb-rm" data-i="${i}" title="Remove">✕</button>
-      </div>`;
-    }).join('');
     host.innerHTML = `
-      <div class="fb-title">Filters${_fbRules.length ? ' <button type="button" class="fb-clear">clear all</button>' : ''}</div>
-      <div class="fb-rules">${rows}</div>
-      <button type="button" class="fb-add">+ Add filter</button>`;
+      <div class="fb-title">Filters${_fbRoot.rules.length ? ' <button type="button" class="fb-clear">clear all</button>' : ''}</div>
+      ${_fbRenderGroup(_fbRoot, [])}`;
   }
   let _fbT;
   function _fbApply(now) {
-    try { localStorage.setItem('ps_charts_filters', JSON.stringify(_fbRules)); } catch {}
+    try { localStorage.setItem('ps_charts_filters', JSON.stringify(_fbRoot)); } catch {}
     clearTimeout(_fbT);                       // an immediate apply cancels any pending debounced one
     if (now) loadCharts();
     else _fbT = setTimeout(() => loadCharts(), 350);
   }
   document.getElementById('fb').addEventListener('click', ev => {
-    if (ev.target.closest('.fb-add')) { _fbRules.push({ field: 'amount', op: 'gt', value: '', value2: '' }); _fbRender(); _fbApply(true); return; }
-    if (ev.target.closest('.fb-clear')) { _fbRules = []; _fbRender(); _fbApply(true); return; }
+    const add = ev.target.closest('.fb-add');
+    if (add) {
+      _fbNodeAt(_fbPath(add.dataset.path)).rules.push({ field: 'amount', op: 'gt', value: '', value2: '' });
+      _fbRender(); _fbApply(true); return;
+    }
+    const addGroup = ev.target.closest('.fb-addgroup');
+    if (addGroup) {
+      _fbNodeAt(_fbPath(addGroup.dataset.path)).rules.push({
+        join: 'and', rules: [{ field: 'amount', op: 'gt', value: '', value2: '' }],
+      });
+      _fbRender(); _fbApply(true); return;
+    }
+    if (ev.target.closest('.fb-clear')) { _fbRoot = { join: 'and', rules: [] }; _fbRender(); _fbApply(true); return; }
+    const rmGroup = ev.target.closest('.fb-rmgroup');
+    if (rmGroup) {
+      const { parent, index } = _fbParentAt(_fbPath(rmGroup.dataset.path));
+      parent.rules.splice(index, 1);
+      _fbRender(); _fbApply(true); return;
+    }
     const rm = ev.target.closest('.fb-rm');
-    if (rm) { _fbRules.splice(+rm.dataset.i, 1); _fbRender(); _fbApply(true); }
+    if (rm) {
+      const { parent, index } = _fbParentAt(_fbPath(rm.dataset.path));
+      parent.rules.splice(index, 1);
+      _fbRender(); _fbApply(true);
+    }
   });
   document.getElementById('fb').addEventListener('change', ev => {
     const el = ev.target;
-    if (el.dataset.i == null) return;
-    const r = _fbRules[+el.dataset.i]; if (!r) return;
+    if (el.dataset.path == null) return;
+    const path = _fbPath(el.dataset.path);
+    if (el.dataset.k === 'join') {
+      _fbNodeAt(path).join = el.value;
+      _fbRender(); _fbApply(true); return;
+    }
+    const r = _fbNodeAt(path); if (!r) return;
     if (el.dataset.k === 'field') {
       r.field = el.value; r.op = (FB_OPS[_fbType(r.field)] || FB_OPS.text)[0][0]; r.value = r.value2 = ''; _fbRender();
     } else if (el.dataset.k === 'op') {
@@ -1426,8 +1530,8 @@
   });
   document.getElementById('fb').addEventListener('input', ev => {
     const el = ev.target;
-    if (el.dataset.i == null || (el.dataset.k !== 'value' && el.dataset.k !== 'value2') || el.tagName === 'SELECT') return;
-    const r = _fbRules[+el.dataset.i]; if (!r) return;
+    if (el.dataset.path == null || (el.dataset.k !== 'value' && el.dataset.k !== 'value2') || el.tagName === 'SELECT') return;
+    const r = _fbNodeAt(_fbPath(el.dataset.path)); if (!r) return;
     r[el.dataset.k] = el.value; _fbApply(false);   // debounced — server round-trip
   });
   _fbRender();
@@ -1438,6 +1542,7 @@
       const period = p.get("period");
       document.getElementById("period").value   = period;
       document.getElementById("group_by").value = p.get("group_by") || "";
+      document.getElementById("bucket").value    = p.get("bucket") || "";
       onPeriodChange();
       if (p.has("year"))      document.getElementById("year").value       = p.get("year");
       if (p.has("month"))     document.getElementById("month").value      = p.get("month");
@@ -1504,8 +1609,10 @@
   function buildParams() {
     const period = document.getElementById("period").value;
     const groupBy = document.getElementById("group_by").value;
+    const bucket = document.getElementById("bucket").value;
     const p = new URLSearchParams({ period });
     if (groupBy) p.set("group_by", groupBy);
+    if (bucket) p.set("bucket", bucket);
     if (period === "yearly")  p.set("year",  document.getElementById("year").value);
     if (period === "monthly") p.set("month", document.getElementById("month").value);
     if (period === "weekly")  p.set("week",  document.getElementById("week").value);

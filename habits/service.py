@@ -321,6 +321,20 @@ class HabitsService:
 
         return {"created": len(created), "dates": created, "failed": failed}
 
+    def get_today(self):
+        today = date.today().isoformat()
+        notion_filter = {"property": "Date", "date": {"equals": today}}
+        rows = self.data_layer.fetch_all_rows(notion_filter)
+        schema = self.data_layer.fetch_schema()
+        habit_names = sorted([k for k, v in schema.items() if v.get("type") == "checkbox"])
+
+        props = rows[0].get("properties", {}) if rows else {}
+        habits = [
+            {"name": h, "done": bool((props.get(h) or {}).get("checkbox"))}
+            for h in habit_names
+        ]
+        return {"date": today, "habits": habits}
+
     def check_habits(self, habits_dict):
         today = date.today().isoformat()
         notion_filter = {"property": "Date", "date": {"equals": today}}

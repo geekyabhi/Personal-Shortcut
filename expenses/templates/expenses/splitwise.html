@@ -171,10 +171,6 @@
       grid-template-columns: minmax(110px, 0.9fr) minmax(110px, 0.9fr) minmax(120px, 1.3fr) 32px;
       gap: 0.4rem; align-items: center;
     }
-    .fb-rule > .fb-and {
-      grid-column: 1 / -1; font-size: 0.64rem; font-weight: 700; color: #9CA3AF;
-      text-transform: uppercase; letter-spacing: 0.08em; margin: 0.1rem 0 -0.15rem;
-    }
     .fb-rule select, .fb-rule input {
       padding: 0.42rem 0.55rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.14);
       font-size: 0.8rem; font-family: inherit; background: #fff; color: inherit; min-width: 0; width: 100%; flex: none;
@@ -190,11 +186,40 @@
     }
     .fb-rm:hover { background: rgba(239,68,68,0.08); }
     .fb-add {
-      margin-top: 0.5rem; border: 1px dashed rgba(124,58,237,0.4); border-radius: 8px; background: transparent;
+      border: 1px dashed rgba(124,58,237,0.4); border-radius: 8px; background: transparent;
       color: var(--accent); font-size: 0.78rem; font-weight: 600; padding: 0.38rem 0.85rem;
       cursor: pointer; font-family: inherit;
     }
     .fb-add:hover { background: rgba(124,58,237,0.08); }
+    .fb-joiner { margin: 0.1rem 0 -0.15rem; }
+    .fb-join-select {
+      width: auto; padding: 0.15rem 0.55rem; border: none; border-radius: 100px;
+      font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--accent); background: rgba(124,58,237,0.1); cursor: pointer;
+    }
+    [data-theme="dark"] .fb-join-select { background: rgba(124,58,237,0.18); color: #C4B5FD; }
+    .fb-group {
+      margin: 0.3rem 0; padding: 0.6rem 0.65rem; border: 1.5px dashed rgba(124,58,237,0.35);
+      border-radius: 12px; background: rgba(124,58,237,0.04);
+    }
+    [data-theme="dark"] .fb-group { border-color: rgba(124,58,237,0.35); background: rgba(124,58,237,0.06); }
+    .fb-group-inner { display: flex; align-items: flex-start; gap: 0.35rem; }
+    .fb-bracket { flex: none; font-size: 1.3rem; font-weight: 800; line-height: 1.5; color: var(--accent); opacity: 0.55; }
+    .fb-group-content { flex: 1; min-width: 0; }
+    .fb-group-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-top: 0.5rem; }
+    .fb-addgroup {
+      border: 1px dashed rgba(124,58,237,0.4); border-radius: 8px; background: transparent;
+      color: var(--accent); font-size: 0.78rem; font-weight: 600; padding: 0.38rem 0.85rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .fb-addgroup:hover { background: rgba(124,58,237,0.08); }
+    .fb-rmgroup {
+      margin-left: auto; border: 1px solid rgba(239,68,68,0.4); border-radius: 8px; background: transparent;
+      color: #EF4444; font-size: 0.72rem; font-weight: 600; padding: 0.38rem 0.7rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .fb-rmgroup:hover { background: rgba(239,68,68,0.08); }
+    .fb-empty-group { font-size: 0.76rem; color: #9CA3AF; padding: 0.2rem 0; }
     @media (max-width: 560px) {
       .fb-rule { grid-template-columns: 1fr 1fr; }
       .fb-rule .fb-vwrap { grid-column: 1 / 2; }
@@ -212,6 +237,23 @@
     #dir-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 8px; }
     [data-theme="dark"] #dir-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
     .detail-summary { font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 0.7rem; padding: 0.55rem 0.8rem; background: rgba(0,0,0,0.03); border-radius: 10px; }
+    .groupby-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+    .groupby-row label { font-size: 0.68rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; }
+    .groupby-row select { padding: 0.35rem 0.6rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.14); font-size: 0.8rem; font-family: inherit; background: #fff; color: inherit; }
+    [data-theme="dark"] .groupby-row select { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #E5E7EB; }
+    .rank-list { display: flex; flex-direction: column; gap: 0; margin-bottom: 0.7rem; }
+    .rank-item { display: grid; grid-template-columns: 1.6rem 1fr auto; align-items: center; gap: 0.6rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+    .rank-item:last-child { border-bottom: none; }
+    [data-theme="dark"] .rank-item { border-bottom-color: rgba(255,255,255,0.07); }
+    .rank-num { font-size: 0.76rem; font-weight: 700; color: #9CA3AF; }
+    .rank-body { min-width: 0; }
+    .rank-name { font-size: 0.86rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-bar-track { height: 5px; background: rgba(0,0,0,0.06); border-radius: 3px; margin-top: 0.3rem; overflow: hidden; }
+    [data-theme="dark"] .rank-bar-track { background: rgba(255,255,255,0.08); }
+    .rank-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+    .rank-right { text-align: right; flex: none; }
+    .rank-amt { font-weight: 700; font-size: 0.86rem; }
+    .rank-pct { font-size: 0.72rem; color: #9CA3AF; margin-top: 0.1rem; }
     .bulk-bar { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; margin-bottom: 0.7rem; padding: 0.5rem 0.8rem; background: rgba(79,70,229,0.08); border: 1px solid var(--accent); border-radius: 12px; font-size: 0.82rem; font-weight: 600; }
     .bulk-bar button { font-size: 0.77rem; font-weight: 700; padding: 0.32rem 0.8rem; border-radius: 8px; cursor: pointer; border: none; }
     .bulk-bar .b-go { background: var(--accent); color: #fff; }
@@ -375,6 +417,16 @@
           <input type="text" id="d-mode" placeholder="Mode (optional, e.g. UPI)" autocomplete="off" title="Applied to the Notion row for whatever you import next">
         </div>
         <div class="detail-summary" id="d-summary"></div>
+        <div class="groupby-row">
+          <label for="d-groupby">Group by</label>
+          <select id="d-groupby" onchange="renderDetail()">
+            <option value="">None</option>
+            <option value="category">Category</option>
+            <option value="group_name">Group</option>
+            <option value="paid_by">Paid by</option>
+          </select>
+        </div>
+        <div class="rank-list" id="d-groups" style="display:none;"></div>
         <div class="bulk-bar" id="bulk-bar" hidden>
           <span id="bulk-count">0 selected</span>
           <button class="b-go" id="bulk-go" onclick="_bulkImport()">Import selected to Notion</button>
@@ -476,9 +528,16 @@
       });
     }
 
-    /* ══ Notion-style filter builder (client-side, AND-combined, on top of the chips) ══ */
-    let _fbRules = [];
-    try { _fbRules = JSON.parse(localStorage.getItem('ps_sw_filters')) || []; } catch { _fbRules = []; }
+    /* ══ Notion-style filter builder (client-side, on top of the chips) ══
+       A node is either a leaf {field, op, value, value2} or a group
+       {join: 'and'|'or', rules: [node, ...]} — nested groups render as a
+       bracketed sub-clause so rules can mix AND/OR. */
+    let _fbRoot = { join: 'and', rules: [] };
+    try {
+      const saved = JSON.parse(localStorage.getItem('ps_sw_filters'));
+      if (Array.isArray(saved)) _fbRoot = { join: 'and', rules: saved };        // migrate old flat format
+      else if (saved && Array.isArray(saved.rules)) _fbRoot = saved;
+    } catch {}
 
     const FB_FIELDS = [
       { key: 'description',   label: 'Name',           type: 'text'   },
@@ -556,59 +615,138 @@
       if (r.op === 'between' && (r.value2 == null || r.value2 === '')) return false;
       return true;
     }
-    function _fbFilter(list) {
-      const active = _fbRules.filter(r => r.field && r.op && _fbComplete(r));
-      return active.length ? list.filter(e => active.every(r => _fbMatch(e, r))) : list;
+    const _fbIsGroup = node => !!(node && Array.isArray(node.rules));
+    function _fbActive(node) {
+      if (_fbIsGroup(node)) return node.rules.some(_fbActive);
+      return !!(node.field && node.op && _fbComplete(node));
     }
-    function _fbValueField(r, i) {
+    function _fbNodeMatch(e, node) {
+      if (_fbIsGroup(node)) {
+        const kids = node.rules.filter(_fbActive);
+        if (!kids.length) return true;
+        const results = kids.map(k => _fbNodeMatch(e, k));
+        return node.join === 'or' ? results.some(Boolean) : results.every(Boolean);
+      }
+      return _fbMatch(e, node);
+    }
+    function _fbFilter(list) {
+      if (!_fbActive(_fbRoot)) return list;
+      return list.filter(e => _fbNodeMatch(e, _fbRoot));
+    }
+    const _fbPath = s => (s === '' || s == null) ? [] : s.split('.').map(Number);
+    function _fbNodeAt(path) {
+      let node = _fbRoot;
+      for (const i of path) node = node.rules[i];
+      return node;
+    }
+    function _fbParentAt(path) {
+      let node = _fbRoot;
+      for (let k = 0; k < path.length - 1; k++) node = node.rules[path[k]];
+      return { parent: node, index: path[path.length - 1] };
+    }
+    function _fbValueField(r, pathStr) {
       if (_fbNoValue(r.op)) return '<span class="fb-vwrap fb-none"></span>';
       const f = _fbField(r.field);
       if ((f.type === 'select') && f.opts) {
         const opts = f.opts().map(o => `<option value="${esc(o)}"${String(o) === String(r.value || '') ? ' selected' : ''}>${esc(o)}</option>`).join('');
-        return `<span class="fb-vwrap"><select data-i="${i}" data-k="value"><option value="">— pick —</option>${opts}</select></span>`;
+        return `<span class="fb-vwrap"><select data-path="${pathStr}" data-k="value"><option value="">— pick —</option>${opts}</select></span>`;
       }
       const inType = f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text';
       if (r.op === 'between') {
         return `<span class="fb-vwrap">
-          <input type="${inType}" data-i="${i}" data-k="value"  value="${esc(r.value ?? '')}">
-          <input type="${inType}" data-i="${i}" data-k="value2" value="${esc(r.value2 ?? '')}"></span>`;
+          <input type="${inType}" data-path="${pathStr}" data-k="value"  value="${esc(r.value ?? '')}">
+          <input type="${inType}" data-path="${pathStr}" data-k="value2" value="${esc(r.value2 ?? '')}"></span>`;
       }
-      return `<span class="fb-vwrap"><input type="${inType}" data-i="${i}" data-k="value" value="${esc(r.value ?? '')}" placeholder="value"></span>`;
+      return `<span class="fb-vwrap"><input type="${inType}" data-path="${pathStr}" data-k="value" value="${esc(r.value ?? '')}" placeholder="value"></span>`;
+    }
+    function _fbRenderRule(r, path) {
+      const pathStr = path.join('.');
+      const fOpts = FB_FIELDS.map(f => `<option value="${f.key}"${f.key === r.field ? ' selected' : ''}>${f.label}</option>`).join('');
+      const ops = FB_OPS[_fbType(r.field)] || FB_OPS.text;
+      const oOpts = ops.map(([k, lbl]) => `<option value="${k}"${k === r.op ? ' selected' : ''}>${lbl}</option>`).join('');
+      return `<div class="fb-rule">
+        <select data-path="${pathStr}" data-k="field">${fOpts}</select>
+        <select data-path="${pathStr}" data-k="op">${oOpts}</select>
+        ${_fbValueField(r, pathStr)}
+        <button type="button" class="fb-rm" data-path="${pathStr}" title="Remove">✕</button>
+      </div>`;
+    }
+    function _fbRenderGroup(group, path) {
+      const isRoot = path.length === 0;
+      const pathStr = path.join('.');
+      const items = group.rules.map((child, i) => {
+        const childPath = [...path, i];
+        const joiner = i > 0
+          ? `<div class="fb-joiner"><select class="fb-join-select" data-path="${pathStr}" data-k="join">
+               <option value="and"${group.join === 'and' ? ' selected' : ''}>and</option>
+               <option value="or"${group.join === 'or' ? ' selected' : ''}>or</option>
+             </select></div>`
+          : '';
+        return joiner + (_fbIsGroup(child) ? _fbRenderGroup(child, childPath) : _fbRenderRule(child, childPath));
+      }).join('');
+      const body = `
+        <div class="fb-rules">${items || '<div class="fb-empty-group">No conditions yet.</div>'}</div>
+        <div class="fb-group-actions">
+          <button type="button" class="fb-add" data-path="${pathStr}">+ Add filter</button>
+          <button type="button" class="fb-addgroup" data-path="${pathStr}">+ Add filter group</button>
+          ${!isRoot ? `<button type="button" class="fb-rmgroup" data-path="${pathStr}" title="Remove group">✕ Remove group</button>` : ''}
+        </div>`;
+      if (isRoot) return body;
+      return `<div class="fb-group">
+        <div class="fb-group-inner">
+          <span class="fb-bracket">(</span>
+          <div class="fb-group-content">${body}</div>
+          <span class="fb-bracket">)</span>
+        </div>
+      </div>`;
     }
     function _fbRender() {
       const host = document.getElementById('fb');
       if (!host) return;
-      const rows = _fbRules.map((r, i) => {
-        const fOpts = FB_FIELDS.map(f => `<option value="${f.key}"${f.key === r.field ? ' selected' : ''}>${f.label}</option>`).join('');
-        const ops = FB_OPS[_fbType(r.field)] || FB_OPS.text;
-        const oOpts = ops.map(([k, lbl]) => `<option value="${k}"${k === r.op ? ' selected' : ''}>${lbl}</option>`).join('');
-        return `<div class="fb-rule">
-          ${i > 0 ? '<span class="fb-and">and</span>' : ''}
-          <select data-i="${i}" data-k="field">${fOpts}</select>
-          <select data-i="${i}" data-k="op">${oOpts}</select>
-          ${_fbValueField(r, i)}
-          <button type="button" class="fb-rm" data-i="${i}" title="Remove">✕</button>
-        </div>`;
-      }).join('');
       host.innerHTML = `
-        <div class="fb-title">Filters${_fbRules.length ? ' <button type="button" class="fb-clear">clear all</button>' : ''}</div>
-        <div class="fb-rules">${rows}</div>
-        <button type="button" class="fb-add">+ Add filter</button>`;
+        <div class="fb-title">Filters${_fbRoot.rules.length ? ' <button type="button" class="fb-clear">clear all</button>' : ''}</div>
+        ${_fbRenderGroup(_fbRoot, [])}`;
     }
     function _fbApply() {
-      try { localStorage.setItem('ps_sw_filters', JSON.stringify(_fbRules)); } catch {}
+      try { localStorage.setItem('ps_sw_filters', JSON.stringify(_fbRoot)); } catch {}
       if (S.groupId !== null || S.expenses.length) renderDetail();
     }
     document.getElementById('fb').addEventListener('click', ev => {
-      if (ev.target.closest('.fb-add')) { _fbRules.push({ field: 'cost', op: 'gt', value: '', value2: '' }); _fbRender(); _fbApply(); return; }
-      if (ev.target.closest('.fb-clear')) { _fbRules = []; _fbRender(); _fbApply(); return; }
+      const add = ev.target.closest('.fb-add');
+      if (add) {
+        _fbNodeAt(_fbPath(add.dataset.path)).rules.push({ field: 'cost', op: 'gt', value: '', value2: '' });
+        _fbRender(); _fbApply(); return;
+      }
+      const addGroup = ev.target.closest('.fb-addgroup');
+      if (addGroup) {
+        _fbNodeAt(_fbPath(addGroup.dataset.path)).rules.push({
+          join: 'and', rules: [{ field: 'cost', op: 'gt', value: '', value2: '' }],
+        });
+        _fbRender(); _fbApply(); return;
+      }
+      if (ev.target.closest('.fb-clear')) { _fbRoot = { join: 'and', rules: [] }; _fbRender(); _fbApply(); return; }
+      const rmGroup = ev.target.closest('.fb-rmgroup');
+      if (rmGroup) {
+        const { parent, index } = _fbParentAt(_fbPath(rmGroup.dataset.path));
+        parent.rules.splice(index, 1);
+        _fbRender(); _fbApply(); return;
+      }
       const rm = ev.target.closest('.fb-rm');
-      if (rm) { _fbRules.splice(+rm.dataset.i, 1); _fbRender(); _fbApply(); }
+      if (rm) {
+        const { parent, index } = _fbParentAt(_fbPath(rm.dataset.path));
+        parent.rules.splice(index, 1);
+        _fbRender(); _fbApply();
+      }
     });
     document.getElementById('fb').addEventListener('change', ev => {
       const el = ev.target;
-      if (el.dataset.i == null) return;
-      const r = _fbRules[+el.dataset.i]; if (!r) return;
+      if (el.dataset.path == null) return;
+      const path = _fbPath(el.dataset.path);
+      if (el.dataset.k === 'join') {
+        _fbNodeAt(path).join = el.value;
+        _fbRender(); _fbApply(); return;
+      }
+      const r = _fbNodeAt(path); if (!r) return;
       if (el.dataset.k === 'field') {
         r.field = el.value; r.op = (FB_OPS[_fbType(r.field)] || FB_OPS.text)[0][0]; r.value = r.value2 = ''; _fbRender();
       } else if (el.dataset.k === 'op') {
@@ -618,8 +756,8 @@
     });
     document.getElementById('fb').addEventListener('input', ev => {
       const el = ev.target;
-      if (el.dataset.i == null || (el.dataset.k !== 'value' && el.dataset.k !== 'value2') || el.tagName === 'SELECT') return;
-      const r = _fbRules[+el.dataset.i]; if (!r) return;
+      if (el.dataset.path == null || (el.dataset.k !== 'value' && el.dataset.k !== 'value2') || el.tagName === 'SELECT') return;
+      const r = _fbNodeAt(_fbPath(el.dataset.path)); if (!r) return;
       r[el.dataset.k] = el.value; _fbApply();
     });
     _fbRender();
@@ -768,6 +906,40 @@
 
     function _loadMore() { _fetchPage(); }
 
+    // Sum `list` (already filtered) by whatever `keyFn` returns — backs the
+    // group-by breakdown, same shape/semantics as the expenses dashboard's.
+    function _groupTotals(list, keyFn) {
+      const totals = {};
+      let grand = 0;
+      for (const e of list) {
+        const amt = e.cost || 0;
+        grand += amt;
+        const key = keyFn(e) || 'Uncategorized';
+        const rec = totals[key] || (totals[key] = { total: 0, count: 0 });
+        rec.total += amt; rec.count++;
+      }
+      return Object.entries(totals).map(([name, v]) => ({
+        name, total: Math.round(v.total * 100) / 100, count: v.count,
+        pct: grand ? Math.round(v.total / grand * 1000) / 10 : 0,
+      })).sort((a, b) => b.total - a.total);
+    }
+    function renderRankList(containerId, items, maxVal) {
+      const el = document.getElementById(containerId);
+      if (!items.length) { el.innerHTML = '<p style="font-size:0.82rem;color:#9CA3AF;">No data</p>'; return; }
+      el.innerHTML = items.map((item, i) => `
+        <div class="rank-item">
+          <span class="rank-num">${i + 1}</span>
+          <div class="rank-body">
+            <div class="rank-name">${esc(item.name)}</div>
+            <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(item.total / maxVal * 100).toFixed(1)}%"></div></div>
+          </div>
+          <div class="rank-right">
+            <div class="rank-amt">${fmt(item.total, S.currency)}</div>
+            <div class="rank-pct">${item.pct}% · ${item.count} entr${item.count === 1 ? 'y' : 'ies'}</div>
+          </div>
+        </div>`).join('');
+    }
+
     function renderDetail() {
       const meta = document.getElementById('d-meta');
       const g = S.groups.find(x => String(x.id) === String(S.groupId));
@@ -798,6 +970,23 @@
         : '';
       document.getElementById('d-summary').textContent =
         `${list.length} expense${list.length !== 1 ? 's' : ''} · ${fmt(totCost, S.currency)} total · ${netTxt}${filtNote}`;
+
+      // Group-by breakdown — same filtered `list`, summed by category/group/payer.
+      const groupBy = document.getElementById('d-groupby').value;
+      const groupsEl = document.getElementById('d-groups');
+      if (!groupBy) {
+        groupsEl.style.display = 'none';
+        groupsEl.innerHTML = '';
+      } else {
+        const keyFns = {
+          category:   e => e.category,
+          group_name: e => e.group_name,
+          paid_by:    e => (e.users || []).filter(u => (u.paid || 0) > 0.005).map(u => u.name).join(', '),
+        };
+        const items = _groupTotals(list, keyFns[groupBy] || (() => ''));
+        groupsEl.style.display = 'block';
+        renderRankList('d-groups', items, items[0]?.total || 1);
+      }
 
       const importable = e => !e.is_payment && !S.imported.has(Number(e.id));
       S.shown = list.filter(importable).map(e => Number(e.id));

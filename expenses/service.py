@@ -9,6 +9,7 @@ class ExpensesService:
     VALID_PERIODS = ("all", "yearly", "monthly", "weekly", "daily", "custom")
     VALID_GROUPS = ("category", "source")
     VALID_SORTS = ("date_desc", "date_asc", "amount_desc", "amount_asc")
+    VALID_BUCKETS = ("day", "week", "month", "year")
 
     YEAR_RE  = re.compile(r"^\d{4}$")
     MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
@@ -33,6 +34,7 @@ class ExpensesService:
         end: str,
         group_by: str = "",
         sort: str = "",
+        bucket: str = "",
     ) -> None:
         """Raises ValueError with a descriptive message on bad input."""
         if period not in self.VALID_PERIODS:
@@ -42,6 +44,10 @@ class ExpensesService:
         if group_by and group_by not in self.VALID_GROUPS:
             raise ValueError(
                 f"Invalid group_by '{group_by}'. Valid options: {', '.join(self.VALID_GROUPS)}"
+            )
+        if bucket and bucket not in self.VALID_BUCKETS:
+            raise ValueError(
+                f"Invalid bucket '{bucket}'. Valid options: {', '.join(self.VALID_BUCKETS)}"
             )
         if sort and sort not in self.VALID_SORTS:
             raise ValueError(
@@ -222,26 +228,43 @@ class ExpensesService:
         if op == "isnot":     return s != t
         return True
 
+    def _rule_active(self, node) -> bool:
+        """True if a leaf is a usable rule, or a group has any active descendant."""
+        if not isinstance(node, dict):
+            return False
+        if isinstance(node.get("rules"), list):
+            return any(self._rule_active(child) for child in node["rules"])
+        return bool(node.get("field") and node.get("op") and self._rule_complete(node))
+
+    def _node_match(self, e: dict, node: dict) -> bool:
+        if isinstance(node.get("rules"), list):
+            kids = [c for c in node["rules"] if self._rule_active(c)]
+            if not kids:
+                return True
+            results = [self._node_match(e, k) for k in kids]
+            return any(results) if node.get("join") == "or" else all(results)
+        return self._rule_match(e, node)
+
     def _filter_by_rules(self, rows: list, filters_raw: str) -> list:
-        """Apply the client-side filter builder's rule list (JSON) to raw Notion
-        rows. Unknown / half-built rules are ignored; all remaining rules are
-        ANDed. Returns ``rows`` unchanged when there's nothing to apply."""
+        """Apply the client-side filter builder's rule tree (JSON) to raw Notion
+        rows. A node is either a leaf {field, op, value, value2} or a group
+        {join: "and"|"or", rules: [node, ...]} — groups nest to express
+        bracketed sub-expressions mixing AND/OR. A bare JSON array (the old
+        flat format) is treated as an implicit top-level AND group. Unknown /
+        half-built rules are ignored. Returns ``rows`` unchanged when there's
+        nothing to apply."""
         if not filters_raw:
             return rows
         try:
-            rules = json.loads(filters_raw)
+            parsed = json.loads(filters_raw)
         except (ValueError, TypeError):
             return rows
-        rules = [
-            r for r in rules
-            if isinstance(r, dict) and r.get("field") and r.get("op") and self._rule_complete(r)
-        ]
-        if not rules:
+        root = {"join": "and", "rules": parsed} if isinstance(parsed, list) else parsed
+        if not isinstance(root, dict) or not isinstance(root.get("rules"), list):
             return rows
-        return [
-            row for row in rows
-            if all(self._rule_match(self._row_to_entry(row), r) for r in rules)
-        ]
+        if not self._rule_active(root):
+            return rows
+        return [row for row in rows if self._node_match(self._row_to_entry(row), root)]
 
     def _row_date(self, row) -> str:
         return (
@@ -466,8 +489,73 @@ class ExpensesService:
             meta["end"] = range_end.isoformat()
         return meta
 
-    def _build_timeseries(self, period, year, rows, range_start, range_end):
+    def _generic_bucket_keys(self, range_start, range_end, unit):
+        """(bucket_keys, key_fn, fmt) for an explicit bucket unit — 'day', 'week',
+        'month', or 'year' — spanning [range_start, range_end] inclusive, letting the
+        user pick a time-frame independent of the period's own default granularity.
+        key_fn maps a full "YYYY-MM-DD" row date to one of bucket_keys."""
+        if unit == "day":
+            keys = []
+            d = range_start
+            while d <= range_end:
+                keys.append(d.isoformat())
+                d += timedelta(days=1)
+            return keys, (lambda ds: ds[:10]), (lambda k: date.fromisoformat(k).strftime("%-d %b %Y"))
+
+        if unit == "week":
+            d = range_start - timedelta(days=range_start.weekday())  # back up to Monday
+            keys = []
+            while d <= range_end:
+                keys.append(d.isoformat())
+                d += timedelta(days=7)
+
+            def key_fn(ds):
+                dd = date.fromisoformat(ds[:10])
+                return (dd - timedelta(days=dd.weekday())).isoformat()
+
+            return keys, key_fn, (lambda k: "Wk of " + date.fromisoformat(k).strftime("%-d %b"))
+
+        if unit == "month":
+            keys = []
+            y, m = range_start.year, range_start.month
+            while date(y, m, 1) <= range_end:
+                keys.append(f"{y}-{m:02d}")
+                m += 1
+                if m > 12:
+                    m, y = 1, y + 1
+            return keys, (lambda ds: ds[:7]), (lambda k: date(int(k[:4]), int(k[5:]), 1).strftime("%b %Y"))
+
+        # "year"
+        keys = [str(y) for y in range(range_start.year, range_end.year + 1)]
+        return keys, (lambda ds: ds[:4]), (lambda k: k)
+
+    def _bucket_override_range(self, rows, range_start, range_end):
+        """When the period has no fixed range (e.g. 'all'), derive one from the
+        actual row dates so an explicit bucket override still has bounds."""
+        if range_start is not None and range_end is not None:
+            return range_start, range_end
+        dates = sorted(d for d in (self._row_date(r) for r in rows) if d)
+        if not dates:
+            return None, None
+        return date.fromisoformat(dates[0]), date.fromisoformat(dates[-1])
+
+    def _build_timeseries(self, period, year, rows, range_start, range_end, bucket=""):
         """Return (labels, values) lists bucketed by the appropriate time unit."""
+        if bucket in self.VALID_BUCKETS:
+            rs, re_ = self._bucket_override_range(rows, range_start, range_end)
+            if rs is None:
+                return [], []
+            keys, key_fn, fmt = self._generic_bucket_keys(rs, re_, bucket)
+            totals = {k: 0.0 for k in keys}
+            for row in rows:
+                d_str = self._row_date(row)
+                if not d_str:
+                    continue
+                k = key_fn(d_str)
+                if k in totals:
+                    totals[k] = round(totals[k] + self._row_amount(row), 2)
+            return [fmt(k) for k in keys], [totals[k] for k in keys]
+
         if period == "daily":
             return (
                 [range_start.strftime("%d %b %Y")],
@@ -546,7 +634,7 @@ class ExpensesService:
             [buckets4[k] for k in sorted_keys2],
         )
 
-    def _build_category_timeseries(self, period, year, rows, range_start, range_end):
+    def _build_category_timeseries(self, period, year, rows, range_start, range_end, bucket=""):
         """Returns (labels, overall_values, category_series).
         category_series = [{"name", "values": [...], "total"}, ...] sorted by total desc.
         All category arrays are aligned to the same labels list.
@@ -554,7 +642,13 @@ class ExpensesService:
         today = date.today()
 
         # Build bucket keys + key extractor + label formatter
-        if period == "daily":
+        if bucket in self.VALID_BUCKETS:
+            rs, re_ = self._bucket_override_range(rows, range_start, range_end)
+            if rs is None:
+                return [], [], []
+            bucket_keys, key_fn, fmt = self._generic_bucket_keys(rs, re_, bucket)
+
+        elif period == "daily":
             bucket_keys = [range_start.isoformat()]
             key_fn = lambda d: range_start.isoformat()
             fmt = lambda k: date.fromisoformat(k).strftime("%d %b %Y")
@@ -755,8 +849,9 @@ class ExpensesService:
         force: bool,
         partial: bool = False,
         filters: str = "",
+        bucket: str = "",
     ) -> dict:
-        self._validate_period(period, year, month, week, day, start, end, group_by=group_by)
+        self._validate_period(period, year, month, week, day, start, end, group_by=group_by, bucket=bucket)
         notion_filter, range_start, range_end = self._build_date_filter(
             period, year=year or None, month=month or None,
             week=week or None, day=day or None,
@@ -773,7 +868,7 @@ class ExpensesService:
             for row in rows
         ), 2)
 
-        trend_labels, trend_values = self._build_timeseries(period, year, rows, range_start, range_end)
+        trend_labels, trend_values = self._build_timeseries(period, year, rows, range_start, range_end, bucket)
 
         breakdown = None
         if group_by:
@@ -828,8 +923,9 @@ class ExpensesService:
         force: bool,
         partial: bool = False,
         filters: str = "",
+        bucket: str = "",
     ) -> dict:
-        self._validate_period(period, year, month, week, day, start, end)
+        self._validate_period(period, year, month, week, day, start, end, bucket=bucket)
         notion_filter, range_start, range_end = self._build_date_filter(
             period, year=year or None, month=month or None,
             week=week or None, day=day or None,
@@ -841,7 +937,7 @@ class ExpensesService:
         rows = self._filter_by_date(all_rows, range_start, range_end)
         rows = self._filter_by_rules(rows, locals().get("filters", ""))
         labels, overall_values, category_series = self._build_category_timeseries(
-            period, year, rows, range_start, range_end
+            period, year, rows, range_start, range_end, bucket
         )
         return {
             "period": period,

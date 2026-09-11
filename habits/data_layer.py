@@ -6,6 +6,7 @@ import requests
 class HabitsDataLayer:
     NOTION_PAGES_URL = "https://api.notion.com/v1/pages"
     NOTION_DB_QUERY_URL = "https://api.notion.com/v1/databases/{db_id}/query"
+    NOTION_DB_URL = "https://api.notion.com/v1/databases/{db_id}"
     NOTION_PAGE_URL = "https://api.notion.com/v1/pages/{page_id}"
     NOTION_VERSION = "2022-06-28"
 
@@ -47,6 +48,14 @@ class HabitsDataLayer:
             if has_more:
                 payload["start_cursor"] = data["next_cursor"]
         return rows
+
+    def fetch_schema(self):
+        """Database properties, independent of whether any row exists yet."""
+        resp = requests.get(
+            self.NOTION_DB_URL.format(db_id=self.db_id), headers=self._headers(), timeout=15
+        )
+        resp.raise_for_status()
+        return resp.json().get("properties", {})
 
     def create_page(self, date_str):
         payload = {

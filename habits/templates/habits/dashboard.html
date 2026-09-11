@@ -153,6 +153,20 @@
     .habit-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
     .habit-done { font-size: 0.78rem; color: #9CA3AF; white-space: nowrap; flex-shrink: 0; font-weight: 500; }
 
+    /* Today checklist */
+    .today-item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.65rem 0; border-bottom: 1px solid #F3F4F6; }
+    .today-item:last-child { border-bottom: none; }
+    .today-name { font-size: 0.9rem; font-weight: 600; }
+    .today-empty { font-size: 0.85rem; color: #9CA3AF; padding: 0.5rem 0; }
+
+    .switch { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch .slider { position: absolute; inset: 0; background: #E5E7EB; border-radius: 100px; cursor: pointer; transition: background 0.2s ease; }
+    .switch .slider::before { content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+    .switch input:checked + .slider { background: var(--grad); }
+    .switch input:checked + .slider::before { transform: translateX(18px); }
+    .switch input:disabled + .slider { opacity: 0.6; cursor: not-allowed; }
+
     .error-box { background: #FEF2F2; border-left: 4px solid #EF4444; color: #B91C1C; border-radius: 12px; padding: 0.9rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; font-weight: 500; }
     #results { display: none; }
     #top-loader { position: fixed; top: 0; left: 0; z-index: 9999; height: 3px; width: 0%; background: var(--grad); opacity: 0; transition: width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease; pointer-events: none; border-radius: 0 2px 2px 0; }
@@ -208,6 +222,8 @@
       background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
     }
     [data-theme="dark"] .error-box { background: rgba(239,68,68,0.10); }
+    [data-theme="dark"] .today-item { border-color: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .switch .slider { background: rgba(255,255,255,0.15); }
 
     /* ── Animations ── */
     @keyframes _fadeUp  { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
@@ -250,6 +266,17 @@
     </nav>
 
     <h1>Habits Dashboard</h1>
+
+    <div class="card" id="today-card">
+      <h2>Today · <span id="today-date"></span></h2>
+      <div id="today-list">
+        <div class="skeleton-wrap">
+          <div class="sk-line" style="width:100%;height:2.2rem;margin-bottom:0.6rem;border-radius:10px;"></div>
+          <div class="sk-line" style="width:100%;height:2.2rem;margin-bottom:0.6rem;border-radius:10px;"></div>
+          <div class="sk-line" style="width:70%;height:2.2rem;border-radius:10px;"></div>
+        </div>
+      </div>
+    </div>
 
     <div class="card">
       <div class="filters">
@@ -334,6 +361,51 @@
       el.addEventListener('animationend', function() { el.remove(); }, {once:true});
     }, duration);
   }
+
+  async function loadToday() {
+    const dateEl = document.getElementById("today-date");
+    const listEl = document.getElementById("today-list");
+    dateEl.textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+    try {
+      const res = await fetch("/habits/today/");
+      const data = await res.json();
+      if (!res.ok) { listEl.innerHTML = `<div class="today-empty">${data.error || "Couldn't load today's habits."}</div>`; return; }
+      if (!data.habits.length) { listEl.innerHTML = `<div class="today-empty">No checkbox habits found in the Notion database.</div>`; return; }
+      listEl.innerHTML = data.habits.map(h => `
+        <div class="today-item">
+          <span class="today-name">${h.name}</span>
+          <label class="switch">
+            <input type="checkbox" data-habit="${h.name}" ${h.done ? "checked" : ""} onchange="toggleHabit(this)">
+            <span class="slider"></span>
+          </label>
+        </div>`).join("");
+    } catch (e) {
+      listEl.innerHTML = `<div class="today-empty">Network error: ${e.message}</div>`;
+    }
+  }
+
+  async function toggleHabit(input) {
+    const name = input.dataset.habit;
+    const val = input.checked;
+    input.disabled = true;
+    try {
+      const res = await fetch("/habits/check/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ habits: { [name]: val } }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save");
+      showToast(`${name} ${val ? "checked" : "unchecked"}`, "success", 1800);
+    } catch (e) {
+      input.checked = !val;
+      showToast("Couldn't save: " + e.message, "error");
+    } finally {
+      input.disabled = false;
+    }
+  }
+
+  loadToday();
 
   const today = new Date();
   document.getElementById("year").value       = today.getFullYear();
