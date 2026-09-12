@@ -57,6 +57,42 @@ class HabitsDataLayer:
         resp.raise_for_status()
         return resp.json().get("properties", {})
 
+    def add_checkbox_property(self, name):
+        """Add a new checkbox column to the database schema."""
+        resp = requests.patch(
+            self.NOTION_DB_URL.format(db_id=self.db_id),
+            headers=self._headers(),
+            json={"properties": {name: {"checkbox": {}}}},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def add_number_property(self, name):
+        """Add (or convert an existing column to) a plain number column — used
+        to mirror the dashboard's computed Score back into Notion, since a
+        formula property can't be set directly via the API."""
+        resp = requests.patch(
+            self.NOTION_DB_URL.format(db_id=self.db_id),
+            headers=self._headers(),
+            json={"properties": {name: {"number": {}}}},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def remove_property(self, name):
+        """Delete a column from the database schema — permanent, drops that
+        column's data on every row."""
+        resp = requests.patch(
+            self.NOTION_DB_URL.format(db_id=self.db_id),
+            headers=self._headers(),
+            json={"properties": {name: None}},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
     def create_page(self, date_str):
         payload = {
             "parent": {"database_id": self.db_id},

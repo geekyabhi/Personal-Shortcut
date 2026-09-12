@@ -54,12 +54,29 @@ class HabitsSummaryView(HabitsBaseView):
         return JsonResponse(data)
 
 
+class HabitsListView(HabitsBaseView):
+    def get(self, request):
+        if not self.service:
+            return self._creds_error()
+        try:
+            data = self.service.list_entries(**self._period_params())
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        except requests.HTTPError as exc:
+            return self._notion_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Network error: {exc}"}, status=502)
+        return JsonResponse(data)
+
+
 class HabitsChartView(HabitsBaseView):
     def get(self, request):
         if not self.service:
             return self._creds_error()
         try:
-            data = self.service.get_chart_data(**self._period_params())
+            data = self.service.get_chart_data(
+                **self._period_params(), bucket=request.GET.get("bucket", "")
+            )
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
         except requests.HTTPError as exc:
@@ -74,7 +91,11 @@ class BackfillView(HabitsBaseView):
         if not self.service:
             return self._creds_error()
         try:
-            result = self.service.backfill()
+            result = self.service.backfill(
+                start=request.GET.get("start", ""), end=request.GET.get("end", "")
+            )
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
         except requests.RequestException as exc:
             return JsonResponse({"error": f"Notion fetch error: {exc}"}, status=502)
         return JsonResponse(result)
@@ -110,6 +131,79 @@ class CheckHabitsView(HabitsBaseView):
             return self._notion_error(exc)
         except requests.RequestException as exc:
             return JsonResponse({"error": f"Failed to update habits: {exc}"}, status=502)
+        return JsonResponse(result)
+
+
+class HabitsUpdateEntryView(HabitsBaseView):
+    def post(self, request, page_id):
+        if not self.service:
+            return self._creds_error()
+        try:
+            body = json.loads(request.body)
+        except (ValueError, json.JSONDecodeError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+        habits = body.get("habits", {})
+        if not isinstance(habits, dict):
+            return JsonResponse({"error": "'habits' must be an object e.g. {\"Exercise\": true}"}, status=400)
+        try:
+            result = self.service.update_entry(page_id, habits)
+        except requests.HTTPError as exc:
+            return self._notion_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Failed to update entry: {exc}"}, status=502)
+        return JsonResponse(result)
+
+
+class HabitNamesView(HabitsBaseView):
+    def get(self, request):
+        if not self.service:
+            return self._creds_error()
+        try:
+            names = self.service.list_habit_names()
+        except requests.HTTPError as exc:
+            return self._notion_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Network error: {exc}"}, status=502)
+        return JsonResponse({"habits": names})
+
+
+class AddHabitView(HabitsBaseView):
+    def post(self, request):
+        if not self.service:
+            return self._creds_error()
+        try:
+            body = json.loads(request.body)
+        except (ValueError, json.JSONDecodeError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+        try:
+            result = self.service.add_habit(
+                body.get("name", ""), default_checked=bool(body.get("default_checked"))
+            )
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        except requests.HTTPError as exc:
+            return self._notion_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Failed to add habit: {exc}"}, status=502)
+        return JsonResponse(result)
+
+
+class RemoveHabitView(HabitsBaseView):
+    def post(self, request):
+        if not self.service:
+            return self._creds_error()
+        try:
+            body = json.loads(request.body)
+        except (ValueError, json.JSONDecodeError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+        try:
+            result = self.service.remove_habit(body.get("name", ""))
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        except requests.HTTPError as exc:
+            return self._notion_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Failed to remove habit: {exc}"}, status=502)
         return JsonResponse(result)
 
 

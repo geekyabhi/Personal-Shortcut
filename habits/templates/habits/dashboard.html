@@ -121,6 +121,168 @@
     .backfill-result.success { background: rgba(5,150,105,0.1); color: #065F46; border: 1px solid rgba(5,150,105,0.2); }
     .backfill-result.error   { background: #FEF2F2; color: #B91C1C; border: 1px solid #FCA5A5; }
 
+    .divider { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #F3F4F6; }
+    [data-theme="dark"] .divider { border-top-color: rgba(255,255,255,0.07); }
+    .range-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end; }
+    .range-row > div { flex: 1; min-width: 130px; }
+
+    .mh-check-label {
+      display: flex; align-items: center; gap: 0.4rem; text-transform: none;
+      font-weight: 500; color: inherit; font-size: 0.82rem; white-space: nowrap;
+    }
+    .mh-check-label input[type="checkbox"] { width: auto; }
+
+    /* ── Filter builder (Notion-style AND/OR + bracket groups) ── */
+    .fb { margin-top: 0.9rem; }
+    .fb-title {
+      display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.7rem; font-weight: 700;
+      color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem;
+    }
+    .fb-title .fb-clear {
+      text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 0.75rem;
+      color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; font-family: inherit;
+    }
+    .fb-title .fb-clear:hover { text-decoration: underline; }
+    .fb-rules { display: flex; flex-direction: column; gap: 0.45rem; }
+    .fb-rule {
+      display: grid;
+      grid-template-columns: minmax(110px, 0.9fr) minmax(110px, 0.9fr) minmax(120px, 1.3fr) 32px;
+      gap: 0.4rem; align-items: center;
+    }
+    .fb-rule select, .fb-rule input {
+      padding: 0.45rem 0.55rem; border-radius: 8px; border: 1.5px solid #E5E7EB;
+      font-size: 0.82rem; font-family: inherit; background: #F9FAFB; color: #111827;
+      min-width: 0; width: 100%;
+    }
+    .fb-rule select:focus, .fb-rule input:focus { outline: none; border-color: var(--accent); background: #fff; }
+    [data-theme="dark"] .fb-rule select, [data-theme="dark"] .fb-rule input {
+      background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
+    }
+    .fb-vwrap { display: flex; gap: 0.3rem; align-items: center; min-width: 0; }
+    .fb-vwrap.fb-none::after { content: "—"; color: #C4C7D0; font-size: 0.85rem; padding-left: 0.2rem; }
+    .fb-rm {
+      width: 32px; height: 32px; flex: none; border-radius: 8px; border: 1.5px solid #FECACA;
+      background: transparent; color: #EF4444; cursor: pointer; font-size: 0.9rem; line-height: 1;
+    }
+    .fb-rm:hover { background: #FEF2F2; }
+    [data-theme="dark"] .fb-rm { border-color: rgba(239,68,68,0.35); color: #F87171; }
+    .fb-add {
+      border: 1.5px dashed rgba(5,150,105,0.35); border-radius: 8px; background: transparent;
+      color: var(--accent); font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.9rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .fb-add:hover { background: rgba(5,150,105,0.08); }
+    [data-theme="dark"] .fb-add { border-color: rgba(5,150,105,0.4); }
+    .fb-joiner { margin: 0.1rem 0 -0.15rem; }
+    .fb-join-select {
+      width: auto; padding: 0.15rem 0.55rem; border: none; border-radius: 100px;
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--accent); background: rgba(5,150,105,0.1); cursor: pointer;
+    }
+    [data-theme="dark"] .fb-join-select { background: rgba(5,150,105,0.18); color: #6EE7B7; }
+    .fb-group {
+      margin: 0.3rem 0; padding: 0.6rem 0.65rem; border: 1.5px dashed rgba(5,150,105,0.35);
+      border-radius: 12px; background: rgba(5,150,105,0.04);
+    }
+    [data-theme="dark"] .fb-group { border-color: rgba(5,150,105,0.35); background: rgba(5,150,105,0.06); }
+    .fb-group-inner { display: flex; align-items: flex-start; gap: 0.35rem; }
+    .fb-bracket { flex: none; font-size: 1.3rem; font-weight: 800; line-height: 1.5; color: var(--accent); opacity: 0.55; }
+    .fb-group-content { flex: 1; min-width: 0; }
+    .fb-group-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-top: 0.55rem; }
+    .fb-addgroup {
+      border: 1.5px dashed rgba(5,150,105,0.35); border-radius: 8px; background: transparent;
+      color: var(--accent); font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.9rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .fb-addgroup:hover { background: rgba(5,150,105,0.08); }
+    [data-theme="dark"] .fb-addgroup { border-color: rgba(5,150,105,0.4); }
+    .fb-rmgroup {
+      margin-left: auto; border: 1.5px solid #FECACA; border-radius: 8px; background: transparent;
+      color: #EF4444; font-size: 0.75rem; font-weight: 600; padding: 0.4rem 0.7rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .fb-rmgroup:hover { background: #FEF2F2; }
+    [data-theme="dark"] .fb-rmgroup { border-color: rgba(239,68,68,0.35); color: #F87171; }
+    .fb-empty-group { font-size: 0.78rem; color: #9CA3AF; padding: 0.2rem 0; }
+    @media (max-width: 560px) {
+      .fb-rule { grid-template-columns: 1fr 1fr; }
+      .fb-rule .fb-vwrap { grid-column: 1 / 2; }
+      .fb-rule .fb-rm { grid-column: 2 / 3; justify-self: end; }
+    }
+
+    /* ── Browse entries grid — one row per day, one column per habit ── */
+    .browse-count-badge { font-size: 0.78rem; font-weight: 700; background: var(--grad); color: #fff; padding: 0.25rem 0.75rem; border-radius: 100px; }
+    .empty-state { font-size: 0.85rem; color: #9CA3AF; padding: 0.75rem 0; }
+
+    .grid-scroll {
+      overflow: auto; -webkit-overflow-scrolling: touch;
+      max-height: 65vh; margin: 0 -0.25rem; padding: 0 0.25rem;
+      border: 1px solid #F3F4F6; border-radius: 12px;
+    }
+    [data-theme="dark"] .grid-scroll { border-color: rgba(255,255,255,0.07); }
+    .hgrid-table { border-collapse: collapse; width: 100%; }
+    .hgrid-table th, .hgrid-table td {
+      padding: 0.5rem 0.5rem; text-align: center; border-bottom: 1px solid #F3F4F6; white-space: nowrap;
+    }
+    [data-theme="dark"] .hgrid-table th, [data-theme="dark"] .hgrid-table td { border-bottom-color: rgba(255,255,255,0.07); }
+    .hgrid-table thead th {
+      position: sticky; top: 0; z-index: 1; background: #FAFFFC;
+      font-size: 0.66rem; font-weight: 700; color: #6B7280; text-transform: uppercase;
+      letter-spacing: 0.02em; white-space: normal; max-width: 78px; vertical-align: bottom;
+    }
+    [data-theme="dark"] .hgrid-table thead th { background: #0F1712; }
+    .hgrid-date-col, .hgrid-score-col { text-align: left; }
+    .hgrid-date-col { font-weight: 700; font-size: 0.85rem; }
+    .hgrid-score-col { font-weight: 600; color: var(--accent); }
+    .hgrid-table tbody tr:hover { background: rgba(5,150,105,0.05); }
+    .hgrid-table tr.hgrid-dirty { background: rgba(217,119,6,0.09); }
+    [data-theme="dark"] .hgrid-table tr.hgrid-dirty { background: rgba(217,119,6,0.16); }
+    .hgrid-cb { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
+    .hgrid-habit-head { display: flex; align-items: center; justify-content: center; gap: 0.3rem; }
+    .hgrid-habit-name { min-width: 0; }
+    .hgrid-habit-rm {
+      flex: none; border: none; background: transparent; color: #EF4444; cursor: pointer;
+      font-size: 0.75rem; line-height: 1; padding: 0.1rem; opacity: 0.45; transition: opacity 0.15s;
+    }
+    .hgrid-habit-rm:hover { opacity: 1; }
+    .hgrid-add-col { width: 2.5rem; }
+    .hgrid-add-btn {
+      width: 26px; height: 26px; border-radius: 50%; border: 1.5px dashed rgba(5,150,105,0.4);
+      background: transparent; color: var(--accent); font-size: 1rem; font-weight: 700;
+      line-height: 1; cursor: pointer; font-family: inherit;
+    }
+    .hgrid-add-btn:hover { background: rgba(5,150,105,0.08); }
+    [data-theme="dark"] .hgrid-add-btn { border-color: rgba(5,150,105,0.5); }
+    .hgrid-add-pop {
+      position: absolute; top: 100%; right: 0; margin-top: 0.35rem; z-index: 5;
+      background: #fff; border: 1.5px solid #E5E7EB; border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.14);
+      padding: 0.75rem; width: 220px; text-align: left; text-transform: none; letter-spacing: normal;
+    }
+    [data-theme="dark"] .hgrid-add-pop { background: #16211B; border-color: rgba(255,255,255,0.12); }
+    .hgrid-add-pop input[type="text"] {
+      width: 100%; padding: 0.45rem 0.6rem; border-radius: 8px; border: 1.5px solid #E5E7EB;
+      font-size: 0.82rem; font-family: inherit; background: #F9FAFB; color: #111827; margin-bottom: 0.5rem;
+    }
+    [data-theme="dark"] .hgrid-add-pop input[type="text"] {
+      background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
+    }
+    .hgrid-add-pop-actions { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
+    .hgrid-add-pop-actions button {
+      flex: 1; padding: 0.4rem 0.6rem; font-size: 0.78rem; font-weight: 600; border-radius: 8px;
+      cursor: pointer; font-family: inherit; border: 1.5px solid transparent;
+    }
+    .hgrid-add-confirm { background: var(--grad); color: #fff; }
+    .hgrid-add-cancel { background: transparent; border-color: #E5E7EB; color: #6B7280; }
+    [data-theme="dark"] .hgrid-add-cancel { border-color: rgba(255,255,255,0.15); color: #9CA3AF; }
+
+    .bulk-bar {
+      display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.85rem;
+      padding: 0.6rem 0.9rem; background: rgba(217,119,6,0.08); border: 1px solid #D97706;
+      border-radius: 12px; font-size: 0.85rem; font-weight: 700; color: #92400E;
+    }
+    [data-theme="dark"] .bulk-bar { background: rgba(217,119,6,0.16); color: #FBBF24; border-color: rgba(217,119,6,0.5); }
+
     /* Stats */
     .period-badge {
       display: inline-block; padding: 0.3rem 0.9rem; border-radius: 100px;
@@ -128,44 +290,7 @@
       box-shadow: 0 2px 10px rgba(5,150,105,0.3); margin-bottom: 1rem;
     }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.85rem; margin-bottom: 1rem; }
-    .stat-card {
-      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.9); border-radius: 18px;
-      padding: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center;
-    }
-    .stat-value { font-size: clamp(1.3rem, 4vw, 1.8rem); font-weight: 400; letter-spacing: -0.02em; }
-    .stat-label { font-size: 0.7rem; color: #6B7280; margin-top: 0.25rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-    .stat-value.green {
-      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    }
-    .stat-value.blue  { background: linear-gradient(135deg,#4F46E5,#7C3AED); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-    .stat-value.amber { background: linear-gradient(135deg,#D97706,#F59E0B); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-
     h2 { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.85rem; color: #374151; }
-
-    /* Habit list */
-    .habit-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0; border-bottom: 1px solid #F3F4F6; transition: background 0.15s; }
-    .habit-item:last-child { border-bottom: none; }
-    .habit-name { font-size: 0.88rem; font-weight: 600; min-width: 0; flex-shrink: 1; word-break: break-word; flex: 1; }
-    .habit-rate { font-size: 0.88rem; font-weight: 500; white-space: nowrap; flex-shrink: 0; width: 3.5rem; text-align: right; }
-    .habit-bar-wrap { width: 80px; flex-shrink: 0; height: 6px; background: #E5E7EB; border-radius: 3px; overflow: hidden; display: none; }
-    .habit-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-    .habit-done { font-size: 0.78rem; color: #9CA3AF; white-space: nowrap; flex-shrink: 0; font-weight: 500; }
-
-    /* Today checklist */
-    .today-item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.65rem 0; border-bottom: 1px solid #F3F4F6; }
-    .today-item:last-child { border-bottom: none; }
-    .today-name { font-size: 0.9rem; font-weight: 600; }
-    .today-empty { font-size: 0.85rem; color: #9CA3AF; padding: 0.5rem 0; }
-
-    .switch { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .switch .slider { position: absolute; inset: 0; background: #E5E7EB; border-radius: 100px; cursor: pointer; transition: background 0.2s ease; }
-    .switch .slider::before { content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
-    .switch input:checked + .slider { background: var(--grad); }
-    .switch input:checked + .slider::before { transform: translateX(18px); }
-    .switch input:disabled + .slider { opacity: 0.6; cursor: not-allowed; }
 
     .error-box { background: #FEF2F2; border-left: 4px solid #EF4444; color: #B91C1C; border-radius: 12px; padding: 0.9rem 1rem; font-size: 0.9rem; margin-bottom: 1rem; font-weight: 500; }
     #results { display: none; }
@@ -222,8 +347,6 @@
       background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
     }
     [data-theme="dark"] .error-box { background: rgba(239,68,68,0.10); }
-    [data-theme="dark"] .today-item { border-color: rgba(255,255,255,0.07); }
-    [data-theme="dark"] .switch .slider { background: rgba(255,255,255,0.15); }
 
     /* ── Animations ── */
     @keyframes _fadeUp  { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
@@ -267,17 +390,6 @@
 
     <h1>Habits Dashboard</h1>
 
-    <div class="card" id="today-card">
-      <h2>Today · <span id="today-date"></span></h2>
-      <div id="today-list">
-        <div class="skeleton-wrap">
-          <div class="sk-line" style="width:100%;height:2.2rem;margin-bottom:0.6rem;border-radius:10px;"></div>
-          <div class="sk-line" style="width:100%;height:2.2rem;margin-bottom:0.6rem;border-radius:10px;"></div>
-          <div class="sk-line" style="width:70%;height:2.2rem;border-radius:10px;"></div>
-        </div>
-      </div>
-    </div>
-
     <div class="card">
       <div class="filters">
         <div>
@@ -299,6 +411,9 @@
         <div id="wrap-end" class="date-input"><label for="end-date">End Date</label><input type="date" id="end-date" /></div>
       </div>
 
+      <!-- Notion-style filter builder — client-side, applies live to Browse + Summary -->
+      <div class="fb" id="fb"></div>
+
       <div class="presets" id="wrap-presets">
         <button type="button" class="preset-btn" onclick="setPreset('7d')">Last 7 days</button>
         <button type="button" class="preset-btn" onclick="setPreset('30d')">Last 30 days</button>
@@ -307,8 +422,18 @@
         <button type="button" class="preset-btn" onclick="setPreset('ytd')">Year to date</button>
       </div>
 
-      <button class="btn-primary" id="btn" onclick="fetchSummary()">Fetch Summary</button>
-      <button class="btn-secondary" id="backfill-btn" onclick="runBackfill()">Backfill Missing Entries</button>
+      <button class="btn-primary" id="btn" onclick="fetchSummary()">Load Entries</button>
+      <button class="btn-secondary" id="backfill-btn" onclick="runBackfill()">Backfill Missing Entries (This Year)</button>
+
+      <div class="divider">
+        <label>Backfill a custom range</label>
+        <div class="range-row">
+          <div><input type="date" id="backfill-start" /></div>
+          <div><input type="date" id="backfill-end" /></div>
+          <button class="btn-secondary" id="backfill-range-btn" onclick="runBackfillRange()" style="margin-top:0;">Backfill Range</button>
+        </div>
+      </div>
+
       <div id="backfill-result" class="backfill-result"></div>
     </div>
 
@@ -325,24 +450,18 @@
     <div id="results">
       <div class="period-badge" id="period-badge"></div>
 
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value blue" id="stat-days">—</div>
-          <div class="stat-label">Days Tracked</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value green" id="stat-rate">—</div>
-          <div class="stat-label">Completion</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value amber" id="stat-score">—</div>
-          <div class="stat-label">Avg Score</div>
-        </div>
-      </div>
-
       <div class="card">
-        <h2>Habit Completion</h2>
-        <div id="habit-list"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem;flex-wrap:wrap;gap:0.5rem;">
+          <h2 style="margin-bottom:0;">Browse Entries</h2>
+          <span class="browse-count-badge" id="browse-count-badge"></span>
+        </div>
+        <p style="font-size:0.78rem;color:#9CA3AF;margin-bottom:0.75rem;">Check or uncheck any cell to stage an edit, then save them all at once. Use + in the header to add a habit, 🗑 to remove one.</p>
+        <div class="bulk-bar" id="bulk-bar" hidden>
+          <span id="bulk-count">0 changes</span>
+          <button class="btn-primary" id="bulk-save-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_saveBulkEdits()">Save changes</button>
+          <button class="btn-secondary" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_discardBulkEdits()">Discard</button>
+        </div>
+        <div class="grid-scroll"><div id="browse-list"></div></div>
       </div>
     </div>
   </div>
@@ -361,51 +480,6 @@
       el.addEventListener('animationend', function() { el.remove(); }, {once:true});
     }, duration);
   }
-
-  async function loadToday() {
-    const dateEl = document.getElementById("today-date");
-    const listEl = document.getElementById("today-list");
-    dateEl.textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
-    try {
-      const res = await fetch("/habits/today/");
-      const data = await res.json();
-      if (!res.ok) { listEl.innerHTML = `<div class="today-empty">${data.error || "Couldn't load today's habits."}</div>`; return; }
-      if (!data.habits.length) { listEl.innerHTML = `<div class="today-empty">No checkbox habits found in the Notion database.</div>`; return; }
-      listEl.innerHTML = data.habits.map(h => `
-        <div class="today-item">
-          <span class="today-name">${h.name}</span>
-          <label class="switch">
-            <input type="checkbox" data-habit="${h.name}" ${h.done ? "checked" : ""} onchange="toggleHabit(this)">
-            <span class="slider"></span>
-          </label>
-        </div>`).join("");
-    } catch (e) {
-      listEl.innerHTML = `<div class="today-empty">Network error: ${e.message}</div>`;
-    }
-  }
-
-  async function toggleHabit(input) {
-    const name = input.dataset.habit;
-    const val = input.checked;
-    input.disabled = true;
-    try {
-      const res = await fetch("/habits/check/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ habits: { [name]: val } }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to save");
-      showToast(`${name} ${val ? "checked" : "unchecked"}`, "success", 1800);
-    } catch (e) {
-      input.checked = !val;
-      showToast("Couldn't save: " + e.message, "error");
-    } finally {
-      input.disabled = false;
-    }
-  }
-
-  loadToday();
 
   const today = new Date();
   document.getElementById("year").value       = today.getFullYear();
@@ -467,16 +541,6 @@
     if (d.period === "custom")  return `${d.start} – ${d.end}`;
   }
 
-  function rateColor(r) {
-    if (r >= 80) return "linear-gradient(135deg,#059669,#0891B2)";
-    if (r >= 50) return "linear-gradient(135deg,#D97706,#F59E0B)";
-    return "linear-gradient(135deg,#DC2626,#EF4444)";
-  }
-  function rateTextColor(r) {
-    if (r >= 80) return "#059669";
-    if (r >= 50) return "#D97706";
-    return "#DC2626";
-  }
 
   async function runBackfill() {
     const btn = document.getElementById("backfill-btn");
@@ -492,13 +556,420 @@
     } catch (e) {
       result.textContent = "Network error: " + e.message; result.classList.add("error");
     } finally {
-      result.style.display = "block"; btn.disabled = false; btn.textContent = "Backfill Missing Entries";
+      result.style.display = "block"; btn.disabled = false; btn.textContent = "Backfill Missing Entries (This Year)";
+    }
+  }
+
+  async function runBackfillRange() {
+    const start = document.getElementById("backfill-start").value;
+    const end = document.getElementById("backfill-end").value;
+    const result = document.getElementById("backfill-result");
+    if (!start || !end) { showToast("Pick both a start and end date", "error"); return; }
+    const btn = document.getElementById("backfill-range-btn");
+    btn.disabled = true; btn.textContent = "Backfilling…";
+    result.style.display = "none"; result.className = "backfill-result";
+    try {
+      const res = await fetch(`/habits/backfill/?start=${start}&end=${end}`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { result.textContent = data.error || "Backfill failed."; result.classList.add("error"); }
+      else if (data.created === 0) { result.textContent = `No missing entries between ${start} and ${end}.`; result.classList.add("success"); }
+      else { result.textContent = `Created ${data.created} missing entr${data.created === 1 ? "y" : "ies"} between ${start} and ${end}.${data.failed.length ? ` ${data.failed.length} failed.` : ""}`; result.classList.add("success"); }
+    } catch (e) {
+      result.textContent = "Network error: " + e.message; result.classList.add("error");
+    } finally {
+      result.style.display = "block"; btn.disabled = false; btn.textContent = "Backfill Range";
+    }
+  }
+
+  /* ── Remove a habit column — bin icon next to its name in the grid header ── */
+  async function removeHabit(name) {
+    if (!confirm(`Remove "${name}"? This permanently deletes that column and all its history from Notion — it can't be undone.`)) return;
+    try {
+      const res = await fetch("/habits/remove/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to remove habit");
+      showToast(`Removed "${name}"`, "success");
+      fetchSummary();
+    } catch (e) {
+      showToast("Error: " + e.message, "error");
     }
   }
 
   let _loaderTimer;
   function _showLoader() { const el=document.getElementById('top-loader'); clearTimeout(_loaderTimer); el.style.transition='none'; el.style.width='0%'; el.style.opacity='1'; requestAnimationFrame(()=>{ el.style.transition='width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease'; el.style.width='80%'; }); }
   function _hideLoader() { const el=document.getElementById('top-loader'); el.style.transition='width 0.2s ease, opacity 0.4s ease 0.15s'; el.style.width='100%'; _loaderTimer=setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{ el.style.width='0%'; },400); },150); }
+
+  function _esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+  /* ══ Notion-style filter builder — client-side, over the loaded Browse entries ══
+     A node is either a leaf {field, op, value, value2} or a group
+     {join: "and"|"or", rules: [node, ...]} — nested groups render as a
+     bracketed sub-clause so rules can mix AND/OR. Fields are Date, Score, and
+     one bool field per habit — the habit list is dynamic (whatever checkbox
+     columns your Notion database has), so FB_FIELDS is rebuilt on every fetch. */
+  let _fbRoot = { join: "and", rules: [] };
+  try {
+    const saved = JSON.parse(localStorage.getItem("ps_habits_filters"));
+    if (Array.isArray(saved)) _fbRoot = { join: "and", rules: saved };
+    else if (saved && Array.isArray(saved.rules)) _fbRoot = saved;
+  } catch {}
+
+  let FB_FIELDS = [
+    { key: "date", label: "Date", type: "date" },
+    { key: "score", label: "Score", type: "number" },
+  ];
+  const FB_OPS = {
+    number: [["eq", "="], ["ne", "≠"], ["gt", ">"], ["lt", "<"], ["gte", "≥"], ["lte", "≤"], ["between", "between"], ["empty", "is empty"], ["nempty", "is not empty"]],
+    date:   [["on", "is on"], ["before", "is before"], ["after", "is after"], ["between", "is between"], ["empty", "is empty"], ["nempty", "is not empty"]],
+    bool:   [["true", "is checked"], ["false", "is unchecked"]],
+  };
+  const _fbNoValue = op => op === "empty" || op === "nempty" || op === "true" || op === "false";
+  function _fbType(field) { return (FB_FIELDS.find(f => f.key === field) || {}).type || "number"; }
+  function _fbGet(e, field) { return e[field]; }
+  function _fbMatch(e, r) {
+    const type = _fbType(r.field);
+    const v = _fbGet(e, r.field);
+    const a = r.value, b = r.value2;
+    if (type === "bool") return r.op === "true" ? !!v : !v;
+    if (type === "date") {
+      const d = v || "";
+      if (r.op === "empty")  return !d;
+      if (r.op === "nempty") return !!d;
+      if (!d || !a) return false;
+      if (r.op === "on")     return d === a;
+      if (r.op === "before") return d < a;
+      if (r.op === "after")  return d > a;
+      if (r.op === "between") return b ? (d >= a && d <= b) : d >= a;
+      return true;
+    }
+    // number
+    const n = (v === "" || v == null) ? null : Number(v);
+    if (r.op === "empty")  return n == null;
+    if (r.op === "nempty") return n != null;
+    if (n == null || a === "" || a == null) return false;
+    const x = Number(a), y = Number(b);
+    if (r.op === "eq") return n === x;
+    if (r.op === "ne") return n !== x;
+    if (r.op === "gt") return n > x;
+    if (r.op === "lt") return n < x;
+    if (r.op === "gte") return n >= x;
+    if (r.op === "lte") return n <= x;
+    if (r.op === "between") return n >= Math.min(x, y) && n <= Math.max(x, y);
+    return true;
+  }
+  function _fbComplete(r) {
+    if (_fbNoValue(r.op)) return true;
+    if (r.value == null || r.value === "") return false;
+    if (r.op === "between" && (r.value2 == null || r.value2 === "")) return false;
+    return true;
+  }
+  const _fbIsGroup = node => !!(node && Array.isArray(node.rules));
+  function _fbActive(node) {
+    if (_fbIsGroup(node)) return node.rules.some(_fbActive);
+    return !!(node.field && node.op && _fbComplete(node));
+  }
+  function _fbNodeMatch(e, node) {
+    if (_fbIsGroup(node)) {
+      const kids = node.rules.filter(_fbActive);
+      if (!kids.length) return true;
+      const results = kids.map(k => _fbNodeMatch(e, k));
+      return node.join === "or" ? results.some(Boolean) : results.every(Boolean);
+    }
+    return _fbMatch(e, node);
+  }
+  function _fbFilter(list) {
+    if (!_fbActive(_fbRoot)) return list;
+    return list.filter(e => _fbNodeMatch(e, _fbRoot));
+  }
+  const _fbPath = s => (s === "" || s == null) ? [] : s.split(".").map(Number);
+  function _fbNodeAt(path) {
+    let node = _fbRoot;
+    for (const i of path) node = node.rules[i];
+    return node;
+  }
+  function _fbParentAt(path) {
+    let node = _fbRoot;
+    for (let k = 0; k < path.length - 1; k++) node = node.rules[path[k]];
+    return { parent: node, index: path[path.length - 1] };
+  }
+  function _fbValueField(r, pathStr) {
+    const type = _fbType(r.field);
+    if (_fbNoValue(r.op)) return '<span class="fb-vwrap fb-none"></span>';
+    const inType = type === "date" ? "date" : "number";
+    if (r.op === "between") {
+      return `<span class="fb-vwrap">
+        <input type="${inType}" data-path="${pathStr}" data-k="value"  value="${_esc(r.value ?? "")}">
+        <input type="${inType}" data-path="${pathStr}" data-k="value2" value="${_esc(r.value2 ?? "")}">
+      </span>`;
+    }
+    return `<span class="fb-vwrap"><input type="${inType}" data-path="${pathStr}" data-k="value" value="${_esc(r.value ?? "")}" placeholder="value"></span>`;
+  }
+  function _fbRenderRule(r, path) {
+    const pathStr = path.join(".");
+    const fOpts = FB_FIELDS.map(f => `<option value="${f.key}"${f.key === r.field ? " selected" : ""}>${f.label}</option>`).join("");
+    const ops = FB_OPS[_fbType(r.field)] || FB_OPS.number;
+    const oOpts = ops.map(([k, lbl]) => `<option value="${k}"${k === r.op ? " selected" : ""}>${lbl}</option>`).join("");
+    return `<div class="fb-rule">
+      <select data-path="${pathStr}" data-k="field">${fOpts}</select>
+      <select data-path="${pathStr}" data-k="op">${oOpts}</select>
+      ${_fbValueField(r, pathStr)}
+      <button type="button" class="fb-rm" data-path="${pathStr}" title="Remove">✕</button>
+    </div>`;
+  }
+  function _fbRenderGroup(group, path) {
+    const isRoot = path.length === 0;
+    const pathStr = path.join(".");
+    const items = group.rules.map((child, i) => {
+      const childPath = [...path, i];
+      const joiner = i > 0
+        ? `<div class="fb-joiner"><select class="fb-join-select" data-path="${pathStr}" data-k="join">
+             <option value="and"${group.join === "and" ? " selected" : ""}>and</option>
+             <option value="or"${group.join === "or" ? " selected" : ""}>or</option>
+           </select></div>`
+        : "";
+      return joiner + (_fbIsGroup(child) ? _fbRenderGroup(child, childPath) : _fbRenderRule(child, childPath));
+    }).join("");
+    const body = `
+      <div class="fb-rules">${items || '<div class="fb-empty-group">No conditions yet.</div>'}</div>
+      <div class="fb-group-actions">
+        <button type="button" class="fb-add" data-path="${pathStr}">+ Add filter</button>
+        <button type="button" class="fb-addgroup" data-path="${pathStr}">+ Add filter group</button>
+        ${!isRoot ? `<button type="button" class="fb-rmgroup" data-path="${pathStr}" title="Remove group">✕ Remove group</button>` : ""}
+      </div>`;
+    if (isRoot) return body;
+    return `<div class="fb-group">
+      <div class="fb-group-inner">
+        <span class="fb-bracket">(</span>
+        <div class="fb-group-content">${body}</div>
+        <span class="fb-bracket">)</span>
+      </div>
+    </div>`;
+  }
+  function _fbRender() {
+    const host = document.getElementById("fb");
+    if (!host) return;
+    host.innerHTML = `
+      <div class="fb-title">Filters${_fbRoot.rules.length ? ' <button type="button" class="fb-clear">clear all</button>' : ""}</div>
+      ${_fbRenderGroup(_fbRoot, [])}`;
+  }
+  function _fbPersistAndApply() {
+    try { localStorage.setItem("ps_habits_filters", JSON.stringify(_fbRoot)); } catch {}
+    if (_browseFull.length) _paintAll();
+  }
+  document.getElementById("fb").addEventListener("click", ev => {
+    const add = ev.target.closest(".fb-add");
+    if (add) {
+      _fbNodeAt(_fbPath(add.dataset.path)).rules.push({ field: "score", op: "gt", value: "", value2: "" });
+      _fbRender(); _fbPersistAndApply(); return;
+    }
+    const addGroup = ev.target.closest(".fb-addgroup");
+    if (addGroup) {
+      _fbNodeAt(_fbPath(addGroup.dataset.path)).rules.push({
+        join: "and", rules: [{ field: "score", op: "gt", value: "", value2: "" }],
+      });
+      _fbRender(); _fbPersistAndApply(); return;
+    }
+    if (ev.target.closest(".fb-clear")) { _fbRoot = { join: "and", rules: [] }; _fbRender(); _fbPersistAndApply(); return; }
+    const rmGroup = ev.target.closest(".fb-rmgroup");
+    if (rmGroup) {
+      const { parent, index } = _fbParentAt(_fbPath(rmGroup.dataset.path));
+      parent.rules.splice(index, 1);
+      _fbRender(); _fbPersistAndApply(); return;
+    }
+    const rm = ev.target.closest(".fb-rm");
+    if (rm) {
+      const { parent, index } = _fbParentAt(_fbPath(rm.dataset.path));
+      parent.rules.splice(index, 1);
+      _fbRender(); _fbPersistAndApply();
+    }
+  });
+  document.getElementById("fb").addEventListener("change", ev => {
+    const el = ev.target;
+    if (el.dataset.path == null) return;
+    const path = _fbPath(el.dataset.path);
+    if (el.dataset.k === "join") {
+      _fbNodeAt(path).join = el.value;
+      _fbRender(); _fbPersistAndApply(); return;
+    }
+    const r = _fbNodeAt(path); if (!r) return;
+    if (el.dataset.k === "field") {
+      r.field = el.value;
+      r.op = (FB_OPS[_fbType(r.field)] || FB_OPS.number)[0][0];
+      r.value = r.value2 = "";
+      _fbRender();
+    } else if (el.dataset.k === "op") {
+      r.op = el.value;
+      if (_fbNoValue(r.op)) { r.value = r.value2 = ""; }
+      _fbRender();
+    } else {
+      r[el.dataset.k] = el.value;
+    }
+    _fbPersistAndApply();
+  });
+  document.getElementById("fb").addEventListener("input", ev => {
+    const el = ev.target;
+    if (el.dataset.path == null || (el.dataset.k !== "value" && el.dataset.k !== "value2")) return;
+    if (el.tagName === "SELECT") return;
+    const r = _fbNodeAt(_fbPath(el.dataset.path)); if (!r) return;
+    r[el.dataset.k] = el.value;
+    _fbPersistAndApply();
+  });
+  setTimeout(_fbRender, 0);
+
+  /* ── Browse Entries grid — rows are days, columns are habits, cells are
+     checkboxes you can toggle and save in bulk (staged locally, then PATCHed
+     to Notion per-day on "Save changes") ── */
+  let _pendingEdits = {};  // { [page_id]: { [habitName]: bool } }
+
+  function _paintBrowseRows(entries, habitNames) {
+    const el = document.getElementById("browse-list");
+    document.getElementById("browse-count-badge").textContent = `${entries.length} ${entries.length === 1 ? "day" : "days"}`;
+
+    const head = `<tr>
+      <th class="hgrid-date-col">Date</th>
+      <th class="hgrid-score-col">Score</th>
+      ${habitNames.map(h => `
+        <th>
+          <div class="hgrid-habit-head">
+            <span class="hgrid-habit-name">${_esc(h)}</span>
+            <button type="button" class="hgrid-habit-rm" data-habit="${_esc(h)}" onclick="removeHabit(this.dataset.habit)" title="Remove habit">🗑</button>
+          </div>
+        </th>`).join("")}
+      <th class="hgrid-add-col" style="position:relative;">
+        <button type="button" class="hgrid-add-btn" onclick="_toggleAddHabitPopover(event)" title="Add habit">+</button>
+        <div class="hgrid-add-pop" id="hgrid-add-pop" hidden>
+          <input type="text" id="hgrid-new-habit-name" placeholder="Habit name" onkeydown="if(event.key==='Enter')_confirmAddHabitFromGrid();">
+          <label class="mh-check-label"><input type="checkbox" id="hgrid-new-habit-default"> Default checked</label>
+          <div class="hgrid-add-pop-actions">
+            <button type="button" class="hgrid-add-confirm" onclick="_confirmAddHabitFromGrid()">Add</button>
+            <button type="button" class="hgrid-add-cancel" onclick="_closeAddHabitPopover()">Cancel</button>
+          </div>
+        </div>
+      </th>
+    </tr>`;
+
+    const colCount = habitNames.length + 3;
+    const rows = entries.length
+      ? entries.map(e => {
+          const dirty = _pendingEdits[e.page_id] ? " hgrid-dirty" : "";
+          const cells = habitNames.map(h => `<td><input type="checkbox" class="hgrid-cb" data-page-id="${e.page_id}" data-habit="${_esc(h)}" ${e[h] ? "checked" : ""}></td>`).join("");
+          return `<tr data-page-id="${e.page_id}" class="${dirty}"><td class="hgrid-date-col">${e.date || "—"}</td><td class="hgrid-score-col">${e.score != null ? e.score : "—"}</td>${cells}<td></td></tr>`;
+        }).join("")
+      : `<tr><td colspan="${colCount}" class="empty-state">No entries match your filters.</td></tr>`;
+
+    el.innerHTML = `<table class="hgrid-table"><thead>${head}</thead><tbody>${rows}</tbody></table>`;
+  }
+
+  /* ── Inline "add habit" popover, opened from the + button in the grid header ── */
+  function _toggleAddHabitPopover(ev) {
+    if (ev) ev.stopPropagation();
+    const pop = document.getElementById("hgrid-add-pop");
+    if (!pop) return;
+    pop.hidden = !pop.hidden;
+    if (!pop.hidden) document.getElementById("hgrid-new-habit-name").focus();
+  }
+  function _closeAddHabitPopover() {
+    const pop = document.getElementById("hgrid-add-pop");
+    if (pop) pop.hidden = true;
+  }
+  document.addEventListener("click", ev => {
+    const pop = document.getElementById("hgrid-add-pop");
+    if (!pop || pop.hidden) return;
+    if (!pop.contains(ev.target) && !ev.target.closest(".hgrid-add-btn")) pop.hidden = true;
+  });
+  async function _confirmAddHabitFromGrid() {
+    const nameInput = document.getElementById("hgrid-new-habit-name");
+    const name = nameInput.value.trim();
+    if (!name) { showToast("Enter a habit name", "error"); return; }
+    const defaultChecked = document.getElementById("hgrid-new-habit-default").checked;
+    try {
+      const res = await fetch("/habits/add/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, default_checked: defaultChecked }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add habit");
+      showToast(`Added "${data.name}"${data.backfilled ? ` · checked on ${data.backfilled} day${data.backfilled === 1 ? "" : "s"}` : ""}`, "success");
+      _closeAddHabitPopover();
+      fetchSummary();
+    } catch (e) {
+      showToast("Error: " + e.message, "error");
+    }
+  }
+
+  document.getElementById("browse-list").addEventListener("change", ev => {
+    const cb = ev.target.closest(".hgrid-cb");
+    if (!cb) return;
+    const pageId = cb.dataset.pageId, habit = cb.dataset.habit, val = cb.checked;
+    const entry = _browseFull.find(x => x.page_id === pageId);
+    const tr = cb.closest("tr");
+    if (entry) {
+      entry[habit] = val;
+      // Score is derived (checked/total for that row) — recompute it live as cells change.
+      const doneCount = _habitNames.filter(h => entry[h]).length;
+      entry.score = _habitNames.length ? Math.round(doneCount / _habitNames.length * 1000) / 10 : null;
+      const scoreCell = tr.querySelector(".hgrid-score-col");
+      if (scoreCell) scoreCell.textContent = entry.score != null ? entry.score : "—";
+    }
+    (_pendingEdits[pageId] || (_pendingEdits[pageId] = {}))[habit] = val;
+    tr.classList.add("hgrid-dirty");
+    _syncBulkBar();
+  });
+
+  function _syncBulkBar() {
+    const pageIds = Object.keys(_pendingEdits);
+    const n = pageIds.reduce((s, id) => s + Object.keys(_pendingEdits[id]).length, 0);
+    document.getElementById("bulk-bar").hidden = n === 0;
+    document.getElementById("bulk-count").textContent =
+      `${n} change${n === 1 ? "" : "s"} across ${pageIds.length} day${pageIds.length === 1 ? "" : "s"}`;
+  }
+
+  async function _saveBulkEdits() {
+    const btn = document.getElementById("bulk-save-btn");
+    btn.disabled = true; btn.textContent = "Saving…";
+    const entries = Object.entries(_pendingEdits);
+    let ok = 0, fail = 0;
+    for (const [pageId, habits] of entries) {
+      try {
+        const res = await fetch(`/habits/${pageId}/update/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ habits }),
+        });
+        if (res.ok) ok++; else fail++;
+      } catch { fail++; }
+    }
+    showToast(`${ok} day${ok === 1 ? "" : "s"} saved${fail ? ` · ${fail} failed` : ""}`, fail ? "info" : "success", 4000);
+    _pendingEdits = {};
+    document.querySelectorAll("#browse-list tr.hgrid-dirty").forEach(tr => tr.classList.remove("hgrid-dirty"));
+    _syncBulkBar();
+    btn.disabled = false; btn.textContent = "Save changes";
+  }
+
+  function _discardBulkEdits() {
+    _pendingEdits = {};
+    fetchSummary();  // simplest correct way to revert — reload the truth from Notion
+  }
+
+  let _browseFull = [], _browseView = [], _habitNames = [];
+
+  function _buildFbFields() {
+    FB_FIELDS = [
+      { key: "date", label: "Date", type: "date" },
+      { key: "score", label: "Score", type: "number" },
+      ..._habitNames.map(h => ({ key: h, label: h, type: "bool" })),
+    ];
+  }
+
+  function _paintAll() {
+    _browseView = _fbFilter(_browseFull);
+    _paintBrowseRows(_browseView, _habitNames);
+  }
 
   async function fetchSummary() {
     const btn = document.getElementById("btn");
@@ -507,25 +978,20 @@
     document.getElementById("loading").style.display = "flex";
     document.getElementById("results").style.display = "none";
     document.getElementById("error-box").style.display = "none";
+    _pendingEdits = {};
+    _syncBulkBar();
     try {
-      const res  = await fetch(`/habits/summary/?${buildParams()}`);
+      const res  = await fetch(`/habits/list/?${buildParams()}`);
       const data = await res.json();
       if (!res.ok) { document.getElementById("error-box").textContent = data.error || "Error"; document.getElementById("error-box").style.display = "block"; return; }
 
-      document.getElementById("period-badge").textContent = periodLabel(data);
-      document.getElementById("stat-days").textContent    = data.total_days;
-      document.getElementById("stat-rate").textContent    = data.overall_completion_rate + "%";
-      document.getElementById("stat-score").textContent   = data.avg_score;
+      _browseFull = data.entries || [];
+      _habitNames = data.habit_names || [];
+      _buildFbFields();
+      _fbRender();
 
-      document.getElementById("habit-list").innerHTML = data.habits.map(h => `
-        <div class="habit-item">
-          <span class="habit-name">${h.name}</span>
-          <div class="habit-bar-wrap">
-            <div class="habit-bar" style="width:${h.rate}%;background:${rateColor(h.rate)};"></div>
-          </div>
-          <span class="habit-done">${h.done}/${h.total}</span>
-          <span class="habit-rate" style="color:${rateTextColor(h.rate)}">${h.rate}%</span>
-        </div>`).join("");
+      document.getElementById("period-badge").textContent = periodLabel(data);
+      _paintAll();
 
       document.getElementById("results").style.display = "block";
     } catch (e) {
@@ -537,6 +1003,7 @@
       btn.disabled = false;
     }
   }
+  fetchSummary();  // auto-load on page visit, matching the expenses dashboard
 
   /* ── Theme toggle ── */
   (function() {
