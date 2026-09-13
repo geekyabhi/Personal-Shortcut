@@ -186,6 +186,7 @@
     }
     .status-todo     { background: #F3F4F6; color: #6B7280; }
     .status-progress { background: #EFF6FF; color: #1D4ED8; }
+    .status-blocked  { background: #FEF2F2; color: #B91C1C; }
     .status-done     { background: #ECFDF5; color: #065F46; }
 
     /* Status tabs */
@@ -346,8 +347,9 @@
           <label for="issuetype">Issue Type</label>
           <select id="issuetype">
             <option value="Task">Task</option>
-            <option value="Bug">Bug</option>
             <option value="Story">Story</option>
+            <option value="Epic">Epic</option>
+            <option value="Rapid">Rapid</option>
           </select>
         </div>
         <div class="form-group">
@@ -370,6 +372,7 @@
         <button class="status-tab active" onclick="setFilter('')">All</button>
         <button class="status-tab" onclick="setFilter('To Do')">To Do</button>
         <button class="status-tab" onclick="setFilter('In Progress')">In Progress</button>
+        <button class="status-tab" onclick="setFilter('Blocked')">Blocked</button>
         <button class="status-tab" onclick="setFilter('Done')">Done</button>
       </div>
 
@@ -400,11 +403,12 @@
     }, duration);
   }
 
-  const ISSUE_TYPE_ICON = { Task: "☑️", Bug: "🐛", Story: "📖" };
+  const ISSUE_TYPE_ICON = { Task: "☑️", Story: "📖", Epic: "🚀", Rapid: "⚡" };
   let activeStatus = "";
 
   function statusClass(s) {
     const l = s.toLowerCase();
+    if (l.includes("blocked")) return "status-blocked";
     if (l.includes("progress") || l.includes("review")) return "status-progress";
     if (l.includes("done") || l.includes("closed") || l.includes("complete")) return "status-done";
     return "status-todo";
@@ -451,8 +455,7 @@
         document.getElementById("duedate").value     = "";
         loadIssues();
       } else {
-        const msg = typeof data.error === "string" ? data.error : JSON.stringify(data.error);
-        showBanner("error", `Jira error: ${msg}`);
+        showBanner("error", `Jira error: ${escHtml(errText(data.error))}`);
       }
     } catch (e) {
       showBanner("error", `Network error: ${e.message}`);
@@ -487,7 +490,7 @@
       const data = await res.json();
 
       if (!res.ok) {
-        wrap.innerHTML = `<div class="empty-state">Failed to load: ${JSON.stringify(data.error)}</div>`;
+        wrap.innerHTML = `<div class="empty-state">Failed to load: ${escHtml(errText(data.error))}</div>`;
         return;
       }
 
@@ -527,6 +530,20 @@
 
   function escHtml(s) {
     return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function errText(err) {
+    if (typeof err === "string") return err;
+    if (err && typeof err === "object") {
+      if (err.message) return err.message;
+      if (err.errors && Object.keys(err.errors).length) {
+        return Object.entries(err.errors).map(([k, v]) => `${k}: ${v}`).join(", ");
+      }
+      if (Array.isArray(err.errorMessages) && err.errorMessages.length) {
+        return err.errorMessages.join(", ");
+      }
+    }
+    return "Something went wrong talking to Jira.";
   }
 
   // Enter key submits the form

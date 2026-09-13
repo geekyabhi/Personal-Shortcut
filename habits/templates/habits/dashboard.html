@@ -123,14 +123,62 @@
 
     .divider { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #F3F4F6; }
     [data-theme="dark"] .divider { border-top-color: rgba(255,255,255,0.07); }
-    .range-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end; }
-    .range-row > div { flex: 1; min-width: 130px; }
+    .backfill-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+    .missing-count { font-size: 1.15rem; font-weight: 700; color: var(--accent); }
 
     .mh-check-label {
       display: flex; align-items: center; gap: 0.4rem; text-transform: none;
       font-weight: 500; color: inherit; font-size: 0.82rem; white-space: nowrap;
     }
     .mh-check-label input[type="checkbox"] { width: auto; }
+
+    /* ── Manage Habits — edit name, delete, or add a habit ── */
+    .mh-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid #F3F4F6; }
+    .mh-item:last-child { border-bottom: none; }
+    [data-theme="dark"] .mh-item { border-bottom-color: rgba(255,255,255,0.07); }
+    .mh-rename-input {
+      flex: 1; min-width: 0; padding: 0.45rem 0.6rem; border-radius: 8px; border: 1.5px solid #E5E7EB;
+      font-size: 0.85rem; font-family: inherit; background: #F9FAFB; color: #111827;
+    }
+    [data-theme="dark"] .mh-rename-input { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB; }
+    .mh-rename-input.mh-dirty { border-color: var(--accent); }
+    .mh-save-btn {
+      flex: none; border: 1.5px solid rgba(5,150,105,0.4); background: transparent; color: var(--accent);
+      border-radius: 8px; padding: 0.4rem 0.7rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .mh-save-btn:hover { background: rgba(5,150,105,0.08); }
+    .mh-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    [data-theme="dark"] .mh-save-btn { border-color: rgba(5,150,105,0.5); }
+    .mh-remove-btn {
+      flex: none; border: 1.5px solid #FECACA; background: transparent; color: #EF4444;
+      border-radius: 8px; padding: 0.4rem 0.6rem; font-size: 0.8rem; cursor: pointer; font-family: inherit;
+    }
+    .mh-remove-btn:hover { background: #FEF2F2; }
+    [data-theme="dark"] .mh-remove-btn { border-color: rgba(239,68,68,0.35); color: #F87171; }
+    .mh-add-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .mh-add-row input[type="text"] { flex: 1; min-width: 160px; }
+
+    /* ── Insights — stats + per-habit breakdown for whatever the filter matches ── */
+    .insight-stats-row { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .insight-stat {
+      flex: 1; min-width: 90px; text-align: center; border-radius: 14px;
+      padding: 0.85rem 0.5rem; background: rgba(5,150,105,0.05);
+    }
+    [data-theme="dark"] .insight-stat { background: rgba(5,150,105,0.08); }
+    .insight-stat-value {
+      font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: 400; letter-spacing: -0.02em;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .insight-stat-label { font-size: 0.68rem; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.2rem; }
+    .insight-habit-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0; border-bottom: 1px solid #F3F4F6; }
+    .insight-habit-item:last-child { border-bottom: none; }
+    [data-theme="dark"] .insight-habit-item { border-bottom-color: rgba(255,255,255,0.07); }
+    .insight-habit-name { font-size: 0.85rem; font-weight: 600; flex: 1; min-width: 0; word-break: break-word; }
+    .insight-habit-bar-wrap { width: 80px; flex-shrink: 0; height: 6px; background: #E5E7EB; border-radius: 3px; overflow: hidden; }
+    [data-theme="dark"] .insight-habit-bar-wrap { background: rgba(255,255,255,0.1); }
+    .insight-habit-bar { height: 100%; border-radius: 3px; }
+    .insight-habit-done { font-size: 0.75rem; color: #9CA3AF; white-space: nowrap; flex-shrink: 0; }
+    .insight-habit-rate { font-size: 0.85rem; font-weight: 600; white-space: nowrap; width: 3.2rem; text-align: right; flex-shrink: 0; }
 
     /* ── Filter builder (Notion-style AND/OR + bracket groups) ── */
     .fb { margin-top: 0.9rem; }
@@ -239,42 +287,11 @@
     [data-theme="dark"] .hgrid-table tr.hgrid-dirty { background: rgba(217,119,6,0.16); }
     .hgrid-cb { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
 
-    .hgrid-habit-head { display: flex; align-items: center; justify-content: center; gap: 0.3rem; }
-    .hgrid-habit-name { min-width: 0; }
-    .hgrid-habit-rm {
-      flex: none; border: none; background: transparent; color: #EF4444; cursor: pointer;
-      font-size: 0.75rem; line-height: 1; padding: 0.1rem; opacity: 0.45; transition: opacity 0.15s;
-    }
-    .hgrid-habit-rm:hover { opacity: 1; }
-    .hgrid-add-col { width: 2.5rem; }
-    .hgrid-add-btn {
-      width: 26px; height: 26px; border-radius: 50%; border: 1.5px dashed rgba(5,150,105,0.4);
-      background: transparent; color: var(--accent); font-size: 1rem; font-weight: 700;
-      line-height: 1; cursor: pointer; font-family: inherit;
-    }
-    .hgrid-add-btn:hover { background: rgba(5,150,105,0.08); }
-    [data-theme="dark"] .hgrid-add-btn { border-color: rgba(5,150,105,0.5); }
-    .hgrid-add-pop {
-      position: absolute; top: 100%; right: 0; margin-top: 0.35rem; z-index: 5;
-      background: #fff; border: 1.5px solid #E5E7EB; border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.14);
-      padding: 0.75rem; width: 220px; text-align: left; text-transform: none; letter-spacing: normal;
-    }
-    [data-theme="dark"] .hgrid-add-pop { background: #16211B; border-color: rgba(255,255,255,0.12); }
-    .hgrid-add-pop input[type="text"] {
-      width: 100%; padding: 0.45rem 0.6rem; border-radius: 8px; border: 1.5px solid #E5E7EB;
-      font-size: 0.82rem; font-family: inherit; background: #F9FAFB; color: #111827; margin-bottom: 0.5rem;
-    }
-    [data-theme="dark"] .hgrid-add-pop input[type="text"] {
-      background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
-    }
-    .hgrid-add-pop-actions { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
-    .hgrid-add-pop-actions button {
-      flex: 1; padding: 0.4rem 0.6rem; font-size: 0.78rem; font-weight: 600; border-radius: 8px;
-      cursor: pointer; font-family: inherit; border: 1.5px solid transparent;
-    }
-    .hgrid-add-confirm { background: var(--grad); color: #fff; }
-    .hgrid-add-cancel { background: transparent; border-color: #E5E7EB; color: #6B7280; }
-    [data-theme="dark"] .hgrid-add-cancel { border-color: rgba(255,255,255,0.15); color: #9CA3AF; }
+    .bulk-habit-row { margin-bottom: 0.85rem; padding-bottom: 0.85rem; border-bottom: 1px solid #F3F4F6; }
+    [data-theme="dark"] .bulk-habit-row { border-bottom-color: rgba(255,255,255,0.07); }
+    .bulk-habit-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .bulk-habit-controls > select, .bulk-habit-controls > input { flex: 1; min-width: 120px; width: auto; }
+    .bulk-habit-controls > button { flex: none; }
 
     .bulk-bar {
       display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.85rem;
@@ -403,12 +420,12 @@
             <option value="custom">Custom Range</option>
           </select>
         </div>
-        <div id="wrap-year" class="date-input"><label for="year">Year</label><input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" /></div>
-        <div id="wrap-month" class="date-input visible"><label for="month">Month</label><input type="month" id="month" /></div>
-        <div id="wrap-week" class="date-input"><label for="week">Week</label><input type="week" id="week" /></div>
-        <div id="wrap-day" class="date-input"><label for="day">Day</label><input type="date" id="day" /></div>
-        <div id="wrap-start" class="date-input"><label for="start-date">Start Date</label><input type="date" id="start-date" /></div>
-        <div id="wrap-end" class="date-input"><label for="end-date">End Date</label><input type="date" id="end-date" /></div>
+        <div id="wrap-year" class="date-input"><label for="year">Year</label><input type="number" id="year" min="2000" max="2099" placeholder="e.g. 2026" onchange="refreshMissingCount()" /></div>
+        <div id="wrap-month" class="date-input visible"><label for="month">Month</label><input type="month" id="month" onchange="refreshMissingCount()" /></div>
+        <div id="wrap-week" class="date-input"><label for="week">Week</label><input type="week" id="week" onchange="refreshMissingCount()" /></div>
+        <div id="wrap-day" class="date-input"><label for="day">Day</label><input type="date" id="day" onchange="refreshMissingCount()" /></div>
+        <div id="wrap-start" class="date-input"><label for="start-date">Start Date</label><input type="date" id="start-date" onchange="refreshMissingCount()" /></div>
+        <div id="wrap-end" class="date-input"><label for="end-date">End Date</label><input type="date" id="end-date" onchange="refreshMissingCount()" /></div>
       </div>
 
       <!-- Notion-style filter builder — client-side, applies live to Browse + Summary -->
@@ -423,18 +440,18 @@
       </div>
 
       <button class="btn-primary" id="btn" onclick="fetchSummary()">Load Entries</button>
-      <button class="btn-secondary" id="backfill-btn" onclick="runBackfill()">Backfill Missing Entries (This Year)</button>
+      <button class="btn-secondary" id="add-today-btn" onclick="addTodayEntry()">+ Add Today's Entry</button>
 
       <div class="divider">
-        <label>Backfill a custom range</label>
-        <div class="range-row">
-          <div><input type="date" id="backfill-start" /></div>
-          <div><input type="date" id="backfill-end" /></div>
-          <button class="btn-secondary" id="backfill-range-btn" onclick="runBackfillRange()" style="margin-top:0;">Backfill Range</button>
+        <div class="backfill-row">
+          <div>
+            <label style="margin-bottom:0.25rem;">Missing entries in selected range</label>
+            <div class="missing-count" id="missing-count">—</div>
+          </div>
+          <button class="btn-secondary" id="backfill-btn" onclick="runBackfill()" style="margin-top:0;" disabled>Backfill Missing</button>
         </div>
+        <div id="backfill-result" class="backfill-result"></div>
       </div>
-
-      <div id="backfill-result" class="backfill-result"></div>
     </div>
 
     <div id="loading" class="spinner" style="display:none;">
@@ -455,7 +472,23 @@
           <h2 style="margin-bottom:0;">Browse Entries</h2>
           <span class="browse-count-badge" id="browse-count-badge"></span>
         </div>
-        <p style="font-size:0.78rem;color:#9CA3AF;margin-bottom:0.75rem;">Check or uncheck any cell to stage an edit, then save them all at once. Use + in the header to add a habit, 🗑 to remove one.</p>
+        <p style="font-size:0.78rem;color:#9CA3AF;margin-bottom:0.75rem;">Check or uncheck any cell to stage an edit, then save them all at once.</p>
+
+        <div class="bulk-habit-row">
+          <label style="margin-bottom:0.35rem;">Check/uncheck a habit across a range</label>
+          <div class="bulk-habit-controls">
+            <select id="bulk-habit-select"></select>
+            <select id="bulk-habit-value">
+              <option value="true">Check</option>
+              <option value="false">Uncheck</option>
+            </select>
+            <input type="date" id="bulk-habit-start" />
+            <input type="date" id="bulk-habit-end" />
+            <button class="btn-secondary" id="bulk-habit-btn" onclick="applyBulkHabitRange()" style="margin-top:0;">Apply</button>
+          </div>
+          <div id="bulk-habit-result" class="backfill-result"></div>
+        </div>
+
         <div class="bulk-bar" id="bulk-bar" hidden>
           <span id="bulk-count">0 changes</span>
           <button class="btn-primary" id="bulk-save-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_saveBulkEdits()">Save changes</button>
@@ -463,10 +496,39 @@
         </div>
         <div class="grid-scroll"><div id="browse-list"></div></div>
       </div>
+
+      <div class="card">
+        <h2>Insights</h2>
+        <div class="insight-stats-row">
+          <div class="insight-stat"><div class="insight-stat-value" id="insight-days">—</div><div class="insight-stat-label">Days</div></div>
+          <div class="insight-stat"><div class="insight-stat-value" id="insight-rate">—</div><div class="insight-stat-label">Completion</div></div>
+          <div class="insight-stat"><div class="insight-stat-value" id="insight-score">—</div><div class="insight-stat-label">Avg Score</div></div>
+        </div>
+        <div id="insight-habit-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Manage Habits</h2>
+        <div id="manage-habits-list"></div>
+        <div class="divider">
+          <label for="new-habit-name">Add a habit</label>
+          <div class="mh-add-row">
+            <input type="text" id="new-habit-name" placeholder="e.g. Meditate" />
+            <label class="mh-check-label"><input type="checkbox" id="new-habit-default"> Default: checked for existing days</label>
+            <button class="btn-secondary" id="add-habit-btn" onclick="addHabit()" style="margin-top:0;">Add Habit</button>
+          </div>
+        </div>
+        <div id="manage-habits-result" class="backfill-result"></div>
+      </div>
     </div>
   </div>
 
 <script>
+  // Floor date for any backfill / missing-count operation — mirrors the
+  // backend's MIN_BACKFILL_DATE (habits before this just aren't tracked).
+  // Declared up top since refreshMissingCount() runs as soon as the page loads.
+  const MIN_BACKFILL_DATE = "2024-01-01";
+
   function showToast(msg, type, duration) {
     type = type || 'info'; duration = duration || 3000;
     var wrap = document.getElementById('toast-container');
@@ -488,6 +550,9 @@
   document.getElementById("day").value        = today.toISOString().slice(0, 10);
   document.getElementById("end-date").value   = today.toISOString().slice(0, 10);
   document.getElementById("start-date").value = monthsAgo(1).toISOString().slice(0, 10);
+  document.getElementById("bulk-habit-end").value   = today.toISOString().slice(0, 10);
+  document.getElementById("bulk-habit-start").value = monthsAgo(1).toISOString().slice(0, 10);
+  refreshMissingCount();
 
   function isoWeek(d) {
     const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -507,6 +572,7 @@
     if (key === "ytd") start.setMonth(0, 1);
     document.getElementById("start-date").value = start.toISOString().slice(0, 10);
     document.getElementById("end-date").value   = end.toISOString().slice(0, 10);
+    refreshMissingCount();
   }
 
   function onPeriodChange() {
@@ -519,6 +585,7 @@
       document.getElementById(`wrap-${id}`).className = "date-input" + (p === "custom" ? " visible" : "");
     });
     document.getElementById("wrap-presets").className = "presets" + (p === "custom" ? " visible" : "");
+    refreshMissingCount();
   }
 
   function buildParams() {
@@ -542,30 +609,67 @@
   }
 
 
-  async function runBackfill() {
+  // Turn whatever the period selector currently represents into a concrete
+  // [start, end] range, clamped to MIN_BACKFILL_DATE — this is what both the
+  // missing-entries count and the backfill button act on, so "the selected
+  // filter date range" always means the same thing in both places.
+  function _currentRangeForBackfill() {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const period = document.getElementById("period").value;
+    let start, end;
+    if (period === "yearly") {
+      const y = document.getElementById("year").value || new Date().getFullYear();
+      start = `${y}-01-01`; end = `${y}-12-31`;
+    } else if (period === "monthly") {
+      const m = document.getElementById("month").value || todayStr.slice(0, 7);
+      const [yy, mm] = m.split("-").map(Number);
+      const lastDay = new Date(yy, mm, 0).getDate();
+      start = `${m}-01`; end = `${m}-${String(lastDay).padStart(2, "0")}`;
+    } else if (period === "weekly") {
+      const w = document.getElementById("week").value;
+      if (w) {
+        const [yy, ww] = w.split("-W").map(Number);
+        const simple = new Date(Date.UTC(yy, 0, 1 + (ww - 1) * 7));
+        const dow = simple.getUTCDay() || 7;
+        const monday = new Date(simple); monday.setUTCDate(simple.getUTCDate() - dow + 1);
+        const sunday = new Date(monday); sunday.setUTCDate(monday.getUTCDate() + 6);
+        start = monday.toISOString().slice(0, 10); end = sunday.toISOString().slice(0, 10);
+      } else { start = end = todayStr; }
+    } else if (period === "daily") {
+      start = end = document.getElementById("day").value || todayStr;
+    } else if (period === "custom") {
+      start = document.getElementById("start-date").value || MIN_BACKFILL_DATE;
+      end = document.getElementById("end-date").value || todayStr;
+    } else { // "all"
+      start = MIN_BACKFILL_DATE; end = todayStr;
+    }
+    if (start < MIN_BACKFILL_DATE) start = MIN_BACKFILL_DATE;
+    if (end > todayStr) end = todayStr;       // never backfill future-dated entries
+    if (start > end) start = end;
+    return { start, end };
+  }
+
+  async function refreshMissingCount() {
+    const el = document.getElementById("missing-count");
     const btn = document.getElementById("backfill-btn");
-    const result = document.getElementById("backfill-result");
-    btn.disabled = true; btn.textContent = "Backfilling…";
-    result.style.display = "none"; result.className = "backfill-result";
+    const { start, end } = _currentRangeForBackfill();
+    el.textContent = "…";
+    btn.disabled = true;
     try {
-      const res = await fetch("/habits/backfill/", { method: "POST" });
+      const res = await fetch(`/habits/backfill/preview/?start=${start}&end=${end}`);
       const data = await res.json();
-      if (!res.ok) { result.textContent = data.error || "Backfill failed."; result.classList.add("error"); }
-      else if (data.created === 0) { result.textContent = "No missing entries — everything is up to date."; result.classList.add("success"); }
-      else { result.textContent = `Created ${data.created} missing entr${data.created === 1 ? "y" : "ies"} for ${new Date().getFullYear()}.${data.failed.length ? ` ${data.failed.length} failed.` : ""}`; result.classList.add("success"); }
+      if (!res.ok) { el.textContent = data.error || "Error"; return; }
+      el.textContent = `${data.count} missing (${data.start} – ${data.end})`;
+      btn.disabled = data.count === 0;
     } catch (e) {
-      result.textContent = "Network error: " + e.message; result.classList.add("error");
-    } finally {
-      result.style.display = "block"; btn.disabled = false; btn.textContent = "Backfill Missing Entries (This Year)";
+      el.textContent = "Network error";
     }
   }
 
-  async function runBackfillRange() {
-    const start = document.getElementById("backfill-start").value;
-    const end = document.getElementById("backfill-end").value;
+  async function runBackfill() {
+    const { start, end } = _currentRangeForBackfill();
+    const btn = document.getElementById("backfill-btn");
     const result = document.getElementById("backfill-result");
-    if (!start || !end) { showToast("Pick both a start and end date", "error"); return; }
-    const btn = document.getElementById("backfill-range-btn");
     btn.disabled = true; btn.textContent = "Backfilling…";
     result.style.display = "none"; result.className = "backfill-result";
     try {
@@ -577,7 +681,30 @@
     } catch (e) {
       result.textContent = "Network error: " + e.message; result.classList.add("error");
     } finally {
-      result.style.display = "block"; btn.disabled = false; btn.textContent = "Backfill Range";
+      result.style.display = "block"; btn.textContent = "Backfill Missing";
+      refreshMissingCount();
+    }
+  }
+
+  /* ── Create today's entry if it doesn't exist yet ── */
+  async function addTodayEntry() {
+    const btn = document.getElementById("add-today-btn");
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = "Checking…";
+    try {
+      const res = await fetch("/habits/check/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ habits: {} }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      showToast(data.created ? "Today's entry created" : "Today's entry already exists", data.created ? "success" : "info");
+      if (data.created) fetchSummary();
+    } catch (e) {
+      showToast("Error: " + e.message, "error");
+    } finally {
+      btn.disabled = false; btn.textContent = original;
     }
   }
 
@@ -593,11 +720,91 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to remove habit");
       showToast(`Removed "${name}"`, "success");
+      loadManageHabits();
       fetchSummary();
     } catch (e) {
       showToast("Error: " + e.message, "error");
     }
   }
+
+  /* ── Manage Habits — list with inline rename + delete, plus an add form ── */
+  async function loadManageHabits() {
+    const el = document.getElementById("manage-habits-list");
+    try {
+      const res = await fetch("/habits/names/");
+      const data = await res.json();
+      if (!res.ok) { el.innerHTML = `<div class="empty-state">${data.error || "Couldn't load habits."}</div>`; return; }
+      if (!data.habits.length) { el.innerHTML = '<div class="empty-state">No habits found.</div>'; return; }
+      el.innerHTML = data.habits.map(h => `
+        <div class="mh-item">
+          <input type="text" class="mh-rename-input" value="${_esc(h)}" data-original="${_esc(h)}"
+                 oninput="this.classList.toggle('mh-dirty', this.value.trim() !== this.dataset.original)"
+                 onkeydown="if(event.key==='Enter')this.nextElementSibling.click();">
+          <button class="mh-save-btn" onclick="renameHabitFromInput(this)">Save</button>
+          <button class="mh-remove-btn" data-habit="${_esc(h)}" onclick="removeHabit(this.dataset.habit)" title="Remove habit">🗑</button>
+        </div>`).join("");
+    } catch (e) {
+      el.innerHTML = `<div class="empty-state">Network error: ${e.message}</div>`;
+    }
+  }
+
+  async function renameHabitFromInput(btn) {
+    const input = btn.previousElementSibling;
+    const oldName = input.dataset.original;
+    const newName = input.value.trim();
+    if (!newName) { showToast("Habit name can't be empty", "error"); return; }
+    if (newName === oldName) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch("/habits/rename/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ old_name: oldName, new_name: newName }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to rename habit");
+      showToast(`Renamed "${oldName}" to "${newName}"`, "success");
+      loadManageHabits();
+      fetchSummary();
+    } catch (e) {
+      showToast("Error: " + e.message, "error");
+      btn.disabled = false;
+    }
+  }
+
+  async function addHabit() {
+    const nameInput = document.getElementById("new-habit-name");
+    const name = nameInput.value.trim();
+    const result = document.getElementById("manage-habits-result");
+    result.style.display = "none"; result.className = "backfill-result";
+    if (!name) { showToast("Enter a habit name", "error"); return; }
+    const defaultChecked = document.getElementById("new-habit-default").checked;
+    const btn = document.getElementById("add-habit-btn");
+    btn.disabled = true; btn.textContent = "Adding…";
+    try {
+      const res = await fetch("/habits/add/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, default_checked: defaultChecked }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add habit");
+      nameInput.value = "";
+      document.getElementById("new-habit-default").checked = false;
+      result.textContent = `Added "${data.name}"${data.backfilled ? ` · checked on ${data.backfilled} existing day${data.backfilled === 1 ? "" : "s"}` : ""}${data.backfill_failed ? ` · ${data.backfill_failed} failed` : ""}.`;
+      result.classList.add("success");
+      loadManageHabits();
+      fetchSummary();
+    } catch (e) {
+      result.textContent = e.message;
+      result.classList.add("error");
+    } finally {
+      result.style.display = "block";
+      btn.disabled = false; btn.textContent = "Add Habit";
+    }
+  }
+
+  loadManageHabits();
 
   let _loaderTimer;
   function _showLoader() { const el=document.getElementById('top-loader'); clearTimeout(_loaderTimer); el.style.transition='none'; el.style.width='0%'; el.style.opacity='1'; requestAnimationFrame(()=>{ el.style.transition='width 2s cubic-bezier(0.1,0.5,0.5,1), opacity 0.3s ease'; el.style.width='80%'; }); }
@@ -832,74 +1039,19 @@
     const head = `<tr>
       <th class="hgrid-date-col">Date</th>
       <th class="hgrid-score-col">Score</th>
-      ${habitNames.map(h => `
-        <th>
-          <div class="hgrid-habit-head">
-            <span class="hgrid-habit-name">${_esc(h)}</span>
-            <button type="button" class="hgrid-habit-rm" data-habit="${_esc(h)}" onclick="removeHabit(this.dataset.habit)" title="Remove habit">🗑</button>
-          </div>
-        </th>`).join("")}
-      <th class="hgrid-add-col" style="position:relative;">
-        <button type="button" class="hgrid-add-btn" onclick="_toggleAddHabitPopover(event)" title="Add habit">+</button>
-        <div class="hgrid-add-pop" id="hgrid-add-pop" hidden>
-          <input type="text" id="hgrid-new-habit-name" placeholder="Habit name" onkeydown="if(event.key==='Enter')_confirmAddHabitFromGrid();">
-          <label class="mh-check-label"><input type="checkbox" id="hgrid-new-habit-default"> Default checked</label>
-          <div class="hgrid-add-pop-actions">
-            <button type="button" class="hgrid-add-confirm" onclick="_confirmAddHabitFromGrid()">Add</button>
-            <button type="button" class="hgrid-add-cancel" onclick="_closeAddHabitPopover()">Cancel</button>
-          </div>
-        </div>
-      </th>
+      ${habitNames.map(h => `<th>${_esc(h)}</th>`).join("")}
     </tr>`;
 
-    const colCount = habitNames.length + 3;
+    const colCount = habitNames.length + 2;
     const rows = entries.length
       ? entries.map(e => {
           const dirty = _pendingEdits[e.page_id] ? " hgrid-dirty" : "";
           const cells = habitNames.map(h => `<td><input type="checkbox" class="hgrid-cb" data-page-id="${e.page_id}" data-habit="${_esc(h)}" ${e[h] ? "checked" : ""}></td>`).join("");
-          return `<tr data-page-id="${e.page_id}" class="${dirty}"><td class="hgrid-date-col">${e.date || "—"}</td><td class="hgrid-score-col">${e.score != null ? e.score : "—"}</td>${cells}<td></td></tr>`;
+          return `<tr data-page-id="${e.page_id}" class="${dirty}"><td class="hgrid-date-col">${e.date || "—"}</td><td class="hgrid-score-col">${e.score != null ? e.score : "—"}</td>${cells}</tr>`;
         }).join("")
       : `<tr><td colspan="${colCount}" class="empty-state">No entries match your filters.</td></tr>`;
 
     el.innerHTML = `<table class="hgrid-table"><thead>${head}</thead><tbody>${rows}</tbody></table>`;
-  }
-
-  /* ── Inline "add habit" popover, opened from the + button in the grid header ── */
-  function _toggleAddHabitPopover(ev) {
-    if (ev) ev.stopPropagation();
-    const pop = document.getElementById("hgrid-add-pop");
-    if (!pop) return;
-    pop.hidden = !pop.hidden;
-    if (!pop.hidden) document.getElementById("hgrid-new-habit-name").focus();
-  }
-  function _closeAddHabitPopover() {
-    const pop = document.getElementById("hgrid-add-pop");
-    if (pop) pop.hidden = true;
-  }
-  document.addEventListener("click", ev => {
-    const pop = document.getElementById("hgrid-add-pop");
-    if (!pop || pop.hidden) return;
-    if (!pop.contains(ev.target) && !ev.target.closest(".hgrid-add-btn")) pop.hidden = true;
-  });
-  async function _confirmAddHabitFromGrid() {
-    const nameInput = document.getElementById("hgrid-new-habit-name");
-    const name = nameInput.value.trim();
-    if (!name) { showToast("Enter a habit name", "error"); return; }
-    const defaultChecked = document.getElementById("hgrid-new-habit-default").checked;
-    try {
-      const res = await fetch("/habits/add/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, default_checked: defaultChecked }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to add habit");
-      showToast(`Added "${data.name}"${data.backfilled ? ` · checked on ${data.backfilled} day${data.backfilled === 1 ? "" : "s"}` : ""}`, "success");
-      _closeAddHabitPopover();
-      fetchSummary();
-    } catch (e) {
-      showToast("Error: " + e.message, "error");
-    }
   }
 
   document.getElementById("browse-list").addEventListener("change", ev => {
@@ -966,9 +1118,95 @@
     ];
   }
 
+  /* ── Bulk check/uncheck one habit across a custom date range ── */
+  function _syncBulkHabitSelect() {
+    const sel = document.getElementById("bulk-habit-select");
+    const prev = sel.value;
+    sel.innerHTML = _habitNames.map(h => `<option value="${_esc(h)}">${_esc(h)}</option>`).join("");
+    if (_habitNames.includes(prev)) sel.value = prev;
+  }
+
+  async function applyBulkHabitRange() {
+    const habit = document.getElementById("bulk-habit-select").value;
+    const value = document.getElementById("bulk-habit-value").value === "true";
+    const start = document.getElementById("bulk-habit-start").value;
+    const end = document.getElementById("bulk-habit-end").value;
+    const result = document.getElementById("bulk-habit-result");
+    result.style.display = "none"; result.className = "backfill-result";
+    if (!habit) { showToast("No habits to set yet — add one below first", "error"); return; }
+    if (!start || !end) { showToast("Pick both a start and end date", "error"); return; }
+    const btn = document.getElementById("bulk-habit-btn");
+    btn.disabled = true; btn.textContent = "Applying…";
+    try {
+      const res = await fetch("/habits/bulk-set/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ habit, value, start, end }),
+      });
+      const data = await res.json();
+      if (!res.ok) { result.textContent = data.error || "Failed."; result.classList.add("error"); }
+      else {
+        const verb = value ? "Checked" : "Unchecked";
+        result.textContent = `${verb} "${habit}" on ${data.updated} day${data.updated === 1 ? "" : "s"} between ${data.start} and ${data.end} (days without an entry yet aren't touched — backfill those first).${data.failed.length ? ` ${data.failed.length} failed.` : ""}`;
+        result.classList.add("success");
+        fetchSummary();
+      }
+    } catch (e) {
+      result.textContent = "Network error: " + e.message; result.classList.add("error");
+    } finally {
+      result.style.display = "block"; btn.disabled = false; btn.textContent = "Apply";
+    }
+  }
+
+  /* ── Insights — recomputed from whatever the filter builder currently matches ── */
+  function rateColor(r) {
+    if (r >= 80) return "linear-gradient(135deg,#059669,#0891B2)";
+    if (r >= 50) return "linear-gradient(135deg,#D97706,#F59E0B)";
+    return "linear-gradient(135deg,#DC2626,#EF4444)";
+  }
+  function rateTextColor(r) {
+    if (r >= 80) return "#059669";
+    if (r >= 50) return "#D97706";
+    return "#DC2626";
+  }
+  function _computeStats(entries, habitNames) {
+    const total = entries.length;
+    const done = {}; habitNames.forEach(h => done[h] = 0);
+    let scoreSum = 0, scoreCount = 0;
+    for (const e of entries) {
+      habitNames.forEach(h => { if (e[h]) done[h]++; });
+      if (e.score != null) { scoreSum += e.score; scoreCount++; }
+    }
+    const avgScore = scoreCount ? Math.round(scoreSum / scoreCount * 10) / 10 : 0;
+    const totalPossible = total * habitNames.length;
+    const doneSum = Object.values(done).reduce((a, b) => a + b, 0);
+    const overallRate = totalPossible ? Math.round(doneSum / totalPossible * 1000) / 10 : 0;
+    const habitStats = habitNames.map(h => ({
+      name: h, done: done[h], total,
+      rate: total ? Math.round(done[h] / total * 1000) / 10 : 0,
+    })).sort((a, b) => b.rate - a.rate);
+    return { total_days: total, avg_score: avgScore, overall_completion_rate: overallRate, habits: habitStats };
+  }
+  function _paintInsights(entries) {
+    const stats = _computeStats(entries, _habitNames);
+    document.getElementById("insight-days").textContent  = stats.total_days;
+    document.getElementById("insight-rate").textContent  = stats.overall_completion_rate + "%";
+    document.getElementById("insight-score").textContent = stats.avg_score;
+    document.getElementById("insight-habit-list").innerHTML = stats.habits.length
+      ? stats.habits.map(h => `
+        <div class="insight-habit-item">
+          <span class="insight-habit-name">${_esc(h.name)}</span>
+          <div class="insight-habit-bar-wrap"><div class="insight-habit-bar" style="width:${h.rate}%;background:${rateColor(h.rate)};"></div></div>
+          <span class="insight-habit-done">${h.done}/${h.total}</span>
+          <span class="insight-habit-rate" style="color:${rateTextColor(h.rate)}">${h.rate}%</span>
+        </div>`).join("")
+      : '<div class="empty-state">No habits found.</div>';
+  }
+
   function _paintAll() {
     _browseView = _fbFilter(_browseFull);
     _paintBrowseRows(_browseView, _habitNames);
+    _paintInsights(_browseView);
   }
 
   async function fetchSummary() {
@@ -989,6 +1227,7 @@
       _habitNames = data.habit_names || [];
       _buildFbFields();
       _fbRender();
+      _syncBulkHabitSelect();
 
       document.getElementById("period-badge").textContent = periodLabel(data);
       _paintAll();

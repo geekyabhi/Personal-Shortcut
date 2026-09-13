@@ -81,6 +81,18 @@ class HabitsDataLayer:
         resp.raise_for_status()
         return resp.json()
 
+    def rename_property(self, old_name, new_name):
+        """Rename a column, keeping its type and data — addressed by its
+        current name, patched with just the new name."""
+        resp = requests.patch(
+            self.NOTION_DB_URL.format(db_id=self.db_id),
+            headers=self._headers(),
+            json={"properties": {old_name: {"name": new_name}}},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
     def remove_property(self, name):
         """Delete a column from the database schema — permanent, drops that
         column's data on every row."""

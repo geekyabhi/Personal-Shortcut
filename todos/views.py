@@ -103,7 +103,12 @@ class DueSummaryView(TodosBaseView):
         except requests.RequestException as e:
             return HttpResponse(str(e), status=502, content_type="text/plain")
         except RuntimeError as e:
-            return HttpResponse(str(e.args[0]), status=502, content_type="text/plain")
+            err = e.args[0]
+            if isinstance(err, dict):
+                msg = err.get("message") or err.get("errorMessages") or err
+            else:
+                msg = err
+            return HttpResponse(str(msg), status=502, content_type="text/plain")
 
         fmt = request.GET.get("format", "text")
         if fmt == "json":

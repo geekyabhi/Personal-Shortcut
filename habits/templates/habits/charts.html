@@ -217,10 +217,111 @@
       border-radius: 3px; vertical-align: middle; margin-right: 4px;
     }
 
+    /* ── Stats mini grid ── */
+    .stats-mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1.25rem; }
+    .stat-mini {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 16px;
+      padding: 0.85rem 1rem; box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    }
+    .stat-mini-lbl { font-size: 0.62rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.3rem; }
+    .stat-mini-val { font-size: 1.1rem; font-weight: 400; color: #111827; letter-spacing: -0.03em; }
+    .stat-mini-val.grad { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-mini-sub { font-size: 0.68rem; color: #9CA3AF; font-weight: 500; margin-top: 2px; }
+
+    /* ── Period comparison ── */
+    .cmp-row { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+    .cmp-period { flex: 1; }
+    .cmp-period-lbl { font-size: 0.65rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.25rem; }
+    .cmp-period-val { font-size: 1.05rem; font-weight: 500; color: #111827; letter-spacing: -0.02em; }
+    .cmp-arrow { font-size: 1.3rem; color: #D1D5DB; flex-shrink: 0; }
+    .cmp-delta {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      margin-top: 0.6rem; padding: 0.22rem 0.6rem; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 700;
+    }
+    .cmp-delta.up   { background: rgba(5,150,105,0.1);  color: #059669; }
+    .cmp-delta.down { background: rgba(239,68,68,0.1);  color: #DC2626; }
+    .cmp-delta.flat { background: rgba(107,114,128,0.1); color: #6B7280; }
+    .cmp-no-prev { font-size: 0.8rem; color: #D1D5DB; font-style: italic; margin-top: 0.5rem; }
+    #comparison-card { min-height: 110px; }
+    .cmp-loading { font-size: 0.8rem; color: #C4C9D4; }
+
+    /* ── Daily score heatmap (GitHub-style) ── */
+    #heatmap-card h2 { margin-bottom: 0.75rem; }
+    .hm-wrap { overflow-x: auto; padding-bottom: 0.25rem; -webkit-overflow-scrolling: touch; }
+    .hm-inner { display: inline-flex; flex-direction: column; min-width: 100%; }
+    .hm-months-row { position: relative; height: 16px; margin-left: 28px; margin-bottom: 3px; flex-shrink: 0; }
+    .hm-month-lbl { position: absolute; top: 0; font-size: 0.62rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+    .hm-body { display: flex; gap: 4px; align-items: flex-start; }
+    .hm-day-labels { display: flex; flex-direction: column; gap: 3px; width: 24px; flex-shrink: 0; padding-top: 1px; }
+    .hm-day-labels span { height: 11px; font-size: 0.58rem; font-weight: 600; color: #9CA3AF; display: flex; align-items: center; white-space: nowrap; user-select: none; }
+    .hm-weeks { display: flex; gap: 3px; }
+    .hm-week { display: flex; flex-direction: column; gap: 3px; }
+    .hm-cell { width: 11px; height: 11px; border-radius: 2px; background: #EBEDF0; cursor: default; flex-shrink: 0; transition: opacity 0.1s, transform 0.1s; }
+    .hm-cell:hover { box-shadow: 0 0 0 2px rgba(255,255,255,0.85); z-index: 10; }
+    .hm-cell.oor { background: transparent !important; pointer-events: none; }
+    .hm-legend { display: flex; align-items: center; gap: 5px; margin-top: 0.6rem; font-size: 0.63rem; color: #9CA3AF; font-weight: 600; }
+    .hm-legend-swatches { display: flex; gap: 3px; }
+    .hm-legend-swatches span { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+    .hm-tip {
+      position: fixed; z-index: 9999; pointer-events: none; display: none;
+      background: rgba(17,24,39,0.88); color: #fff;
+      font-size: 0.68rem; font-weight: 600; font-family: inherit;
+      padding: 3px 8px 4px; border-radius: 6px; white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    }
+
+    /* ── Mini Grafana-style habit panel ── */
+    .grafana-panel {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 20px;
+      padding: 0; margin-bottom: 1.25rem; box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.85rem 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.06);
+      gap: 0.5rem; flex-wrap: wrap;
+    }
+    .panel-title { font-size: 0.95rem; font-weight: 500; color: #111827; letter-spacing: -0.01em; white-space: nowrap; }
+    .panel-controls { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+    .tg { display: inline-flex; background: rgba(0,0,0,0.045); border-radius: 8px; padding: 2px; gap: 2px; }
+    .tb {
+      padding: 0.28rem 0.6rem; font-size: 0.72rem; font-weight: 700;
+      border: none; border-radius: 6px; background: transparent;
+      color: #6B7280; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap;
+    }
+    .tb.active { background: #fff; color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .tb:hover:not(.active) { color: #374151; }
+    .tg-dim { opacity: 0.35 !important; pointer-events: none !important; }
+    .panel-chart-wrap { padding: 1rem 1.25rem 0.5rem; position: relative; }
+    .legend-table-wrap { overflow-x: auto; padding: 0 1.25rem 1rem; border-top: 1px solid rgba(0,0,0,0.06); }
+    .legend-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; font-family: inherit; }
+    .legend-table th {
+      font-size: 0.62rem; font-weight: 700; color: #9CA3AF;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 0.5rem 0.45rem 0.3rem; text-align: right; white-space: nowrap;
+    }
+    .legend-table th:nth-child(2) { text-align: left; padding-left: 0; }
+    .legend-table th:first-child { width: 18px; }
+    .legend-table td {
+      padding: 0.35rem 0.45rem; text-align: right;
+      border-bottom: 1px solid rgba(0,0,0,0.03); font-weight: 600; color: #374151; white-space: nowrap;
+    }
+    .legend-table td:nth-child(2) { text-align: left; padding-left: 0; }
+    .legend-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; cursor: pointer; box-shadow: 0 0 0 0 rgba(0,0,0,0); transition: box-shadow .12s; }
+    .legend-swatch:hover { box-shadow: 0 0 0 3px rgba(5,150,105,0.25); }
+    .legend-name { font-weight: 700; color: #111827; }
+    .legend-row { cursor: pointer; transition: background 0.1s; }
+    .legend-row:hover { background: rgba(5,150,105,0.04); }
+    .legend-row.dimmed td, .legend-row.dimmed .legend-name { color: #C9D0D8 !important; }
+
     @media (min-width: 480px) {
       body { padding: 2rem 1.25rem; }
       .filters { grid-template-columns: 1fr 1fr; }
       .grid-cell { width: 20px; height: 20px; border-radius: 5px; }
+      .stats-mini-grid { grid-template-columns: repeat(4, 1fr); }
     }
     @media (min-width: 768px) {
       body { padding: 2.5rem 1.5rem; }
@@ -267,6 +368,33 @@
     [data-theme="dark"] .error-box { background: rgba(239,68,68,0.10); }
     [data-theme="dark"] .stat-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
     [data-theme="dark"] .section-heading { color: #9CA3AF; }
+
+    [data-theme="dark"] .stat-mini { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .stat-mini-lbl { color: #6B7280; }
+    [data-theme="dark"] .stat-mini-val { color: #F9FAFB; }
+    [data-theme="dark"] .stat-mini-sub { color: #6B7280; }
+    [data-theme="dark"] .cmp-period-lbl { color: #6B7280; }
+    [data-theme="dark"] .cmp-period-val { color: #F9FAFB; }
+    [data-theme="dark"] .cmp-arrow { color: #6B7280; }
+    [data-theme="dark"] .cmp-no-prev { color: #6B7280; }
+    [data-theme="dark"] .cmp-loading { color: #6B7280; }
+    [data-theme="dark"] .hm-month-lbl { color: #6B7280; }
+    [data-theme="dark"] .hm-day-labels span { color: #6B7280; }
+    [data-theme="dark"] .hm-legend { color: #6B7280; }
+    [data-theme="dark"] .hm-cell:not(.oor) { box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.06); }
+    [data-theme="dark"] .grafana-panel { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); box-shadow: 0 4px 24px rgba(0,0,0,0.30); }
+    [data-theme="dark"] .panel-header { border-bottom-color: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .panel-title { color: #E5E7EB; }
+    [data-theme="dark"] .tg { background: rgba(255,255,255,0.08); }
+    [data-theme="dark"] .tb { color: #9CA3AF; }
+    [data-theme="dark"] .tb.active { background: rgba(255,255,255,0.12); color: var(--accent); box-shadow: none; }
+    [data-theme="dark"] .legend-table-wrap { border-top-color: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .legend-table th { color: #6B7280; }
+    [data-theme="dark"] .legend-table td { color: #E5E7EB; border-bottom-color: rgba(255,255,255,0.05); }
+    [data-theme="dark"] .legend-name { color: #F9FAFB; }
+    [data-theme="dark"] .legend-row:hover { background: rgba(255,255,255,0.04); }
+    [data-theme="dark"] .legend-row.dimmed td,
+    [data-theme="dark"] .legend-row.dimmed .legend-name { color: rgba(255,255,255,0.18) !important; }
 
     /* ── Toast ── */
     #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
@@ -379,12 +507,58 @@
         </div>
       </div>
 
+      <!-- Stats mini grid -->
+      <div class="stats-mini-grid" id="stats-mini-grid">
+        <div class="stat-mini">
+          <div class="stat-mini-lbl">Avg Score</div>
+          <div class="stat-mini-val grad" id="smc-avg">—</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-lbl">Completion Rate</div>
+          <div class="stat-mini-val" id="smc-rate">—</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-lbl">Best Day</div>
+          <div class="stat-mini-val" id="smc-best">—</div>
+          <div class="stat-mini-sub" id="smc-best-lbl"></div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-lbl">Longest Streak</div>
+          <div class="stat-mini-val" id="smc-streak">—</div>
+        </div>
+      </div>
+
+      <!-- Daily score heatmap (GitHub style) -->
+      <div class="card" id="heatmap-card" style="display:none;">
+        <h2>Daily Score</h2>
+        <div class="hm-wrap">
+          <div class="hm-inner" id="hm-inner"></div>
+        </div>
+        <div class="hm-legend">
+          Less
+          <div class="hm-legend-swatches">
+            <span style="background:#EBEDF0;"></span>
+            <span style="background:#A7F3D0;"></span>
+            <span style="background:#34D399;"></span>
+            <span style="background:#059669;"></span>
+            <span style="background:#065F46;"></span>
+          </div>
+          More
+        </div>
+      </div>
+
       <!-- Score trend -->
       <div class="card">
         <h2>Score Trend</h2>
         <div class="chart-wrap">
           <canvas id="score-chart"></canvas>
         </div>
+      </div>
+
+      <!-- Period comparison -->
+      <div class="card" id="comparison-card">
+        <h2>Period Comparison</h2>
+        <div id="comparison-content"><span class="cmp-loading">Loading…</span></div>
       </div>
 
       <!-- Daily binary heatmap grid -->
@@ -400,15 +574,39 @@
         </div>
       </div>
 
-      <!-- Days done bar chart -->
-      <div class="card">
-        <h2>Days Done per Habit</h2>
-        <div class="chart-wrap">
-          <canvas id="habit-chart"></canvas>
+      <!-- Habit trend panel -->
+      <div class="grafana-panel" id="habit-panel">
+        <div class="panel-header">
+          <span class="panel-title">Habit Trend</span>
+          <div class="panel-controls">
+            <div class="tg" title="What to plot">
+              <button class="tb active" data-group="view" data-val="overall" onclick="setHabitState('view','overall')">Overall</button>
+              <button class="tb"        data-group="view" data-val="habit"   onclick="setHabitState('view','habit')">By Habit</button>
+            </div>
+            <div class="tg" id="tg-htype" title="Chart type">
+              <button class="tb active" data-group="type" data-val="bar"  onclick="setHabitState('type','bar')">Bar</button>
+              <button class="tb"        data-group="type" data-val="line" onclick="setHabitState('type','line')">Line</button>
+            </div>
+            <div class="tg" title="Show top N habits">
+              <button class="tb active" data-group="topn" data-val="0"  onclick="setHabitState('topn',0)">All</button>
+              <button class="tb"        data-group="topn" data-val="5"  onclick="setHabitState('topn',5)">Top 5</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel-chart-wrap">
+          <canvas id="habit-panel-chart"></canvas>
+        </div>
+        <div class="legend-table-wrap">
+          <table class="legend-table">
+            <thead><tr><th></th><th>Habit</th><th>Done</th><th>Rate</th></tr></thead>
+            <tbody id="habit-legend-body"></tbody>
+          </table>
         </div>
       </div>
     </div>
   </div>
+
+  <div id="hm-tip" class="hm-tip"></div>
 
 <script>
   function showToast(msg, type, duration) {
@@ -426,7 +624,6 @@
   }
 
   let scoreChart = null;
-  let habitChart = null;
 
   const today = new Date();
   document.getElementById("year").value       = today.getFullYear();
@@ -577,45 +774,369 @@
     container.innerHTML = html;
   }
 
-  function renderHabitChart(labels, values, totalDays) {
-    if (habitChart) habitChart.destroy();
-    const canvas = document.getElementById("habit-chart");
-    canvas.style.height = `${Math.max(200, labels.length * 40)}px`;
+  /* ══════════════════════════════════════════
+     HABIT TREND PANEL (Overall vs By Habit)
+  ══════════════════════════════════════════ */
+  let habitPanelChart = null;
+  let lastChartData = null;
+  const habitPanelState = { view: "overall", type: "bar", topn: 0, hidden: new Set() };
 
-    habitChart = new Chart(canvas.getContext("2d"), {
-      type: "bar",
-      data: {
-        labels,
-        datasets: [{
-          data: values,
-          backgroundColor: values.map(v => rateColor(totalDays ? v / totalDays : 0)),
-          borderRadius: 6,
-          borderSkipped: false,
-        }]
-      },
-      options: {
-        indexAxis: "y",
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: c => ` ${c.parsed.x} / ${totalDays} day${totalDays === 1 ? "" : "s"}`
-            }
-          }
-        },
-        scales: {
-          x: {
-            beginAtZero: true,
-            max: totalDays || 1,
-            grid: { color: "rgba(0,0,0,0.04)" },
-            ticks: { font: { size: 10 }, stepSize: 1, callback: v => Number.isInteger(v) ? v : "" }
-          },
-          y: { grid: { display: false }, ticks: { font: { size: 10 } } }
-        }
-      }
+  function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    const toHex = x => Math.round(255 * x).toString(16).padStart(2, "0");
+    return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+  }
+
+  function habitColor(name) {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
+    return hslToHex(h, 62, 42);
+  }
+
+  function setHabitState(key, val) {
+    habitPanelState[key] = val;
+    document.querySelectorAll(`.tb[data-group="${key}"]`).forEach(b => {
+      b.classList.toggle("active", String(b.dataset.val) === String(val));
     });
+    const typeGroup = document.getElementById("tg-htype");
+    if (typeGroup) typeGroup.classList.toggle("tg-dim", habitPanelState.view === "overall");
+    renderHabitPanel();
+  }
+
+  function toggleHabitSeries(name) {
+    if (habitPanelState.hidden.has(name)) habitPanelState.hidden.delete(name);
+    else habitPanelState.hidden.add(name);
+    renderHabitPanel();
+  }
+
+  function renderHabitLegend(rows, colorFn, clickable) {
+    const body = document.getElementById("habit-legend-body");
+    body.innerHTML = rows.map(r => `
+      <tr class="legend-row${habitPanelState.hidden.has(r.name) ? " dimmed" : ""}"
+          ${clickable ? `onclick="toggleHabitSeries('${r.name.replace(/'/g, "\\'")}')"` : ""}>
+        <td><span class="legend-swatch" style="background:${colorFn(r.name)}"></span></td>
+        <td class="legend-name">${r.name}</td>
+        <td>${r.done}</td>
+        <td>${r.rate}%</td>
+      </tr>`).join("");
+  }
+
+  function renderHabitPanel() {
+    const data = lastChartData;
+    if (!data) return;
+    const canvas = document.getElementById("habit-panel-chart");
+    const order = data.habit_counts.labels; // already sorted desc by done count
+    const n = habitPanelState.topn > 0 ? habitPanelState.topn : order.length;
+    const chosen = order.slice(0, n);
+
+    if (habitPanelChart) { habitPanelChart.destroy(); habitPanelChart = null; }
+
+    if (habitPanelState.view === "overall") {
+      const values = chosen.map(h => data.habit_counts.values[order.indexOf(h)]);
+      canvas.parentElement.style.height = `${Math.max(200, chosen.length * 40)}px`;
+      habitPanelChart = new Chart(canvas.getContext("2d"), {
+        type: "bar",
+        data: {
+          labels: chosen,
+          datasets: [{
+            data: values,
+            backgroundColor: values.map(v => rateColor(data.total_days ? v / data.total_days : 0)),
+            borderRadius: 6,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => ` ${c.parsed.x} / ${data.total_days} day${data.total_days === 1 ? "" : "s"}` } }
+          },
+          scales: {
+            x: {
+              beginAtZero: true, max: data.total_days || 1,
+              grid: { color: "rgba(0,0,0,0.04)" },
+              ticks: { font: { size: 10 }, stepSize: 1, callback: v => Number.isInteger(v) ? v : "" }
+            },
+            y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+      renderHabitLegend(chosen.map(h => {
+        const done = data.habit_counts.values[order.indexOf(h)];
+        return { name: h, done, rate: data.total_days ? Math.round(done / data.total_days * 1000) / 10 : 0 };
+      }), h => rateColor(data.total_days ? data.habit_counts.values[order.indexOf(h)] / data.total_days : 0), false);
+    } else {
+      canvas.parentElement.style.height = "320px";
+      const labels = data.habit_trend.labels;
+      const stacked = habitPanelState.type === "bar";
+      const datasets = chosen.map(h => {
+        const series = data.habit_trend.habits.find(s => s.name === h);
+        const color = habitColor(h);
+        return {
+          label: h,
+          data: series ? series.values : labels.map(() => 0),
+          borderColor: color,
+          backgroundColor: stacked ? color : color + "22",
+          fill: !stacked,
+          tension: 0.35,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          borderWidth: 2,
+          hidden: habitPanelState.hidden.has(h),
+        };
+      });
+      habitPanelChart = new Chart(canvas.getContext("2d"), {
+        type: stacked ? "bar" : "line",
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y}` } }
+          },
+          scales: {
+            x: { stacked, grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45, autoSkip: true } },
+            y: { stacked, beginAtZero: true, grid: { color: "rgba(0,0,0,0.04)" }, ticks: { font: { size: 10 }, stepSize: 1 } }
+          }
+        }
+      });
+      renderHabitLegend(chosen.map(h => {
+        const series = data.habit_trend.habits.find(s => s.name === h);
+        const done = series ? series.values.reduce((a, b) => a + b, 0) : 0;
+        return { name: h, done, rate: data.total_days ? Math.round(done / data.total_days * 1000) / 10 : 0 };
+      }), habitColor, true);
+    }
+  }
+
+  /* ── Stats mini cards ── */
+  function renderStatsCards(data) {
+    const s = data.stats || {};
+    document.getElementById("smc-avg").textContent = (s.avg_score ?? 0) + "%";
+
+    const habitCount = data.habit_counts.labels.length;
+    const totalPossible = data.total_days * habitCount;
+    const totalDone = data.habit_counts.values.reduce((a, b) => a + b, 0);
+    const overallRate = totalPossible ? Math.round(totalDone / totalPossible * 1000) / 10 : 0;
+    document.getElementById("smc-rate").textContent = overallRate + "%";
+
+    if (s.best_day) {
+      document.getElementById("smc-best").textContent = s.best_day.score + "%";
+      document.getElementById("smc-best-lbl").textContent = s.best_day.date;
+    } else {
+      document.getElementById("smc-best").textContent = "—";
+      document.getElementById("smc-best-lbl").textContent = "";
+    }
+
+    const streak = s.longest_streak ?? 0;
+    document.getElementById("smc-streak").textContent = `${streak} day${streak === 1 ? "" : "s"}`;
+  }
+
+  /* ── Period comparison ── */
+  function _prevPeriodQS(data) {
+    const p = data.period;
+    if (p === "all") return null;
+    if (p === "yearly") {
+      const y = parseInt(data.year || new Date().getFullYear()) - 1;
+      return `period=yearly&year=${y}`;
+    }
+    if (p === "monthly") {
+      const [yr, mo] = (data.month || new Date().toISOString().slice(0, 7)).split("-").map(Number);
+      const prev = new Date(yr, mo - 2, 1);
+      return `period=monthly&month=${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`;
+    }
+    if (p === "weekly") {
+      const s = new Date(data.week_start); s.setDate(s.getDate() - 7);
+      const e = new Date(data.week_end);   e.setDate(e.getDate() - 7);
+      return `period=custom&start=${s.toISOString().slice(0, 10)}&end=${e.toISOString().slice(0, 10)}`;
+    }
+    if (p === "daily") {
+      const d = new Date(data.date); d.setDate(d.getDate() - 1);
+      return `period=daily&day=${d.toISOString().slice(0, 10)}`;
+    }
+    if (p === "custom") {
+      const s = new Date(data.start), e = new Date(data.end);
+      const delta = Math.round((e - s) / 86400000) + 1;
+      const ps = new Date(s); ps.setDate(ps.getDate() - delta);
+      const pe = new Date(e); pe.setDate(pe.getDate() - delta);
+      return `period=custom&start=${ps.toISOString().slice(0, 10)}&end=${pe.toISOString().slice(0, 10)}`;
+    }
+    return null;
+  }
+
+  async function loadComparison(data) {
+    const el = document.getElementById("comparison-content");
+    el.innerHTML = '<span class="cmp-loading">Loading…</span>';
+
+    const prevQS = _prevPeriodQS(data);
+    if (!prevQS) {
+      el.innerHTML = '<div class="cmp-no-prev">No previous period to compare.</div>';
+      return;
+    }
+
+    let prevData;
+    try {
+      const r = await fetch(`/habits/chart/?${prevQS}`);
+      prevData = await r.json();
+      if (!r.ok) throw new Error(prevData.error || "Error");
+    } catch { el.innerHTML = '<div class="cmp-no-prev">Could not load previous period.</div>'; return; }
+
+    const cur  = data.stats?.avg_score ?? 0;
+    const prev = prevData.stats?.avg_score ?? 0;
+    const delta = Math.round((cur - prev) * 10) / 10;
+    const cls   = delta > 0 ? "up" : delta < 0 ? "down" : "flat";
+    const arrow = delta > 0 ? "▲" : delta < 0 ? "▼" : "—";
+    const curLbl  = periodLabel(data);
+    const prevLbl = periodLabel(prevData);
+
+    el.innerHTML = `
+      <div class="cmp-row">
+        <div class="cmp-period">
+          <div class="cmp-period-lbl">Previous · ${prevLbl}</div>
+          <div class="cmp-period-val">${prev}%</div>
+        </div>
+        <div class="cmp-arrow">→</div>
+        <div class="cmp-period">
+          <div class="cmp-period-lbl">Current · ${curLbl}</div>
+          <div class="cmp-period-val">${cur}%</div>
+        </div>
+      </div>
+      <div class="cmp-delta ${cls}">${arrow} ${Math.abs(delta)} pts avg score</div>`;
+  }
+
+  /* ── Daily score heatmap (GitHub style) ── */
+  const HM_COLORS = ["#EBEDF0", "#A7F3D0", "#34D399", "#059669", "#065F46"];
+  const CELL_SIZE = 11, CELL_GAP = 3, COL_W = CELL_SIZE + CELL_GAP;
+
+  function _hmColor(score) {
+    if (score === undefined || score === null || score <= 0) return HM_COLORS[0];
+    if (score < 25) return HM_COLORS[1];
+    if (score < 50) return HM_COLORS[2];
+    if (score < 80) return HM_COLORS[3];
+    return HM_COLORS[4];
+  }
+
+  function renderHeatmap(daily, rangeStart, rangeEnd) {
+    const inner = document.getElementById("hm-inner");
+    inner.innerHTML = "";
+    if (!rangeStart || !rangeEnd) {
+      document.getElementById("heatmap-card").style.display = "none";
+      return;
+    }
+
+    const start = new Date(rangeStart + "T00:00:00");
+    const end   = new Date(rangeEnd + "T00:00:00");
+    const diffDays = Math.round((end - start) / 86400000) + 1;
+
+    if (diffDays < 14 || diffDays > 1500) {
+      document.getElementById("heatmap-card").style.display = "none";
+      return;
+    }
+
+    const INTER_MONTH_PX = 6;
+    const monthsRow = document.createElement("div");
+    monthsRow.className = "hm-months-row";
+
+    const body = document.createElement("div");
+    body.className = "hm-body";
+
+    const dayLabels = document.createElement("div");
+    dayLabels.className = "hm-day-labels";
+    ["", "Mon", "", "Wed", "", "Fri", ""].forEach(txt => {
+      const s = document.createElement("span"); s.textContent = txt; dayLabels.appendChild(s);
+    });
+
+    const weeksDiv = document.createElement("div");
+    weeksDiv.className = "hm-weeks";
+    const tip = document.getElementById("hm-tip");
+
+    let cumWidth = 0;
+    let lastLabelYear = null;
+    let curY = start.getFullYear(), curM = start.getMonth();
+    const endY = end.getFullYear(), endM = end.getMonth();
+
+    while (curY < endY || (curY === endY && curM <= endM)) {
+      const mFirst = new Date(curY, curM, 1);
+      const mLast  = new Date(curY, curM + 1, 0);
+
+      const gStart = new Date(mFirst); gStart.setDate(gStart.getDate() - gStart.getDay());
+      const gEnd   = new Date(mLast);  gEnd.setDate(gEnd.getDate() + (6 - gEnd.getDay()));
+      const numW   = Math.round((gEnd - gStart) / 86400000) / 7;
+
+      const yr = curY;
+      const showYear = yr !== lastLabelYear;
+      lastLabelYear = yr;
+      const lbl = document.createElement("span");
+      lbl.className = "hm-month-lbl";
+      lbl.textContent = showYear
+        ? mFirst.toLocaleString("en", { month: "short" }) + " '" + String(yr).slice(2)
+        : mFirst.toLocaleString("en", { month: "short" });
+      lbl.style.left = cumWidth + "px";
+      monthsRow.appendChild(lbl);
+
+      for (let w = 0; w < numW; w++) {
+        const col = document.createElement("div");
+        col.className = "hm-week";
+        for (let d = 0; d < 7; d++) {
+          const day = new Date(gStart); day.setDate(day.getDate() + w * 7 + d);
+          const iso = day.getFullYear() + "-" + String(day.getMonth() + 1).padStart(2, "0") + "-" + String(day.getDate()).padStart(2, "0");
+          const inMonth = day >= mFirst && day <= mLast;
+          const inRange = day >= start && day <= end;
+          const cell = document.createElement("div");
+          if (!inMonth || !inRange) {
+            cell.className = "hm-cell oor";
+          } else {
+            cell.className = "hm-cell";
+            const score = daily?.[iso];
+            cell.style.background = _hmColor(score);
+            cell.dataset.tip = score === undefined ? iso + "  no entry" : iso + "  " + score + "%";
+          }
+          col.appendChild(cell);
+        }
+        weeksDiv.appendChild(col);
+        cumWidth += COL_W;
+      }
+
+      const isLast = curY === endY && curM === endM;
+      if (!isLast) {
+        const gap = document.createElement("div");
+        gap.style.cssText = `width:${INTER_MONTH_PX}px;flex-shrink:0;`;
+        weeksDiv.appendChild(gap);
+        cumWidth += INTER_MONTH_PX;
+      }
+
+      curM++; if (curM > 11) { curM = 0; curY++; }
+    }
+
+    monthsRow.style.width = (cumWidth + 4) + "px";
+
+    if (window._hmTipListener) document.removeEventListener("mousemove", window._hmTipListener);
+    window._hmTipListener = (e) => {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const cell = el?.closest?.(".hm-cell");
+      if (cell && cell.dataset.tip) {
+        tip.textContent = cell.dataset.tip;
+        tip.style.display = "block";
+        tip.style.left = (e.clientX + 16) + "px";
+        tip.style.top  = (e.clientY - 36) + "px";
+      } else {
+        tip.style.display = "none";
+      }
+    };
+    document.addEventListener("mousemove", window._hmTipListener);
+
+    body.appendChild(dayLabels);
+    body.appendChild(weeksDiv);
+    inner.appendChild(monthsRow);
+    inner.appendChild(body);
+
+    document.getElementById("heatmap-card").style.display = "block";
   }
 
   async function loadCharts() {

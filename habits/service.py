@@ -56,10 +56,15 @@ class HabitsService:
         elif period == "custom":
             s = date.fromisoformat(start) if start else date(today.year, 1, 1)
             e = date.fromisoformat(end) + timedelta(days=1) if end else today + timedelta(days=1)
+        # Padded by a day on each side: some rows carry a full timestamp (e.g.
+        # "00:05 +05:30") instead of a bare date, and Notion compares those in
+        # UTC — an early-morning local entry can sit on the *previous* UTC day.
+        # The exact boundary is enforced afterwards in `_fetch_rows`, keyed off
+        # each row's own displayed calendar date instead of Notion's filter.
         notion_filter = {
             "and": [
-                {"property": "Date", "date": {"on_or_after": s.isoformat()}},
-                {"property": "Date", "date": {"before": e.isoformat()}},
+                {"property": "Date", "date": {"on_or_after": (s - timedelta(days=1)).isoformat()}},
+                {"property": "Date", "date": {"before": (e + timedelta(days=1)).isoformat()}},
             ]
         }
         return notion_filter, s, e - timedelta(days=1)
@@ -150,33 +155,26 @@ class HabitsService:
             return None, None
         return date.fromisoformat(dates[0]), date.fromisoformat(dates[-1])
 
-    def _score_trend(self, period, year, rows, range_start, range_end, bucket="", habit_names=None):
-        habit_names = habit_names if habit_names is not None else self._habit_fields(rows)
-
+    def _bucket_rows(self, period, year, rows, range_start, range_end, bucket=""):
+        """Group `rows` into ordered (label, [rows in that bucket]) pairs, using
+        an explicit bucket override when given, else the period's own default
+        granularity (day for daily/weekly/monthly/short custom ranges, month
+        for yearly/all/long custom ranges). Shared by `_score_trend` and
+        `_habit_trend` so both always agree on the same bucket boundaries."""
         if bucket in self.VALID_BUCKETS:
             rs, re_ = self._bucket_override_range(rows, range_start, range_end)
             if rs is None:
-                return {"labels": [], "values": []}
+                return [], []
             keys, key_fn, fmt = self._generic_bucket_keys(rs, re_, bucket)
             buckets = {k: [] for k in keys}
             for row in rows:
-                d, s = self._row_date(row), self._row_computed_score(row, habit_names)
-                if not d or s is None:
-                    continue
-                k = key_fn(d)
-                if k in buckets:
-                    buckets[k].append(s)
-            return {
-                "labels": [fmt(k) for k in keys],
-                "values": [round(sum(v) / len(v), 1) if v else None for v in [buckets[k] for k in keys]],
-            }
+                d = self._row_date(row)
+                if d and key_fn(d) in buckets:
+                    buckets[key_fn(d)].append(row)
+            return [fmt(k) for k in keys], [buckets[k] for k in keys]
 
         if period == "daily" or not rows:
-            scores = [s for r in rows if (s := self._row_computed_score(r, habit_names)) is not None]
-            return {
-                "labels": [range_start.strftime("%d %b %Y") if range_start else "-"],
-                "values": [round(sum(scores) / len(scores), 1) if scores else None],
-            }
+            return [range_start.strftime("%d %b %Y") if range_start else "-"], [rows]
 
         if period in ("monthly", "weekly"):
             buckets: dict[str, list] = {}
@@ -185,26 +183,22 @@ class HabitsService:
                 buckets[d.isoformat()] = []
                 d += timedelta(days=1)
             for row in rows:
-                k, s = self._row_date(row), self._row_computed_score(row, habit_names)
-                if k in buckets and s is not None:
-                    buckets[k].append(s)
+                k = self._row_date(row)
+                if k in buckets:
+                    buckets[k].append(row)
             fmt = "%a %d" if period == "weekly" else "%-d"
-            return {
-                "labels": [date.fromisoformat(k).strftime(fmt) for k in sorted(buckets)],
-                "values": [round(sum(v) / len(v), 1) if v else None for v in [buckets[k] for k in sorted(buckets)]],
-            }
+            keys = sorted(buckets)
+            return [date.fromisoformat(k).strftime(fmt) for k in keys], [buckets[k] for k in keys]
 
         if period == "yearly":
             y = int(year) if year else date.today().year
             buckets = {f"{y}-{m:02d}": [] for m in range(1, 13)}
             for row in rows:
-                k, s = self._row_date(row)[:7], self._row_computed_score(row, habit_names)
-                if k in buckets and s is not None:
-                    buckets[k].append(s)
-            return {
-                "labels": [date(int(k[:4]), int(k[5:]), 1).strftime("%b") for k in sorted(buckets)],
-                "values": [round(sum(v) / len(v), 1) if v else None for v in [buckets[k] for k in sorted(buckets)]],
-            }
+                k = self._row_date(row)[:7]
+                if k in buckets:
+                    buckets[k].append(row)
+            keys = sorted(buckets)
+            return [date(int(k[:4]), int(k[5:]), 1).strftime("%b") for k in keys], [buckets[k] for k in keys]
 
         if period == "custom":
             delta = (range_end - range_start).days
@@ -215,39 +209,86 @@ class HabitsService:
                     buckets[d.isoformat()] = []
                     d += timedelta(days=1)
                 for row in rows:
-                    k, s = self._row_date(row), self._row_computed_score(row, habit_names)
-                    if k in buckets and s is not None:
-                        buckets[k].append(s)
-                return {
-                    "labels": [date.fromisoformat(k).strftime("%-d %b") for k in sorted(buckets)],
-                    "values": [round(sum(v) / len(v), 1) if v else None for v in [buckets[k] for k in sorted(buckets)]],
-                }
+                    k = self._row_date(row)
+                    if k in buckets:
+                        buckets[k].append(row)
+                keys = sorted(buckets)
+                return [date.fromisoformat(k).strftime("%-d %b") for k in keys], [buckets[k] for k in keys]
             buckets2: dict[str, list] = {}
             d = range_start
             while d <= range_end:
-                k = d.strftime("%Y-%m")
-                buckets2.setdefault(k, [])
+                buckets2.setdefault(d.strftime("%Y-%m"), [])
                 d += timedelta(days=1)
             for row in rows:
-                k, s = self._row_date(row)[:7], self._row_computed_score(row, habit_names)
-                if k in buckets2 and s is not None:
-                    buckets2[k].append(s)
+                k = self._row_date(row)[:7]
+                if k in buckets2:
+                    buckets2[k].append(row)
             keys2 = sorted(buckets2)
-            return {
-                "labels": [date(int(k[:4]), int(k[5:]), 1).strftime("%b %Y") for k in keys2],
-                "values": [round(sum(buckets2[k]) / len(buckets2[k]), 1) if buckets2[k] else None for k in keys2],
-            }
+            return [date(int(k[:4]), int(k[5:]), 1).strftime("%b %Y") for k in keys2], [buckets2[k] for k in keys2]
 
-        # all — monthly buckets
-        buckets: dict[str, list] = {}
+        # all — monthly buckets, only for months that actually have rows
+        buckets3: dict[str, list] = {}
         for row in rows:
-            k, s = self._row_date(row)[:7], self._row_computed_score(row, habit_names)
-            if len(k) == 7 and s is not None:
-                buckets.setdefault(k, []).append(s)
-        keys = sorted(buckets)
+            k = self._row_date(row)[:7]
+            if len(k) == 7:
+                buckets3.setdefault(k, []).append(row)
+        keys3 = sorted(buckets3)
+        return [date(int(k[:4]), int(k[5:]), 1).strftime("%b %Y") for k in keys3], [buckets3[k] for k in keys3]
+
+    def _score_trend(self, period, year, rows, range_start, range_end, bucket="", habit_names=None):
+        habit_names = habit_names if habit_names is not None else self._habit_fields(rows)
+        labels, bucketed = self._bucket_rows(period, year, rows, range_start, range_end, bucket)
+        values = []
+        for group in bucketed:
+            scores = [s for r in group if (s := self._row_computed_score(r, habit_names)) is not None]
+            values.append(round(sum(scores) / len(scores), 1) if scores else None)
+        return {"labels": labels, "values": values}
+
+    def _habit_trend(self, period, year, rows, range_start, range_end, bucket, habit_names):
+        """Per-bucket done-count for each habit, plus how many tracked days
+        landed in each bucket — lets the client turn counts into a rate."""
+        labels, bucketed = self._bucket_rows(period, year, rows, range_start, range_end, bucket)
+        series = [
+            {
+                "name": h,
+                "values": [
+                    sum(1 for r in group if (r.get("properties", {}).get(h) or {}).get("checkbox"))
+                    for group in bucketed
+                ],
+            }
+            for h in habit_names
+        ]
+        return {"labels": labels, "bucket_days": [len(g) for g in bucketed], "habits": series}
+
+    def _habit_stats(self, rows, habit_names):
+        """Avg score, best day, and longest run of consecutive tracked days
+        with a nonzero score — computed from the rows actually in this
+        period, so it reflects "best streak in this view", not lifetime."""
+        scored = sorted(
+            ((self._row_date(r), s) for r in rows if (s := self._row_computed_score(r, habit_names)) is not None),
+            key=lambda x: x[0],
+        )
+        if not scored:
+            return {"avg_score": 0, "best_day": None, "longest_streak": 0}
+
+        avg_score = round(sum(s for _, s in scored) / len(scored), 1)
+        best_date, best_score = max(scored, key=lambda x: x[1])
+
+        longest = current = 0
+        prev_date = None
+        for d, s in scored:
+            d_date = date.fromisoformat(d)
+            if s > 0:
+                current = current + 1 if prev_date is not None and d_date == prev_date + timedelta(days=1) else 1
+            else:
+                current = 0
+            longest = max(longest, current)
+            prev_date = d_date
+
         return {
-            "labels": [date(int(k[:4]), int(k[5:]), 1).strftime("%b %Y") for k in keys],
-            "values": [round(sum(buckets[k]) / len(buckets[k]), 1) for k in keys],
+            "avg_score": avg_score,
+            "best_day": {"date": best_date, "score": best_score},
+            "longest_streak": longest,
         }
 
     def _habit_grid(self, rows, range_start, range_end):
@@ -284,6 +325,9 @@ class HabitsService:
             start=start or None, end=end or None,
         )
         rows = self.data_layer.fetch_all_rows(notion_filter)
+        if range_start is not None:
+            lo, hi = range_start.isoformat(), range_end.isoformat()
+            rows = [r for r in rows if lo <= self._row_date(r) <= hi]
         return rows, range_start, range_end
 
     # ── Public interface ──────────────────────────────────────────────────────
@@ -379,50 +423,92 @@ class HabitsService:
         )
         grid = self._habit_grid(rows, range_start, range_end) if show_grid else None
 
+        daily_scores = {}
+        for row in rows:
+            d, s = self._row_date(row), self._row_computed_score(row, habits)
+            if d and s is not None:
+                daily_scores[d] = s
+
+        # period="all" has no fixed range — derive one from the data itself
+        # so the client's heatmap still knows what span to draw.
+        hm_start, hm_end = self._bucket_override_range(rows, range_start, range_end)
+
         return {
             "period": period,
             "total_days": total_days,
             "score_trend": self._score_trend(period, year, rows, range_start, range_end, bucket, habits),
             "habit_counts": habit_counts,
             "habit_grid": grid,
+            "habit_trend": self._habit_trend(period, year, rows, range_start, range_end, bucket, habits),
+            "stats": self._habit_stats(rows, habits),
+            "daily_scores": daily_scores,
+            "range_start": hm_start.isoformat() if hm_start else None,
+            "range_end": hm_end.isoformat() if hm_end else None,
             **self._period_meta(period, year, month, week, range_start, range_end),
         }
 
-    def backfill(self, start=None, end=None):
-        """Create missing daily entries in [start, end] — defaults to Jan 1 of
-        the current year through today when no range is given."""
+    MIN_BACKFILL_DATE = date(2024, 1, 1)  # habits aren't tracked before this — never backfill earlier
+
+    def _backfill_range(self, start, end, max_days=750):
+        """Validate and clamp a [start, end] range: defaults to
+        MIN_BACKFILL_DATE..today, never goes earlier than MIN_BACKFILL_DATE, never
+        later than today (no touching future-dated entries), and is capped in
+        span so a fat-fingered range can't queue years of API calls. `max_days`
+        is lower for operations that do more than one API call per day in range
+        (e.g. bulk-setting a habit also rewrites that row's Score)."""
         if start and not self.DAY_RE.match(start):
             raise ValueError("Invalid start date. Use YYYY-MM-DD")
         if end and not self.DAY_RE.match(end):
             raise ValueError("Invalid end date. Use YYYY-MM-DD")
 
         today = date.today()
-        start_d = date.fromisoformat(start) if start else date(today.year, 1, 1)
+        start_d = date.fromisoformat(start) if start else self.MIN_BACKFILL_DATE
         end_d = date.fromisoformat(end) if end else today
+        if start_d < self.MIN_BACKFILL_DATE:
+            start_d = self.MIN_BACKFILL_DATE
+        if end_d > today:
+            end_d = today
         if start_d > end_d:
-            raise ValueError("start must be on or before end")
-        if (end_d - start_d).days > 400:
-            raise ValueError("Range too large — please backfill at most ~400 days at a time")
+            start_d = end_d
+        if (end_d - start_d).days > max_days:
+            raise ValueError(f"Range too large — please pick {max_days} days or fewer")
+        return start_d, end_d
 
+    def missing_dates(self, start=None, end=None):
+        """Dates in [start, end] (clamped to MIN_BACKFILL_DATE) with no entry yet
+        — read-only, backs the "missing entries" count next to the Backfill button."""
+        start_d, end_d = self._backfill_range(start, end)
+
+        # Padded a day each side for the same reason as `_build_date_filter` —
+        # a row with a real timestamp near local midnight can land on the
+        # adjacent UTC day in Notion's own comparison. The `lo <= ... <= hi`
+        # check below enforces the exact boundary from each row's own date.
         notion_filter = {
             "and": [
-                {"property": "Date", "date": {"on_or_after": start_d.isoformat()}},
-                {"property": "Date", "date": {"on_or_before": end_d.isoformat()}},
+                {"property": "Date", "date": {"on_or_after": (start_d - timedelta(days=1)).isoformat()}},
+                {"property": "Date", "date": {"on_or_before": (end_d + timedelta(days=1)).isoformat()}},
             ]
         }
         rows = self.data_layer.fetch_all_rows(notion_filter)
-        existing = {self._row_date(r) for r in rows if self._row_date(r)}
+        lo, hi = start_d.isoformat(), end_d.isoformat()
+        existing = {d for r in rows if (d := self._row_date(r)) and lo <= d <= hi}
 
-        all_dates = []
+        missing = []
         d = start_d
         while d <= end_d:
-            all_dates.append(d.isoformat())
+            if d.isoformat() not in existing:
+                missing.append(d.isoformat())
             d += timedelta(days=1)
 
-        missing = [d for d in all_dates if d not in existing]
+        return {"start": start_d.isoformat(), "end": end_d.isoformat(), "missing": missing, "count": len(missing)}
+
+    def backfill(self, start=None, end=None):
+        """Create every missing daily entry in [start, end] (clamped to
+        MIN_BACKFILL_DATE..today by default)."""
+        preview = self.missing_dates(start, end)
 
         created, failed = [], []
-        for date_str in missing:
+        for date_str in preview["missing"]:
             try:
                 self.data_layer.create_page(date_str)
                 created.append(date_str)
@@ -514,6 +600,53 @@ class HabitsService:
             self._write_score(page_id, score, schema)
         return {"page_id": page_id, "updated": habits_dict, "score": score}
 
+    def bulk_set_habit(self, habit_name, value, start, end):
+        """Check or uncheck one habit across every existing entry in [start, end]
+        (clamped like backfill — never before MIN_BACKFILL_DATE, never past
+        today). Only touches days that already have an entry; it doesn't create
+        missing ones — use Backfill for that first. Capped to a shorter span
+        than backfill since each day costs two writes (the habit, then Score)."""
+        habit_name = (habit_name or "").strip()
+        schema, habit_names = self._schema_and_habits()
+        if habit_name not in habit_names:
+            raise ValueError(f'No habit named "{habit_name}" found')
+        start_d, end_d = self._backfill_range(start, end, max_days=180)
+
+        notion_filter = {
+            "and": [
+                {"property": "Date", "date": {"on_or_after": (start_d - timedelta(days=1)).isoformat()}},
+                {"property": "Date", "date": {"on_or_before": (end_d + timedelta(days=1)).isoformat()}},
+            ]
+        }
+        rows = self.data_layer.fetch_all_rows(notion_filter)
+        lo, hi = start_d.isoformat(), end_d.isoformat()
+        rows = [r for r in rows if lo <= self._row_date(r) <= hi]
+
+        value = self._to_bool(value)
+        updated, failed = [], []
+        for row in rows:
+            page_id = row.get("id", "")
+            d = self._row_date(row)
+            try:
+                page = self.data_layer.patch_page(page_id, {habit_name: {"checkbox": value}})
+                score = self._row_computed_score(page, habit_names)
+                self._write_score(page_id, score, schema)
+                updated.append(d)
+            except requests.HTTPError as exc:
+                try:
+                    err = exc.response.json() if exc.response else str(exc)
+                except Exception:
+                    err = str(exc)
+                failed.append({"date": d, "error": err})
+            except requests.RequestException as exc:
+                failed.append({"date": d, "error": str(exc)})
+
+        return {
+            "habit": habit_name, "value": value,
+            "start": start_d.isoformat(), "end": end_d.isoformat(),
+            "updated": len(updated), "dates": updated, "failed": failed,
+        }
+
     # ── Habit management (add/remove columns in the Notion schema) ─────────────
 
     def list_habit_names(self):
@@ -552,3 +685,18 @@ class HabitsService:
             raise ValueError(f'No habit column named "{name}" found')
         self.data_layer.remove_property(name)
         return {"name": name, "removed": True}
+
+    def rename_habit(self, old_name, new_name):
+        old_name = (old_name or "").strip()
+        new_name = (new_name or "").strip()
+        if not old_name or not new_name:
+            raise ValueError("Both the current and new habit name are required")
+        if old_name == new_name:
+            return {"old_name": old_name, "new_name": new_name, "renamed": False}
+        schema = self.data_layer.fetch_schema()
+        if old_name not in schema or schema[old_name].get("type") != "checkbox":
+            raise ValueError(f'No habit column named "{old_name}" found')
+        if new_name in schema:
+            raise ValueError(f'A column named "{new_name}" already exists')
+        self.data_layer.rename_property(old_name, new_name)
+        return {"old_name": old_name, "new_name": new_name, "renamed": True}

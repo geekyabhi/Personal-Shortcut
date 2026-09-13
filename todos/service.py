@@ -4,6 +4,16 @@ from dateutil import parser as dateparser
 from .data_layer import JiraDataLayer
 
 
+def _extract_error(resp):
+    content_type = resp.headers.get("Content-Type", "")
+    if "application/json" in content_type:
+        try:
+            return resp.json()
+        except ValueError:
+            pass
+    return {"message": f"Jira returned an unexpected response (status {resp.status_code}). It may be temporarily unavailable."}
+
+
 class TodosService:
     def __init__(self, data_layer: JiraDataLayer):
         self.data_layer = data_layer
@@ -42,11 +52,7 @@ class TodosService:
             key = resp.json().get("key")
             return key, f"{self.data_layer.base_url}/browse/{key}"
 
-        try:
-            err = resp.json()
-        except Exception:
-            err = {"raw": resp.text}
-        raise RuntimeError(err)
+        raise RuntimeError(_extract_error(resp))
 
     def list_issues(self, status=""):
         status_filter = f' AND status="{status}"' if status else ""
@@ -59,11 +65,7 @@ class TodosService:
         )
 
         if not resp.ok:
-            try:
-                err = resp.json()
-            except Exception:
-                err = {"raw": resp.text}
-            raise RuntimeError(err)
+            raise RuntimeError(_extract_error(resp))
 
         issues = []
         for issue in resp.json().get("issues", []):
@@ -94,7 +96,7 @@ class TodosService:
         )
 
         if not resp.ok:
-            raise RuntimeError(resp.text)
+            raise RuntimeError(_extract_error(resp))
 
         now = datetime.now(timezone.utc)
         today = now.date()

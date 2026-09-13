@@ -101,6 +101,21 @@ class BackfillView(HabitsBaseView):
         return JsonResponse(result)
 
 
+class BackfillPreviewView(HabitsBaseView):
+    def get(self, request):
+        if not self.service:
+            return self._creds_error()
+        try:
+            result = self.service.missing_dates(
+                start=request.GET.get("start", ""), end=request.GET.get("end", "")
+            )
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Notion fetch error: {exc}"}, status=502)
+        return JsonResponse(result)
+
+
 class TodayHabitsView(HabitsBaseView):
     def get(self, request):
         if not self.service:
@@ -154,6 +169,28 @@ class HabitsUpdateEntryView(HabitsBaseView):
         return JsonResponse(result)
 
 
+class BulkSetHabitView(HabitsBaseView):
+    def post(self, request):
+        if not self.service:
+            return self._creds_error()
+        try:
+            body = json.loads(request.body)
+        except (ValueError, json.JSONDecodeError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+        try:
+            result = self.service.bulk_set_habit(
+                body.get("habit", ""), body.get("value"),
+                body.get("start", ""), body.get("end", ""),
+            )
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        except requests.HTTPError as exc:
+            return self._notion_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Bulk update failed: {exc}"}, status=502)
+        return JsonResponse(result)
+
+
 class HabitNamesView(HabitsBaseView):
     def get(self, request):
         if not self.service:
@@ -204,6 +241,25 @@ class RemoveHabitView(HabitsBaseView):
             return self._notion_error(exc)
         except requests.RequestException as exc:
             return JsonResponse({"error": f"Failed to remove habit: {exc}"}, status=502)
+        return JsonResponse(result)
+
+
+class RenameHabitView(HabitsBaseView):
+    def post(self, request):
+        if not self.service:
+            return self._creds_error()
+        try:
+            body = json.loads(request.body)
+        except (ValueError, json.JSONDecodeError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+        try:
+            result = self.service.rename_habit(body.get("old_name", ""), body.get("new_name", ""))
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        except requests.HTTPError as exc:
+            return self._notion_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Failed to rename habit: {exc}"}, status=502)
         return JsonResponse(result)
 
 
