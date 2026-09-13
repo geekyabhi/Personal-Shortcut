@@ -753,7 +753,7 @@
       const dt = new Date(d + "T00:00:00");
       return isWeekly
         ? dt.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2)
-        : String(dt.getUTCDate());
+        : String(Number(d.slice(8, 10)));
     });
 
     let html = `<table class="grid-table"><thead><tr><th class="habit-label"></th>`;
@@ -815,7 +815,7 @@
   function renderHabitLegend(rows, colorFn, clickable) {
     const body = document.getElementById("habit-legend-body");
     body.innerHTML = rows.map(r => `
-      <tr class="legend-row${habitPanelState.hidden.has(r.name) ? " dimmed" : ""}"
+      <tr class="legend-row${clickable && habitPanelState.hidden.has(r.name) ? " dimmed" : ""}"
           ${clickable ? `onclick="toggleHabitSeries('${r.name.replace(/'/g, "\\'")}')"` : ""}>
         <td><span class="legend-swatch" style="background:${colorFn(r.name)}"></span></td>
         <td class="legend-name">${r.name}</td>
@@ -1158,11 +1158,17 @@
       document.getElementById("period-badge").textContent = periodLabel(data);
       document.getElementById("stat-days").textContent    = data.total_days + " days";
 
+      lastChartData = data;
+      habitPanelState.hidden.clear();
+
       renderScoreChart(data.score_trend.labels, data.score_trend.values);
       renderHabitGrid(data.habit_grid);
-      renderHabitChart(data.habit_counts.labels, data.habit_counts.values, data.total_days);
+      renderStatsCards(data);
+      renderHeatmap(data.daily_scores, data.range_start, data.range_end);
+      renderHabitPanel();
 
       document.getElementById("results").style.display = "block";
+      loadComparison(data);
     } catch (e) {
       document.getElementById("error-box").textContent = "Network error: " + e.message;
       document.getElementById("error-box").style.display = "block";
