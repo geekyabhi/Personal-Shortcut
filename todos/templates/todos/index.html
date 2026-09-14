@@ -251,55 +251,129 @@
     .status-tab:hover { color: var(--accent); border-color: rgba(2,132,199,0.2); }
     .status-tab.active { background: var(--grad); color: #fff; box-shadow: 0 2px 8px rgba(2,132,199,0.25); }
 
-    /* ── Smart filter builder (Sprint + Issues sections) ── */
+    /* ── Notion-style filter builder (Sprint + Issues sections) — nested AND/OR
+       groups plus a Visual/SQL mode toggle, the same builder used on the
+       expenses and books dashboards. ── */
     .tfb { margin-bottom: 1.1rem; }
-    .tfb-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; }
-    .tfb-bar .status-tabs { margin-bottom: 0; }
-    .tfb-rules { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.6rem; }
-    .tfb-rules:empty { display: none; margin-top: 0; }
-    .tfb-rule { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-    .tfb-where { font-size: 0.78rem; font-weight: 700; color: #9CA3AF; min-width: 44px; flex-shrink: 0; }
-    .tfb-join-label {
-      font-size: 0.68rem; font-weight: 700; color: var(--accent); text-transform: uppercase;
-      min-width: 44px; flex-shrink: 0; text-align: center;
+    .tfb .status-tabs { margin-bottom: 0.75rem; }
+
+    .btn-ghost {
+      padding: 0.4rem 1rem; font-size: 0.82rem; font-weight: 600;
+      background: rgba(2,132,199,0.07); color: var(--accent);
+      border: 1px solid rgba(2,132,199,0.18); border-radius: 100px;
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
     }
-    .tfb-join {
-      width: auto; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--accent);
-      padding: 0.25rem 0.3rem; border-radius: 8px; border: 1.5px solid rgba(2,132,199,0.25);
-      background: rgba(2,132,199,0.06); font-family: inherit; flex: 0 0 auto; min-width: 60px;
+    .btn-ghost:hover { background: var(--grad); color: #fff; border-color: transparent; }
+    [data-theme="dark"] .btn-ghost { background: rgba(2,132,199,0.15); border-color: rgba(2,132,199,0.28); }
+
+    .fb-mode-toggle { display: flex; gap: 0.35rem; margin-bottom: 0.75rem; }
+    .fb-mode-btn {
+      border: 1.5px solid rgba(0,0,0,0.1); background: transparent; color: #6B7280;
+      font-size: 0.74rem; font-weight: 700; padding: 0.3rem 0.8rem; border-radius: 100px;
+      cursor: pointer; font-family: inherit; transition: all 0.15s ease;
     }
-    /* Override the page-wide `select, input[type=text] { width:100% }` rule —
-       without this each control claims the full row and the whole filter
-       row stacks into one control per line instead of sitting inline. */
-    .tfb-field, .tfb-op, .tfb-value {
-      width: auto; font-size: 0.82rem; padding: 0.42rem 0.6rem; border-radius: 8px;
-      border: 1.5px solid rgba(0,0,0,0.1); background: #fff; font-family: inherit;
-      color: inherit; appearance: none;
+    .fb-mode-btn.active { background: var(--grad); color: #fff; border-color: transparent; }
+    [data-theme="dark"] .fb-mode-btn { border-color: rgba(255,255,255,0.14); color: #9CA3AF; }
+
+    .fb-sql-panel textarea {
+      width: 100%; padding: 0.65rem 0.8rem; border-radius: 10px; border: 1.5px solid rgba(0,0,0,0.1);
+      font-size: 0.83rem; font-family: "SF Mono", ui-monospace, monospace; background: #F9FAFB;
+      color: #111827; resize: vertical; min-height: 3.4rem;
     }
-    .tfb-field { flex: 1 1 130px; min-width: 110px; }
-    .tfb-op    { flex: 1 1 110px; min-width: 90px; }
-    .tfb-value { flex: 1.4 1 140px; min-width: 120px; }
-    .tfb-rm {
-      width: 28px; height: 28px; flex-shrink: 0; border-radius: 8px;
-      border: 1px solid rgba(239,68,68,0.3); background: transparent; color: #DC2626;
-      cursor: pointer; font-size: 0.85rem; font-family: inherit;
+    .fb-sql-panel textarea:focus { outline: none; border-color: var(--accent); background: #fff; }
+    [data-theme="dark"] .fb-sql-panel textarea {
+      background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
     }
-    .tfb-rm:hover { background: rgba(239,68,68,0.08); }
-    .tfb-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
-    .tfb-add {
-      border: 1px dashed rgba(2,132,199,0.4); border-radius: 8px; background: transparent;
+    .fb-sql-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.55rem; }
+    .fb-sql-hint { font-size: 0.72rem; color: #9CA3AF; line-height: 1.5; }
+    .fb-sql-error {
+      margin-top: 0.5rem; padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+      background: #FEF2F2; color: #B91C1C; border: 1px solid #FCA5A5;
+    }
+    [data-theme="dark"] .fb-sql-error { background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.3); }
+
+    .fb-title {
+      display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.68rem; font-weight: 700;
+      color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem;
+    }
+    .fb-title .fb-clear {
+      text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 0.72rem;
+      color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; font-family: inherit;
+    }
+    .fb-title .fb-clear:hover { text-decoration: underline; }
+    .fb-rules { display: flex; flex-direction: column; gap: 0.45rem; }
+    .fb-rule {
+      display: grid;
+      grid-template-columns: 1fr 32px;
+      grid-template-areas: "field field" "op op" "value value" "rm rm";
+      gap: 0.4rem; align-items: center;
+    }
+    .fb-rule > select[data-k="field"] { grid-area: field; }
+    .fb-rule > select[data-k="op"]    { grid-area: op; }
+    .fb-rule > .fb-vwrap              { grid-area: value; }
+    .fb-rule > .fb-rm                 { grid-area: rm; justify-self: end; }
+    @media (min-width: 560px) {
+      .fb-rule {
+        grid-template-columns: minmax(100px, 0.9fr) minmax(120px, 0.9fr) minmax(140px, 1.3fr) 32px;
+        grid-template-areas: "field op value rm";
+      }
+    }
+    .fb-joiner { margin: 0.1rem 0 -0.15rem; }
+    .fb-join-select {
+      width: auto; padding: 0.15rem 0.55rem; border: none; border-radius: 100px;
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--accent); background: rgba(2,132,199,0.09); cursor: pointer;
+    }
+    [data-theme="dark"] .fb-join-select { background: rgba(99,102,241,0.16); color: #A5B4FC; }
+    .fb-group {
+      margin: 0.3rem 0; padding: 0.6rem 0.65rem;
+      border: 1.5px dashed rgba(2,132,199,0.35); border-radius: 12px;
+      background: rgba(2,132,199,0.03);
+    }
+    [data-theme="dark"] .fb-group { border-color: rgba(99,102,241,0.35); background: rgba(99,102,241,0.05); }
+    .fb-group-inner { display: flex; align-items: flex-start; gap: 0.35rem; }
+    .fb-bracket { flex: none; font-size: 1.3rem; font-weight: 800; line-height: 1.5; color: var(--accent); opacity: 0.55; }
+    .fb-group-content { flex: 1; min-width: 0; }
+    .fb-group-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-top: 0.55rem; }
+    .fb-addgroup {
+      border: 1.5px dashed #BAE6FD; border-radius: 8px; background: transparent;
       color: var(--accent); font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.9rem;
       cursor: pointer; font-family: inherit;
     }
-    .tfb-add:hover { background: rgba(2,132,199,0.08); }
-    .tfb-clear {
-      border: none; background: none; color: #6B7280; font-size: 0.78rem; font-weight: 600;
-      cursor: pointer; font-family: inherit; text-decoration: underline; padding: 0;
+    .fb-addgroup:hover { background: rgba(2,132,199,0.06); }
+    [data-theme="dark"] .fb-addgroup { border-color: rgba(99,102,241,0.4); }
+    .fb-rmgroup {
+      margin-left: auto; border: 1.5px solid #FECACA; border-radius: 8px; background: transparent;
+      color: #EF4444; font-size: 0.75rem; font-weight: 600; padding: 0.4rem 0.7rem;
+      cursor: pointer; font-family: inherit;
     }
-    [data-theme="dark"] .tfb-field, [data-theme="dark"] .tfb-op, [data-theme="dark"] .tfb-value {
-      background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
+    .fb-rmgroup:hover { background: #FEF2F2; }
+    [data-theme="dark"] .fb-rmgroup { border-color: rgba(239,68,68,0.35); color: #F87171; }
+    .fb-empty-group { font-size: 0.78rem; color: #9CA3AF; padding: 0.2rem 0; }
+    .fb-rule select, .fb-rule input {
+      padding: 0.45rem 0.55rem; border-radius: 8px; border: 1.5px solid rgba(0,0,0,0.1);
+      font-size: 0.82rem; font-family: inherit; background: #F9FAFB; color: #111827;
+      min-width: 0; width: 100%;
     }
-    [data-theme="dark"] .tfb-join { background: rgba(2,132,199,0.15); border-color: rgba(2,132,199,0.3); }
+    .fb-rule select:focus, .fb-rule input:focus { outline: none; border-color: var(--accent); background: #fff; }
+    [data-theme="dark"] .fb-rule select, [data-theme="dark"] .fb-rule input {
+      background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
+    }
+    .fb-vwrap { display: flex; gap: 0.3rem; align-items: center; min-width: 0; }
+    .fb-vwrap.fb-none::after { content: "—"; color: #C4C7D0; font-size: 0.85rem; padding-left: 0.2rem; }
+    .fb-rm {
+      width: 32px; height: 32px; flex: none; border-radius: 8px; border: 1.5px solid #FECACA;
+      background: transparent; color: #EF4444; cursor: pointer; font-size: 0.9rem; line-height: 1;
+    }
+    .fb-rm:hover { background: #FEF2F2; }
+    [data-theme="dark"] .fb-rm { border-color: rgba(239,68,68,0.35); color: #F87171; }
+    .fb-add {
+      border: 1.5px dashed #BAE6FD; border-radius: 8px; background: transparent;
+      color: var(--accent); font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.9rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .fb-add:hover { background: rgba(2,132,199,0.06); }
+    [data-theme="dark"] .fb-add { border-color: rgba(99,102,241,0.4); }
 
     /* ── Insights ── */
     .insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1.25rem; }
@@ -653,11 +727,21 @@
       </div>
 
       <div class="tfb" id="spr-tfb">
-        <div class="tfb-bar">
-          <button type="button" class="tfb-add" onclick="tfbAddRule('spr')">+ Add filter</button>
-          <button type="button" class="tfb-clear" id="spr-tfb-clear" onclick="tfbClear('spr')" style="display:none;">Clear all</button>
+        <div class="fb-mode-toggle">
+          <button type="button" class="fb-mode-btn active" id="spr-fb-mode-visual" onclick="tfbSetMode('spr','visual')">Visual</button>
+          <button type="button" class="fb-mode-btn" id="spr-fb-mode-sql" onclick="tfbSetMode('spr','sql')">SQL</button>
         </div>
-        <div class="tfb-rules" id="spr-tfb-rules"></div>
+
+        <div class="fb" id="spr-fb"></div>
+
+        <div class="fb-sql-panel" id="spr-fb-sql-panel" style="display:none;">
+          <textarea id="spr-fb-sql-input" rows="3" placeholder="status = 'In Progress' AND type = 'Bug'"></textarea>
+          <div class="fb-sql-actions">
+            <button type="button" class="btn-ghost" style="font-size:0.8rem;padding:0.4rem 1rem;margin-top:0;" onclick="tfbApplySQL('spr')">Apply query</button>
+            <span class="fb-sql-hint">Columns: type, status, assignee, duedate, summary, parent — combine with AND / OR / parentheses, e.g. <code>status = 'In Progress' AND type = 'Bug'</code></span>
+          </div>
+          <div class="fb-sql-error" id="spr-fb-sql-error" style="display:none;"></div>
+        </div>
       </div>
 
       <div id="sprint-content">
@@ -684,20 +768,29 @@
       </div>
 
       <div class="tfb" id="iss-tfb">
-        <div class="tfb-bar">
-          <div class="status-tabs">
-            <button class="status-tab active" onclick="setFilter('')">All</button>
-            <button class="status-tab" onclick="setFilter('To Do')">To Do</button>
-            <button class="status-tab" onclick="setFilter('In Progress')">In Progress</button>
-            <button class="status-tab" onclick="setFilter('Blocked')">Blocked</button>
-            <button class="status-tab" onclick="setFilter('Done')">Done</button>
-          </div>
-          <div class="tfb-actions">
-            <button type="button" class="tfb-add" onclick="tfbAddRule('iss')">+ Add filter</button>
-            <button type="button" class="tfb-clear" id="iss-tfb-clear" onclick="tfbClear('iss')" style="display:none;">Clear all</button>
-          </div>
+        <div class="status-tabs">
+          <button class="status-tab active" onclick="setFilter('')">All</button>
+          <button class="status-tab" onclick="setFilter('To Do')">To Do</button>
+          <button class="status-tab" onclick="setFilter('In Progress')">In Progress</button>
+          <button class="status-tab" onclick="setFilter('Blocked')">Blocked</button>
+          <button class="status-tab" onclick="setFilter('Done')">Done</button>
         </div>
-        <div class="tfb-rules" id="iss-tfb-rules"></div>
+
+        <div class="fb-mode-toggle">
+          <button type="button" class="fb-mode-btn active" id="iss-fb-mode-visual" onclick="tfbSetMode('iss','visual')">Visual</button>
+          <button type="button" class="fb-mode-btn" id="iss-fb-mode-sql" onclick="tfbSetMode('iss','sql')">SQL</button>
+        </div>
+
+        <div class="fb" id="iss-fb"></div>
+
+        <div class="fb-sql-panel" id="iss-fb-sql-panel" style="display:none;">
+          <textarea id="iss-fb-sql-input" rows="3" placeholder="status = 'In Progress' AND type = 'Bug'"></textarea>
+          <div class="fb-sql-actions">
+            <button type="button" class="btn-ghost" style="font-size:0.8rem;padding:0.4rem 1rem;margin-top:0;" onclick="tfbApplySQL('iss')">Apply query</button>
+            <span class="fb-sql-hint">Columns: type, status, assignee, duedate, summary, parent — combine with AND / OR / parentheses, e.g. <code>status = 'In Progress' AND type = 'Bug'</code></span>
+          </div>
+          <div class="fb-sql-error" id="iss-fb-sql-error" style="display:none;"></div>
+        </div>
       </div>
 
       <div class="insights-grid" id="insights-grid">
@@ -984,10 +1077,12 @@
   }
 
   /* ══════════════════════════════════════════
-     SMART FILTER BUILDER (Sprint + Issues sections)
-     A flat list of field/operator/value rules, combined by one AND/OR —
-     the same idea as the expense dashboard's filter builder, scoped down
-     to this app's much smaller field set (no nested groups, no SQL mode).
+     NOTION-STYLE FILTER BUILDER (Sprint + Issues sections)
+     Two independent instances ("iss" and "spr") of the same nested-group,
+     Visual/SQL-mode builder used on the expenses and books dashboards. A
+     node is either a leaf condition {field, op, value} or a group
+     {join: "and"|"or", rules: [node, ...]}; the root of each instance's
+     state is always a group.
   ══════════════════════════════════════════ */
   const TFB_FIELDS = {
     type:     { label: "Type",     kind: "select",   getOptions: () => issueMeta.issue_types.map(t => t.name) },
@@ -998,7 +1093,7 @@
     parent:   { label: "Parent",   kind: "bool" },
   };
 
-  const tfbState = {
+  let tfbState = {
     iss: { join: "and", rules: [] },
     spr: { join: "and", rules: [] },
   };
@@ -1011,68 +1106,12 @@
     return [];
   }
 
-  function tfbFieldSelectHtml(prefix, idx, rule) {
-    return `<select class="tfb-field" onchange="tfbFieldChanged('${prefix}',${idx},this.value)">` +
-      Object.entries(TFB_FIELDS).map(([key, def]) => `<option value="${key}" ${rule.field === key ? "selected" : ""}>${def.label}</option>`).join("") +
-      `</select>`;
-  }
-
-  function tfbOpSelectHtml(prefix, idx, rule) {
-    const ops = tfbOperatorsFor(TFB_FIELDS[rule.field].kind);
-    return `<select class="tfb-op" onchange="tfbUpdateRule('${prefix}',${idx},'op',this.value)">` +
-      ops.map(([v, l]) => `<option value="${v}" ${rule.op === v ? "selected" : ""}>${l}</option>`).join("") + `</select>`;
-  }
-
-  function tfbValueInputHtml(prefix, idx, rule) {
-    const def = TFB_FIELDS[rule.field];
-    if (def.kind === "bool") return "";
-    if (def.kind === "date") {
-      if (rule.op === "empty" || rule.op === "not_empty") return "";
-      return `<input type="date" class="tfb-value" value="${rule.value || ""}" onchange="tfbUpdateRule('${prefix}',${idx},'value',this.value)" />`;
-    }
-    if (def.kind === "text") {
-      return `<input type="text" class="tfb-value" placeholder="Value…" value="${escHtml(rule.value || "")}" oninput="tfbUpdateRule('${prefix}',${idx},'value',this.value)" />`;
-    }
-    if (def.kind === "select") {
-      const opts = def.getOptions();
-      return `<select class="tfb-value" onchange="tfbUpdateRule('${prefix}',${idx},'value',this.value)">` +
-        opts.map(o => `<option value="${escHtml(o)}" ${rule.value === o ? "selected" : ""}>${escHtml(o)}</option>`).join("") + `</select>`;
-    }
-    if (def.kind === "assignee") {
-      const opts = [["", "Unassigned"], ...issueMeta.assignees.map(a => [a.account_id, a.display_name])];
-      return `<select class="tfb-value" onchange="tfbUpdateRule('${prefix}',${idx},'value',this.value)">` +
-        opts.map(([v, l]) => `<option value="${v}" ${rule.value === v ? "selected" : ""}>${escHtml(l)}</option>`).join("") + `</select>`;
-    }
-    return "";
-  }
-
-  function tfbRenderRules(prefix) {
-    const state = tfbState[prefix];
-    const wrap  = document.getElementById(`${prefix}-tfb-rules`);
-    if (!state.rules.length) {
-      wrap.innerHTML = "";
-    } else {
-      wrap.innerHTML = state.rules.map((rule, idx) => `
-        <div class="tfb-rule">
-          ${idx === 0 ? `<span class="tfb-where">Where</span>` :
-            idx === 1 ? `<select class="tfb-join" onchange="tfbSetJoin('${prefix}',this.value)">
-                           <option value="and" ${state.join === "and" ? "selected" : ""}>AND</option>
-                           <option value="or"  ${state.join === "or"  ? "selected" : ""}>OR</option>
-                         </select>` :
-            `<span class="tfb-join-label">${state.join}</span>`}
-          ${tfbFieldSelectHtml(prefix, idx, rule)}
-          ${tfbOpSelectHtml(prefix, idx, rule)}
-          ${tfbValueInputHtml(prefix, idx, rule)}
-          <button type="button" class="tfb-rm" onclick="tfbRemoveRule('${prefix}',${idx})" title="Remove">✕</button>
-        </div>
-      `).join("");
-    }
-    document.getElementById(`${prefix}-tfb-clear`).style.display = state.rules.length ? "inline-flex" : "none";
-  }
-
-  function tfbApply(prefix) {
-    try { localStorage.setItem(`ps_todos_tfb_${prefix}`, JSON.stringify(tfbState[prefix])); } catch (e) {}
-    if (prefix === "iss") renderIssuesList(); else renderSprintBoard();
+  function tfbNoValue(r) {
+    const def = TFB_FIELDS[r.field];
+    if (!def) return true;
+    if (def.kind === "bool") return true;
+    if (def.kind === "date") return r.op === "empty" || r.op === "not_empty";
+    return false;
   }
 
   function tfbDefaultValue(field) {
@@ -1085,53 +1124,23 @@
     return ""; // assignee's first option is Unassigned (value ""), already correct; text/date/bool need no seed
   }
 
-  function tfbAddRule(prefix) {
-    const firstField = Object.keys(TFB_FIELDS)[0];
-    const ops = tfbOperatorsFor(TFB_FIELDS[firstField].kind);
-    tfbState[prefix].rules.push({ field: firstField, op: ops[0][0], value: tfbDefaultValue(firstField) });
-    tfbRenderRules(prefix);
-    tfbApply(prefix);
+  function tfbNewRule() {
+    const field = Object.keys(TFB_FIELDS)[0];
+    const ops = tfbOperatorsFor(TFB_FIELDS[field].kind);
+    return { field, op: ops[0][0], value: tfbDefaultValue(field) };
   }
 
-  function tfbRemoveRule(prefix, idx) {
-    tfbState[prefix].rules.splice(idx, 1);
-    tfbRenderRules(prefix);
-    tfbApply(prefix);
+  function tfbRuleComplete(r) {
+    if (tfbNoValue(r)) return true;
+    return r.value != null && r.value !== "";
+  }
+  const tfbIsGroup = node => !!(node && Array.isArray(node.rules));
+  function tfbActive(node) {
+    if (tfbIsGroup(node)) return node.rules.some(tfbActive);
+    return !!(node.field && node.op && tfbRuleComplete(node));
   }
 
-  function tfbFieldChanged(prefix, idx, newField) {
-    const ops = tfbOperatorsFor(TFB_FIELDS[newField].kind);
-    tfbState[prefix].rules[idx] = { field: newField, op: ops[0][0], value: tfbDefaultValue(newField) };
-    tfbRenderRules(prefix);
-    tfbApply(prefix);
-  }
-
-  function tfbUpdateRule(prefix, idx, key, value) {
-    tfbState[prefix].rules[idx][key] = value;
-    if (key === "op") tfbRenderRules(prefix); // operator change can add/remove the value input
-    tfbApply(prefix);
-  }
-
-  function tfbSetJoin(prefix, join) {
-    tfbState[prefix].join = join;
-    tfbRenderRules(prefix);
-    tfbApply(prefix);
-  }
-
-  function tfbClear(prefix) {
-    tfbState[prefix] = { join: "and", rules: [] };
-    tfbRenderRules(prefix);
-    tfbApply(prefix);
-  }
-
-  function tfbLoadState(prefix) {
-    try {
-      const saved = JSON.parse(localStorage.getItem(`ps_todos_tfb_${prefix}`));
-      if (saved && Array.isArray(saved.rules)) tfbState[prefix] = saved;
-    } catch (e) {}
-  }
-
-  function tfbRuleMatches(issue, rule) {
+  function tfbRuleMatch(issue, rule) {
     const def = TFB_FIELDS[rule.field];
     if (!def) return true;
     if (def.kind === "select") {
@@ -1157,12 +1166,375 @@
     }
     return true;
   }
-
+  function tfbNodeMatch(issue, node) {
+    if (tfbIsGroup(node)) {
+      const kids = node.rules.filter(tfbActive);
+      if (!kids.length) return true;
+      const results = kids.map(k => tfbNodeMatch(issue, k));
+      return node.join === "or" ? results.some(Boolean) : results.every(Boolean);
+    }
+    return tfbRuleMatch(issue, node);
+  }
   function tfbMatches(issue, prefix) {
-    const state = tfbState[prefix];
-    if (!state.rules.length) return true;
-    const results = state.rules.map(r => tfbRuleMatches(issue, r));
-    return state.join === "and" ? results.every(Boolean) : results.some(Boolean);
+    const root = tfbState[prefix];
+    if (!tfbActive(root)) return true;
+    return tfbNodeMatch(issue, root);
+  }
+
+  // Path = dot-separated indices through nested `rules` arrays, e.g. "1.2" → root.rules[1].rules[2].
+  const tfbPath = s => (s === "" || s == null) ? [] : s.split(".").map(Number);
+  function tfbNodeAt(prefix, path) {
+    let node = tfbState[prefix];
+    for (const i of path) node = node.rules[i];
+    return node;
+  }
+  function tfbParentAt(prefix, path) {
+    let node = tfbState[prefix];
+    for (let k = 0; k < path.length - 1; k++) node = node.rules[path[k]];
+    return { parent: node, index: path[path.length - 1] };
+  }
+
+  function tfbValueHtml(r, pathStr) {
+    const def = TFB_FIELDS[r.field];
+    if (tfbNoValue(r)) return '<span class="fb-vwrap fb-none"></span>';
+    if (def.kind === "date") {
+      return `<span class="fb-vwrap"><input type="date" data-path="${pathStr}" data-k="value" value="${escHtml(String(r.value || ""))}"></span>`;
+    }
+    if (def.kind === "text") {
+      return `<span class="fb-vwrap"><input type="text" data-path="${pathStr}" data-k="value" value="${escHtml(String(r.value || ""))}" placeholder="value"></span>`;
+    }
+    if (def.kind === "select") {
+      const opts = def.getOptions();
+      return `<span class="fb-vwrap"><select data-path="${pathStr}" data-k="value">` +
+        opts.map(o => `<option value="${escHtml(o)}"${o === r.value ? " selected" : ""}>${escHtml(o)}</option>`).join("") +
+        `</select></span>`;
+    }
+    if (def.kind === "assignee") {
+      const opts = [["", "Unassigned"], ...issueMeta.assignees.map(a => [a.account_id, a.display_name])];
+      return `<span class="fb-vwrap"><select data-path="${pathStr}" data-k="value">` +
+        opts.map(([v, l]) => `<option value="${escHtml(v)}"${v === (r.value || "") ? " selected" : ""}>${escHtml(l)}</option>`).join("") +
+        `</select></span>`;
+    }
+    return '<span class="fb-vwrap fb-none"></span>';
+  }
+  function tfbRenderRule(r, path) {
+    const pathStr = path.join(".");
+    const fOpts = Object.entries(TFB_FIELDS).map(([k, def]) => `<option value="${k}"${k === r.field ? " selected" : ""}>${def.label}</option>`).join("");
+    const ops = tfbOperatorsFor(TFB_FIELDS[r.field].kind);
+    const oOpts = ops.map(([k, l]) => `<option value="${k}"${k === r.op ? " selected" : ""}>${l}</option>`).join("");
+    return `<div class="fb-rule">
+      <select data-path="${pathStr}" data-k="field">${fOpts}</select>
+      <select data-path="${pathStr}" data-k="op">${oOpts}</select>
+      ${tfbValueHtml(r, pathStr)}
+      <button type="button" class="fb-rm" data-path="${pathStr}" title="Remove">✕</button>
+    </div>`;
+  }
+  function tfbRenderGroup(group, path) {
+    const isRoot = path.length === 0;
+    const pathStr = path.join(".");
+    const items = group.rules.map((child, i) => {
+      const childPath = [...path, i];
+      const joiner = i > 0
+        ? `<div class="fb-joiner"><select class="fb-join-select" data-path="${pathStr}" data-k="join">
+             <option value="and"${group.join === "and" ? " selected" : ""}>and</option>
+             <option value="or"${group.join === "or" ? " selected" : ""}>or</option>
+           </select></div>`
+        : "";
+      return joiner + (tfbIsGroup(child) ? tfbRenderGroup(child, childPath) : tfbRenderRule(child, childPath));
+    }).join("");
+    const body = `
+      <div class="fb-rules">${items || '<div class="fb-empty-group">No conditions yet.</div>'}</div>
+      <div class="fb-group-actions">
+        <button type="button" class="fb-add" data-path="${pathStr}">+ Add filter</button>
+        <button type="button" class="fb-addgroup" data-path="${pathStr}">+ Add filter group</button>
+        ${!isRoot ? `<button type="button" class="fb-rmgroup" data-path="${pathStr}" title="Remove group">✕ Remove group</button>` : ""}
+      </div>`;
+    if (isRoot) return body;
+    return `<div class="fb-group">
+      <div class="fb-group-inner">
+        <span class="fb-bracket">(</span>
+        <div class="fb-group-content">${body}</div>
+        <span class="fb-bracket">)</span>
+      </div>
+    </div>`;
+  }
+  function tfbRender(prefix) {
+    const host = document.getElementById(`${prefix}-fb`);
+    if (!host) return;
+    const root = tfbState[prefix];
+    host.innerHTML = `
+      <div class="fb-title">Filters${root.rules.length ? ` <button type="button" class="fb-clear">clear all</button>` : ""}</div>
+      ${tfbRenderGroup(root, [])}`;
+  }
+
+  function tfbPersistAndApply(prefix) {
+    try { localStorage.setItem(`ps_todos_tfb_${prefix}`, JSON.stringify(tfbState[prefix])); } catch (e) {}
+    if (prefix === "iss") renderIssuesList(); else renderSprintBoard();
+  }
+
+  function tfbLoadState(prefix) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`ps_todos_tfb_${prefix}`));
+      if (saved && Array.isArray(saved.rules)) tfbState[prefix] = saved;
+    } catch (e) {}
+  }
+
+  ["iss", "spr"].forEach(prefix => {
+    const host = document.getElementById(`${prefix}-fb`);
+    host.addEventListener("click", ev => {
+      const add = ev.target.closest(".fb-add");
+      if (add) {
+        tfbNodeAt(prefix, tfbPath(add.dataset.path)).rules.push(tfbNewRule());
+        tfbRender(prefix); tfbPersistAndApply(prefix); return;
+      }
+      const addGroup = ev.target.closest(".fb-addgroup");
+      if (addGroup) {
+        tfbNodeAt(prefix, tfbPath(addGroup.dataset.path)).rules.push({ join: "and", rules: [tfbNewRule()] });
+        tfbRender(prefix); tfbPersistAndApply(prefix); return;
+      }
+      if (ev.target.closest(".fb-clear")) {
+        tfbState[prefix] = { join: "and", rules: [] };
+        tfbRender(prefix); tfbPersistAndApply(prefix); return;
+      }
+      const rmGroup = ev.target.closest(".fb-rmgroup");
+      if (rmGroup) {
+        const { parent, index } = tfbParentAt(prefix, tfbPath(rmGroup.dataset.path));
+        parent.rules.splice(index, 1);
+        tfbRender(prefix); tfbPersistAndApply(prefix); return;
+      }
+      const rm = ev.target.closest(".fb-rm");
+      if (rm) {
+        const { parent, index } = tfbParentAt(prefix, tfbPath(rm.dataset.path));
+        parent.rules.splice(index, 1);
+        tfbRender(prefix); tfbPersistAndApply(prefix);
+      }
+    });
+    host.addEventListener("change", ev => {
+      const el = ev.target;
+      if (el.dataset.path == null) return;
+      const path = tfbPath(el.dataset.path);
+      if (el.dataset.k === "join") {
+        tfbNodeAt(prefix, path).join = el.value;
+        tfbRender(prefix); tfbPersistAndApply(prefix); return;
+      }
+      const r = tfbNodeAt(prefix, path); if (!r) return;
+      if (el.dataset.k === "field") {
+        const ops = tfbOperatorsFor(TFB_FIELDS[el.value].kind);
+        Object.assign(r, { field: el.value, op: ops[0][0], value: tfbDefaultValue(el.value) });
+        tfbRender(prefix);
+      } else if (el.dataset.k === "op") {
+        r.op = el.value;
+        tfbRender(prefix); // operator change can add/remove the value input
+      } else {
+        r[el.dataset.k] = el.value;
+      }
+      tfbPersistAndApply(prefix);
+    });
+    host.addEventListener("input", ev => {
+      const el = ev.target;
+      if (el.dataset.path == null || el.dataset.k !== "value" || el.tagName === "SELECT") return;
+      const r = tfbNodeAt(prefix, tfbPath(el.dataset.path)); if (!r) return;
+      r.value = el.value;
+      tfbPersistAndApply(prefix);
+    });
+  });
+
+  /* ══ SQL-style filter query — parses a WHERE-clause-like string into the same
+     {field,op,value} / {join,rules} tree the visual builder edits. ══ */
+  const TFB_SQL_KEYWORDS = new Set(["AND", "OR", "NOT", "IS", "NULL", "LIKE", "CONTAINS"]);
+  const TFB_SQL_ALIASES = {
+    type: "type", issuetype: "type",
+    status: "status",
+    assignee: "assignee",
+    duedate: "duedate", due: "duedate", due_date: "duedate",
+    summary: "summary", title: "summary", name: "summary",
+    parent: "parent",
+  };
+
+  function tfbSqlTokenize(text) {
+    const re = /\s*(?:(\()|(\))|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|(-?\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*)|(!=|<>|>=|<=|=|>|<))/g;
+    const tokens = [];
+    let m, pos = 0;
+    while ((m = re.exec(text))) {
+      if (m.index !== pos) throw new Error(`Unexpected character near "${text.slice(pos, m.index).trim()}"`);
+      pos = re.lastIndex;
+      if (m[1]) tokens.push({ type: "lparen", value: "(" });
+      else if (m[2]) tokens.push({ type: "rparen", value: ")" });
+      else if (m[3]) tokens.push({ type: "string", value: m[3].slice(1, -1).replace(/\\(.)/g, "$1") });
+      else if (m[4]) tokens.push({ type: "number", value: m[4] });
+      else if (m[5]) tokens.push({ type: TFB_SQL_KEYWORDS.has(m[5].toUpperCase()) ? "kw" : "ident", value: m[5] });
+      else if (m[6]) tokens.push({ type: "op", value: m[6] });
+    }
+    if (pos < text.length && text.slice(pos).trim() !== "") {
+      throw new Error(`Unexpected character near "${text.slice(pos).trim()}"`);
+    }
+    return tokens;
+  }
+  function tfbSqlResolveField(name) {
+    const mapped = TFB_SQL_ALIASES[(name || "").toLowerCase()];
+    return (mapped && TFB_FIELDS[mapped]) ? mapped : null;
+  }
+  function tfbSqlResolveAssignee(val) {
+    if (!val || /^unassigned$/i.test(val)) return "";
+    const hit = (issueMeta.assignees || []).find(a =>
+      a.display_name.toLowerCase() === String(val).toLowerCase() || a.account_id === val);
+    return hit ? hit.account_id : val;
+  }
+  function tfbSqlBuildComparison(field, def, symOp, val, negWord) {
+    if (negWord && !["=", "!=", "<>"].includes(symOp)) {
+      throw new Error("NOT only works with = or != — try a different operator");
+    }
+    if (def.kind === "select" || def.kind === "assignee") {
+      const map = { "=": "is", "!=": "is_not", "<>": "is_not" };
+      let op = map[symOp];
+      if (!op) throw new Error(`Operator "${symOp}" isn't supported for ${field} — use = or !=`);
+      if (negWord) op = op === "is" ? "is_not" : "is";
+      const value = def.kind === "assignee" ? tfbSqlResolveAssignee(val) : val;
+      return { field, op, value };
+    }
+    if (def.kind === "date") {
+      const map = { ">": "after", ">=": "after", "<": "before", "<=": "before" };
+      const op = map[symOp];
+      if (!op) throw new Error(`Operator "${symOp}" isn't supported for dates — use <, <=, >, >=`);
+      return { field, op, value: val };
+    }
+    if (def.kind === "text") {
+      let op = "contains";
+      if (symOp === "!=" || symOp === "<>") op = "not_contains";
+      if (negWord) op = op === "contains" ? "not_contains" : "contains";
+      return { field, op, value: val };
+    }
+    throw new Error(`"${field}" only supports IS NULL / IS NOT NULL`);
+  }
+  function tfbParseSQL(text) {
+    const tokens = tfbSqlTokenize(text);
+    let pos = 0;
+    const peek = () => tokens[pos];
+    const next = () => tokens[pos++];
+    const isKw = (t, word) => !!t && t.type === "kw" && t.value.toUpperCase() === word;
+
+    function parseValue() {
+      const t = next();
+      if (!t) throw new Error("Expected a value");
+      if (t.type === "string" || t.type === "number") return t.value;
+      if (t.type === "ident") return t.value;
+      throw new Error(`Expected a value near "${t.value}"`);
+    }
+    function parseComparison() {
+      const colTok = next();
+      if (!colTok || colTok.type !== "ident") {
+        throw new Error(`Expected a field name near "${colTok ? colTok.value : "end of input"}"`);
+      }
+      const field = tfbSqlResolveField(colTok.value);
+      if (!field) throw new Error(`Unknown field "${colTok.value}"`);
+      const def = TFB_FIELDS[field];
+
+      if (isKw(peek(), "IS")) {
+        next();
+        let neg = false;
+        if (isKw(peek(), "NOT")) { next(); neg = true; }
+        const kw = next();
+        if (!kw || kw.value.toUpperCase() !== "NULL") throw new Error('Expected NULL after IS');
+        if (def.kind === "bool") return { field, op: neg ? "has_parent" : "no_parent", value: "" };
+        if (def.kind === "date") return { field, op: neg ? "not_empty" : "empty", value: "" };
+        throw new Error(`"${field}" doesn't support IS NULL`);
+      }
+      let negWord = false;
+      if (isKw(peek(), "NOT")) { next(); negWord = true; }
+      const opTok = next();
+      if (!opTok) throw new Error(`Expected an operator after "${colTok.value}"`);
+      if (opTok.type === "op") return tfbSqlBuildComparison(field, def, opTok.value, parseValue(), negWord);
+      const opWord = opTok.value.toUpperCase();
+      if (opWord === "LIKE" || opWord === "CONTAINS") {
+        if (def.kind !== "text") throw new Error(`LIKE/CONTAINS only works on the Summary field`);
+        const val = parseValue();
+        const op = negWord ? "not_contains" : "contains";
+        return { field, op, value: val };
+      }
+      throw new Error(`Unexpected operator "${opTok.value}"`);
+    }
+    function parsePrimary() {
+      if (peek() && peek().type === "lparen") {
+        next();
+        const node = parseOr();
+        if (!peek() || peek().type !== "rparen") throw new Error('Expected ")"');
+        next();
+        return node;
+      }
+      return parseComparison();
+    }
+    function parseAnd() {
+      const parts = [parsePrimary()];
+      while (isKw(peek(), "AND")) { next(); parts.push(parsePrimary()); }
+      return parts.length === 1 ? parts[0] : { join: "and", rules: parts };
+    }
+    function parseOr() {
+      const parts = [parseAnd()];
+      while (isKw(peek(), "OR")) { next(); parts.push(parseAnd()); }
+      return parts.length === 1 ? parts[0] : { join: "or", rules: parts };
+    }
+
+    if (!tokens.length) return { join: "and", rules: [] };
+    const result = parseOr();
+    if (pos < tokens.length) throw new Error(`Unexpected "${tokens[pos].value}"`);
+    return tfbIsGroup(result) ? result : { join: "and", rules: [result] };
+  }
+
+  function tfbValToSQL(v) {
+    if (v === "" || v == null) return "''";
+    if (/^-?\d+(\.\d+)?$/.test(String(v))) return String(v);
+    return `'${String(v).replace(/'/g, "\\'")}'`;
+  }
+  function tfbLeafToSQL(r) {
+    const def = TFB_FIELDS[r.field];
+    const col = r.field;
+    if (def.kind === "bool") return r.op === "has_parent" ? `${col} IS NOT NULL` : `${col} IS NULL`;
+    switch (r.op) {
+      case "empty":        return `${col} IS NULL`;
+      case "not_empty":    return `${col} IS NOT NULL`;
+      case "before":       return `${col} < ${tfbValToSQL(r.value)}`;
+      case "after":        return `${col} > ${tfbValToSQL(r.value)}`;
+      case "contains":     return `${col} LIKE ${tfbValToSQL(r.value)}`;
+      case "not_contains": return `${col} NOT LIKE ${tfbValToSQL(r.value)}`;
+      case "is_not":       return `${col} != ${tfbValToSQL(r.value)}`;
+      default:             return `${col} = ${tfbValToSQL(r.value)}`; // "is"
+    }
+  }
+  function tfbToSQL(node) {
+    if (!tfbIsGroup(node)) return tfbLeafToSQL(node);
+    const active = node.rules.filter(tfbActive);
+    if (!active.length) return "";
+    const parts = active.map(child => {
+      const s = tfbToSQL(child);
+      return (tfbIsGroup(child) && child.rules.filter(tfbActive).length > 1) ? `(${s})` : s;
+    });
+    return parts.join(node.join === "or" ? " OR " : " AND ");
+  }
+
+  function tfbSetMode(prefix, mode) {
+    const isSql = mode === "sql";
+    document.getElementById(`${prefix}-fb-mode-visual`).classList.toggle("active", !isSql);
+    document.getElementById(`${prefix}-fb-mode-sql`).classList.toggle("active", isSql);
+    document.getElementById(`${prefix}-fb`).style.display = isSql ? "none" : "block";
+    document.getElementById(`${prefix}-fb-sql-panel`).style.display = isSql ? "block" : "none";
+    if (isSql) {
+      document.getElementById(`${prefix}-fb-sql-input`).value = tfbToSQL(tfbState[prefix]);
+      document.getElementById(`${prefix}-fb-sql-error`).style.display = "none";
+    }
+  }
+  function tfbApplySQL(prefix) {
+    const text = document.getElementById(`${prefix}-fb-sql-input`).value.trim();
+    const errEl = document.getElementById(`${prefix}-fb-sql-error`);
+    errEl.style.display = "none";
+    try {
+      tfbState[prefix] = text ? tfbParseSQL(text) : { join: "and", rules: [] };
+      tfbRender(prefix);
+      tfbPersistAndApply(prefix);
+      showToast(text ? "Filter applied" : "Filters cleared", "success", 1800);
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = "block";
+    }
   }
 
   function escHtml(s) {
@@ -1545,8 +1917,8 @@
       // Re-render any already-visible filter rules now that Type/Status/Assignee
       // options are populated for real (they render fine with empty options
       // before this, but a rule added that early would have nothing to pick).
-      tfbRenderRules("iss");
-      tfbRenderRules("spr");
+      tfbRender("iss");
+      tfbRender("spr");
     } catch (e) { /* keep the static fallback options already in the markup */ }
   }
 
@@ -1785,8 +2157,8 @@
 
   tfbLoadState("iss");
   tfbLoadState("spr");
-  tfbRenderRules("iss");
-  tfbRenderRules("spr");
+  tfbRender("iss");
+  tfbRender("spr");
 
   loadIssues();
   loadSprint();

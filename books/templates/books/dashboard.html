@@ -14,7 +14,6 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { overflow-x: hidden; }
@@ -139,13 +138,7 @@
     .stat-label { font-size: 0.7rem; font-weight: 500; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
     .stat-value { font-size: 1.75rem; font-weight: 400; letter-spacing: -0.03em; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
-    /* Charts row */
-    .charts-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem; }
-    .chart-wrap { position: relative; height: 260px; width: 100%; max-width: 100%; display: block; }
-    .charts-grid .card { overflow: hidden; }
-
     /* Filters */
-    .filters { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
     label { display: block; font-size: 0.68rem; font-weight: 500; color: #9CA3AF; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
     select, input[type="text"] {
       width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid #E5E7EB; border-radius: 12px;
@@ -153,6 +146,115 @@
       appearance: none; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
     }
     select:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5,150,105,0.12); }
+
+    /* ── Notion-style filter builder ── */
+    .fb-mode-toggle { display: flex; gap: 0.35rem; margin-bottom: 0.75rem; }
+    .fb-mode-btn {
+      border: 1.5px solid #E5E7EB; background: transparent; color: #6B7280;
+      font-size: 0.74rem; font-weight: 700; padding: 0.3rem 0.8rem; border-radius: 100px;
+      cursor: pointer; font-family: inherit; transition: all 0.15s ease;
+    }
+    .fb-mode-btn.active { background: var(--grad); color: #fff; border-color: transparent; }
+    [data-theme="dark"] .fb-mode-btn { border-color: rgba(255,255,255,0.14); color: #9CA3AF; }
+    .fb-sql-panel textarea {
+      width: 100%; padding: 0.65rem 0.8rem; border-radius: 10px; border: 1.5px solid #E5E7EB;
+      font-size: 0.83rem; font-family: "SF Mono", ui-monospace, monospace; background: #F9FAFB;
+      color: #111827; resize: vertical; min-height: 3.4rem;
+    }
+    .fb-sql-panel textarea:focus { outline: none; border-color: #10B981; background: #fff; }
+    [data-theme="dark"] .fb-sql-panel textarea {
+      background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
+    }
+    .fb-sql-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.55rem; }
+    .fb-sql-hint { font-size: 0.72rem; color: #9CA3AF; line-height: 1.5; }
+    .fb-sql-error {
+      margin-top: 0.5rem; padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+      background: #FEF2F2; color: #B91C1C; border: 1px solid #FCA5A5;
+    }
+    [data-theme="dark"] .fb-sql-error { background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.3); }
+
+    .fb-title {
+      display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.68rem; font-weight: 700;
+      color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem;
+    }
+    .fb-title .fb-clear {
+      text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 0.72rem;
+      color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; font-family: inherit;
+    }
+    .fb-title .fb-clear:hover { text-decoration: underline; }
+    .fb-rules { display: flex; flex-direction: column; gap: 0.45rem; }
+    .fb-rule {
+      display: grid;
+      grid-template-columns: 1fr 32px;
+      grid-template-areas: "field field" "op op" "value value" "rm rm";
+      gap: 0.4rem; align-items: center;
+    }
+    .fb-rule > select[data-k="field"] { grid-area: field; }
+    .fb-rule > select[data-k="op"]    { grid-area: op; }
+    .fb-rule > .fb-vwrap              { grid-area: value; }
+    .fb-rule > .fb-rm                 { grid-area: rm; justify-self: end; }
+    .fb-joiner { margin: 0.1rem 0 -0.15rem; }
+    .fb-join-select {
+      width: auto; padding: 0.15rem 0.55rem; border: none; border-radius: 100px;
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--accent); background: rgba(5,150,105,0.09); cursor: pointer;
+    }
+    [data-theme="dark"] .fb-join-select { background: rgba(16,185,129,0.16); color: #6EE7B7; }
+    .fb-group {
+      margin: 0.3rem 0; padding: 0.6rem 0.65rem;
+      border: 1.5px dashed rgba(5,150,105,0.35); border-radius: 12px;
+      background: rgba(5,150,105,0.03);
+    }
+    [data-theme="dark"] .fb-group { border-color: rgba(16,185,129,0.35); background: rgba(16,185,129,0.05); }
+    .fb-group-inner { display: flex; align-items: flex-start; gap: 0.35rem; }
+    .fb-bracket { flex: none; font-size: 1.3rem; font-weight: 800; line-height: 1.5; color: var(--accent); opacity: 0.55; }
+    .fb-group-content { flex: 1; min-width: 0; }
+    .fb-group-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-top: 0.55rem; }
+    .fb-addgroup {
+      border: 1.5px dashed #A7F3D0; border-radius: 8px; background: transparent;
+      color: var(--accent); font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.9rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .fb-addgroup:hover { background: rgba(5,150,105,0.06); }
+    [data-theme="dark"] .fb-addgroup { border-color: rgba(16,185,129,0.4); }
+    .fb-rmgroup {
+      margin-left: auto; border: 1.5px solid #FECACA; border-radius: 8px; background: transparent;
+      color: #EF4444; font-size: 0.75rem; font-weight: 600; padding: 0.4rem 0.7rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .fb-rmgroup:hover { background: #FEF2F2; }
+    [data-theme="dark"] .fb-rmgroup { border-color: rgba(239,68,68,0.35); color: #F87171; }
+    .fb-empty-group { font-size: 0.78rem; color: #9CA3AF; padding: 0.2rem 0; }
+    .fb-rule select, .fb-rule input {
+      padding: 0.45rem 0.55rem; border-radius: 8px; border: 1.5px solid #E5E7EB;
+      font-size: 0.82rem; font-family: inherit; background: #F9FAFB; color: #111827;
+      min-width: 0; width: 100%;
+    }
+    .fb-rule select:focus, .fb-rule input:focus { outline: none; border-color: #10B981; background: #fff; }
+    [data-theme="dark"] .fb-rule select, [data-theme="dark"] .fb-rule input {
+      background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
+    }
+    .fb-vwrap { display: flex; gap: 0.3rem; align-items: center; min-width: 0; }
+    .fb-vwrap.fb-none::after { content: "—"; color: #C4C7D0; font-size: 0.85rem; padding-left: 0.2rem; }
+    .fb-rm {
+      width: 32px; height: 32px; flex: none; border-radius: 8px; border: 1.5px solid #FECACA;
+      background: transparent; color: #EF4444; cursor: pointer; font-size: 0.9rem; line-height: 1;
+    }
+    .fb-rm:hover { background: #FEF2F2; }
+    [data-theme="dark"] .fb-rm { border-color: rgba(239,68,68,0.35); color: #F87171; }
+    .fb-add {
+      border: 1.5px dashed #A7F3D0; border-radius: 8px; background: transparent;
+      color: var(--accent); font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.9rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .fb-add:hover { background: rgba(5,150,105,0.06); }
+    [data-theme="dark"] .fb-add { border-color: rgba(16,185,129,0.4); }
+    @media (min-width: 560px) {
+      .fb-rule {
+        grid-template-columns: minmax(100px, 0.9fr) minmax(100px, 0.9fr) minmax(110px, 1.3fr) 32px;
+        grid-template-areas: "field op value rm";
+      }
+    }
 
     .btn-primary {
       margin-top: 1.1rem; padding: 0.55rem 1.75rem;
@@ -375,13 +477,6 @@
       .stat-card { padding: 0.75rem 0.9rem; }
       .stat-value { font-size: 1.35rem; }
 
-      /* Charts: force single column */
-      .charts-grid { grid-template-columns: 1fr !important; }
-      .chart-wrap { height: 220px; }
-
-      /* Filters */
-      .filters { grid-template-columns: 1fr; }
-
       /* Cache bar: stack on small screens */
       .cache-bar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
       .cache-bar-actions { width: 100%; justify-content: flex-end; display: flex; }
@@ -422,14 +517,9 @@
     @media (min-width: 640px) {
       body { padding: 1.75rem 1.25rem; }
       .stats-grid { grid-template-columns: repeat(4, 1fr); }
-      .filters { grid-template-columns: repeat(2, 1fr); }
-      .charts-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (min-width: 1024px) {
       body { padding: 2rem 1.5rem; }
-      .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 1.5rem; align-items: start; }
-      .layout > div { min-width: 0; overflow: hidden; }
-      .filters { grid-template-columns: 1fr; }
     }
     @media (hover: none) {
       .book-row:hover { transform: none !important; }
@@ -561,19 +651,6 @@
     [data-theme="dark"] .sum-btn-cancel:hover { background: rgba(255,255,255,0.05); color: #9CA3AF; }
     [data-theme="dark"] .sum-close { color: #4B5563; }
     [data-theme="dark"] .sum-close:hover { background: rgba(239,68,68,0.12); color: #EF4444; }
-
-    /* ── Quick-filter chips ── */
-    .chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-    .status-chip {
-      padding: 0.25rem 0.75rem; border-radius: 100px; font-size: 0.73rem; font-weight: 600;
-      background: rgba(5,150,105,0.06); color: #6B7280;
-      border: 1.5px solid rgba(5,150,105,0.15);
-      cursor: pointer; font-family: inherit; transition: all 0.15s;
-    }
-    .status-chip:hover { background: rgba(5,150,105,0.10); color: var(--accent); }
-    .status-chip.active { background: var(--grad); color: #fff; border-color: transparent; }
-    .status-chip:active { transform: scale(0.96); }
-    [data-theme="dark"] .status-chip { color: #9CA3AF; border-color: rgba(5,150,105,0.22); }
 
     /* ── Sort row ── */
     .sort-row { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.65rem; flex-wrap: wrap; }
@@ -814,66 +891,30 @@
       <div class="stat-card"><div class="stat-label">To Read</div><div class="stat-value" id="s-toread">—</div></div>
     </div>
 
-    <!-- Charts -->
-    <div class="section-heading"><span>📊</span> Overview</div>
-    <div class="charts-grid">
-      <div class="card"><canvas id="chart-status" class="chart-wrap"></canvas></div>
-      <div class="card"><canvas id="chart-genres" class="chart-wrap"></canvas></div>
-    </div>
+    <!-- Filters -->
+    <div class="card" style="margin-top:1.5rem;">
+      <div class="section-heading" style="margin-top:0;animation-play-state:running"><span>🔍</span> Filter</div>
 
-    <div class="layout" style="margin-top:1.5rem;">
-      <!-- Filters -->
-      <div>
-        <div class="card">
-          <div class="section-heading" style="margin-top:0;animation-play-state:running"><span>🔍</span> Filter</div>
-          <div class="filters">
-            <div>
-              <label>Search</label>
-              <input type="text" id="f-search" placeholder="Book title…" oninput="_debounce()">
-            </div>
-            <div>
-              <label>Status</label>
-              <select id="f-status" onchange="applyFilters()">
-                <option value="">All Statuses</option>
-                <option>Reading</option>
-                <option>To Read</option>
-                <option>Queued</option>
-                <option>Finished</option>
-                <option>Blocked</option>
-                <option>Unorganized</option>
-              </select>
-            </div>
-            <div>
-              <label>Genre</label>
-              <select id="f-genre" onchange="applyFilters()">
-                <option value="">All Genres</option>
-              </select>
-            </div>
-            <div>
-              <label>Author</label>
-              <select id="f-author" onchange="applyFilters()">
-                <option value="">All Authors</option>
-              </select>
-            </div>
-          </div>
-          <div style="margin-top:0.9rem;">
-            <label>Quick Filter</label>
-            <div class="chip-row">
-              <button class="status-chip" data-status="Reading" onclick="_chipClick('Reading')">📖 Reading</button>
-              <button class="status-chip" data-status="To Read" onclick="_chipClick('To Read')">📋 To Read</button>
-              <button class="status-chip" data-status="Finished" onclick="_chipClick('Finished')">✅ Finished</button>
-              <button class="status-chip" data-status="Queued" onclick="_chipClick('Queued')">⏳ Queued</button>
-              <button class="status-chip chip-file" data-file="notion" onclick="_fileFilterClick('notion')">📎 Notion PDF</button>
-              <button class="status-chip chip-file" data-file="drive"  onclick="_fileFilterClick('drive')">🔗 Drive Link</button>
-              <button class="status-chip chip-file" data-file="none"   onclick="_fileFilterClick('none')">📭 No File</button>
-            </div>
-          </div>
-          <button class="btn-primary" onclick="applyFilters()">Apply</button>
-        </div>
+      <div class="fb-mode-toggle">
+        <button type="button" class="fb-mode-btn active" id="fb-mode-visual" onclick="_fbSetMode('visual')">Visual</button>
+        <button type="button" class="fb-mode-btn" id="fb-mode-sql" onclick="_fbSetMode('sql')">SQL</button>
       </div>
 
-      <!-- Book list -->
-      <div>
+      <!-- Notion-style filter builder — client-side, applies live to the list -->
+      <div class="fb" id="fb"></div>
+
+      <div class="fb-sql-panel" id="fb-sql-panel" style="display:none;">
+        <textarea id="fb-sql-input" rows="3" placeholder="status = 'Reading' AND genre = 'Fantasy'"></textarea>
+        <div class="fb-sql-actions">
+          <button type="button" class="btn-ghost" style="font-size:0.8rem;padding:0.4rem 1rem;margin-top:0;" onclick="_fbApplySQL()">Apply query</button>
+          <span class="fb-sql-hint">Columns: name, status, genre, author, file, added, edited — combine with AND / OR / parentheses, e.g. <code>status = 'Reading' AND genre = 'Fantasy'</code></span>
+        </div>
+        <div class="fb-sql-error" id="fb-sql-error" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Book list -->
+    <div style="margin-top:1rem;">
         <div class="cache-bar">
           <span id="cache-info">Loading…</span>
           <div class="cache-bar-actions">
@@ -906,7 +947,6 @@
           </div>
           <div class="pagination" id="pagination"></div>
         </div>
-      </div>
     </div>
   </div>
 
@@ -925,21 +965,13 @@
   })();
 
   const PAGE_SIZE = 30;
-  let _books = [], _booksRaw = [], _page = 1, _debTimer = null;
+  let _books = [], _booksRaw = [], _page = 1;
   let _allGenres = [], _allAuthors = [];
-  let _chartStatus = null, _chartGenres = null;
   let _editPageId = null, _delBook = null;
-  let _sortMode = 'status', _fileFilter = null; // 'notion' | 'drive' | 'none' | null
+  let _sortMode = 'status';
   let _viewMode = localStorage.getItem('ps_books_view') || 'list';
 
-  const STATUS_COLORS = {
-    Reading:      { bg: 'rgba(5,150,105,0.8)',   border: '#059669' },
-    Finished:     { bg: 'rgba(99,102,241,0.8)',  border: '#4F46E5' },
-    'To Read':    { bg: 'rgba(245,158,11,0.8)',  border: '#D97706' },
-    Queued:       { bg: 'rgba(8,145,178,0.8)',   border: '#0891B2' },
-    Blocked:      { bg: 'rgba(239,68,68,0.8)',   border: '#DC2626' },
-    Unorganized:  { bg: 'rgba(156,163,175,0.7)', border: '#9CA3AF' },
-  };
+  const _esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
 
   const STATUS_GRAD = {
     Reading:     'linear-gradient(135deg,#059669,#10B981)',
@@ -1126,40 +1158,16 @@
   function _hasAnyFile(b) {
     return (b.soft_copy||[]).length > 0 || (b.key_points||[]).length > 0;
   }
-  function _applyFileFilter(books) {
-    if (!_fileFilter) return books;
-    if (_fileFilter === 'notion') return books.filter(_hasNotionFile);
-    if (_fileFilter === 'drive')  return books.filter(_hasDriveLink);
-    if (_fileFilter === 'none')   return books.filter(b => !_hasAnyFile(b));
-    return books;
+  function _fileType(b) {
+    if (_hasNotionFile(b)) return 'Notion PDF';
+    if (_hasDriveLink(b))  return 'Drive Link';
+    return 'None';
   }
 
   function _sortChange() {
     _sortMode = document.getElementById('sort-select').value;
-    _books = sortBooks(_applyFileFilter(_booksRaw));
+    _books = sortBooks(_fbFilter(_booksRaw));
     _page = 1; renderBooks();
-  }
-
-  /* ── Quick filter chips ── */
-  function _chipClick(status) {
-    const sel = document.getElementById('f-status');
-    sel.value = sel.value === status ? '' : status;
-    _syncChips();
-    applyFilters();
-  }
-
-  function _fileFilterClick(type) {
-    _fileFilter = _fileFilter === type ? null : type;
-    document.querySelectorAll('.chip-file').forEach(c =>
-      c.classList.toggle('active', c.dataset.file === _fileFilter));
-    _books = sortBooks(_applyFileFilter(_booksRaw));
-    _page = 1; renderBooks();
-  }
-
-  function _syncChips() {
-    const cur = document.getElementById('f-status').value;
-    document.querySelectorAll('.status-chip[data-status]').forEach(c =>
-      c.classList.toggle('active', c.dataset.status === cur));
   }
 
   /* ── Top loader ── */
@@ -1176,82 +1184,28 @@
     _loaderTimer = setTimeout(() => { el.style.opacity = '0'; setTimeout(() => { el.style.width = '0%'; }, 300); }, 200);
   }
 
-  /* ── Filters ── */
-  function applyFilters() {
-    const status = document.getElementById('f-status').value;
-    const genre  = document.getElementById('f-genre').value;
-    const author = document.getElementById('f-author').value;
-    const q      = document.getElementById('f-search').value;
-    const params = new URLSearchParams();
-    if (status) params.set('status', status);
-    if (genre)  params.set('genre', genre);
-    if (author) params.set('author', author);
-    if (q)      params.set('q', q);
-    _syncChips();
+  /* ── Filters ── one filter set (the fb builder below) drives the list, live */
+  function _applyFB() {
+    _books = sortBooks(_fbFilter(_booksRaw));
+    _page = 1; renderBooks();
+    document.getElementById('cache-info').textContent = _books.length + ' books';
+  }
+
+  function loadBooks() {
     document.getElementById('cache-info').textContent = 'Loading…';
     _showLoader();
-    fetch('/books/list/?' + params)
+    fetch('/books/list/')
       .then(r => r.json())
       .then(data => {
         _booksRaw = data.books;
-        _books = sortBooks(_applyFileFilter(_booksRaw));
-        _page = 1; renderBooks();
-        document.getElementById('cache-info').textContent = data.total + ' books';
+        _applyFB();
         _hideLoader();
       }).catch(() => _hideLoader());
   }
 
-  function _debounce() { clearTimeout(_debTimer); _debTimer = setTimeout(applyFilters, 320); }
-
   function bustCache() {
     fetch('/books/cache/bust/', {method:'POST'})
-      .then(() => { document.getElementById('cache-info').textContent = 'Refreshing…'; applyFilters(); loadStats(); });
-  }
-
-  /* ── Charts ── */
-  function _chartDefaults() {
-    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    return { color: dark ? '#9CA3AF' : '#6B7280', gridColor: dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' };
-  }
-
-  function buildCharts(d) {
-    const { color, gridColor } = _chartDefaults();
-
-    // Status donut
-    const statusLabels = Object.keys(d.status_counts);
-    const statusData   = statusLabels.map(k => d.status_counts[k]);
-    const statusBg     = statusLabels.map(k => (STATUS_COLORS[k] || STATUS_COLORS.Unorganized).bg);
-    if (_chartStatus) _chartStatus.destroy();
-    _chartStatus = new Chart(document.getElementById('chart-status'), {
-      type: 'doughnut',
-      data: { labels: statusLabels, datasets: [{ data: statusData, backgroundColor: statusBg, borderWidth: 2, borderColor: 'transparent', hoverOffset: 8 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false, cutout: '65%',
-        plugins: {
-          legend: { position: 'bottom', labels: { color, font: { family:'Inter', size:11, weight:'600' }, padding:12, boxWidth:12, borderRadius:6 } },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} books` } }
-        }
-      }
-    });
-
-    // Genre bar (top 15)
-    const genres = d.top_genres.slice(0,15);
-    const gLabels = genres.map(g => g[0]);
-    const gData   = genres.map(g => g[1]);
-    const gBg = gLabels.map((_,i) => `hsla(${160 + i*12},60%,${45+i*1.5}%,0.8)`);
-    if (_chartGenres) _chartGenres.destroy();
-    _chartGenres = new Chart(document.getElementById('chart-genres'), {
-      type: 'bar',
-      data: { labels: gLabels, datasets: [{ label: 'Books', data: gData, backgroundColor: gBg, borderRadius: 6, borderSkipped: false }] },
-      options: {
-        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x} books` } } },
-        scales: {
-          x: { grid: { color: gridColor }, ticks: { color, font: { family:'Inter', size:11 } }, beginAtZero: true },
-          y: { grid: { display: false }, ticks: { color, font: { family:'Inter', size:10, weight:'600' } } }
-        }
-      }
-    });
+      .then(() => { document.getElementById('cache-info').textContent = 'Refreshing…'; loadBooks(); loadStats(); });
   }
 
   /* ── Stats ── */
@@ -1267,16 +1221,6 @@
         _allGenres  = d.all_genres;
         _allAuthors = d.all_authors;
 
-        // Genre dropdown
-        const gSel = document.getElementById('f-genre');
-        const curG = gSel.value;
-        gSel.innerHTML = '<option value="">All Genres</option>' + d.all_genres.map(g=>`<option${g===curG?' selected':''}>${g}</option>`).join('');
-
-        // Author dropdown
-        const aSel = document.getElementById('f-author');
-        const curA = aSel.value;
-        aSel.innerHTML = '<option value="">All Authors</option>' + d.all_authors.map(a=>`<option${a===curA?' selected':''}>${a}</option>`).join('');
-
         // Modal author dropdown
         const maSel = document.getElementById('ab-author');
         maSel.innerHTML = '<option value="">— Select author —</option>' + d.all_authors.map(a=>`<option>${a}</option>`).join('');
@@ -1285,7 +1229,7 @@
         const pillGrid = document.getElementById('ab-genre-pills');
         pillGrid.innerHTML = d.all_genres.map(g=>`<span class="pill" onclick="this.classList.toggle('selected')">${g}</span>`).join('');
 
-        buildCharts(d);
+        if (typeof _fbRender === 'function') _fbRender();  // genre/author value options may have grown
       });
   }
 
@@ -1530,7 +1474,7 @@
     .then(data => {
       if (data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
       document.getElementById('ab-overlay').classList.remove('open');
-      applyFilters();
+      loadBooks();
       loadStats();
     })
     .finally(() => {
@@ -1618,7 +1562,7 @@
         if (data.error) { alert('Delete failed: ' + data.error); return; }
         document.getElementById('del-overlay').classList.remove('open');
         _delBook = null;
-        applyFilters();
+        loadBooks();
         loadStats();
       })
       .finally(() => { btn.disabled = false; btn.textContent = 'Delete'; });
@@ -1658,11 +1602,460 @@
     });
   })();
 
+  /* ══ Notion-style filter builder — client-side, live on the loaded list ══
+     A node is either a leaf condition {field, op, value, value2} or a group
+     {join: "and"|"or", rules: [node, ...]}. The root is always a group; a
+     nested group renders as a bracketed sub-clause so rules can mix AND/OR,
+     e.g. (Genre is Fantasy OR Genre is Sci-Fi) AND Status is Reading. */
+  let _fbRoot = { join: "and", rules: [] };
+  try {
+    const saved = JSON.parse(localStorage.getItem("ps_books_filters"));
+    if (saved && Array.isArray(saved.rules)) _fbRoot = saved;
+  } catch {}
+
+  const STATUS_OPTIONS = ['Reading', 'To Read', 'Queued', 'Finished', 'Blocked', 'Unorganized'];
+  const FILE_OPTIONS = ['Notion PDF', 'Drive Link', 'None'];
+
+  const FB_FIELDS = [
+    { key: "name",             label: "Name",        type: "text"   },
+    { key: "status",           label: "Status",      type: "select", options: () => STATUS_OPTIONS },
+    { key: "genre",            label: "Genre",       type: "multi",  options: () => _allGenres },
+    { key: "author",           label: "Author",      type: "multi",  options: () => _allAuthors },
+    { key: "file",             label: "File",        type: "select", options: () => FILE_OPTIONS },
+    { key: "created_time",     label: "Added",       type: "date"   },
+    { key: "last_edited_time", label: "Last Edited", type: "date"   },
+  ];
+  const FB_OPS = {
+    text:   [["contains","contains"],["ncontains","doesn't contain"],["is","is"],["isnot","is not"],["empty","is empty"],["nempty","is not empty"]],
+    date:   [["on","is on"],["before","is before"],["after","is after"],["between","is between"],["empty","is empty"],["nempty","is not empty"]],
+    select: [["is","is"],["isnot","is not"],["contains","contains"],["empty","is empty"],["nempty","is not empty"]],
+    multi:  [["has","includes"],["nhas","doesn't include"],["only","is only"],["empty","is empty"],["nempty","is not empty"]],
+  };
+  const _fbNoValue = op => op === "empty" || op === "nempty";
+
+  function _fbType(field) { return (FB_FIELDS.find(f => f.key === field) || {}).type || "text"; }
+  function _fbGet(b, field) {
+    if (field === "created_time" || field === "last_edited_time") return (b[field] || "").slice(0, 10);
+    if (field === "file") return _fileType(b);
+    return b[field];
+  }
+  function _fbMatch(b, r) {
+    const type = _fbType(r.field);
+    const v = _fbGet(b, r.field);
+    const a = r.value, b2 = r.value2;
+    if (type === "multi") {
+      const arr = (v || []).map(x => String(x).toLowerCase());
+      const t = (a || "").toLowerCase();
+      if (r.op === "empty")  return arr.length === 0;
+      if (r.op === "nempty") return arr.length > 0;
+      if (!t) return true;
+      if (r.op === "has")   return arr.includes(t);
+      if (r.op === "nhas")  return !arr.includes(t);
+      if (r.op === "only")  return arr.length === 1 && arr[0] === t;
+      return true;
+    }
+    if (type === "date") {
+      const d = v || "";
+      if (r.op === "empty")  return !d;
+      if (r.op === "nempty") return !!d;
+      if (!d || !a) return false;
+      if (r.op === "on")     return d === a;
+      if (r.op === "before") return d < a;
+      if (r.op === "after")  return d > a;
+      if (r.op === "between") return b2 ? (d >= a && d <= b2) : d >= a;
+      return true;
+    }
+    // text / select
+    const s = (v == null ? "" : String(v)).toLowerCase();
+    const t = (a || "").toLowerCase();
+    if (r.op === "empty")     return !s;
+    if (r.op === "nempty")    return !!s;
+    if (r.op === "contains")  return s.includes(t);
+    if (r.op === "ncontains") return !s.includes(t);
+    if (r.op === "is")        return s === t;
+    if (r.op === "isnot")     return s !== t;
+    return true;
+  }
+  function _fbComplete(r) {
+    if (_fbNoValue(r.op)) return true;
+    if (r.value == null || r.value === "") return false;         // half-built rule = no-op
+    if (r.op === "between" && (r.value2 == null || r.value2 === "")) return false;
+    return true;
+  }
+  const _fbIsGroup = node => !!(node && Array.isArray(node.rules));
+  function _fbActive(node) {
+    if (_fbIsGroup(node)) return node.rules.some(_fbActive);
+    return !!(node.field && node.op && _fbComplete(node));
+  }
+  function _fbNodeMatch(b, node) {
+    if (_fbIsGroup(node)) {
+      const kids = node.rules.filter(_fbActive);
+      if (!kids.length) return true;
+      const results = kids.map(k => _fbNodeMatch(b, k));
+      return node.join === "or" ? results.some(Boolean) : results.every(Boolean);
+    }
+    return _fbMatch(b, node);
+  }
+  function _fbFilter(list) {
+    if (!_fbActive(_fbRoot)) return list;
+    return list.filter(b => _fbNodeMatch(b, _fbRoot));
+  }
+
+  // Path = dot-separated indices through nested `rules` arrays, e.g. "1.2" → root.rules[1].rules[2].
+  const _fbPath  = s => (s === "" || s == null) ? [] : s.split(".").map(Number);
+  function _fbNodeAt(path) {
+    let node = _fbRoot;
+    for (const i of path) node = node.rules[i];
+    return node;
+  }
+  function _fbParentAt(path) {
+    let node = _fbRoot;
+    for (let k = 0; k < path.length - 1; k++) node = node.rules[path[k]];
+    return { parent: node, index: path[path.length - 1] };
+  }
+
+  function _fbValueField(r, pathStr) {
+    const type = _fbType(r.field);
+    if (_fbNoValue(r.op)) return '<span class="fb-vwrap fb-none"></span>';
+    if (type === "multi" || type === "select") {
+      const fieldDef = FB_FIELDS.find(f => f.key === r.field);
+      const src = (fieldDef && fieldDef.options) ? fieldDef.options() : [];
+      const opts = src
+        .map(o => `<option value="${_esc(o)}"${String(o) === String(r.value || "") ? " selected" : ""}>${_esc(o)}</option>`).join("");
+      return `<span class="fb-vwrap"><select data-path="${pathStr}" data-k="value"><option value="">— pick —</option>${opts}</select></span>`;
+    }
+    const inType = type === "date" ? "date" : "text";
+    if (r.op === "between") {
+      return `<span class="fb-vwrap">
+        <input type="${inType}" data-path="${pathStr}" data-k="value"  value="${_esc(r.value ?? "")}">
+        <input type="${inType}" data-path="${pathStr}" data-k="value2" value="${_esc(r.value2 ?? "")}">
+      </span>`;
+    }
+    return `<span class="fb-vwrap"><input type="${inType}" data-path="${pathStr}" data-k="value" value="${_esc(r.value ?? "")}" placeholder="value"></span>`;
+  }
+  function _fbRenderRule(r, path) {
+    const pathStr = path.join(".");
+    const fOpts = FB_FIELDS.map(f => `<option value="${f.key}"${f.key === r.field ? " selected" : ""}>${f.label}</option>`).join("");
+    const ops = FB_OPS[_fbType(r.field)] || FB_OPS.text;
+    const oOpts = ops.map(([k, lbl]) => `<option value="${k}"${k === r.op ? " selected" : ""}>${lbl}</option>`).join("");
+    return `<div class="fb-rule">
+      <select data-path="${pathStr}" data-k="field">${fOpts}</select>
+      <select data-path="${pathStr}" data-k="op">${oOpts}</select>
+      ${_fbValueField(r, pathStr)}
+      <button type="button" class="fb-rm" data-path="${pathStr}" title="Remove">✕</button>
+    </div>`;
+  }
+  function _fbRenderGroup(group, path) {
+    const isRoot = path.length === 0;
+    const pathStr = path.join(".");
+    const items = group.rules.map((child, i) => {
+      const childPath = [...path, i];
+      const joiner = i > 0
+        ? `<div class="fb-joiner"><select class="fb-join-select" data-path="${pathStr}" data-k="join">
+             <option value="and"${group.join === "and" ? " selected" : ""}>and</option>
+             <option value="or"${group.join === "or" ? " selected" : ""}>or</option>
+           </select></div>`
+        : "";
+      return joiner + (_fbIsGroup(child) ? _fbRenderGroup(child, childPath) : _fbRenderRule(child, childPath));
+    }).join("");
+    const body = `
+      <div class="fb-rules">${items || '<div class="fb-empty-group">No conditions yet.</div>'}</div>
+      <div class="fb-group-actions">
+        <button type="button" class="fb-add" data-path="${pathStr}">+ Add filter</button>
+        <button type="button" class="fb-addgroup" data-path="${pathStr}">+ Add filter group</button>
+        ${!isRoot ? `<button type="button" class="fb-rmgroup" data-path="${pathStr}" title="Remove group">✕ Remove group</button>` : ""}
+      </div>`;
+    if (isRoot) return body;
+    return `<div class="fb-group">
+      <div class="fb-group-inner">
+        <span class="fb-bracket">(</span>
+        <div class="fb-group-content">${body}</div>
+        <span class="fb-bracket">)</span>
+      </div>
+    </div>`;
+  }
+  function _fbRender() {
+    const host = document.getElementById("fb");
+    if (!host) return;
+    host.innerHTML = `
+      <div class="fb-title">Filters${_fbRoot.rules.length ? ' <button type="button" class="fb-clear">clear all</button>' : ''}</div>
+      ${_fbRenderGroup(_fbRoot, [])}`;
+  }
+  function _fbPersistAndApply() {
+    try { localStorage.setItem("ps_books_filters", JSON.stringify(_fbRoot)); } catch {}
+    _applyFB();
+  }
+  document.getElementById("fb").addEventListener("click", ev => {
+    const add = ev.target.closest(".fb-add");
+    if (add) {
+      _fbNodeAt(_fbPath(add.dataset.path)).rules.push({ field: "status", op: "is", value: "", value2: "" });
+      _fbRender(); _fbPersistAndApply(); return;
+    }
+    const addGroup = ev.target.closest(".fb-addgroup");
+    if (addGroup) {
+      _fbNodeAt(_fbPath(addGroup.dataset.path)).rules.push({
+        join: "and", rules: [{ field: "status", op: "is", value: "", value2: "" }],
+      });
+      _fbRender(); _fbPersistAndApply(); return;
+    }
+    if (ev.target.closest(".fb-clear")) {
+      _fbRoot = { join: "and", rules: [] }; _fbRender(); _fbPersistAndApply(); return;
+    }
+    const rmGroup = ev.target.closest(".fb-rmgroup");
+    if (rmGroup) {
+      const { parent, index } = _fbParentAt(_fbPath(rmGroup.dataset.path));
+      parent.rules.splice(index, 1);
+      _fbRender(); _fbPersistAndApply(); return;
+    }
+    const rm = ev.target.closest(".fb-rm");
+    if (rm) {
+      const { parent, index } = _fbParentAt(_fbPath(rm.dataset.path));
+      parent.rules.splice(index, 1);
+      _fbRender(); _fbPersistAndApply();
+    }
+  });
+  document.getElementById("fb").addEventListener("change", ev => {
+    const el = ev.target;
+    if (el.dataset.path == null) return;
+    const path = _fbPath(el.dataset.path);
+    if (el.dataset.k === "join") {
+      _fbNodeAt(path).join = el.value;
+      _fbRender(); _fbPersistAndApply(); return;
+    }
+    const r = _fbNodeAt(path); if (!r) return;
+    if (el.dataset.k === "field") {
+      r.field = el.value;
+      r.op = (FB_OPS[_fbType(r.field)] || FB_OPS.text)[0][0];  // reset to first valid op
+      r.value = r.value2 = "";
+      _fbRender();
+    } else if (el.dataset.k === "op") {
+      r.op = el.value;
+      if (_fbNoValue(r.op)) { r.value = r.value2 = ""; }
+      _fbRender();
+    } else {
+      r[el.dataset.k] = el.value;
+    }
+    _fbPersistAndApply();
+  });
+  document.getElementById("fb").addEventListener("input", ev => {
+    const el = ev.target;
+    if (el.dataset.path == null || (el.dataset.k !== "value" && el.dataset.k !== "value2")) return;
+    if (el.tagName === "SELECT") return;   // handled by 'change'
+    const r = _fbNodeAt(_fbPath(el.dataset.path)); if (!r) return;
+    r[el.dataset.k] = el.value;
+    _fbPersistAndApply();
+  });
+
+  /* ══ SQL-style filter query — parses a WHERE-clause-like string into the same
+     {field,op,value,value2} / {join,rules} tree the visual builder edits, so
+     both modes drive the exact same `_fbRoot` and `_fbFilter`. ══ */
+  const _SQL_KEYWORDS = new Set(["AND", "OR", "NOT", "IS", "NULL", "BETWEEN", "LIKE", "CONTAINS"]);
+  const _SQL_ALIASES = {
+    name: "name", title: "name",
+    status: "status",
+    genre: "genre", genres: "genre",
+    author: "author", authors: "author",
+    file: "file",
+    added: "created_time", created: "created_time", created_time: "created_time",
+    edited: "last_edited_time", updated: "last_edited_time", last_edited_time: "last_edited_time", last_edited: "last_edited_time",
+  };
+
+  function _sqlTokenize(text) {
+    const re = /\s*(?:(\()|(\))|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|(-?\d+(?:\.\d+)?)|([A-Za-z_][A-Za-z0-9_]*)|(!=|<>|>=|<=|=|>|<))/g;
+    const tokens = [];
+    let m, pos = 0;
+    while ((m = re.exec(text))) {
+      if (m.index !== pos) throw new Error(`Unexpected character near "${text.slice(pos, m.index).trim()}"`);
+      pos = re.lastIndex;
+      if (m[1]) tokens.push({ type: "lparen", value: "(" });
+      else if (m[2]) tokens.push({ type: "rparen", value: ")" });
+      else if (m[3]) tokens.push({ type: "string", value: m[3].slice(1, -1).replace(/\\(.)/g, "$1") });
+      else if (m[4]) tokens.push({ type: "number", value: m[4] });
+      else if (m[5]) tokens.push({ type: _SQL_KEYWORDS.has(m[5].toUpperCase()) ? "kw" : "ident", value: m[5] });
+      else if (m[6]) tokens.push({ type: "op", value: m[6] });
+    }
+    if (pos < text.length && text.slice(pos).trim() !== "") {
+      throw new Error(`Unexpected character near "${text.slice(pos).trim()}"`);
+    }
+    return tokens;
+  }
+  function _sqlResolveField(name) {
+    const mapped = _SQL_ALIASES[(name || "").toLowerCase()];
+    return (mapped && FB_FIELDS.some(f => f.key === mapped)) ? mapped : null;
+  }
+  function _sqlBuildComparison(field, type, symOp, val, negWord) {
+    if (negWord && !["=", "!=", "<>"].includes(symOp)) {
+      throw new Error("NOT only works with = or != — try a different operator");
+    }
+    if (type === "multi") {
+      let op;
+      if (symOp === "=") op = negWord ? "nhas" : "has";
+      else if (symOp === "!=" || symOp === "<>") op = negWord ? "has" : "nhas";
+      else throw new Error(`Operator "${symOp}" isn't supported for ${field} — use =, !=, or LIKE`);
+      return { field, op, value: val, value2: "" };
+    }
+    if (type === "date") {
+      const map = { "=": "on", ">": "after", ">=": "after", "<": "before", "<=": "before" };
+      const op = map[symOp];
+      if (!op) throw new Error(`Operator "${symOp}" isn't supported for dates`);
+      return { field, op, value: val, value2: "" };
+    }
+    // text / select
+    const map = { "=": "is", "!=": "isnot", "<>": "isnot" };
+    let op = map[symOp];
+    if (!op) throw new Error(`Operator "${symOp}" isn't supported for text fields — use =, !=, or LIKE`);
+    if (negWord) op = op === "is" ? "isnot" : "is";
+    return { field, op, value: val, value2: "" };
+  }
+  function _fbParseSQL(text) {
+    const tokens = _sqlTokenize(text);
+    let pos = 0;
+    const peek = () => tokens[pos];
+    const next = () => tokens[pos++];
+    const isKw = (t, word) => !!t && t.type === "kw" && t.value.toUpperCase() === word;
+
+    function parseValue() {
+      const t = next();
+      if (!t) throw new Error("Expected a value");
+      if (t.type === "string" || t.type === "number") return t.value;
+      if (t.type === "ident") return t.value;
+      throw new Error(`Expected a value near "${t.value}"`);
+    }
+    function parseComparison() {
+      const colTok = next();
+      if (!colTok || colTok.type !== "ident") {
+        throw new Error(`Expected a field name near "${colTok ? colTok.value : "end of input"}"`);
+      }
+      const field = _sqlResolveField(colTok.value);
+      if (!field) throw new Error(`Unknown field "${colTok.value}"`);
+      const type = _fbType(field);
+
+      if (isKw(peek(), "IS")) {
+        next();
+        let neg = false;
+        if (isKw(peek(), "NOT")) { next(); neg = true; }
+        const kw = next();
+        const kwU = kw && kw.value.toUpperCase();
+        if (kwU === "NULL") return { field, op: neg ? "nempty" : "empty", value: "", value2: "" };
+        throw new Error('Expected NULL after IS');
+      }
+      if (isKw(peek(), "BETWEEN")) {
+        next();
+        const a = parseValue();
+        if (!isKw(peek(), "AND")) throw new Error('Expected AND inside BETWEEN');
+        next();
+        const b = parseValue();
+        return { field, op: "between", value: a, value2: b };
+      }
+      let negWord = false;
+      if (isKw(peek(), "NOT")) { next(); negWord = true; }
+      const opTok = next();
+      if (!opTok) throw new Error(`Expected an operator after "${colTok.value}"`);
+      if (opTok.type === "op") return _sqlBuildComparison(field, type, opTok.value, parseValue(), negWord);
+      const opWord = opTok.value.toUpperCase();
+      if (opWord === "LIKE" || opWord === "CONTAINS") {
+        const val = parseValue();
+        const op = type === "multi" ? (negWord ? "nhas" : "has") : (negWord ? "ncontains" : "contains");
+        return { field, op, value: val, value2: "" };
+      }
+      throw new Error(`Unexpected operator "${opTok.value}"`);
+    }
+    function parsePrimary() {
+      if (peek() && peek().type === "lparen") {
+        next();
+        const node = parseOr();
+        if (!peek() || peek().type !== "rparen") throw new Error('Expected ")"');
+        next();
+        return node;
+      }
+      return parseComparison();
+    }
+    function parseAnd() {
+      const parts = [parsePrimary()];
+      while (isKw(peek(), "AND")) { next(); parts.push(parsePrimary()); }
+      return parts.length === 1 ? parts[0] : { join: "and", rules: parts };
+    }
+    function parseOr() {
+      const parts = [parseAnd()];
+      while (isKw(peek(), "OR")) { next(); parts.push(parseAnd()); }
+      return parts.length === 1 ? parts[0] : { join: "or", rules: parts };
+    }
+
+    if (!tokens.length) return { join: "and", rules: [] };
+    const result = parseOr();
+    if (pos < tokens.length) throw new Error(`Unexpected "${tokens[pos].value}"`);
+    return _fbIsGroup(result) ? result : { join: "and", rules: [result] };
+  }
+
+  function _fbColumnLabel(field) {
+    const map = { created_time: "added", last_edited_time: "edited" };
+    return map[field] || field;
+  }
+  function _fbValToSQL(v) {
+    if (v === "" || v == null) return "''";
+    if (/^-?\d+(\.\d+)?$/.test(String(v))) return String(v);
+    return `'${String(v).replace(/'/g, "\\'")}'`;
+  }
+  function _fbLeafToSQL(r) {
+    const col = _fbColumnLabel(r.field);
+    switch (r.op) {
+      case "empty":     return `${col} IS NULL`;
+      case "nempty":    return `${col} IS NOT NULL`;
+      case "between":   return `${col} BETWEEN ${_fbValToSQL(r.value)} AND ${_fbValToSQL(r.value2)}`;
+      case "contains":  return `${col} LIKE ${_fbValToSQL(r.value)}`;
+      case "ncontains": return `${col} NOT LIKE ${_fbValToSQL(r.value)}`;
+      case "has":       return `${col} = ${_fbValToSQL(r.value)}`;
+      case "nhas":      return `${col} != ${_fbValToSQL(r.value)}`;
+      case "isnot":     return `${col} != ${_fbValToSQL(r.value)}`;
+      case "before":    return `${col} < ${_fbValToSQL(r.value)}`;
+      case "after":     return `${col} > ${_fbValToSQL(r.value)}`;
+      case "on":        return `${col} = ${_fbValToSQL(r.value)}`;
+      default:          return `${col} = ${_fbValToSQL(r.value)}`;  // is
+    }
+  }
+  function _fbToSQL(node) {
+    if (!_fbIsGroup(node)) return _fbLeafToSQL(node);
+    const active = node.rules.filter(_fbActive);
+    if (!active.length) return "";
+    const parts = active.map(child => {
+      const s = _fbToSQL(child);
+      return (_fbIsGroup(child) && child.rules.filter(_fbActive).length > 1) ? `(${s})` : s;
+    });
+    return parts.join(node.join === "or" ? " OR " : " AND ");
+  }
+
+  function _fbSetMode(mode) {
+    const isSql = mode === "sql";
+    document.getElementById("fb-mode-visual").classList.toggle("active", !isSql);
+    document.getElementById("fb-mode-sql").classList.toggle("active", isSql);
+    document.getElementById("fb").style.display = isSql ? "none" : "block";
+    document.getElementById("fb-sql-panel").style.display = isSql ? "block" : "none";
+    if (isSql) {
+      document.getElementById("fb-sql-input").value = _fbToSQL(_fbRoot);
+      document.getElementById("fb-sql-error").style.display = "none";
+    }
+  }
+  function _fbApplySQL() {
+    const text = document.getElementById("fb-sql-input").value.trim();
+    const errEl = document.getElementById("fb-sql-error");
+    errEl.style.display = "none";
+    try {
+      _fbRoot = text ? _fbParseSQL(text) : { join: "and", rules: [] };
+      _fbRender();
+      _fbPersistAndApply();
+      showToast(text ? "Filter applied" : "Filters cleared", "success", 1800);
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = "block";
+    }
+  }
+
   /* ── Init ── */
   // Restore saved view mode
   document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === _viewMode));
+  _fbRender();
   loadStats();
-  applyFilters();
+  loadBooks();
 </script>
 <div id="toast-container"></div>
   <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/service-worker.js");</script>
