@@ -98,7 +98,7 @@
       text-transform: uppercase; letter-spacing: 0.06em;
     }
 
-    input[type="text"], textarea, select {
+    input[type="text"], input[type="date"], textarea, select {
       width: 100%; padding: 0.7rem 0.9rem;
       border: 1.5px solid rgba(0,0,0,0.08); border-radius: 12px;
       font-size: 0.95rem; font-family: inherit;
@@ -106,11 +106,18 @@
       transition: border-color 0.15s, box-shadow 0.15s; color: #111827;
       resize: vertical;
     }
-    input[type="text"]:focus, textarea:focus, select:focus {
+    input[type="text"]:focus, input[type="date"]:focus, textarea:focus, select:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(2,132,199,0.12);
     }
     textarea { min-height: 90px; }
+    input[type="date"] { line-height: 1.4; }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer; border-radius: 6px; padding: 3px;
+      opacity: 0.6; transition: opacity 0.15s;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+    [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
 
     .btn-primary {
       padding: 0.55rem 1.75rem;
@@ -127,6 +134,7 @@
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(2,132,199,0.4); }
     .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
     button:active, .btn:active { transform: scale(0.97); }
+    .new-issue-btn { margin: 0 0 1.25rem; }
 
     /* Feedback banner */
     .banner {
@@ -245,7 +253,10 @@
 
     /* ── Smart filter builder (Sprint + Issues sections) ── */
     .tfb { margin-bottom: 1.1rem; }
-    .tfb-rules { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.6rem; }
+    .tfb-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; }
+    .tfb-bar .status-tabs { margin-bottom: 0; }
+    .tfb-rules { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.6rem; }
+    .tfb-rules:empty { display: none; margin-top: 0; }
     .tfb-rule { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
     .tfb-where { font-size: 0.78rem; font-weight: 700; color: #9CA3AF; min-width: 44px; flex-shrink: 0; }
     .tfb-join-label {
@@ -253,16 +264,21 @@
       min-width: 44px; flex-shrink: 0; text-align: center;
     }
     .tfb-join {
-      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--accent);
+      width: auto; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--accent);
       padding: 0.25rem 0.3rem; border-radius: 8px; border: 1.5px solid rgba(2,132,199,0.25);
-      background: rgba(2,132,199,0.06); font-family: inherit; flex-shrink: 0; min-width: 60px;
+      background: rgba(2,132,199,0.06); font-family: inherit; flex: 0 0 auto; min-width: 60px;
     }
+    /* Override the page-wide `select, input[type=text] { width:100% }` rule —
+       without this each control claims the full row and the whole filter
+       row stacks into one control per line instead of sitting inline. */
     .tfb-field, .tfb-op, .tfb-value {
-      font-size: 0.82rem; padding: 0.42rem 0.6rem; border-radius: 8px;
+      width: auto; font-size: 0.82rem; padding: 0.42rem 0.6rem; border-radius: 8px;
       border: 1.5px solid rgba(0,0,0,0.1); background: #fff; font-family: inherit;
-      color: inherit; min-width: 100px; appearance: none;
+      color: inherit; appearance: none;
     }
-    .tfb-value { flex: 1; min-width: 130px; }
+    .tfb-field { flex: 1 1 130px; min-width: 110px; }
+    .tfb-op    { flex: 1 1 110px; min-width: 90px; }
+    .tfb-value { flex: 1.4 1 140px; min-width: 120px; }
     .tfb-rm {
       width: 28px; height: 28px; flex-shrink: 0; border-radius: 8px;
       border: 1px solid rgba(239,68,68,0.3); background: transparent; color: #DC2626;
@@ -280,12 +296,10 @@
       border: none; background: none; color: #6B7280; font-size: 0.78rem; font-weight: 600;
       cursor: pointer; font-family: inherit; text-decoration: underline; padding: 0;
     }
-    .tfb-empty { font-size: 0.8rem; color: #9CA3AF; font-style: italic; }
     [data-theme="dark"] .tfb-field, [data-theme="dark"] .tfb-op, [data-theme="dark"] .tfb-value {
       background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
     }
     [data-theme="dark"] .tfb-join { background: rgba(2,132,199,0.15); border-color: rgba(2,132,199,0.3); }
-    [data-theme="dark"] .tfb-empty { color: rgba(255,255,255,0.3); }
 
     /* ── Insights ── */
     .insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1.25rem; }
@@ -572,7 +586,8 @@
     [data-theme="dark"] input[type="week"],
     [data-theme="dark"] input[type="date"],
     [data-theme="dark"] input[type="number"],
-    [data-theme="dark"] input[type="text"] {
+    [data-theme="dark"] input[type="text"],
+    [data-theme="dark"] textarea {
       background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
     }
     [data-theme="dark"] .error-box { background: rgba(239,68,68,0.10); }
@@ -624,10 +639,102 @@
 
     <div id="banner" class="banner"></div>
 
-    <!-- Create form -->
-    <div class="card">
-      <h2>Create New Issue</h2>
+    <!-- Create issue -->
+    <button class="btn-primary new-issue-btn" onclick="openNewIssueModal()">+ New Issue</button>
 
+    <!-- Active sprint board -->
+    <div class="card" id="sprint-card">
+      <div class="list-header">
+        <h2 style="margin-bottom:0;">Sprint</h2>
+        <div style="display:flex; gap:0.9rem; align-items:center;">
+          <button class="refresh-btn" onclick="openNewSprintModal()">+ New Sprint</button>
+          <button class="refresh-btn" onclick="loadSprint()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <div class="tfb" id="spr-tfb">
+        <div class="tfb-bar">
+          <button type="button" class="tfb-add" onclick="tfbAddRule('spr')">+ Add filter</button>
+          <button type="button" class="tfb-clear" id="spr-tfb-clear" onclick="tfbClear('spr')" style="display:none;">Clear all</button>
+        </div>
+        <div class="tfb-rules" id="spr-tfb-rules"></div>
+      </div>
+
+      <div id="sprint-content">
+        <div class="spinner-wrap" style="display:block;">
+          <div class="spinner-ring"></div>
+          <div class="spinner-text">Loading sprint…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All sprints -->
+    <div class="card" id="all-sprints-card">
+      <div class="list-header">
+        <h2 style="margin-bottom:0;">All Sprints</h2>
+      </div>
+      <div id="all-sprints-list"><div class="empty-state">Loading…</div></div>
+    </div>
+
+    <!-- Issues list -->
+    <div class="card">
+      <div class="list-header">
+        <h2 style="margin-bottom:0;">Issues</h2>
+        <button class="refresh-btn" onclick="loadIssues()">↻ Refresh</button>
+      </div>
+
+      <div class="tfb" id="iss-tfb">
+        <div class="tfb-bar">
+          <div class="status-tabs">
+            <button class="status-tab active" onclick="setFilter('')">All</button>
+            <button class="status-tab" onclick="setFilter('To Do')">To Do</button>
+            <button class="status-tab" onclick="setFilter('In Progress')">In Progress</button>
+            <button class="status-tab" onclick="setFilter('Blocked')">Blocked</button>
+            <button class="status-tab" onclick="setFilter('Done')">Done</button>
+          </div>
+          <div class="tfb-actions">
+            <button type="button" class="tfb-add" onclick="tfbAddRule('iss')">+ Add filter</button>
+            <button type="button" class="tfb-clear" id="iss-tfb-clear" onclick="tfbClear('iss')" style="display:none;">Clear all</button>
+          </div>
+        </div>
+        <div class="tfb-rules" id="iss-tfb-rules"></div>
+      </div>
+
+      <div class="insights-grid" id="insights-grid">
+        <div class="insight-tile">
+          <div class="insight-lbl">Open</div>
+          <div class="insight-val open" id="insight-open">—</div>
+        </div>
+        <div class="insight-tile">
+          <div class="insight-lbl">Blocked</div>
+          <div class="insight-val blocked" id="insight-blocked">—</div>
+        </div>
+        <div class="insight-tile">
+          <div class="insight-lbl">Closed</div>
+          <div class="insight-val closed" id="insight-closed">—</div>
+        </div>
+        <div class="insight-tile">
+          <div class="insight-lbl">Total (filtered)</div>
+          <div class="insight-val total" id="insight-total">—</div>
+        </div>
+      </div>
+
+      <div class="spinner-wrap" id="list-loading">
+        <div class="skeleton-wrap">
+          <div class="sk-line" style="width:100%;height:3rem;margin-bottom:0.5rem;border-radius:12px;"></div>
+          <div class="sk-line" style="width:100%;height:3rem;margin-bottom:0.5rem;border-radius:12px;"></div>
+          <div class="sk-line" style="width:90%;height:3rem;border-radius:12px;"></div>
+        </div>
+      </div>
+
+      <div class="issues-wrap" id="issues-wrap"></div>
+    </div>
+  </div>
+
+  <!-- New Issue modal -->
+  <div class="modal-overlay" id="new-issue-modal" onclick="_issueCreateModalBgClick(event)">
+    <div class="modal-box">
+      <div class="modal-title">New Issue</div>
       <div class="form-group">
         <label for="summary">Summary *</label>
         <input type="text" id="summary" placeholder="What needs to be done?" />
@@ -664,94 +771,10 @@
         </div>
       </div>
 
-      <button class="btn-primary" id="create-btn" onclick="createIssue()">Create Issue</button>
-    </div>
-
-    <!-- Active sprint board -->
-    <div class="card" id="sprint-card">
-      <div class="list-header">
-        <h2 style="margin-bottom:0;">Sprint</h2>
-        <div style="display:flex; gap:0.9rem; align-items:center;">
-          <button class="refresh-btn" onclick="openNewSprintModal()">+ New Sprint</button>
-          <button class="refresh-btn" onclick="loadSprint()">↻ Refresh</button>
-        </div>
+      <div class="modal-actions">
+        <button class="modal-btn-cancel" onclick="closeNewIssueModal()">Cancel</button>
+        <button class="modal-btn-ok" id="create-btn" onclick="createIssue()">Create Issue</button>
       </div>
-
-      <div class="tfb" id="spr-tfb">
-        <div class="tfb-rules" id="spr-tfb-rules"></div>
-        <div class="tfb-actions">
-          <button type="button" class="tfb-add" onclick="tfbAddRule('spr')">+ Add filter</button>
-          <button type="button" class="tfb-clear" id="spr-tfb-clear" onclick="tfbClear('spr')" style="display:none;">Clear all</button>
-        </div>
-      </div>
-
-      <div id="sprint-content">
-        <div class="spinner-wrap" style="display:block;">
-          <div class="spinner-ring"></div>
-          <div class="spinner-text">Loading sprint…</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- All sprints -->
-    <div class="card" id="all-sprints-card">
-      <div class="list-header">
-        <h2 style="margin-bottom:0;">All Sprints</h2>
-      </div>
-      <div id="all-sprints-list"><div class="empty-state">Loading…</div></div>
-    </div>
-
-    <!-- Issues list -->
-    <div class="card">
-      <div class="list-header">
-        <h2 style="margin-bottom:0;">Issues</h2>
-        <button class="refresh-btn" onclick="loadIssues()">↻ Refresh</button>
-      </div>
-
-      <div class="status-tabs">
-        <button class="status-tab active" onclick="setFilter('')">All</button>
-        <button class="status-tab" onclick="setFilter('To Do')">To Do</button>
-        <button class="status-tab" onclick="setFilter('In Progress')">In Progress</button>
-        <button class="status-tab" onclick="setFilter('Blocked')">Blocked</button>
-        <button class="status-tab" onclick="setFilter('Done')">Done</button>
-      </div>
-
-      <div class="tfb" id="iss-tfb">
-        <div class="tfb-rules" id="iss-tfb-rules"></div>
-        <div class="tfb-actions">
-          <button type="button" class="tfb-add" onclick="tfbAddRule('iss')">+ Add filter</button>
-          <button type="button" class="tfb-clear" id="iss-tfb-clear" onclick="tfbClear('iss')" style="display:none;">Clear all</button>
-        </div>
-      </div>
-
-      <div class="insights-grid" id="insights-grid">
-        <div class="insight-tile">
-          <div class="insight-lbl">Open</div>
-          <div class="insight-val open" id="insight-open">—</div>
-        </div>
-        <div class="insight-tile">
-          <div class="insight-lbl">Blocked</div>
-          <div class="insight-val blocked" id="insight-blocked">—</div>
-        </div>
-        <div class="insight-tile">
-          <div class="insight-lbl">Closed</div>
-          <div class="insight-val closed" id="insight-closed">—</div>
-        </div>
-        <div class="insight-tile">
-          <div class="insight-lbl">Total (filtered)</div>
-          <div class="insight-val total" id="insight-total">—</div>
-        </div>
-      </div>
-
-      <div class="spinner-wrap" id="list-loading">
-        <div class="skeleton-wrap">
-          <div class="sk-line" style="width:100%;height:3rem;margin-bottom:0.5rem;border-radius:12px;"></div>
-          <div class="sk-line" style="width:100%;height:3rem;margin-bottom:0.5rem;border-radius:12px;"></div>
-          <div class="sk-line" style="width:90%;height:3rem;border-radius:12px;"></div>
-        </div>
-      </div>
-
-      <div class="issues-wrap" id="issues-wrap"></div>
     </div>
   </div>
 
@@ -841,6 +864,7 @@
         document.getElementById("description").value = "";
         document.getElementById("duedate").value     = "";
         document.getElementById("assignee").value    = "";
+        closeNewIssueModal();
         loadSprint();
         loadIssues();
       } else {
@@ -1026,7 +1050,7 @@
     const state = tfbState[prefix];
     const wrap  = document.getElementById(`${prefix}-tfb-rules`);
     if (!state.rules.length) {
-      wrap.innerHTML = `<div class="tfb-empty">No filters — showing everything.</div>`;
+      wrap.innerHTML = "";
     } else {
       wrap.innerHTML = state.rules.map((rule, idx) => `
         <div class="tfb-rule">
@@ -1382,6 +1406,19 @@
       // Start date moved — if a duration is still selected, keep the end date in sync with it.
       onNewSprintDurationChange();
     }
+  }
+
+  function openNewIssueModal() {
+    document.getElementById("new-issue-modal").classList.add("open");
+    document.getElementById("summary").focus();
+  }
+
+  function closeNewIssueModal() {
+    document.getElementById("new-issue-modal").classList.remove("open");
+  }
+
+  function _issueCreateModalBgClick(e) {
+    if (e.target.id === "new-issue-modal") closeNewIssueModal();
   }
 
   function openNewSprintModal() {
