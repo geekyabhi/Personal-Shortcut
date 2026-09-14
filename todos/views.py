@@ -36,6 +36,11 @@ class TodoView(View):
         return render(request, "todos/index.html")
 
 
+class ChartsView(View):
+    def get(self, request):
+        return render(request, "todos/charts.html")
+
+
 class CreateIssueView(TodosBaseView):
     def post(self, request):
         if self.service is None:
@@ -53,6 +58,8 @@ class CreateIssueView(TodosBaseView):
         issuetype = body.get("issuetype", "Task")
         description = body.get("description", "").strip()
         duedate = body.get("duedate", "").strip()
+        assignee_account_id = body.get("assignee_account_id", "").strip()
+        parent_key = (body.get("parent_key") or "").strip()
 
         try:
             key, url = self.service.create_issue(
@@ -60,6 +67,8 @@ class CreateIssueView(TodosBaseView):
                 issuetype=issuetype,
                 description=description,
                 duedate=duedate,
+                assignee_account_id=assignee_account_id,
+                parent_key=parent_key,
             )
         except ValueError as e:
             return JsonResponse({"error": str(e)}, status=400)
@@ -91,6 +100,271 @@ class ListIssuesView(TodosBaseView):
             return JsonResponse({"error": err}, status=status_code)
 
         return JsonResponse({"issues": issues})
+
+
+class SprintView(TodosBaseView):
+    def get(self, request):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            data = self.service.get_active_sprint(sprint_id=request.GET.get("sprint_id", "") or None)
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(data)
+
+
+class IssueTransitionView(TodosBaseView):
+    def post(self, request, key):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+        target_status = body.get("status", "").strip()
+        if not target_status:
+            return JsonResponse({"error": "status is required"}, status=400)
+
+        try:
+            result = self.service.move_issue(key, target_status)
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(result)
+
+
+class IssueAssigneeView(TodosBaseView):
+    def post(self, request, key):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+        try:
+            result = self.service.set_assignee(key, body.get("account_id", ""))
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(result)
+
+
+class IssueSprintView(TodosBaseView):
+    def post(self, request, key):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+        sprint_id = body.get("sprint_id") or None
+
+        try:
+            result = self.service.set_issue_sprint(key, sprint_id)
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(result)
+
+
+class SprintCloseView(TodosBaseView):
+    def post(self, request):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+        sprint_id = body.get("sprint_id")
+        if not sprint_id:
+            return JsonResponse({"error": "sprint_id is required"}, status=400)
+
+        try:
+            result = self.service.close_sprint(sprint_id)
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(result)
+
+
+class SprintDeleteView(TodosBaseView):
+    def post(self, request):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+        sprint_id = body.get("sprint_id")
+        if not sprint_id:
+            return JsonResponse({"error": "sprint_id is required"}, status=400)
+
+        try:
+            result = self.service.delete_sprint(sprint_id)
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(result)
+
+
+class SprintCreateView(TodosBaseView):
+    def post(self, request):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+        name = body.get("name", "").strip()
+        if not name:
+            return JsonResponse({"error": "name is required"}, status=400)
+
+        try:
+            duration_days = int(body.get("duration_days") or 7)
+        except (TypeError, ValueError):
+            return JsonResponse({"error": "duration_days must be a number"}, status=400)
+        goal = body.get("goal", "").strip()
+        start_date = (body.get("start_date") or "").strip()
+        end_date = (body.get("end_date") or "").strip()
+
+        try:
+            result = self.service.create_and_start_sprint(
+                name, duration_days, goal, start_date=start_date, end_date=end_date
+            )
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(result, status=201)
+
+
+class MetaView(TodosBaseView):
+    def get(self, request):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            data = self.service.get_meta()
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(data)
+
+
+class IssueDetailView(TodosBaseView):
+    def get(self, request, key):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            data = self.service.get_issue_detail(key)
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(data)
+
+
+class IssueUpdateView(TodosBaseView):
+    def post(self, request, key):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+        try:
+            result = self.service.update_issue(
+                key,
+                summary=body.get("summary", "").strip(),
+                description=body.get("description", "").strip(),
+                duedate=body.get("duedate", "").strip(),
+                issuetype=body.get("issuetype", "Task"),
+                parent_key=body.get("parent_key", "").strip(),
+            )
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(result)
+
+
+class IssueDeleteView(TodosBaseView):
+    def post(self, request, key):
+        if self.service is None:
+            return self._creds_error_json()
+
+        try:
+            result = self.service.delete_issue(key)
+        except requests.RequestException as e:
+            return JsonResponse({"error": str(e)}, status=502)
+        except RuntimeError as e:
+            err = e.args[0]
+            status_code = err.get("status", 502) if isinstance(err, dict) else 502
+            return JsonResponse({"error": err}, status=status_code)
+
+        return JsonResponse(result)
 
 
 class DueSummaryView(TodosBaseView):

@@ -161,12 +161,30 @@
       padding: 0.85rem 1rem;
       background: rgba(255,255,255,0.6);
       border: 1px solid rgba(255,255,255,0.9);
+      border-left-width: 4px;
       border-radius: 14px;
       text-decoration: none; color: #111827;
       transition: all 0.2s ease;
       box-shadow: 0 1px 6px rgba(0,0,0,0.04);
     }
     .issue-row:hover { background: rgba(255,255,255,0.85); box-shadow: 0 4px 16px rgba(0,0,0,0.09); transform: translateY(-1px); }
+
+    /* Type-colored accent — a soft border stripe plus a barely-there
+       background wash, so a ticket's kind reads at a glance without
+       painting the whole card in a saturated color. Scoped separately
+       from .type-badge so the small pill can stay a bit richer. */
+    .issue-row.type-epic,    .sprint-card.type-epic    { border-left-color: #C4B5FD; background-color: rgba(124,58,237,0.045); }
+    .issue-row.type-story,   .sprint-card.type-story   { border-left-color: #6EE7B7; background-color: rgba(16,185,129,0.05); }
+    .issue-row.type-task,    .sprint-card.type-task    { border-left-color: #93C5FD; background-color: rgba(59,130,246,0.05); }
+    .issue-row.type-bug,     .sprint-card.type-bug     { border-left-color: #FCA5A5; background-color: rgba(239,68,68,0.05); }
+    .issue-row.type-subtask, .sprint-card.type-subtask { border-left-color: #D1D5DB; background-color: rgba(156,163,175,0.06); }
+    .issue-row.type-default, .sprint-card.type-default { border-left-color: #FDBA74; background-color: rgba(249,115,22,0.05); }
+    [data-theme="dark"] .issue-row.type-epic,    [data-theme="dark"] .sprint-card.type-epic    { background-color: rgba(124,58,237,0.09); }
+    [data-theme="dark"] .issue-row.type-story,   [data-theme="dark"] .sprint-card.type-story   { background-color: rgba(16,185,129,0.09); }
+    [data-theme="dark"] .issue-row.type-task,    [data-theme="dark"] .sprint-card.type-task    { background-color: rgba(59,130,246,0.09); }
+    [data-theme="dark"] .issue-row.type-bug,     [data-theme="dark"] .sprint-card.type-bug     { background-color: rgba(239,68,68,0.09); }
+    [data-theme="dark"] .issue-row.type-subtask, [data-theme="dark"] .sprint-card.type-subtask { background-color: rgba(156,163,175,0.1); }
+    [data-theme="dark"] .issue-row.type-default, [data-theme="dark"] .sprint-card.type-default { background-color: rgba(249,115,22,0.09); }
 
     .issue-key {
       font-size: 0.75rem; font-weight: 700; white-space: nowrap;
@@ -176,9 +194,32 @@
       padding: 0.2rem 0.55rem; letter-spacing: 0.02em;
     }
 
-    .issue-type-icon { font-size: 1rem; flex-shrink: 0; }
+    /* ── Issue type badge (icon + text, shown wherever a ticket appears) ── */
+    .type-badge {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.68rem; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+      padding: 0.16rem 0.55rem; border-radius: 100px; letter-spacing: 0.01em;
+    }
+    .type-badge.type-epic    { background: #F5F3FF; color: #7C3AED; }
+    .type-badge.type-story   { background: #ECFDF5; color: #059669; }
+    .type-badge.type-task    { background: #EFF6FF; color: #2563EB; }
+    .type-badge.type-bug     { background: #FEF2F2; color: #DC2626; }
+    .type-badge.type-subtask { background: #F3F4F6; color: #6B7280; }
+    .type-badge.type-default { background: #FFF7ED; color: #EA580C; }
+    [data-theme="dark"] .type-badge.type-epic    { background: rgba(124,58,237,0.15); color: #C4B5FD; }
+    [data-theme="dark"] .type-badge.type-story   { background: rgba(5,150,105,0.15);  color: #6EE7B7; }
+    [data-theme="dark"] .type-badge.type-task    { background: rgba(37,99,235,0.15);  color: #93C5FD; }
+    [data-theme="dark"] .type-badge.type-bug     { background: rgba(220,38,38,0.15);  color: #FCA5A5; }
+    [data-theme="dark"] .type-badge.type-subtask { background: rgba(107,114,128,0.2); color: #D1D5DB; }
+    [data-theme="dark"] .type-badge.type-default { background: rgba(217,119,6,0.15);  color: #FDBA74; }
 
     .issue-summary { flex: 1; min-width: 0; font-size: 0.9rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .issue-parent {
+      font-size: 0.72rem; font-weight: 600; color: #9CA3AF; white-space: nowrap;
+      flex-shrink: 0; max-width: 140px; overflow: hidden; text-overflow: ellipsis;
+    }
+    [data-theme="dark"] .issue-parent { color: #6B7280; }
 
     .issue-status {
       font-size: 0.72rem; font-weight: 700; white-space: nowrap;
@@ -202,6 +243,96 @@
     .status-tab:hover { color: var(--accent); border-color: rgba(2,132,199,0.2); }
     .status-tab.active { background: var(--grad); color: #fff; box-shadow: 0 2px 8px rgba(2,132,199,0.25); }
 
+    /* ── Smart filter builder (Sprint + Issues sections) ── */
+    .tfb { margin-bottom: 1.1rem; }
+    .tfb-rules { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.6rem; }
+    .tfb-rule { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+    .tfb-where { font-size: 0.78rem; font-weight: 700; color: #9CA3AF; min-width: 44px; flex-shrink: 0; }
+    .tfb-join-label {
+      font-size: 0.68rem; font-weight: 700; color: var(--accent); text-transform: uppercase;
+      min-width: 44px; flex-shrink: 0; text-align: center;
+    }
+    .tfb-join {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--accent);
+      padding: 0.25rem 0.3rem; border-radius: 8px; border: 1.5px solid rgba(2,132,199,0.25);
+      background: rgba(2,132,199,0.06); font-family: inherit; flex-shrink: 0; min-width: 60px;
+    }
+    .tfb-field, .tfb-op, .tfb-value {
+      font-size: 0.82rem; padding: 0.42rem 0.6rem; border-radius: 8px;
+      border: 1.5px solid rgba(0,0,0,0.1); background: #fff; font-family: inherit;
+      color: inherit; min-width: 100px; appearance: none;
+    }
+    .tfb-value { flex: 1; min-width: 130px; }
+    .tfb-rm {
+      width: 28px; height: 28px; flex-shrink: 0; border-radius: 8px;
+      border: 1px solid rgba(239,68,68,0.3); background: transparent; color: #DC2626;
+      cursor: pointer; font-size: 0.85rem; font-family: inherit;
+    }
+    .tfb-rm:hover { background: rgba(239,68,68,0.08); }
+    .tfb-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    .tfb-add {
+      border: 1px dashed rgba(2,132,199,0.4); border-radius: 8px; background: transparent;
+      color: var(--accent); font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.9rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .tfb-add:hover { background: rgba(2,132,199,0.08); }
+    .tfb-clear {
+      border: none; background: none; color: #6B7280; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; font-family: inherit; text-decoration: underline; padding: 0;
+    }
+    .tfb-empty { font-size: 0.8rem; color: #9CA3AF; font-style: italic; }
+    [data-theme="dark"] .tfb-field, [data-theme="dark"] .tfb-op, [data-theme="dark"] .tfb-value {
+      background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #F9FAFB;
+    }
+    [data-theme="dark"] .tfb-join { background: rgba(2,132,199,0.15); border-color: rgba(2,132,199,0.3); }
+    [data-theme="dark"] .tfb-empty { color: rgba(255,255,255,0.3); }
+
+    /* ── Insights ── */
+    .insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1.25rem; }
+    .insight-tile {
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 16px;
+      padding: 0.85rem 1rem; box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    }
+    .insight-lbl { font-size: 0.62rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.3rem; }
+    .insight-val { font-size: 1.4rem; font-weight: 400; letter-spacing: -0.03em; color: #111827; }
+    .insight-val.open    { color: #6B7280; }
+    .insight-val.blocked { color: #DC2626; }
+    .insight-val.closed  { color: #059669; }
+    .insight-val.total   { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    @media (min-width: 480px) { .insights-grid { grid-template-columns: repeat(4, 1fr); } }
+    [data-theme="dark"] .insight-tile { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .insight-lbl { color: #6B7280; }
+    [data-theme="dark"] .insight-val { color: #F9FAFB; }
+
+    /* ── All Sprints list ── */
+    .sprint-list-row {
+      display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+      padding: 0.75rem 0.9rem; margin-bottom: 0.5rem;
+      background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.9);
+      border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    }
+    .sprint-list-row:last-child { margin-bottom: 0; }
+    .sprint-list-name { font-weight: 700; font-size: 0.9rem; flex: 1; min-width: 120px; }
+    .sprint-list-dates { font-size: 0.78rem; color: #9CA3AF; white-space: nowrap; }
+    .sprint-list-state {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 0.18rem 0.55rem; border-radius: 100px; white-space: nowrap;
+    }
+    .sprint-list-state.active  { background: rgba(5,150,105,0.1);  color: #059669; }
+    .sprint-list-state.future  { background: rgba(2,132,199,0.1);  color: #0284C7; }
+    .sprint-list-state.closed  { background: rgba(107,114,128,0.12); color: #6B7280; }
+    .sprint-list-actions { display: flex; gap: 0.4rem; }
+    .sprint-list-actions button {
+      font-size: 0.76rem; font-weight: 600; border: none; background: none; cursor: pointer;
+      font-family: inherit; padding: 0.2rem 0.5rem; border-radius: 6px; color: var(--accent);
+    }
+    .sprint-list-actions button:hover { background: rgba(2,132,199,0.08); }
+    .sprint-list-actions button.danger { color: #DC2626; }
+    .sprint-list-actions button.danger:hover { background: rgba(220,38,38,0.08); }
+    [data-theme="dark"] .sprint-list-row { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .sprint-list-dates { color: #6B7280; }
+
     .due-date {
       font-size: 0.72rem; font-weight: 600; white-space: nowrap;
       padding: 0.2rem 0.6rem; border-radius: 100px;
@@ -216,6 +347,160 @@
       text-align: center; color: #9CA3AF; font-size: 0.9rem;
       font-weight: 500; padding: 2rem 0;
     }
+
+    /* ── Sprint board ── */
+    .sprint-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;
+    }
+    .sprint-title-wrap { display: flex; flex-direction: column; gap: 0.2rem; }
+    .sprint-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+    .sprint-dates { font-size: 0.78rem; color: #6B7280; font-weight: 500; }
+    .sprint-goal { font-size: 0.82rem; color: #374151; font-style: italic; margin-top: 0.35rem; }
+    .sprint-countdown {
+      font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.85rem; border-radius: 100px;
+      background: var(--grad-bg); color: var(--accent); border: 1px solid rgba(2,132,199,0.2);
+      white-space: nowrap;
+    }
+    .sprint-countdown.ending-soon { background: #FFFBEB; color: #92400E; border-color: rgba(217,119,6,0.25); }
+    .sprint-countdown.overdue     { background: #FEF2F2; color: #B91C1C; border-color: rgba(185,28,28,0.25); }
+
+    .sprint-board { display: flex; gap: 0.85rem; overflow-x: auto; padding-bottom: 0.4rem; -webkit-overflow-scrolling: touch; }
+    .sprint-col { background: rgba(0,0,0,0.025); border-radius: 14px; padding: 0.75rem; min-height: 80px; flex: 0 0 250px; width: 250px; }
+    .sprint-col-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.65rem; padding: 0 0.15rem;
+    }
+    .sprint-col-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6B7280; }
+    .sprint-col-count { font-size: 0.7rem; font-weight: 700; color: #9CA3AF; background: rgba(0,0,0,0.05); border-radius: 100px; padding: 0.05rem 0.5rem; }
+    .sprint-col.done .sprint-col-title          { color: #059669; }
+    .sprint-col.indeterminate .sprint-col-title { color: #1D4ED8; }
+
+    .sprint-card {
+      display: block; background: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.9);
+      border-left-width: 4px;
+      border-radius: 10px; padding: 0.6rem 0.7rem; margin-bottom: 0.5rem;
+      text-decoration: none; color: inherit;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05); transition: all 0.15s ease;
+    }
+    .sprint-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); transform: translateY(-1px); }
+    .sprint-card:last-child { margin-bottom: 0; }
+    .sprint-card-top { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+    .sprint-card-parent {
+      font-size: 0.68rem; font-weight: 600; color: #9CA3AF;
+      margin-bottom: 0.3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sprint-card-summary { font-size: 0.83rem; font-weight: 500; color: #111827; margin-bottom: 0.4rem; line-height: 1.3; }
+    .sprint-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+    .sprint-card-key { font-size: 0.68rem; font-weight: 700; color: var(--accent); }
+    .sprint-card-avatar {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--grad); color: #fff;
+      font-size: 0.6rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .sprint-col-empty { font-size: 0.76rem; color: #C4C9D4; text-align: center; padding: 1rem 0; }
+    .sprint-empty-state { text-align: center; padding: 1.5rem 0; color: #9CA3AF; font-size: 0.9rem; }
+
+    .sprint-close-btn {
+      font-size: 0.72rem; font-weight: 700; color: #B91C1C;
+      background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 100px; padding: 0.3rem 0.75rem; cursor: pointer; font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    .sprint-close-btn:hover { background: rgba(239,68,68,0.15); }
+
+    /* Sprint switcher (Backlog / each sprint) */
+    .sprint-switcher-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 1.1rem; }
+    .sprint-switcher { display: flex; gap: 0.4rem; width: max-content; }
+    .sprint-switch-btn {
+      padding: 0.35rem 0.85rem; font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+      border-radius: 100px; border: 1.5px solid rgba(0,0,0,0.1);
+      background: #fff; color: #6B7280; cursor: pointer; font-family: inherit;
+      transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 0.3rem;
+    }
+    .sprint-switch-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .sprint-switch-btn.active { background: var(--grad); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(2,132,199,0.25); }
+    .sprint-switch-state { opacity: 0.7; font-size: 0.68rem; text-transform: capitalize; }
+    [data-theme="dark"] .sprint-switch-btn { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #9CA3AF; }
+    [data-theme="dark"] .sprint-switch-btn.active { background: var(--grad); color: #fff; border-color: transparent; }
+
+    /* Drag and drop */
+    .sprint-card[draggable="true"] { cursor: grab; }
+    .sprint-card.dragging { opacity: 0.4; }
+    .sprint-col.drag-over { background: var(--grad-bg); box-shadow: inset 0 0 0 1.5px rgba(2,132,199,0.35); }
+
+    @media (max-width: 767px) {
+      .sprint-col { flex-basis: 200px; width: 200px; }
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(17,24,39,0.45); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 20px; padding: 1.75rem 1.5rem;
+      width: min(380px, 90vw); box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: _scaleIn 0.2s ease both;
+    }
+    .modal-title { font-size: 1rem; font-weight: 700; color: #111827; margin-bottom: 1.1rem; letter-spacing: -0.01em; }
+    .modal-actions { display: flex; gap: 0.5rem; margin-top: 1.1rem; }
+    .modal-btn-cancel {
+      flex: 1; padding: 0.65rem; border-radius: 100px; border: 1.5px solid rgba(0,0,0,0.1);
+      background: #fff; color: #6B7280; font-size: 0.88rem; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: all 0.2s;
+    }
+    .modal-btn-cancel:hover { border-color: rgba(0,0,0,0.2); }
+    .modal-btn-ok {
+      flex: 2; padding: 0.65rem; border-radius: 100px; border: none;
+      background: var(--grad); color: #fff; font-size: 0.88rem; font-weight: 700;
+      font-family: inherit; cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(2,132,199,0.3);
+    }
+    .modal-btn-ok:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(2,132,199,0.4); }
+    .modal-btn-ok:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .modal-btn-danger {
+      flex: 0 0 auto; padding: 0.65rem 0.9rem; border-radius: 100px;
+      border: 1.5px solid rgba(239,68,68,0.3); background: rgba(239,68,68,0.07);
+      color: #DC2626; font-size: 0.95rem; cursor: pointer; font-family: inherit;
+      transition: all 0.2s;
+    }
+    .modal-btn-danger:hover { background: rgba(239,68,68,0.15); }
+    [data-theme="dark"] .modal-btn-danger { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #FCA5A5; }
+    [data-theme="dark"] .modal-box { background: #1B1B28; }
+    [data-theme="dark"] .modal-title { color: #F9FAFB; }
+    [data-theme="dark"] .modal-btn-cancel { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #9CA3AF; }
+
+    /* ── Issue detail modal ── */
+    .issue-modal-box { width: min(520px, 92vw); max-height: 88vh; overflow-y: auto; text-align: left; }
+    .issue-modal-box #im-key { font-size: 1rem; font-weight: 700; }
+    .im-jira-link { font-size: 0.76rem; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap; }
+    .im-jira-link:hover { text-decoration: underline; }
+    #im-description { min-height: 70px; }
+
+    .status-picker-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+    .status-picker { display: flex; gap: 0.4rem; width: max-content; }
+    .status-pick-btn {
+      padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 600; white-space: nowrap;
+      border-radius: 100px; border: 1.5px solid rgba(0,0,0,0.1);
+      background: #fff; color: #6B7280; cursor: pointer; font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    .status-pick-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .status-pick-btn.active { background: var(--grad); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(2,132,199,0.3); }
+    [data-theme="dark"] .status-pick-btn { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #9CA3AF; }
+    [data-theme="dark"] .status-pick-btn.active { background: var(--grad); color: #fff; border-color: transparent; }
+
+    /* Clickable cards/rows that open the in-app detail modal */
+    .sprint-card { cursor: pointer; }
+    .issue-row { cursor: pointer; }
+    .row-open-link {
+      font-size: 0.72rem; font-weight: 700; color: var(--accent);
+      text-decoration: none; white-space: nowrap; padding: 0.15rem 0.4rem;
+      border-radius: 6px; flex-shrink: 0;
+    }
+    .row-open-link:hover { background: rgba(2,132,199,0.1); }
 
     .list-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -293,6 +578,16 @@
     [data-theme="dark"] .error-box { background: rgba(239,68,68,0.10); }
     [data-theme="dark"] p { color: #9CA3AF; }
 
+    [data-theme="dark"] .sprint-dates { color: #6B7280; }
+    [data-theme="dark"] .sprint-goal { color: #D1D5DB; }
+    [data-theme="dark"] .sprint-col { background: rgba(255,255,255,0.03); }
+    [data-theme="dark"] .sprint-col-title { color: #9CA3AF; }
+    [data-theme="dark"] .sprint-col-count { background: rgba(255,255,255,0.07); color: #9CA3AF; }
+    [data-theme="dark"] .sprint-card { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.09); }
+    [data-theme="dark"] .sprint-card-summary { color: #F1F5F9; }
+    [data-theme="dark"] .sprint-card-parent { color: #6B7280; }
+    [data-theme="dark"] .sprint-col-empty { color: rgba(255,255,255,0.18); }
+
     /* ── Toast ── */
     #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
     .toast { padding: 0.7rem 1.1rem; border-radius: 12px; font-size: 0.83rem; font-weight: 500; font-family: inherit; box-shadow: 0 8px 32px rgba(0,0,0,0.13); display: flex; align-items: center; gap: 0.55rem; pointer-events: auto; backdrop-filter: blur(12px); max-width: 300px; animation: _toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
@@ -322,6 +617,7 @@
     <nav>
       <a href="/">Home</a>
       <a href="/todos/" class="active">Jira Todos</a>
+      <a href="/todos/charts/">Charts</a>
     </nav>
 
     <h1>Jira Todos</h1>
@@ -345,11 +641,8 @@
       <div class="form-row">
         <div class="form-group">
           <label for="issuetype">Issue Type</label>
-          <select id="issuetype">
+          <select id="issuetype" onchange="onCreateIssueTypeChange()">
             <option value="Task">Task</option>
-            <option value="Story">Story</option>
-            <option value="Epic">Epic</option>
-            <option value="Rapid">Rapid</option>
           </select>
         </div>
         <div class="form-group">
@@ -358,7 +651,54 @@
         </div>
       </div>
 
+      <div class="form-row">
+        <div class="form-group">
+          <label for="assignee">Assignee</label>
+          <select id="assignee">
+            <option value="">Unassigned</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="parent" id="parent-label">Parent (optional)</label>
+          <select id="parent"><option value="">No parent</option></select>
+        </div>
+      </div>
+
       <button class="btn-primary" id="create-btn" onclick="createIssue()">Create Issue</button>
+    </div>
+
+    <!-- Active sprint board -->
+    <div class="card" id="sprint-card">
+      <div class="list-header">
+        <h2 style="margin-bottom:0;">Sprint</h2>
+        <div style="display:flex; gap:0.9rem; align-items:center;">
+          <button class="refresh-btn" onclick="openNewSprintModal()">+ New Sprint</button>
+          <button class="refresh-btn" onclick="loadSprint()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <div class="tfb" id="spr-tfb">
+        <div class="tfb-rules" id="spr-tfb-rules"></div>
+        <div class="tfb-actions">
+          <button type="button" class="tfb-add" onclick="tfbAddRule('spr')">+ Add filter</button>
+          <button type="button" class="tfb-clear" id="spr-tfb-clear" onclick="tfbClear('spr')" style="display:none;">Clear all</button>
+        </div>
+      </div>
+
+      <div id="sprint-content">
+        <div class="spinner-wrap" style="display:block;">
+          <div class="spinner-ring"></div>
+          <div class="spinner-text">Loading sprint…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All sprints -->
+    <div class="card" id="all-sprints-card">
+      <div class="list-header">
+        <h2 style="margin-bottom:0;">All Sprints</h2>
+      </div>
+      <div id="all-sprints-list"><div class="empty-state">Loading…</div></div>
     </div>
 
     <!-- Issues list -->
@@ -374,6 +714,33 @@
         <button class="status-tab" onclick="setFilter('In Progress')">In Progress</button>
         <button class="status-tab" onclick="setFilter('Blocked')">Blocked</button>
         <button class="status-tab" onclick="setFilter('Done')">Done</button>
+      </div>
+
+      <div class="tfb" id="iss-tfb">
+        <div class="tfb-rules" id="iss-tfb-rules"></div>
+        <div class="tfb-actions">
+          <button type="button" class="tfb-add" onclick="tfbAddRule('iss')">+ Add filter</button>
+          <button type="button" class="tfb-clear" id="iss-tfb-clear" onclick="tfbClear('iss')" style="display:none;">Clear all</button>
+        </div>
+      </div>
+
+      <div class="insights-grid" id="insights-grid">
+        <div class="insight-tile">
+          <div class="insight-lbl">Open</div>
+          <div class="insight-val open" id="insight-open">—</div>
+        </div>
+        <div class="insight-tile">
+          <div class="insight-lbl">Blocked</div>
+          <div class="insight-val blocked" id="insight-blocked">—</div>
+        </div>
+        <div class="insight-tile">
+          <div class="insight-lbl">Closed</div>
+          <div class="insight-val closed" id="insight-closed">—</div>
+        </div>
+        <div class="insight-tile">
+          <div class="insight-lbl">Total (filtered)</div>
+          <div class="insight-val total" id="insight-total">—</div>
+        </div>
       </div>
 
       <div class="spinner-wrap" id="list-loading">
@@ -403,7 +770,21 @@
     }, duration);
   }
 
-  const ISSUE_TYPE_ICON = { Task: "☑️", Story: "📖", Epic: "🚀", Rapid: "⚡" };
+  const ISSUE_TYPE_ICON = { Task: "☑️", Story: "📖", Epic: "🚀", Rapid: "⚡", Bug: "🐞", Subtask: "📎" };
+
+  function typeClass(name) {
+    const n = (name || "").toLowerCase();
+    if (n === "epic") return "type-epic";
+    if (n === "story") return "type-story";
+    if (n === "task") return "type-task";
+    if (n === "bug") return "type-bug";
+    if (n === "subtask" || n === "sub-task") return "type-subtask";
+    return "type-default";
+  }
+
+  function typeBadge(name) {
+    return `<span class="type-badge ${typeClass(name)}" title="${escHtml(name)}">${ISSUE_TYPE_ICON[name] || "📋"} ${escHtml(name)}</span>`;
+  }
   let activeStatus = "";
 
   function statusClass(s) {
@@ -427,9 +808,15 @@
     const description = document.getElementById("description").value.trim();
     const issuetype   = document.getElementById("issuetype").value;
     const duedate     = document.getElementById("duedate").value;
+    const assignee_account_id = document.getElementById("assignee").value;
+    const parent_key  = document.getElementById("parent").value;
 
     if (!summary) {
       showBanner("error", "Summary is required.");
+      return;
+    }
+    if (issueMeta.issue_type_levels[issuetype] === -1 && !parent_key) {
+      showBanner("error", "A Subtask needs a parent — pick one above.");
       return;
     }
 
@@ -441,7 +828,7 @@
       const res  = await fetch("/todos/create/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ summary, description, issuetype, duedate }),
+        body: JSON.stringify({ summary, description, issuetype, duedate, assignee_account_id, parent_key }),
       });
       const data = await res.json();
 
@@ -453,6 +840,8 @@
         document.getElementById("summary").value     = "";
         document.getElementById("description").value = "";
         document.getElementById("duedate").value     = "";
+        document.getElementById("assignee").value    = "";
+        loadSprint();
         loadIssues();
       } else {
         showBanner("error", `Jira error: ${escHtml(errText(data.error))}`);
@@ -465,12 +854,14 @@
     }
   }
 
+  let lastIssuesData = null;
+
   function setFilter(status) {
     activeStatus = status;
     document.querySelectorAll(".status-tab").forEach(btn => {
       btn.classList.toggle("active", btn.textContent.trim() === (status || "All"));
     });
-    loadIssues();
+    renderIssuesList();
   }
 
   let _loaderTimer;
@@ -485,8 +876,7 @@
     wrap.innerHTML = "";
 
     try {
-      const url = activeStatus ? `/todos/issues/?status=${encodeURIComponent(activeStatus)}` : "/todos/issues/";
-      const res  = await fetch(url);
+      const res  = await fetch("/todos/issues/");
       const data = await res.json();
 
       if (!res.ok) {
@@ -494,21 +884,8 @@
         return;
       }
 
-      const { issues } = data;
-      if (!issues.length) {
-        wrap.innerHTML = `<div class="empty-state">No issues found in ${location.hostname ? "Jira" : "project"} yet.</div>`;
-        return;
-      }
-
-      wrap.innerHTML = issues.map(i => `
-        <a class="issue-row" href="${i.url}" target="_blank" rel="noopener">
-          <span class="issue-type-icon">${ISSUE_TYPE_ICON[i.issuetype] || "📋"}</span>
-          <span class="issue-key">${i.key}</span>
-          <span class="issue-summary">${escHtml(i.summary)}</span>
-          ${dueBadge(i.duedate)}
-          <span class="issue-status ${statusClass(i.status)}">${i.status}</span>
-        </a>
-      `).join("");
+      lastIssuesData = data.issues;
+      renderIssuesList();
     } catch (e) {
       wrap.innerHTML = `<div class="empty-state">Network error: ${e.message}</div>`;
     } finally {
@@ -517,19 +894,837 @@
     }
   }
 
-  function dueBadge(duedate) {
-    if (!duedate) return `<span class="due-date no-date">No due date</span>`;
+  function renderInsights(issues) {
+    let open = 0, blocked = 0, closed = 0;
+    issues.forEach(i => {
+      const cls = statusClass(i.status);
+      if (cls === "status-blocked") blocked++;
+      else if (cls === "status-done") closed++;
+      else open++; // status-todo and status-progress both read as "in flight"
+    });
+    document.getElementById("insight-open").textContent    = open;
+    document.getElementById("insight-blocked").textContent = blocked;
+    document.getElementById("insight-closed").textContent  = closed;
+    document.getElementById("insight-total").textContent   = issues.length;
+  }
+
+  function renderIssuesList() {
+    const wrap = document.getElementById("issues-wrap");
+    if (lastIssuesData === null) return; // not loaded yet — loadIssues() will render once it lands
+    if (!lastIssuesData.length) {
+      wrap.innerHTML = `<div class="empty-state">No issues found in Jira yet.</div>`;
+      renderInsights([]);
+      return;
+    }
+
+    let issues = activeStatus ? lastIssuesData.filter(i => i.status === activeStatus) : lastIssuesData;
+    issues = issues.filter(i => tfbMatches(i, "iss"));
+    renderInsights(issues);
+
+    if (!issues.length) {
+      wrap.innerHTML = `<div class="empty-state">No issues match your filters.</div>`;
+      return;
+    }
+
+    wrap.innerHTML = issues.map(i => `
+      <div class="issue-row ${typeClass(i.issuetype)}" onclick="openIssueModal('${i.key}')">
+        ${typeBadge(i.issuetype)}
+        <span class="issue-key">${i.key}</span>
+        <span class="issue-summary">${escHtml(i.summary)}</span>
+        ${i.parent_key ? `<span class="issue-parent" title="${escHtml(i.parent_summary)}">↳ ${i.parent_key}</span>` : ""}
+        ${dueBadge(i.duedate)}
+        <span class="issue-status ${statusClass(i.status)}">${i.status}</span>
+        <a class="row-open-link" href="${i.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open in Jira">↗</a>
+      </div>
+    `).join("");
+  }
+
+  function _dueDateStatus(duedate) {
+    if (!duedate) return "none";
     const due   = new Date(duedate + "T00:00:00");
     const today = new Date(); today.setHours(0,0,0,0);
     const diff  = Math.round((due - today) / 86400000);
+    if (diff < 0)  return "overdue";
+    if (diff <= 3) return "soon";
+    return "future";
+  }
+
+  function dueBadge(duedate) {
+    const status = _dueDateStatus(duedate);
+    if (status === "none") return `<span class="due-date no-date">No due date</span>`;
+    const due   = new Date(duedate + "T00:00:00");
     const label = due.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-    if (diff < 0)  return `<span class="due-date overdue">⚠ Overdue · ${label}</span>`;
-    if (diff <= 3) return `<span class="due-date due-soon">⏳ Due ${label}</span>`;
+    if (status === "overdue") return `<span class="due-date overdue">⚠ Overdue · ${label}</span>`;
+    if (status === "soon")    return `<span class="due-date due-soon">⏳ Due ${label}</span>`;
     return `<span class="due-date on-track">📅 ${label}</span>`;
+  }
+
+  /* ══════════════════════════════════════════
+     SMART FILTER BUILDER (Sprint + Issues sections)
+     A flat list of field/operator/value rules, combined by one AND/OR —
+     the same idea as the expense dashboard's filter builder, scoped down
+     to this app's much smaller field set (no nested groups, no SQL mode).
+  ══════════════════════════════════════════ */
+  const TFB_FIELDS = {
+    type:     { label: "Type",     kind: "select",   getOptions: () => issueMeta.issue_types.map(t => t.name) },
+    status:   { label: "Status",   kind: "select",   getOptions: () => issueMeta.statuses },
+    assignee: { label: "Assignee", kind: "assignee" },
+    duedate:  { label: "Due Date", kind: "date" },
+    summary:  { label: "Summary",  kind: "text" },
+    parent:   { label: "Parent",   kind: "bool" },
+  };
+
+  const tfbState = {
+    iss: { join: "and", rules: [] },
+    spr: { join: "and", rules: [] },
+  };
+
+  function tfbOperatorsFor(kind) {
+    if (kind === "select" || kind === "assignee") return [["is", "is"], ["is_not", "is not"]];
+    if (kind === "date")   return [["before", "before"], ["after", "after"], ["empty", "is empty"], ["not_empty", "is not empty"]];
+    if (kind === "text")   return [["contains", "contains"], ["not_contains", "does not contain"]];
+    if (kind === "bool")   return [["has_parent", "has a parent"], ["no_parent", "has no parent"]];
+    return [];
+  }
+
+  function tfbFieldSelectHtml(prefix, idx, rule) {
+    return `<select class="tfb-field" onchange="tfbFieldChanged('${prefix}',${idx},this.value)">` +
+      Object.entries(TFB_FIELDS).map(([key, def]) => `<option value="${key}" ${rule.field === key ? "selected" : ""}>${def.label}</option>`).join("") +
+      `</select>`;
+  }
+
+  function tfbOpSelectHtml(prefix, idx, rule) {
+    const ops = tfbOperatorsFor(TFB_FIELDS[rule.field].kind);
+    return `<select class="tfb-op" onchange="tfbUpdateRule('${prefix}',${idx},'op',this.value)">` +
+      ops.map(([v, l]) => `<option value="${v}" ${rule.op === v ? "selected" : ""}>${l}</option>`).join("") + `</select>`;
+  }
+
+  function tfbValueInputHtml(prefix, idx, rule) {
+    const def = TFB_FIELDS[rule.field];
+    if (def.kind === "bool") return "";
+    if (def.kind === "date") {
+      if (rule.op === "empty" || rule.op === "not_empty") return "";
+      return `<input type="date" class="tfb-value" value="${rule.value || ""}" onchange="tfbUpdateRule('${prefix}',${idx},'value',this.value)" />`;
+    }
+    if (def.kind === "text") {
+      return `<input type="text" class="tfb-value" placeholder="Value…" value="${escHtml(rule.value || "")}" oninput="tfbUpdateRule('${prefix}',${idx},'value',this.value)" />`;
+    }
+    if (def.kind === "select") {
+      const opts = def.getOptions();
+      return `<select class="tfb-value" onchange="tfbUpdateRule('${prefix}',${idx},'value',this.value)">` +
+        opts.map(o => `<option value="${escHtml(o)}" ${rule.value === o ? "selected" : ""}>${escHtml(o)}</option>`).join("") + `</select>`;
+    }
+    if (def.kind === "assignee") {
+      const opts = [["", "Unassigned"], ...issueMeta.assignees.map(a => [a.account_id, a.display_name])];
+      return `<select class="tfb-value" onchange="tfbUpdateRule('${prefix}',${idx},'value',this.value)">` +
+        opts.map(([v, l]) => `<option value="${v}" ${rule.value === v ? "selected" : ""}>${escHtml(l)}</option>`).join("") + `</select>`;
+    }
+    return "";
+  }
+
+  function tfbRenderRules(prefix) {
+    const state = tfbState[prefix];
+    const wrap  = document.getElementById(`${prefix}-tfb-rules`);
+    if (!state.rules.length) {
+      wrap.innerHTML = `<div class="tfb-empty">No filters — showing everything.</div>`;
+    } else {
+      wrap.innerHTML = state.rules.map((rule, idx) => `
+        <div class="tfb-rule">
+          ${idx === 0 ? `<span class="tfb-where">Where</span>` :
+            idx === 1 ? `<select class="tfb-join" onchange="tfbSetJoin('${prefix}',this.value)">
+                           <option value="and" ${state.join === "and" ? "selected" : ""}>AND</option>
+                           <option value="or"  ${state.join === "or"  ? "selected" : ""}>OR</option>
+                         </select>` :
+            `<span class="tfb-join-label">${state.join}</span>`}
+          ${tfbFieldSelectHtml(prefix, idx, rule)}
+          ${tfbOpSelectHtml(prefix, idx, rule)}
+          ${tfbValueInputHtml(prefix, idx, rule)}
+          <button type="button" class="tfb-rm" onclick="tfbRemoveRule('${prefix}',${idx})" title="Remove">✕</button>
+        </div>
+      `).join("");
+    }
+    document.getElementById(`${prefix}-tfb-clear`).style.display = state.rules.length ? "inline-flex" : "none";
+  }
+
+  function tfbApply(prefix) {
+    try { localStorage.setItem(`ps_todos_tfb_${prefix}`, JSON.stringify(tfbState[prefix])); } catch (e) {}
+    if (prefix === "iss") renderIssuesList(); else renderSprintBoard();
+  }
+
+  function tfbDefaultValue(field) {
+    // A native <select> with no explicit selection still visually shows its
+    // first option — if state kept value:"" here, the UI and the actual
+    // filter would silently disagree (rule looks like "Type is Subtask" but
+    // matches against ""). Seed it with whatever the dropdown will show.
+    const def = TFB_FIELDS[field];
+    if (def.kind === "select") { const opts = def.getOptions(); return opts.length ? opts[0] : ""; }
+    return ""; // assignee's first option is Unassigned (value ""), already correct; text/date/bool need no seed
+  }
+
+  function tfbAddRule(prefix) {
+    const firstField = Object.keys(TFB_FIELDS)[0];
+    const ops = tfbOperatorsFor(TFB_FIELDS[firstField].kind);
+    tfbState[prefix].rules.push({ field: firstField, op: ops[0][0], value: tfbDefaultValue(firstField) });
+    tfbRenderRules(prefix);
+    tfbApply(prefix);
+  }
+
+  function tfbRemoveRule(prefix, idx) {
+    tfbState[prefix].rules.splice(idx, 1);
+    tfbRenderRules(prefix);
+    tfbApply(prefix);
+  }
+
+  function tfbFieldChanged(prefix, idx, newField) {
+    const ops = tfbOperatorsFor(TFB_FIELDS[newField].kind);
+    tfbState[prefix].rules[idx] = { field: newField, op: ops[0][0], value: tfbDefaultValue(newField) };
+    tfbRenderRules(prefix);
+    tfbApply(prefix);
+  }
+
+  function tfbUpdateRule(prefix, idx, key, value) {
+    tfbState[prefix].rules[idx][key] = value;
+    if (key === "op") tfbRenderRules(prefix); // operator change can add/remove the value input
+    tfbApply(prefix);
+  }
+
+  function tfbSetJoin(prefix, join) {
+    tfbState[prefix].join = join;
+    tfbRenderRules(prefix);
+    tfbApply(prefix);
+  }
+
+  function tfbClear(prefix) {
+    tfbState[prefix] = { join: "and", rules: [] };
+    tfbRenderRules(prefix);
+    tfbApply(prefix);
+  }
+
+  function tfbLoadState(prefix) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`ps_todos_tfb_${prefix}`));
+      if (saved && Array.isArray(saved.rules)) tfbState[prefix] = saved;
+    } catch (e) {}
+  }
+
+  function tfbRuleMatches(issue, rule) {
+    const def = TFB_FIELDS[rule.field];
+    if (!def) return true;
+    if (def.kind === "select") {
+      const issueVal = rule.field === "type" ? issue.issuetype : issue.status;
+      return rule.op === "is" ? issueVal === rule.value : issueVal !== rule.value;
+    }
+    if (def.kind === "assignee") {
+      const match = (issue.assignee_id || "") === (rule.value || "");
+      return rule.op === "is" ? match : !match;
+    }
+    if (def.kind === "date") {
+      if (rule.op === "empty")     return !issue.duedate;
+      if (rule.op === "not_empty") return !!issue.duedate;
+      if (!issue.duedate || !rule.value) return false;
+      return rule.op === "before" ? issue.duedate < rule.value : issue.duedate > rule.value;
+    }
+    if (def.kind === "text") {
+      const has = issue.summary.toLowerCase().includes((rule.value || "").toLowerCase());
+      return rule.op === "contains" ? has : !has;
+    }
+    if (def.kind === "bool") {
+      return rule.op === "has_parent" ? !!issue.parent_key : !issue.parent_key;
+    }
+    return true;
+  }
+
+  function tfbMatches(issue, prefix) {
+    const state = tfbState[prefix];
+    if (!state.rules.length) return true;
+    const results = state.rules.map(r => tfbRuleMatches(issue, r));
+    return state.join === "and" ? results.every(Boolean) : results.some(Boolean);
   }
 
   function escHtml(s) {
     return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  /* ── Active sprint board ── */
+  let currentSprint = null;   // {id, name, state, ...} of the sprint currently on screen
+  let draggedIssueKey = null;
+
+  function initials(name) {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/);
+    return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || "?";
+  }
+
+  function fmtSprintDate(iso) {
+    if (!iso) return "";
+    return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  }
+
+  function sprintCountdown(sprint) {
+    if (sprint.state === "future") return `<span class="sprint-countdown">Starts ${fmtSprintDate(sprint.start_date)}</span>`;
+    if (!sprint.end_date) return "";
+    const diffDays = Math.ceil((new Date(sprint.end_date) - new Date()) / 86400000);
+    if (diffDays < 0)  return `<span class="sprint-countdown overdue">Sprint ended</span>`;
+    if (diffDays <= 2) return `<span class="sprint-countdown ending-soon">${diffDays === 0 ? "Ends today" : diffDays + "d left"}</span>`;
+    return `<span class="sprint-countdown">${diffDays}d left</span>`;
+  }
+
+  function sprintCard(i) {
+    return `
+      <div class="sprint-card ${typeClass(i.issuetype)}"
+           draggable="true" data-key="${i.key}"
+           ondragstart="onCardDragStart(event, '${i.key}')" ondragend="onCardDragEnd(event)"
+           onclick="openIssueModal('${i.key}')">
+        <div class="sprint-card-top">
+          ${typeBadge(i.issuetype)}
+          <span class="issue-status ${statusClass(i.status)}">${escHtml(i.status)}</span>
+        </div>
+        ${i.parent_key ? `<div class="sprint-card-parent" title="${escHtml(i.parent_summary)}">↳ ${i.parent_key} ${escHtml(i.parent_summary)}</div>` : ""}
+        <div class="sprint-card-summary">${escHtml(i.summary)}</div>
+        <div class="sprint-card-meta">
+          <span class="sprint-card-key">${i.key}</span>
+          ${i.assignee ? `<span class="sprint-card-avatar" title="${escHtml(i.assignee)}">${initials(i.assignee)}</span>` : ""}
+        </div>
+      </div>`;
+  }
+
+  function sprintSwitcherHtml(current) {
+    const isBacklog = current && current.state === "backlog";
+    return `<div class="sprint-switcher-scroll"><div class="sprint-switcher">
+      <button type="button" class="sprint-switch-btn${isBacklog ? " active" : ""}" onclick="loadSprint('backlog')">Backlog</button>
+      <button type="button" class="sprint-switch-btn${!isBacklog ? " active" : ""}" onclick="loadSprint()">Current Sprint</button>
+    </div></div>`;
+  }
+
+  let lastSprintData = null;
+
+  async function loadSprint(sprintId) {
+    const el = document.getElementById("sprint-content");
+    el.innerHTML = `<div class="spinner-wrap" style="display:block;"><div class="spinner-ring"></div><div class="spinner-text">Loading sprint…</div></div>`;
+
+    try {
+      const qs  = sprintId ? `?sprint_id=${encodeURIComponent(sprintId)}` : "";
+      const res  = await fetch(`/todos/sprint/${qs}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        el.innerHTML = `<div class="empty-state">Failed to load: ${escHtml(errText(data.error))}</div>`;
+        return;
+      }
+
+      lastSprintData = data;
+      currentSprint = data.sprint;
+      renderAllSprintsList(data.all_sprints || []);
+      renderSprintBoard();
+    } catch (e) {
+      el.innerHTML = `<div class="empty-state">Network error: ${e.message}</div>`;
+    }
+  }
+
+  function renderSprintBoard() {
+    const el = document.getElementById("sprint-content");
+    if (!lastSprintData) return; // not loaded yet — loadSprint() will render once it lands
+
+    const { sprint, columns, issues } = lastSprintData;
+    const switcherHtml = sprintSwitcherHtml(sprint);
+
+    if (!sprint) {
+      el.innerHTML = switcherHtml + `<div class="sprint-empty-state">No sprint found for this board. Use “+ New Sprint” to start one.</div>`;
+      return;
+    }
+
+    const filtered = issues.filter(i => tfbMatches(i, "spr"));
+
+    const byStatus = {};
+    columns.forEach(c => c.statuses.forEach(s => { byStatus[s] = []; }));
+    filtered.forEach(i => (byStatus[i.status] || (byStatus[i.status] = [])).push(i));
+
+    const cols = columns.map(c => {
+      const colIssues = c.statuses.flatMap(s => byStatus[s] || []);
+      const primaryStatus = c.statuses[0];
+      return `
+      <div class="sprint-col" data-statuses="${c.statuses.join(",")}"
+           ondragover="onColDragOver(event, this)" ondragleave="onColDragLeave(event, this)"
+           ondrop="onColDrop(event, '${primaryStatus.replace(/'/g, "\\'")}')">
+        <div class="sprint-col-head">
+          <span class="sprint-col-title">${escHtml(c.name)}</span>
+          <span class="sprint-col-count">${colIssues.length}</span>
+        </div>
+        ${colIssues.length ? colIssues.map(sprintCard).join("") : `<div class="sprint-col-empty">Nothing here</div>`}
+      </div>`;
+    }).join("");
+
+    const headerHtml = sprint.state === "backlog"
+      ? `<div class="sprint-header">
+           <div class="sprint-title-wrap">
+             <span class="sprint-title">Backlog</span>
+             <span class="sprint-dates">Tickets not yet in a sprint</span>
+           </div>
+         </div>`
+      : `<div class="sprint-header">
+           <div class="sprint-title-wrap">
+             <span class="sprint-title">${escHtml(sprint.name)}</span>
+             <span class="sprint-dates">${fmtSprintDate(sprint.start_date)} – ${fmtSprintDate(sprint.end_date)}</span>
+             ${sprint.goal ? `<span class="sprint-goal">🎯 ${escHtml(sprint.goal)}</span>` : ""}
+           </div>
+           <div style="display:flex; align-items:center; gap:0.6rem;">
+             ${sprintCountdown(sprint)}
+             ${sprint.state === "active" ? `<button class="sprint-close-btn" onclick="closeSprint(${sprint.id})">Close Sprint</button>` : ""}
+             <button class="sprint-close-btn" onclick="deleteSprint(${sprint.id})" title="Delete this sprint">🗑</button>
+           </div>
+         </div>`;
+
+    el.innerHTML = switcherHtml + headerHtml + `<div class="sprint-board">${cols}</div>`;
+  }
+
+  /* ── All Sprints list ── */
+  function renderAllSprintsList(allSprints) {
+    const el = document.getElementById("all-sprints-list");
+    if (!allSprints.length) {
+      el.innerHTML = `<div class="empty-state">No sprints yet. Use “+ New Sprint” above to start one.</div>`;
+      return;
+    }
+    el.innerHTML = allSprints.map(s => `
+      <div class="sprint-list-row">
+        <span class="sprint-list-name">${escHtml(s.name)}</span>
+        <span class="sprint-list-state ${s.state}">${escHtml(s.state)}</span>
+        <span class="sprint-list-dates">${s.start_date ? `${fmtSprintDate(s.start_date)} – ${fmtSprintDate(s.end_date)}` : "No dates set"}</span>
+        <span class="sprint-list-actions">
+          <button onclick="viewSprintFromList(${s.id})">View</button>
+          <button class="danger" onclick="deleteSprint(${s.id})">Delete</button>
+        </span>
+      </div>
+    `).join("");
+  }
+
+  function viewSprintFromList(sprintId) {
+    loadSprint(sprintId);
+    document.getElementById("sprint-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  /* ── Drag and drop ── */
+  function onCardDragStart(e, key) {
+    draggedIssueKey = key;
+    e.target.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", key);
+  }
+
+  function onCardDragEnd(e) {
+    e.target.classList.remove("dragging");
+    draggedIssueKey = null;
+  }
+
+  function onColDragOver(e, col) {
+    e.preventDefault();
+    col.classList.add("drag-over");
+  }
+
+  function onColDragLeave(e, col) {
+    col.classList.remove("drag-over");
+  }
+
+  async function onColDrop(e, targetStatus) {
+    e.preventDefault();
+    e.currentTarget.classList.remove("drag-over");
+    const key = draggedIssueKey || e.dataTransfer.getData("text/plain");
+    if (!key) return;
+    await moveIssue(key, targetStatus);
+  }
+
+  async function moveIssue(key, targetStatus) {
+    try {
+      const res  = await fetch(`/todos/issues/${encodeURIComponent(key)}/transition/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: targetStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(errText(data.error), "error");
+        return;
+      }
+      showToast(`${key} → ${targetStatus}`, "success");
+      loadSprint();
+    } catch (e) {
+      showToast(`Network error: ${e.message}`, "error");
+    }
+  }
+
+  /* ── Sprint management ── */
+  // Pure calendar-date arithmetic, anchored to UTC throughout so a date
+  // string never drifts based on the browser's local timezone (mixing
+  // local-time parsing with UTC serialization silently shifts dates near
+  // midnight in any timezone west of UTC).
+  function _todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  function _addDaysISO(isoStr, days) {
+    const d = new Date(isoStr + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function onNewSprintDurationChange() {
+    const days = parseInt(document.getElementById("new-sprint-duration").value, 10);
+    if (!days) return; // "Custom" — leave the end date as the user set it
+    const start = document.getElementById("new-sprint-start").value || _todayISO();
+    document.getElementById("new-sprint-end").value = _addDaysISO(start, days);
+  }
+
+  function onNewSprintDateChange(fromEndField) {
+    if (fromEndField) {
+      // Hand-editing the end date directly overrides whatever duration was selected.
+      document.getElementById("new-sprint-duration").value = "";
+    } else {
+      // Start date moved — if a duration is still selected, keep the end date in sync with it.
+      onNewSprintDurationChange();
+    }
+  }
+
+  function openNewSprintModal() {
+    const n = document.getElementById("new-sprint-name");
+    n.value = "";
+    document.getElementById("new-sprint-goal").value = "";
+    const today = _todayISO();
+    document.getElementById("new-sprint-start").value = today;
+    document.getElementById("new-sprint-end").value = _addDaysISO(today, 7);
+    document.getElementById("new-sprint-duration").value = "7";
+    document.getElementById("new-sprint-modal").classList.add("open");
+    n.focus();
+  }
+
+  function closeNewSprintModal() {
+    document.getElementById("new-sprint-modal").classList.remove("open");
+  }
+
+  function _sprintModalBgClick(e) {
+    if (e.target.id === "new-sprint-modal") closeNewSprintModal();
+  }
+
+  async function submitNewSprint() {
+    const name = document.getElementById("new-sprint-name").value.trim();
+    if (!name) { showToast("Sprint name is required", "error"); return; }
+    const start_date = document.getElementById("new-sprint-start").value;
+    const end_date = document.getElementById("new-sprint-end").value;
+    if (!start_date || !end_date) { showToast("Start and end date are required", "error"); return; }
+    if (end_date <= start_date) { showToast("End date must be after the start date", "error"); return; }
+    const goal = document.getElementById("new-sprint-goal").value.trim();
+
+    const btn = document.getElementById("new-sprint-ok-btn");
+    btn.disabled = true;
+    btn.textContent = "Creating…";
+
+    try {
+      const res  = await fetch("/todos/sprint/new/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, start_date, end_date, goal }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(errText(data.error), "error");
+        return;
+      }
+      showToast(`Sprint "${name}" started`, "success");
+      closeNewSprintModal();
+      loadSprint();
+    } catch (e) {
+      showToast(`Network error: ${e.message}`, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Create & Start";
+    }
+  }
+
+  async function closeSprint(sprintId) {
+    if (!confirm("Close this sprint? This can't be undone from here.")) return;
+    try {
+      const res  = await fetch("/todos/sprint/close/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sprint_id: sprintId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(errText(data.error), "error");
+        return;
+      }
+      showToast("Sprint closed", "success");
+      loadSprint();
+    } catch (e) {
+      showToast(`Network error: ${e.message}`, "error");
+    }
+  }
+
+  async function deleteSprint(sprintId) {
+    if (!confirm("Permanently delete this sprint? Its tickets aren't deleted — they fall back to the backlog. This can't be undone.")) return;
+    try {
+      const res  = await fetch("/todos/sprint/delete/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sprint_id: sprintId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(errText(data.error), "error");
+        return;
+      }
+      showToast("Sprint deleted", "success");
+      loadSprint();
+    } catch (e) {
+      showToast(`Network error: ${e.message}`, "error");
+    }
+  }
+
+  /* ── Create-issue form metadata (issue types, assignees) ── */
+  let issueMeta = { issue_types: [], assignees: [], parentable_issues: [], issue_type_levels: {}, sprints: [], statuses: [] };
+
+  async function loadMeta() {
+    try {
+      const res  = await fetch("/todos/meta/");
+      const data = await res.json();
+      if (!res.ok) return;
+      issueMeta = data;
+
+      const types = [...data.issue_types].sort((a, b) => {
+        if (a.name === "Task") return -1;
+        if (b.name === "Task") return 1;
+        if (a.name === "Subtask") return 1;
+        if (b.name === "Subtask") return -1;
+        return a.name.localeCompare(b.name);
+      });
+      const typeSel = document.getElementById("issuetype");
+      typeSel.innerHTML = types.map(t => `<option value="${escHtml(t.name)}">${escHtml(t.name)}</option>`).join("");
+
+      const assigneeSel = document.getElementById("assignee");
+      assigneeSel.innerHTML = `<option value="">Unassigned</option>` +
+        data.assignees.map(a => `<option value="${a.account_id}">${escHtml(a.display_name)}</option>`).join("");
+
+      onCreateIssueTypeChange();
+      populateIssueModalOptions();
+      // Re-render any already-visible filter rules now that Type/Status/Assignee
+      // options are populated for real (they render fine with empty options
+      // before this, but a rule added that early would have nothing to pick).
+      tfbRenderRules("iss");
+      tfbRenderRules("spr");
+    } catch (e) { /* keep the static fallback options already in the markup */ }
+  }
+
+  function onCreateIssueTypeChange() {
+    const type = document.getElementById("issuetype").value;
+    populateParentOptions(null, type, "parent");
+    const required = issueMeta.issue_type_levels[type] === -1;
+    document.getElementById("parent-label").textContent = required ? "Parent (required for Subtask)" : "Parent (optional)";
+  }
+
+  /* ── Issue detail modal ── */
+  function renderStatusPicker(selected) {
+    document.getElementById("im-status-picker").innerHTML = issueMeta.statuses.map(s => `
+      <button type="button" class="status-pick-btn${s === selected ? " active" : ""}" onclick="selectStatus('${s.replace(/'/g, "\\'")}')">${escHtml(s)}</button>
+    `).join("");
+    document.getElementById("im-status").value = selected || "";
+  }
+
+  function selectStatus(s) {
+    document.getElementById("im-status").value = s;
+    document.querySelectorAll(".status-pick-btn").forEach(b => b.classList.toggle("active", b.textContent === s));
+  }
+
+  function onIssueTypeChange(newType) {
+    document.getElementById("im-type-badge").innerHTML = typeBadge(newType);
+    const modal = document.getElementById("issue-modal");
+    populateParentOptions(modal.dataset.key, newType); // parent's valid options depend on the (possibly new) type
+  }
+
+  function populateParentOptions(excludeKey, currentType, targetId) {
+    targetId = targetId || "im-parent";
+    const levels = issueMeta.issue_type_levels;
+    const parentSel = document.getElementById(targetId);
+    const curLevel = levels[currentType];
+    const maxLevel = Math.max(0, ...Object.values(levels));
+    const required = curLevel === -1; // a Subtask must have a parent
+
+    if (curLevel === undefined) {
+      parentSel.innerHTML = `<option value="">No parent</option>`;
+      parentSel.disabled = false;
+      return;
+    }
+    if (curLevel >= maxLevel) {
+      parentSel.innerHTML = `<option value="">No parent (top of the hierarchy)</option>`;
+      parentSel.disabled = true;
+      return;
+    }
+    parentSel.disabled = false;
+    const opts = issueMeta.parentable_issues.filter(p => p.key !== excludeKey && levels[p.issuetype] === curLevel + 1);
+    parentSel.innerHTML = (required ? "" : `<option value="">No parent</option>`) +
+      opts.map(p => `<option value="${p.key}">${escHtml(p.issuetype)} · ${p.key} — ${escHtml(p.summary)}</option>`).join("");
+  }
+
+  function populateIssueModalOptions(excludeKey, currentType) {
+    const types = [...issueMeta.issue_types].sort((a, b) => (a.name === "Task" ? -1 : b.name === "Task" ? 1 : a.name.localeCompare(b.name)));
+    document.getElementById("im-issuetype").innerHTML =
+      types.map(t => `<option value="${escHtml(t.name)}">${escHtml(t.name)}</option>`).join("");
+
+    renderStatusPicker(null);
+
+    document.getElementById("im-assignee").innerHTML = `<option value="">Unassigned</option>` +
+      issueMeta.assignees.map(a => `<option value="${a.account_id}">${escHtml(a.display_name)}</option>`).join("");
+
+    document.getElementById("im-sprint").innerHTML = `<option value="">Backlog</option>` +
+      issueMeta.sprints.map(s => `<option value="${s.id}">${escHtml(s.name)}${s.state === "future" ? " (not started)" : ""}</option>`).join("");
+
+    populateParentOptions(excludeKey, currentType);
+  }
+
+  async function openIssueModal(key) {
+    populateIssueModalOptions(key); // exclude this ticket from its own parent list
+    const modal = document.getElementById("issue-modal");
+    modal.classList.add("open");
+    modal.dataset.key = key;
+    document.getElementById("im-key").textContent = key;
+    document.getElementById("im-type-badge").innerHTML = "";
+    document.getElementById("im-jira-link").href = "#";
+    ["im-summary", "im-description", "im-duedate"].forEach(id => { document.getElementById(id).value = ""; });
+    document.getElementById("im-parent").value = "";
+
+    try {
+      const res  = await fetch(`/todos/issues/${encodeURIComponent(key)}/`);
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(errText(data.error), "error");
+        closeIssueModal();
+        return;
+      }
+
+      document.getElementById("im-key").textContent = data.key;
+      document.getElementById("im-type-badge").innerHTML = typeBadge(data.issuetype);
+      document.getElementById("im-jira-link").href = data.url;
+      document.getElementById("im-summary").value = data.summary;
+      document.getElementById("im-description").value = data.description;
+      document.getElementById("im-issuetype").value = data.issuetype;
+      document.getElementById("im-assignee").value = data.assignee_id || "";
+      document.getElementById("im-duedate").value = data.duedate;
+
+      populateParentOptions(key, data.issuetype); // now that we know the real type, build the valid parent list
+      document.getElementById("im-parent").value = data.parent_key || "";
+
+      renderStatusPicker(data.status);
+      document.getElementById("im-sprint").value = data.sprint_id || "";
+
+      modal.dataset.originalStatus = data.status;
+      modal.dataset.originalAssignee = data.assignee_id || "";
+      modal.dataset.originalSprint = data.sprint_id || "";
+    } catch (e) {
+      showToast(`Network error: ${e.message}`, "error");
+      closeIssueModal();
+    }
+  }
+
+  function closeIssueModal() {
+    document.getElementById("issue-modal").classList.remove("open");
+  }
+
+  function _issueModalBgClick(e) {
+    if (e.target.id === "issue-modal") closeIssueModal();
+  }
+
+  async function deleteIssueFromModal() {
+    const modal = document.getElementById("issue-modal");
+    const key = modal.dataset.key;
+    if (!confirm(`Permanently delete ${key}? This also deletes any of its subtasks. This can't be undone.`)) return;
+
+    const btn = document.getElementById("im-delete-btn");
+    btn.disabled = true;
+
+    try {
+      const res  = await fetch(`/todos/issues/${encodeURIComponent(key)}/delete/`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(errText(data.error), "error");
+        return;
+      }
+      showToast(`${key} deleted`, "success");
+      closeIssueModal();
+      loadSprint();
+      loadIssues();
+    } catch (e) {
+      showToast(`Network error: ${e.message}`, "error");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function saveIssueModal() {
+    const modal = document.getElementById("issue-modal");
+    const key = modal.dataset.key;
+    const summary     = document.getElementById("im-summary").value.trim();
+    const description = document.getElementById("im-description").value.trim();
+    const issuetype   = document.getElementById("im-issuetype").value;
+    const duedate     = document.getElementById("im-duedate").value;
+    const parent_key  = document.getElementById("im-parent").value.trim();
+    const newStatus   = document.getElementById("im-status").value;
+    const newAssignee = document.getElementById("im-assignee").value;
+    const newSprint   = document.getElementById("im-sprint").value;
+
+    if (!summary) { showToast("Summary is required", "error"); return; }
+
+    const btn = document.getElementById("im-save-btn");
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+
+    try {
+      const res  = await fetch(`/todos/issues/${encodeURIComponent(key)}/update/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ summary, description, issuetype, duedate, parent_key }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(errText(data.error), "error");
+        return;
+      }
+
+      if (newStatus !== modal.dataset.originalStatus) {
+        const r2 = await fetch(`/todos/issues/${encodeURIComponent(key)}/transition/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        const d2 = await r2.json();
+        if (!r2.ok) showToast(`Fields saved, but status change failed: ${errText(d2.error)}`, "error");
+      }
+
+      if (newAssignee !== modal.dataset.originalAssignee) {
+        const r3 = await fetch(`/todos/issues/${encodeURIComponent(key)}/assignee/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ account_id: newAssignee }),
+        });
+        if (!r3.ok) { const d3 = await r3.json(); showToast(`Fields saved, but assignee change failed: ${errText(d3.error)}`, "error"); }
+      }
+
+      if (newSprint !== modal.dataset.originalSprint) {
+        const r4 = await fetch(`/todos/issues/${encodeURIComponent(key)}/sprint/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sprint_id: newSprint || null }),
+        });
+        if (!r4.ok) { const d4 = await r4.json(); showToast(`Fields saved, but sprint change failed: ${errText(d4.error)}`, "error"); }
+      }
+
+      showToast(`${key} saved`, "success");
+      closeIssueModal();
+      loadSprint();
+      loadIssues();
+    } catch (e) {
+      showToast(`Network error: ${e.message}`, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Save Changes";
+    }
   }
 
   function errText(err) {
@@ -551,7 +1746,14 @@
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); createIssue(); }
   });
 
+  tfbLoadState("iss");
+  tfbLoadState("spr");
+  tfbRenderRules("iss");
+  tfbRenderRules("spr");
+
   loadIssues();
+  loadSprint();
+  loadMeta();
 
   /* ── Theme toggle ── */
   (function() {
@@ -577,6 +1779,108 @@
   })();
 </script>
 <div id="toast-container"></div>
+
+<!-- New Sprint modal -->
+<div class="modal-overlay" id="new-sprint-modal" onclick="_sprintModalBgClick(event)">
+  <div class="modal-box">
+    <div class="modal-title">New Sprint</div>
+    <div class="form-group">
+      <label for="new-sprint-name">Name</label>
+      <input type="text" id="new-sprint-name" placeholder="e.g. TODO Sprint 2" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="new-sprint-start">Start Date</label>
+        <input type="date" id="new-sprint-start" onchange="onNewSprintDateChange()" />
+      </div>
+      <div class="form-group">
+        <label for="new-sprint-end">End Date</label>
+        <input type="date" id="new-sprint-end" onchange="onNewSprintDateChange(true)" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="new-sprint-duration">Duration (fills in the end date)</label>
+      <select id="new-sprint-duration" onchange="onNewSprintDurationChange()">
+        <option value="">Custom — set end date above</option>
+        <option value="7">1 week</option>
+        <option value="14">2 weeks</option>
+        <option value="21">3 weeks</option>
+        <option value="28">4 weeks</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="new-sprint-goal">Goal (optional)</label>
+      <input type="text" id="new-sprint-goal" placeholder="What's this sprint about?" />
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" onclick="closeNewSprintModal()">Cancel</button>
+      <button class="modal-btn-ok" id="new-sprint-ok-btn" onclick="submitNewSprint()">Create &amp; Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- Issue detail modal -->
+<div class="modal-overlay" id="issue-modal" onclick="_issueModalBgClick(event)">
+  <div class="modal-box issue-modal-box">
+    <div class="modal-title" style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+      <span style="display:flex; align-items:center; gap:0.5rem;">
+        <span id="im-key">Loading…</span>
+        <span id="im-type-badge"></span>
+      </span>
+      <a id="im-jira-link" class="im-jira-link" href="#" target="_blank" rel="noopener">Open in Jira ↗</a>
+    </div>
+
+    <div class="form-group">
+      <label for="im-summary">Summary</label>
+      <input type="text" id="im-summary" />
+    </div>
+
+    <div class="form-group">
+      <label for="im-description">Description</label>
+      <textarea id="im-description" placeholder="No description"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Status</label>
+      <div class="status-picker-scroll"><div class="status-picker" id="im-status-picker"></div></div>
+      <input type="hidden" id="im-status" />
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="im-issuetype">Issue Type</label>
+        <select id="im-issuetype" onchange="onIssueTypeChange(this.value)"></select>
+      </div>
+      <div class="form-group">
+        <label for="im-sprint">Sprint</label>
+        <select id="im-sprint"><option value="">Backlog</option></select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="im-assignee">Assignee</label>
+        <select id="im-assignee"></select>
+      </div>
+      <div class="form-group">
+        <label for="im-duedate">Due Date</label>
+        <input type="date" id="im-duedate" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="im-parent">Parent</label>
+      <select id="im-parent"><option value="">No parent</option></select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-btn-danger" id="im-delete-btn" onclick="deleteIssueFromModal()" title="Delete this ticket">🗑</button>
+      <button class="modal-btn-cancel" onclick="closeIssueModal()">Cancel</button>
+      <button class="modal-btn-ok" id="im-save-btn" onclick="saveIssueModal()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
   <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/service-worker.js");</script>
 </body>
 </html>
