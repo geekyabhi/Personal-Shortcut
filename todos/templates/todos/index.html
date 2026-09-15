@@ -738,7 +738,7 @@
           <textarea id="spr-fb-sql-input" rows="3" placeholder="status = 'In Progress' AND type = 'Bug'"></textarea>
           <div class="fb-sql-actions">
             <button type="button" class="btn-ghost" style="font-size:0.8rem;padding:0.4rem 1rem;margin-top:0;" onclick="tfbApplySQL('spr')">Apply query</button>
-            <span class="fb-sql-hint">Columns: type, status, assignee, duedate, summary, parent — combine with AND / OR / parentheses, e.g. <code>status = 'In Progress' AND type = 'Bug'</code></span>
+            <span class="fb-sql-hint">Columns: name, type, status, assignee, duedate, parent — combine with AND / OR / parentheses, e.g. <code>name LIKE 'auth' AND status = 'In Progress'</code></span>
           </div>
           <div class="fb-sql-error" id="spr-fb-sql-error" style="display:none;"></div>
         </div>
@@ -787,7 +787,7 @@
           <textarea id="iss-fb-sql-input" rows="3" placeholder="status = 'In Progress' AND type = 'Bug'"></textarea>
           <div class="fb-sql-actions">
             <button type="button" class="btn-ghost" style="font-size:0.8rem;padding:0.4rem 1rem;margin-top:0;" onclick="tfbApplySQL('iss')">Apply query</button>
-            <span class="fb-sql-hint">Columns: type, status, assignee, duedate, summary, parent — combine with AND / OR / parentheses, e.g. <code>status = 'In Progress' AND type = 'Bug'</code></span>
+            <span class="fb-sql-hint">Columns: name, type, status, assignee, duedate, parent — combine with AND / OR / parentheses, e.g. <code>name LIKE 'auth' AND status = 'In Progress'</code></span>
           </div>
           <div class="fb-sql-error" id="iss-fb-sql-error" style="display:none;"></div>
         </div>
@@ -1085,11 +1085,11 @@
      state is always a group.
   ══════════════════════════════════════════ */
   const TFB_FIELDS = {
+    summary:  { label: "Name",     kind: "text" },
     type:     { label: "Type",     kind: "select",   getOptions: () => issueMeta.issue_types.map(t => t.name) },
     status:   { label: "Status",   kind: "select",   getOptions: () => issueMeta.statuses },
     assignee: { label: "Assignee", kind: "assignee" },
     duedate:  { label: "Due Date", kind: "date" },
-    summary:  { label: "Summary",  kind: "text" },
     parent:   { label: "Parent",   kind: "bool" },
   };
 
@@ -1487,7 +1487,7 @@
   }
   function tfbLeafToSQL(r) {
     const def = TFB_FIELDS[r.field];
-    const col = r.field;
+    const col = r.field === "summary" ? "name" : r.field;
     if (def.kind === "bool") return r.op === "has_parent" ? `${col} IS NOT NULL` : `${col} IS NULL`;
     switch (r.op) {
       case "empty":        return `${col} IS NULL`;
