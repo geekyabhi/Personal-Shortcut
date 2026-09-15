@@ -124,8 +124,71 @@
     .status-dot.status-blocked  { background: #DC2626; }
     .status-dot.status-done     { background: #059669; }
 
+    /* ── Hierarchy card header ── */
+    .dag-hierarchy-header h2 { margin-bottom: 0.3rem; }
+    .dag-hint { font-size: 0.74rem; color: #9CA3AF; font-weight: 500; margin-bottom: 1rem; }
+    [data-theme="dark"] .dag-hint { color: #6B7280; }
+
+    /* ── Figma/Whimsical-style pan/zoom canvas ──
+       `.dag-wrap` is a fixed-size viewport with a dot-grid background; the
+       actual tree lives in `.dag-zoom-surface`, positioned with a single
+       `translate(...) scale(...)` transform that a drag (pan) and a
+       wheel/pinch (zoom, anchored under the cursor) both drive directly —
+       the same interaction model those tools use, rather than native
+       scrollbars over a shrunk static image. ── */
+    .dag-wrap {
+      position: relative; overflow: hidden;
+      height: min(64vh, 620px); min-height: 340px;
+      border-radius: 16px; margin-top: 0;
+      background-color: rgba(2,132,199,0.025);
+      background-image: radial-gradient(rgba(2,132,199,0.22) 1px, transparent 1px);
+      background-size: 24px 24px;
+      cursor: grab; touch-action: pan-y; user-select: none;
+    }
+    .dag-wrap.dragging { cursor: grabbing; }
+    [data-theme="dark"] .dag-wrap {
+      background-color: rgba(255,255,255,0.015);
+      background-image: radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px);
+    }
+    .dag-zoom-surface { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+
+    /* Floating zoom toolbar, Figma/Whimsical-style — overlaid bottom-right of the canvas */
+    .dag-toolbar {
+      position: absolute; right: 14px; bottom: 14px; z-index: 5;
+      display: flex; align-items: center; gap: 0.3rem;
+      background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.3rem 0.4rem; box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    }
+    .dag-zoom-btn {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; border: none;
+      background: transparent; color: var(--accent); font-size: 0.95rem; font-weight: 700; line-height: 1;
+      cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .dag-zoom-btn:hover { background: rgba(2,132,199,0.12); }
+    .dag-zoom-btn:active { transform: scale(0.9); }
+    .dag-zoom-label {
+      border: none; background: transparent; font-size: 0.74rem; font-weight: 700; color: #6B7280;
+      min-width: 40px; text-align: center; cursor: pointer; font-family: inherit; padding: 0.2rem 0;
+    }
+    .dag-zoom-label:hover { color: var(--accent); }
+    .dag-toolbar-sep { width: 1px; height: 16px; background: rgba(0,0,0,0.1); margin: 0 0.1rem; }
+    .dag-zoom-fit {
+      border: none; background: transparent; color: var(--accent);
+      font-size: 0.74rem; font-weight: 600; padding: 0.3rem 0.65rem; border-radius: 100px;
+      cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap;
+    }
+    .dag-zoom-fit:hover { background: rgba(2,132,199,0.12); }
+    [data-theme="dark"] .dag-toolbar { background: rgba(20,20,30,0.85); border-color: rgba(255,255,255,0.1); }
+    [data-theme="dark"] .dag-zoom-btn { color: #7DD3FC; }
+    [data-theme="dark"] .dag-zoom-btn:hover { background: rgba(2,132,199,0.18); }
+    [data-theme="dark"] .dag-zoom-label { color: #9CA3AF; }
+    [data-theme="dark"] .dag-zoom-fit { color: #7DD3FC; }
+    [data-theme="dark"] .dag-zoom-fit:hover { background: rgba(2,132,199,0.18); }
+    [data-theme="dark"] .dag-toolbar-sep { background: rgba(255,255,255,0.12); }
+
     /* ── DAG / hierarchy tree (classic CSS org-chart pattern) ── */
-    .dag-wrap { overflow: auto; padding: 1.5rem 1rem 2rem; }
     .dag-forest { display: flex; flex-wrap: wrap; gap: 2.5rem; justify-content: flex-start; width: max-content; min-width: 100%; }
     .dag-tree, .dag-tree ul { list-style: none; margin: 0; padding: 0; position: relative; }
     .dag-tree { display: inline-flex; }
@@ -296,13 +359,25 @@
     </div>
 
     <div class="card">
-      <h2>Hierarchy — click a ticket to open it in Jira</h2>
+      <div class="dag-hierarchy-header">
+        <h2>Hierarchy — click a ticket to open it in Jira</h2>
+        <div class="dag-hint">Drag to pan · pinch or ctrl+scroll to zoom · double-click empty space to fit</div>
+      </div>
       <div class="spinner-wrap" id="loading" style="display:block;">
         <div class="spinner-ring"></div>
         <div class="spinner-text">Fetching from Jira…</div>
       </div>
       <div class="dag-wrap" id="dag-wrap" style="display:none;">
-        <div class="dag-forest" id="dag-forest"></div>
+        <div class="dag-zoom-surface" id="dag-zoom-surface">
+          <div class="dag-forest" id="dag-forest"></div>
+        </div>
+        <div class="dag-toolbar">
+          <button type="button" class="dag-zoom-btn" onclick="dagZoomOut()" title="Zoom out">−</button>
+          <button type="button" class="dag-zoom-label" id="dag-zoom-label" onclick="dagZoomReset()" title="Reset to 100%">100%</button>
+          <button type="button" class="dag-zoom-btn" onclick="dagZoomIn()" title="Zoom in">+</button>
+          <span class="dag-toolbar-sep"></span>
+          <button type="button" class="dag-zoom-fit" onclick="dagFitToScreen()" title="Fit the whole tree to the screen">Fit</button>
+        </div>
       </div>
     </div>
   </div>
@@ -390,6 +465,114 @@
     return 1 + node.children.reduce((sum, c) => sum + countAll(c), 0);
   }
 
+  /* ── Figma/Whimsical-style pan/zoom canvas ──
+     `.dag-zoom-surface` sits at `translate(panX, panY) scale(zoom)` inside
+     a fixed-size, `overflow:hidden` viewport (`.dag-wrap`). A drag pans by
+     adjusting panX/panY directly; a wheel/pinch zooms by rescaling *and*
+     shifting pan so the point under the cursor stays put, exactly like a
+     design-tool canvas — rather than shrinking a static image inside
+     scrollbars. */
+  let dagZoom = 1, dagPanX = 0, dagPanY = 0;
+  let dagDragging = false, dagDragMoved = false, dagDragStartX = 0, dagDragStartY = 0, dagPanStartX = 0, dagPanStartY = 0;
+  // A low floor on purpose: a flat tree of 80+ siblings can need well under
+  // 10% scale to fit on screen at all, and Fit must be able to reach that.
+  const DAG_ZOOM_MIN = 0.03, DAG_ZOOM_MAX = 3, DAG_ZOOM_STEP = 0.2;
+
+  function applyDagTransform() {
+    const surface = document.getElementById("dag-zoom-surface");
+    if (!surface) return;
+    surface.style.transform = `translate(${dagPanX}px, ${dagPanY}px) scale(${dagZoom})`;
+    const label = document.getElementById("dag-zoom-label");
+    if (label) label.textContent = Math.round(dagZoom * 100) + "%";
+  }
+
+  // Zooms to `newZoom` while keeping the canvas point under viewport
+  // coordinate (cx, cy) visually fixed — the "zoom toward the cursor" feel.
+  function dagZoomAt(newZoom, cx, cy) {
+    newZoom = Math.min(DAG_ZOOM_MAX, Math.max(DAG_ZOOM_MIN, newZoom));
+    const ratio = newZoom / dagZoom;
+    dagPanX = cx - (cx - dagPanX) * ratio;
+    dagPanY = cy - (cy - dagPanY) * ratio;
+    dagZoom = newZoom;
+    applyDagTransform();
+  }
+
+  function dagViewportCenter() {
+    const wrap = document.getElementById("dag-wrap");
+    return { x: wrap.clientWidth / 2, y: wrap.clientHeight / 2 };
+  }
+
+  function dagZoomIn()  { const c = dagViewportCenter(); dagZoomAt(dagZoom + DAG_ZOOM_STEP, c.x, c.y); }
+  function dagZoomOut() { const c = dagViewportCenter(); dagZoomAt(dagZoom - DAG_ZOOM_STEP, c.x, c.y); }
+
+  function dagCenterContent() {
+    const wrap = document.getElementById("dag-wrap");
+    const forest = document.getElementById("dag-forest");
+    if (!wrap || !forest) return;
+    dagPanX = (wrap.clientWidth  - forest.scrollWidth  * dagZoom) / 2;
+    dagPanY = (wrap.clientHeight - forest.scrollHeight * dagZoom) / 2;
+    applyDagTransform();
+  }
+
+  function dagZoomReset() { dagZoom = 1; dagCenterContent(); }
+
+  function dagFitToScreen() {
+    const wrap   = document.getElementById("dag-wrap");
+    const forest = document.getElementById("dag-forest");
+    if (!wrap || !forest || !forest.scrollWidth) return;
+    const pad = 32;
+    const scaleX = (wrap.clientWidth  - pad * 2) / forest.scrollWidth;
+    const scaleY = (wrap.clientHeight - pad * 2) / forest.scrollHeight;
+    dagZoom = Math.max(DAG_ZOOM_MIN, Math.min(1, Math.min(scaleX, scaleY)));
+    dagCenterContent();
+  }
+
+  const dagWrapEl = document.getElementById("dag-wrap");
+
+  // Only ctrl+wheel — which is also how browsers report an actual trackpad
+  // pinch — zooms, anchored under the cursor. Plain wheel/scroll is left
+  // completely alone so the surrounding page keeps scrolling normally even
+  // while the cursor is over the canvas (panning is drag-only, below).
+  dagWrapEl.addEventListener("wheel", ev => {
+    if (!ev.ctrlKey) return;
+    ev.preventDefault();
+    const rect = dagWrapEl.getBoundingClientRect();
+    dagZoomAt(dagZoom * (1 - ev.deltaY * 0.01), ev.clientX - rect.left, ev.clientY - rect.top);
+  }, { passive: false });
+
+  // Click-and-drag panning.
+  dagWrapEl.addEventListener("mousedown", ev => {
+    if (ev.button !== 0) return;
+    dagDragging = true; dagDragMoved = false;
+    dagDragStartX = ev.clientX; dagDragStartY = ev.clientY;
+    dagPanStartX = dagPanX; dagPanStartY = dagPanY;
+    dagWrapEl.classList.add("dragging");
+    ev.preventDefault();
+  });
+  window.addEventListener("mousemove", ev => {
+    if (!dagDragging) return;
+    const dx = ev.clientX - dagDragStartX, dy = ev.clientY - dagDragStartY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dagDragMoved = true;
+    dagPanX = dagPanStartX + dx;
+    dagPanY = dagPanStartY + dy;
+    applyDagTransform();
+  });
+  window.addEventListener("mouseup", () => {
+    if (!dagDragging) return;
+    dagDragging = false;
+    dagWrapEl.classList.remove("dragging");
+  });
+  // A drag that happened to pass over a ticket shouldn't open it — only a
+  // real (non-moved) click should navigate.
+  document.getElementById("dag-forest").addEventListener("click", ev => {
+    if (dagDragMoved) { ev.preventDefault(); ev.stopPropagation(); }
+  }, true);
+
+  dagWrapEl.addEventListener("dblclick", ev => {
+    if (ev.target.closest(".dag-node")) return;
+    dagFitToScreen();
+  });
+
   async function loadHierarchy() {
     const loading = document.getElementById("loading");
     const dagWrap = document.getElementById("dag-wrap");
@@ -419,6 +602,7 @@
 
       renderForest(roots);
       dagWrap.style.display = "block";
+      dagFitToScreen();
     } catch (e) {
       errorBox.textContent = "Network error: " + e.message;
       errorBox.style.display = "block";
