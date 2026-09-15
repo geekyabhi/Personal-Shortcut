@@ -63,21 +63,33 @@ class TodosService:
 
         raise RuntimeError(_extract_error(resp))
 
+    def _search_all(self, jql, fields, page_size=100):
+        """Runs `jql` against the paginated /search/jql endpoint, following
+        `nextPageToken` until Jira reports `isLast`, so callers always get
+        every matching issue rather than just the first page."""
+        results = []
+        token = None
+        while True:
+            resp = self.data_layer.search_jql(
+                jql=jql, max_results=page_size, fields=fields, next_page_token=token,
+            )
+            if not resp.ok:
+                raise RuntimeError(_extract_error(resp))
+            data = resp.json()
+            results.extend(data.get("issues", []))
+            if data.get("isLast", True) or not data.get("nextPageToken"):
+                break
+            token = data["nextPageToken"]
+        return results
+
     def list_issues(self, status=""):
         status_filter = f' AND status="{status}"' if status else ""
         jql = f"project={self.data_layer.project}{status_filter} ORDER BY created DESC"
 
-        resp = self.data_layer.search_jql(
-            jql=jql,
-            max_results=50,
-            fields="summary,status,issuetype,priority,duedate,parent",
-        )
-
-        if not resp.ok:
-            raise RuntimeError(_extract_error(resp))
+        raw_issues = self._search_all(jql, fields="summary,status,issuetype,priority,duedate,parent")
 
         issues = []
-        for issue in resp.json().get("issues", []):
+        for issue in raw_issues:
             f = issue.get("fields", {})
             parent = f.get("parent") or {}
             issues.append({
@@ -289,16 +301,14 @@ class TodosService:
         but a subtask — for the detail modal's Parent list. Subtasks are
         excluded since Jira doesn't allow a subtask to parent anything."""
         jql = f"project={self.data_layer.project} AND issuetype != Subtask ORDER BY created DESC"
-        resp = self.data_layer.search_jql(jql=jql, max_results=100, fields="summary,issuetype")
-        if not resp.ok:
-            raise RuntimeError(_extract_error(resp))
+        raw_issues = self._search_all(jql, fields="summary,issuetype")
         return [
             {
                 "key": i["key"],
                 "summary": i.get("fields", {}).get("summary", ""),
                 "issuetype": i.get("fields", {}).get("issuetype", {}).get("name", "Task"),
             }
-            for i in resp.json().get("issues", [])
+            for i in raw_issues
         ]
 
     def get_meta(self):

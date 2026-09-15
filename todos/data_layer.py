@@ -38,15 +38,18 @@ class JiraDataLayer:
             timeout=10,
         )
 
-    def search_jql(self, jql, max_results=50, fields=""):
+    def search_jql(self, jql, max_results=50, fields="", next_page_token=None):
+        params = {
+            "jql": jql,
+            "maxResults": max_results,
+            "fields": fields,
+        }
+        if next_page_token:
+            params["nextPageToken"] = next_page_token
         return requests.get(
             f"{self.base_url}/rest/api/3/search/jql",
             headers=self._headers(),
-            params={
-                "jql": jql,
-                "maxResults": max_results,
-                "fields": fields,
-            },
+            params=params,
             timeout=10,
         )
 
