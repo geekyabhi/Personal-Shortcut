@@ -281,6 +281,8 @@
     [data-theme="dark"] .hgrid-table thead th { background: #0F1712; }
     .hgrid-date-col, .hgrid-score-col { text-align: left; }
     .hgrid-date-col { font-weight: 700; font-size: 0.85rem; }
+    .hgrid-weekday { font-weight: 500; font-size: 0.7rem; color: #9CA3AF; margin-right: 0.15rem; }
+    [data-theme="dark"] .hgrid-weekday { color: #6B7280; }
     .hgrid-score-col { font-weight: 600; color: var(--accent); }
     .hgrid-table tbody tr:hover { background: rgba(5,150,105,0.05); }
     .hgrid-table tr.hgrid-dirty { background: rgba(217,119,6,0.09); }
@@ -812,6 +814,14 @@
 
   function _esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
+  const _WEEKDAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  function _dateWithDay(dateStr) {
+    if (!dateStr) return "—";
+    const d = new Date(dateStr + "T00:00:00Z");
+    if (isNaN(d)) return _esc(dateStr);
+    return `<span class="hgrid-weekday">${_WEEKDAY_ABBR[d.getUTCDay()]}</span> ${_esc(dateStr)}`;
+  }
+
   /* ══ Notion-style filter builder — client-side, over the loaded Browse entries ══
      A node is either a leaf {field, op, value, value2} or a group
      {join: "and"|"or", rules: [node, ...]} — nested groups render as a
@@ -1047,7 +1057,7 @@
       ? entries.map(e => {
           const dirty = _pendingEdits[e.page_id] ? " hgrid-dirty" : "";
           const cells = habitNames.map(h => `<td><input type="checkbox" class="hgrid-cb" data-page-id="${e.page_id}" data-habit="${_esc(h)}" ${e[h] ? "checked" : ""}></td>`).join("");
-          return `<tr data-page-id="${e.page_id}" class="${dirty}"><td class="hgrid-date-col">${e.date || "—"}</td><td class="hgrid-score-col">${e.score != null ? e.score : "—"}</td>${cells}</tr>`;
+          return `<tr data-page-id="${e.page_id}" class="${dirty}"><td class="hgrid-date-col">${_dateWithDay(e.date)}</td><td class="hgrid-score-col">${e.score != null ? e.score : "—"}</td>${cells}</tr>`;
         }).join("")
       : `<tr><td colspan="${colCount}" class="empty-state">No entries match your filters.</td></tr>`;
 
