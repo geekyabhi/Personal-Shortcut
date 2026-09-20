@@ -15,10 +15,14 @@ class ExpensesDataLayer:
 
     SWID_TTL = 60  # seconds — cache for the tiny "already-imported ids" query
 
+    MANDATE_TTL = 60  # seconds — cache for the small mandate-related queries
+
     # Full dataset + a small "recent months" slice used for the fast first paint.
     _cache: dict = {"rows": None, "ts": 0.0}
     _recent_cache: dict = {"rows": None, "ts": 0.0}
     _swid_cache: dict = {"ids": None, "ts": 0.0, "exists": True}
+    _mandate_cache: dict = {"rows": None, "ts": 0.0}
+    _mandate_tagged_cache: dict = {"rows": None, "ts": 0.0}
     _full_fetch_lock = threading.Lock()
 
     def __init__(self, token: str, db_id: str):
@@ -107,6 +111,46 @@ class ExpensesDataLayer:
         cache.update(ids=list(ids), ts=now, exists=True)
         return set(ids), True
 
+    def fetch_mandate_rows(self):
+        """Every mandate-template row (`Is Mandate` checked) — a dedicated,
+        always-complete query so a mandate is found regardless of the main
+        cache's date-range/partial filters (a mandate template's own `Date`
+        property is unused/inert, so it would be invisible to the
+        recent-months-only fetch). Cached briefly; returns [] before the
+        column exists in Notion yet."""
+        now = time.time()
+        cache = self.__class__._mandate_cache
+        if cache["rows"] is not None and (now - cache["ts"]) < self.MANDATE_TTL:
+            return cache["rows"]
+        try:
+            rows = self.fetch_all_rows({"property": "Is Mandate", "checkbox": {"equals": True}})
+        except requests.HTTPError as exc:
+            resp = exc.response
+            if resp is not None and resp.status_code == 400 and "Is Mandate" in (resp.text or ""):
+                cache.update(rows=[], ts=now)  # column not added yet
+                return []
+            raise
+        cache.update(rows=rows, ts=now)
+        return rows
+
+    def fetch_mandate_tagged_rows(self):
+        """Every already-backfilled expense row (`Mandate ID` set) — one
+        query covering all mandates, rather than one per mandate."""
+        now = time.time()
+        cache = self.__class__._mandate_tagged_cache
+        if cache["rows"] is not None and (now - cache["ts"]) < self.MANDATE_TTL:
+            return cache["rows"]
+        try:
+            rows = self.fetch_all_rows({"property": "Mandate ID", "rich_text": {"is_not_empty": True}})
+        except requests.HTTPError as exc:
+            resp = exc.response
+            if resp is not None and resp.status_code == 400 and "Mandate ID" in (resp.text or ""):
+                cache.update(rows=[], ts=now)  # column not added yet
+                return []
+            raise
+        cache.update(rows=rows, ts=now)
+        return rows
+
     def get_cached_rows(self, force: bool = False, partial: bool = False):
         """Return (rows, cache_ts, from_cache, is_partial).
 
@@ -177,3 +221,5 @@ class ExpensesDataLayer:
         self.__class__._cache["ts"] = 0.0
         self.__class__._recent_cache["ts"] = 0.0
         self.__class__._swid_cache["ids"] = None
+        self.__class__._mandate_cache["rows"] = None
+        self.__class__._mandate_tagged_cache["rows"] = None

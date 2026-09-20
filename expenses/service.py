@@ -2,6 +2,8 @@ import json
 import re
 from datetime import date, datetime, timedelta, timezone
 
+from dateutil.relativedelta import relativedelta
+
 from .data_layer import ExpensesDataLayer
 
 
@@ -15,6 +17,19 @@ class ExpensesService:
     MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
     WEEK_RE  = re.compile(r"^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$")
     DAY_RE   = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
+
+    # ── Recurring mandates ── #
+    MANDATE_PROP       = "Is Mandate"
+    MANDATE_FREQ_PROP  = "Mandate Frequency"
+    MANDATE_START_PROP = "Mandate Start Date"
+    MANDATE_END_PROP   = "Mandate End Date"
+    MANDATE_ID_PROP    = "Mandate ID"
+    MANDATE_STEP = {
+        "Weekly":    relativedelta(weeks=1),
+        "Monthly":   relativedelta(months=1),
+        "Quarterly": relativedelta(months=3),
+        "Yearly":    relativedelta(years=1),
+    }
 
     def __init__(self, data_layer: ExpensesDataLayer):
         self.dl = data_layer
@@ -142,6 +157,19 @@ class ExpensesService:
             if range_start <= d <= range_end:
                 result.append(row)
         return result
+
+    def _is_mandate_row(self, row) -> bool:
+        return bool((row.get("properties", {}).get(self.MANDATE_PROP) or {}).get("checkbox"))
+
+    def _get_rows(self, force: bool = False, partial: bool = False):
+        """Drop-in replacement for ``self.dl.get_cached_rows(...)`` for every
+        aggregation/browse method: same 4-tuple shape, with mandate-template
+        rows filtered out so they never appear as a phantom line item —
+        only their real backfilled occurrences (ordinary rows created by
+        ``backfill_mandate``) count as spending."""
+        rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(force=force, partial=partial)
+        rows = [r for r in rows if not self._is_mandate_row(r)]
+        return rows, cache_ts, from_cache, is_partial
 
     # ------------------------------------------------------------------ #
     #  Generic row-filter rules (the client-side "filter builder")        #
@@ -365,6 +393,10 @@ class ExpensesService:
             "split_added": bool((props.get("Split Added") or {}).get("checkbox")),
             "processed": bool((props.get("Processed") or {}).get("checkbox")),
             "splitwise_id": (props.get("Splitwise ID") or {}).get("number"),
+            "is_mandate": bool((props.get(self.MANDATE_PROP) or {}).get("checkbox")),
+            "mandate_frequency": ((props.get(self.MANDATE_FREQ_PROP) or {}).get("select") or {}).get("name", ""),
+            "mandate_start": (((props.get(self.MANDATE_START_PROP) or {}).get("date") or {}).get("start") or "")[:10],
+            "mandate_end": (((props.get(self.MANDATE_END_PROP) or {}).get("date") or {}).get("start") or "")[:10],
         }
 
     def _detect_title_prop(self, rows) -> str:
@@ -760,7 +792,7 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+        all_rows, cache_ts, from_cache, is_partial = self._get_rows(
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
@@ -820,7 +852,7 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+        all_rows, cache_ts, from_cache, is_partial = self._get_rows(
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
@@ -857,7 +889,7 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+        all_rows, cache_ts, from_cache, is_partial = self._get_rows(
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
@@ -931,7 +963,7 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+        all_rows, cache_ts, from_cache, is_partial = self._get_rows(
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
@@ -969,7 +1001,7 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+        all_rows, cache_ts, from_cache, is_partial = self._get_rows(
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
@@ -1080,7 +1112,7 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+        all_rows, cache_ts, from_cache, is_partial = self._get_rows(
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
@@ -1167,7 +1199,7 @@ class ExpensesService:
             week=week or None, day=day or None,
             start=start or None, end=end or None,
         )
-        all_rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(
+        all_rows, cache_ts, from_cache, is_partial = self._get_rows(
             force=force, partial=partial
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
@@ -1205,6 +1237,11 @@ class ExpensesService:
         split_added=None,
         processed=None,
         splitwise_id=None,
+        is_mandate=None,
+        mandate_frequency=None,
+        mandate_start=None,
+        mandate_end=None,
+        mandate_source_id=None,
     ) -> dict:
         """Notion property payloads for the optional columns. A value of
         ``None`` means 'leave this column untouched'."""
@@ -1228,6 +1265,18 @@ class ExpensesService:
         if splitwise_id is not None:
             s = str(splitwise_id).strip()
             props["Splitwise ID"] = {"number": int(float(s)) if s else None}
+        if is_mandate is not None:
+            props["Is Mandate"] = {"checkbox": bool(is_mandate)}
+        if mandate_frequency is not None:
+            props["Mandate Frequency"] = {"select": {"name": mandate_frequency} if mandate_frequency else None}
+        if mandate_start is not None:
+            props["Mandate Start Date"] = {"date": {"start": mandate_start} if mandate_start else None}
+        if mandate_end is not None:
+            props["Mandate End Date"] = {"date": {"start": mandate_end} if mandate_end else None}
+        if mandate_source_id is not None:
+            props["Mandate ID"] = {
+                "rich_text": [{"text": {"content": mandate_source_id}}] if mandate_source_id else []
+            }
         return props
 
     def create_entry(
@@ -1262,6 +1311,122 @@ class ExpensesService:
         result = self.dl.create_page(properties)
         self.dl.bust_cache()
         return result.get("id", "")
+
+    # ------------------------------------------------------------------ #
+    #  Recurring mandates — reconciliation / backfill                     #
+    # ------------------------------------------------------------------ #
+
+    def _mandate_last_logged(self, tagged_rows: list) -> dict:
+        """{mandate_page_id: latest occurrence date already logged for it},
+        built from every row carrying a ``Mandate ID``."""
+        last: dict = {}
+        for row in tagged_rows:
+            props = row.get("properties", {})
+            mid = "".join(
+                t.get("plain_text", "") for t in (props.get(self.MANDATE_ID_PROP) or {}).get("rich_text", [])
+            ).strip()
+            if not mid:
+                continue
+            d_str = ((props.get("Date") or {}).get("date") or {}).get("start", "")[:10]
+            if not d_str:
+                continue
+            try:
+                d = date.fromisoformat(d_str)
+            except ValueError:
+                continue
+            if mid not in last or d > last[mid]:
+                last[mid] = d
+        return last
+
+    def _mandate_missing_dates(self, mandate_row: dict, last_logged: dict, cap) -> list:
+        """Occurrence dates for ``mandate_row`` that fall on/before ``cap``
+        (further capped by the mandate's own End Date, if set) but have no
+        real expense row logged for them yet. [] for a misconfigured mandate
+        (unknown frequency / unparseable start) — it must never be treated
+        as having infinite/undefined occurrences."""
+        props = mandate_row.get("properties", {})
+        freq = ((props.get(self.MANDATE_FREQ_PROP) or {}).get("select") or {}).get("name", "")
+        step = self.MANDATE_STEP.get(freq)
+        start_str = ((props.get(self.MANDATE_START_PROP) or {}).get("date") or {}).get("start")
+        if not step or not start_str:
+            return []
+        try:
+            start = date.fromisoformat(start_str[:10])
+        except ValueError:
+            return []
+
+        end_str = ((props.get(self.MANDATE_END_PROP) or {}).get("date") or {}).get("start")
+        if end_str:
+            try:
+                cap = min(cap, date.fromisoformat(end_str[:10]))
+            except ValueError:
+                pass
+
+        cursor = last_logged.get(mandate_row.get("id", ""), start - step)
+        missing = []
+        nxt = cursor + step
+        while nxt <= cap:
+            missing.append(nxt)
+            nxt += step
+        return missing
+
+    def get_mandate_reconciliation(self) -> dict:
+        """What's pending: every mandate with at least one occurrence that
+        should have happened by today but has no matching expense row yet."""
+        today = date.today()
+        mandate_rows = self.dl.fetch_mandate_rows()
+        last_logged = self._mandate_last_logged(self.dl.fetch_mandate_tagged_rows())
+
+        pending = []
+        for row in mandate_rows:
+            missing = self._mandate_missing_dates(row, last_logged, today)
+            if not missing:
+                continue
+            entry = self._row_to_entry(row)
+            pending.append({
+                "page_id": row.get("id", ""),
+                "title": entry["title"],
+                "amount": entry["amount"],
+                "frequency": entry["mandate_frequency"],
+                "missing_dates": [d.isoformat() for d in missing],
+            })
+        return {"pending": pending}
+
+    def backfill_mandate(self, mandate_page_id: str, cutoff_date: str = "") -> dict:
+        """Creates one real expense row per missing occurrence, through
+        today (``cutoff_date`` empty — "still running") or through
+        ``cutoff_date`` (the mandate ended then; nothing beyond it is
+        created, and — deliberately — the mandate's own End Date property is
+        left untouched here; see the recurring-mandates plan)."""
+        mandate_rows = self.dl.fetch_mandate_rows()
+        row = next((r for r in mandate_rows if r.get("id") == mandate_page_id), None)
+        if not row:
+            raise ValueError("Mandate not found")
+
+        cap = date.today()
+        if cutoff_date:
+            try:
+                cap = min(cap, date.fromisoformat(cutoff_date[:10]))
+            except ValueError:
+                raise ValueError(f"Invalid cutoff date: {cutoff_date}")
+
+        last_logged = self._mandate_last_logged(self.dl.fetch_mandate_tagged_rows())
+        missing = self._mandate_missing_dates(row, last_logged, cap)
+        entry = self._row_to_entry(row)
+
+        for d in missing:
+            self.create_entry(
+                entry["title"], entry["amount"], d.isoformat(),
+                entry["categories"], entry["source"], mode=entry["mode"],
+                comment=entry["comment"], other_partner=entry["other_partner"],
+                mandate_source_id=mandate_page_id,
+            )
+        return {"created": len(missing)}
+
+    def list_mandates(self) -> dict:
+        """Every mandate template, for the management panel."""
+        rows = self.dl.fetch_mandate_rows()
+        return {"mandates": [self._row_to_entry(r) for r in rows]}
 
     SPLITWISE_ID_PROP = "Splitwise ID"
 

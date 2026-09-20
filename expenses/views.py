@@ -275,9 +275,64 @@ class ExpensesHeatmapView(ExpensesBaseView):
         return JsonResponse(result)
 
 
+class ExpensesMandatesView(ExpensesBaseView):
+    def get(self, request):
+        if not self.service:
+            return self._creds_error()
+
+        try:
+            result = self.service.list_mandates()
+        except requests.HTTPError as exc:
+            return self._api_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Network error: {exc}"}, status=502)
+
+        return JsonResponse(result)
+
+
+class ExpensesMandateReconcileView(ExpensesBaseView):
+    def get(self, request):
+        if not self.service:
+            return self._creds_error()
+
+        try:
+            result = self.service.get_mandate_reconciliation()
+        except requests.HTTPError as exc:
+            return self._api_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Network error: {exc}"}, status=502)
+
+        return JsonResponse(result)
+
+
+class ExpensesMandateBackfillView(ExpensesBaseView):
+    def post(self, request, page_id):
+        if not self.service:
+            return self._creds_error()
+
+        try:
+            data = json.loads(request.body or "{}")
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        cutoff_date = (data.get("cutoff_date") or "").strip()
+
+        try:
+            result = self.service.backfill_mandate(page_id, cutoff_date)
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        except requests.HTTPError as exc:
+            return self._api_error(exc)
+        except requests.RequestException as exc:
+            return JsonResponse({"error": f"Network error: {exc}"}, status=502)
+
+        return JsonResponse({"ok": True, **result})
+
+
 _EXTRA_KEYS = (
     "comment", "other_partner", "add_to_split", "from_split",
     "split_added", "processed", "splitwise_id",
+    "is_mandate", "mandate_frequency", "mandate_start", "mandate_end",
 )
 
 

@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     ChartsView, DashboardView, ExpensesChartView, ExpensesCategoryTimeseriesView,
     ExpensesCreateView, ExpensesDeleteView, ExpensesHeatmapView, ExpensesInsightsView,
-    ExpensesListView, ExpensesSplitView, ExpensesSummaryView, ExpensesTimeseriesView,
+    ExpensesListView, ExpensesMandateBackfillView, ExpensesMandateReconcileView,
+    ExpensesMandatesView, ExpensesSplitView, ExpensesSummaryView, ExpensesTimeseriesView,
     ExpensesUpdateView,
 )
 from .splitwise_views import (
@@ -23,6 +24,9 @@ urlpatterns = [
     path("heatmap/", ExpensesHeatmapView.as_view(), name="expenses-heatmap"),
     path("list/", ExpensesListView.as_view(), name="expenses-list"),
     path("create/", ExpensesCreateView.as_view(), name="expenses-create"),
+    path("mandates/", ExpensesMandatesView.as_view(), name="expenses-mandates"),
+    path("mandates/reconcile/", ExpensesMandateReconcileView.as_view(), name="expenses-mandates-reconcile"),
+    path("mandates/<str:page_id>/backfill/", ExpensesMandateBackfillView.as_view(), name="expenses-mandates-backfill"),
     path("splitwise/overview/", SplitwiseOverviewView.as_view(), name="expenses-splitwise-overview"),
     path("splitwise/expenses/", SplitwiseExpensesView.as_view(), name="expenses-splitwise-expenses"),
     path("splitwise/groups/", SplitwiseGroupsView.as_view(), name="expenses-splitwise-groups"),

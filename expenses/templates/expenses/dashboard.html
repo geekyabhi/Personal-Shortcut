@@ -1214,6 +1214,15 @@
       <button class="btn-primary" id="btn-apply" onclick="_applyFilters()">Apply Filters</button>
     </div>
 
+    <!-- ─── RECURRING MANDATES ─────────────── -->
+    <div class="card" id="mandates-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+        <div class="section-heading" style="margin-top:0;">🔁 Recurring Mandates</div>
+        <button class="btn-primary" onclick="_efOpen(null, {mandate: true})" style="margin-top:0;">+ Add Mandate</button>
+      </div>
+      <div id="mandates-list"><div class="empty-state">Loading…</div></div>
+    </div>
+
     <!-- ─── BROWSE EXPENSES (right below the filter) ─────────────── -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;gap:0.5rem;flex-wrap:wrap;">
       <div class="section-heading" style="margin-top:0;cursor:default;user-select:none;" onclick="_titleClick()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Browse Expenses</div>
@@ -3725,11 +3734,14 @@
     }
     pill.classList.add("on");
   }
-  function _efOpen(entry) {
+  function _efOpen(entry, opts) {
+    const isMandate = !!(entry ? entry.is_mandate : (opts && opts.mandate));
     _efPageId = entry ? entry.page_id : null;
     _efEntry = entry || null;
-    document.getElementById("ef-split-btn").hidden = !entry;
-    document.getElementById("ef-title").textContent = entry ? "Edit Expense" : "Add Expense";
+    document.getElementById("ef-split-btn").hidden = !entry || isMandate;
+    document.getElementById("ef-title").textContent = isMandate
+      ? (entry ? "Edit Mandate" : "Add Mandate")
+      : (entry ? "Edit Expense" : "Add Expense");
     document.getElementById("ef-name").value   = entry ? entry.title  : "";
     document.getElementById("ef-amount").value = entry ? entry.amount : "";
     document.getElementById("ef-date").value   = entry ? _toLocalInput(entry.datetime || entry.date) : _nowLocalInput();
@@ -3742,6 +3754,12 @@
     document.getElementById("ef-split-added").checked  = entry ? !!entry.split_added : false;
     document.getElementById("ef-processed").checked    = entry ? !!entry.processed : false;
     document.getElementById("ef-swid").value = (entry && entry.splitwise_id != null) ? entry.splitwise_id : "";
+    // Recurring mandate toggle + fields
+    document.getElementById("ef-is-mandate").checked = isMandate;
+    document.getElementById("ef-mandate-freq").value = (entry && entry.mandate_frequency) || "Monthly";
+    document.getElementById("ef-mandate-start").value = (entry && entry.mandate_start) || "";
+    document.getElementById("ef-mandate-end").value = (entry && entry.mandate_end) || "";
+    _efToggleMandate();
     // Category pills
     const selectedCats = entry ? (entry.categories || []) : [];
     document.querySelectorAll(".ef-pill").forEach(p => {
@@ -3753,6 +3771,11 @@
     document.getElementById("ef-save-btn").disabled = false;
     document.getElementById("ef-overlay").classList.add("open");
     setTimeout(() => document.getElementById("ef-name").focus(), 60);
+  }
+
+  function _efToggleMandate() {
+    document.getElementById("ef-mandate-fields").style.display =
+      document.getElementById("ef-is-mandate").checked ? "block" : "none";
   }
 
   function _efClose() {
@@ -3785,9 +3808,12 @@
     const errEl  = document.getElementById("ef-error");
 
     const editId = _efPageId;
+    const isMandate = document.getElementById("ef-is-mandate").checked;
+    const mandateStart = document.getElementById("ef-mandate-start").value;
     if (!name)          { errEl.textContent = "Name is required.";   errEl.style.display = "block"; return; }
     if (!amount)        { errEl.textContent = "Amount is required."; errEl.style.display = "block"; return; }
     if (!date && !editId) { errEl.textContent = "Date is required.";   errEl.style.display = "block"; return; }
+    if (isMandate && !mandateStart) { errEl.textContent = "Start date is required for a recurring mandate."; errEl.style.display = "block"; return; }
     errEl.style.display = "none";
 
     // Only send Date if it's a new expense or the user actually changed it —
@@ -3809,6 +3835,10 @@
       split_added: document.getElementById("ef-split-added").checked,
       processed: document.getElementById("ef-processed").checked,
       splitwise_id: swidRaw === "" ? "" : swid,
+      is_mandate: isMandate,
+      mandate_frequency: isMandate ? document.getElementById("ef-mandate-freq").value : "",
+      mandate_start: isMandate ? mandateStart : "",
+      mandate_end: isMandate ? document.getElementById("ef-mandate-end").value : "",
     };
     const fields = {
       title: name, amount: payload.amount,
@@ -3819,6 +3849,8 @@
       add_to_split: payload.add_to_split, from_split: payload.from_split,
       split_added: payload.split_added, processed: payload.processed,
       splitwise_id: swid,
+      is_mandate: payload.is_mandate, mandate_frequency: payload.mandate_frequency,
+      mandate_start: payload.mandate_start, mandate_end: payload.mandate_end,
     };
 
     if (mode) _registerNewMode(mode);
@@ -3830,13 +3862,21 @@
   async function _saveEntry(editId, payload, fields) {
     const url    = editId ? `/expenses/${editId}/update/` : "/expenses/create/";
     const method = editId ? "PATCH" : "POST";
+    // A mandate template never appears in Browse Expenses (it's metadata,
+    // not a transaction) — only its backfilled occurrences do — so it gets
+    // no optimistic row inserted/patched into _browseFull/_lastBrowse here.
+    const isMandate = !!fields.is_mandate;
 
     let rowId, prev = null;
     if (editId) {
-      const en = (_lastBrowse?.entries || []).find(x => x.page_id === editId);
-      if (en) { prev = { ...en }; Object.assign(en, fields); }
-      _splitRefreshRow(editId);
+      if (!isMandate) {
+        const en = (_lastBrowse?.entries || []).find(x => x.page_id === editId);
+        if (en) { prev = { ...en }; Object.assign(en, fields); }
+        _splitRefreshRow(editId);
+      }
       rowId = editId;
+    } else if (isMandate) {
+      rowId = "tmp-" + Date.now();
     } else {
       rowId = "tmp-" + Date.now();
       _browseFull.unshift({ page_id: rowId, ...fields });
@@ -3855,7 +3895,9 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Save failed");
 
-      if (editId) {
+      if (isMandate) {
+        showToast(editId ? 'Mandate updated' : 'Mandate added', 'success');
+      } else if (editId) {
         _rowSaving(rowId, false);
         showToast('Expense updated', 'success');
       } else {
@@ -3864,12 +3906,13 @@
         _paintBrowse(true);   // fresh render drops the saving state
         showToast('Expense added', 'success');
       }
+      if (typeof loadMandates === "function") loadMandates();
     } catch (e) {
-      if (editId) {
+      if (!isMandate && editId) {
         const en = (_lastBrowse?.entries || []).find(x => x.page_id === editId);
         if (en && prev) Object.assign(en, prev);
         _splitRefreshRow(editId);
-      } else {
+      } else if (!isMandate) {
         const i = _browseFull.findIndex(e => e.page_id === rowId);
         if (i >= 0) { _browseFull.splice(i, 1); _paintBrowse(true); }
       }
@@ -3913,6 +3956,7 @@
         if (_browseShown > _browseFull.length) _browseShown = _browseFull.length;
         _paintBrowse(true);
       }
+      if (typeof loadMandates === "function") loadMandates();  // no-op unless a mandate was deleted
       showToast('Expense deleted', 'success');
     } catch (err) {
       btn.disabled = false; btn.textContent = "Delete";
@@ -3942,6 +3986,134 @@
     );
   }
 
+  /* ── Recurring Mandates panel ── */
+  let _mandatesData = [];
+
+  function _mandateRow(m) {
+    const range = m.mandate_start ? `${m.mandate_start} → ${m.mandate_end || "ongoing"}` : "";
+    return `
+      <div class="expense-row">
+        <div class="er-left">
+          <div class="expense-title">${_esc(m.title)}</div>
+          <div class="expense-amount">${fmt(m.amount)}</div>
+          <div class="expense-date">${_esc(m.mandate_frequency || "")}${range ? " · " + _esc(range) : ""}</div>
+        </div>
+        <div class="expense-btn-row">
+          <button class="expense-edit-btn" data-mandate-edit="${m.page_id}" title="Edit" aria-label="Edit">${_ICON.edit}</button>
+          <button class="expense-edit-btn expense-del-btn" data-mandate-del="${m.page_id}" data-mandate-del-title="${_esc(m.title)}" title="Delete" aria-label="Delete">${_ICON.trash}</button>
+        </div>
+      </div>`;
+  }
+
+  async function loadMandates() {
+    const list = document.getElementById("mandates-list");
+    try {
+      const res = await fetch("/expenses/mandates/");
+      const data = await res.json();
+      if (!res.ok) { list.innerHTML = `<div class="empty-state">Failed to load mandates: ${_esc(data.error || "")}</div>`; return; }
+      _mandatesData = data.mandates || [];
+      list.innerHTML = _mandatesData.length
+        ? _mandatesData.map(_mandateRow).join("")
+        : `<div class="empty-state">No recurring mandates yet.</div>`;
+    } catch (e) {
+      list.innerHTML = `<div class="empty-state">Network error loading mandates.</div>`;
+    }
+  }
+
+  document.getElementById("mandates-list").addEventListener("click", ev => {
+    const editBtn = ev.target.closest("[data-mandate-edit]");
+    if (editBtn) {
+      const m = _mandatesData.find(x => x.page_id === editBtn.dataset.mandateEdit);
+      if (m) _efOpen(m);
+      return;
+    }
+    const delBtn = ev.target.closest("[data-mandate-del]");
+    if (delBtn) _delOpen(delBtn.dataset.mandateDel, delBtn.dataset.mandateDelTitle);
+  });
+
+  /* ── Mandate reconciliation modal ──
+     On each dashboard load, checks whether any mandate has cycles that
+     should have happened by now but have no matching expense row, and
+     offers to backfill them. Dismissible — closing without action just
+     means it asks again next load, since nothing was resolved. */
+  let _reconcilePending = [];
+
+  async function checkMandateReconciliation() {
+    try {
+      const res = await fetch("/expenses/mandates/reconcile/");
+      const data = await res.json();
+      if (!res.ok) return;
+      _reconcilePending = data.pending || [];
+      if (_reconcilePending.length) _reconcileOpen();
+    } catch (e) { /* silent — this is a background nicety, not core functionality */ }
+  }
+
+  function _reconcileRow(p) {
+    const dates = p.missing_dates || [];
+    const shown = dates.slice(0, 4).join(", ");
+    const more = dates.length > 4 ? ` +${dates.length - 4} more` : "";
+    return `
+      <div class="expense-row" data-reconcile-id="${p.page_id}" style="flex-direction:column;align-items:stretch;gap:0.6rem;">
+        <div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;">
+          <div>
+            <div class="expense-title">${_esc(p.title)}</div>
+            <div class="expense-date">${_esc(p.frequency || "")} · ${fmt(p.amount)} · ${dates.length} missed: ${_esc(shown)}${more}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;font-weight:600;cursor:pointer;">
+            <input type="radio" name="recon-${p.page_id}" value="yes" checked onchange="_reconcileToggleEnd('${p.page_id}', false)"> Still running
+          </label>
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;font-weight:600;cursor:pointer;">
+            <input type="radio" name="recon-${p.page_id}" value="no" onchange="_reconcileToggleEnd('${p.page_id}', true)"> Ended
+          </label>
+          <input type="date" id="recon-end-${p.page_id}" style="display:none;max-width:160px;" max="${new Date().toISOString().slice(0,10)}">
+        </div>
+      </div>`;
+  }
+
+  function _reconcileToggleEnd(pageId, show) {
+    document.getElementById(`recon-end-${pageId}`).style.display = show ? "block" : "none";
+  }
+
+  function _reconcileOpen() {
+    document.getElementById("reconcile-list").innerHTML = _reconcilePending.map(_reconcileRow).join("");
+    document.getElementById("reconcile-overlay").classList.add("open");
+  }
+  function _reconcileClose() {
+    document.getElementById("reconcile-overlay").classList.remove("open");
+  }
+  function _reconcileBgClick(e) {
+    if (e.target === document.getElementById("reconcile-overlay")) _reconcileClose();
+  }
+
+  async function _reconcileConfirm() {
+    const btn = document.getElementById("reconcile-confirm-btn");
+    btn.disabled = true; btn.textContent = "Backfilling…";
+    let totalCreated = 0, failed = 0;
+    for (const p of _reconcilePending) {
+      const stillRunning = document.querySelector(`input[name="recon-${p.page_id}"][value="yes"]`).checked;
+      const cutoff = stillRunning ? "" : (document.getElementById(`recon-end-${p.page_id}`).value || "");
+      try {
+        const res = await fetch(`/expenses/mandates/${p.page_id}/backfill/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+          body: JSON.stringify({ cutoff_date: cutoff }),
+        });
+        const data = await res.json();
+        if (res.ok) totalCreated += data.created || 0; else failed++;
+      } catch (e) { failed++; }
+    }
+    btn.disabled = false; btn.textContent = "Confirm & backfill";
+    _reconcileClose();
+    showToast(
+      failed ? `Backfilled ${totalCreated} — ${failed} mandate(s) failed` : `Backfilled ${totalCreated} expense${totalCreated === 1 ? "" : "s"}`,
+      failed ? "error" : "success",
+    );
+    fetchList(true);      // new rows exist now — refresh Browse/Summary
+    checkMandateReconciliation();  // re-check: anything just resolved should now be gone
+  }
+
   async function _bootstrap() {
     // The Recent / All-expenses chips are driven from fetchList itself.
     _bgMark("splitwise", "loading");
@@ -3959,6 +4131,9 @@
 
     // Phase 2 — full dataset in the background, then silently overwrite the UI
     fetchList(false, { bg: true }).catch(() => {});
+
+    loadMandates();
+    checkMandateReconciliation();
   }
 
   _bootstrap();
@@ -4052,6 +4227,32 @@
         <input type="text" id="ef-other-partner" autocomplete="off" />
       </div>
       <div class="ef-field">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;text-transform:none;font-weight:600;color:#374151;">
+          <input type="checkbox" id="ef-is-mandate" onchange="_efToggleMandate()"> 🔁 This is a recurring mandate
+        </label>
+      </div>
+      <div class="ef-field" id="ef-mandate-fields" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
+          <div class="ef-field">
+            <label for="ef-mandate-freq">Frequency</label>
+            <select id="ef-mandate-freq">
+              <option value="Weekly">Weekly</option>
+              <option value="Monthly" selected>Monthly</option>
+              <option value="Quarterly">Quarterly</option>
+              <option value="Yearly">Yearly</option>
+            </select>
+          </div>
+          <div class="ef-field">
+            <label for="ef-mandate-start">Start date</label>
+            <input type="date" id="ef-mandate-start">
+          </div>
+          <div class="ef-field">
+            <label for="ef-mandate-end" style="text-transform:none;font-weight:600;">End date <span style="font-weight:400;color:#9CA3AF;">(optional)</span></label>
+            <input type="date" id="ef-mandate-end">
+          </div>
+        </div>
+      </div>
+      <div class="ef-field">
         <label>Flags</label>
         <div class="ef-checks">
           <label><input type="checkbox" id="ef-add-to-split"> Add to Split</label>
@@ -4091,6 +4292,20 @@
     <div class="del-actions">
       <button class="del-btn-cancel" onclick="_delClose()">Cancel</button>
       <button class="del-btn-confirm" id="del-confirm-btn" onclick="_delConfirm()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="ef-overlay" id="reconcile-overlay" onclick="_reconcileBgClick(event)">
+  <div class="ef-box" style="max-width:560px;">
+    <div class="ef-title">🔁 Recurring mandates need a check-in</div>
+    <div style="font-size:0.85rem;color:#6B7280;margin-top:-0.75rem;margin-bottom:1.1rem;">
+      These haven't been logged for a while. For each, say whether it's still running (we'll backfill through today) or it ended (pick the date — nothing beyond it gets created).
+    </div>
+    <div id="reconcile-list" style="display:flex;flex-direction:column;gap:0.9rem;"></div>
+    <div class="ef-actions">
+      <button class="ef-btn-cancel" onclick="_reconcileClose()">Not now</button>
+      <button class="ef-btn-save" id="reconcile-confirm-btn" onclick="_reconcileConfirm()">Confirm &amp; backfill</button>
     </div>
   </div>
 </div>
