@@ -278,7 +278,12 @@
     .btn-ghost:active { transform: scale(0.97); }
 
     /* Book list */
-    .book-list { display: flex; flex-direction: column; gap: 0.65rem; }
+    .book-list {
+      display: flex; flex-direction: column; gap: 0.65rem;
+      max-height: 70vh; overflow-y: auto; overflow-x: hidden;
+      padding-right: 0.25rem;
+    }
+    .book-list.grid-view, .book-list.compact-view { max-height: 70vh; overflow-y: auto; }
     .book-row {
       display: flex; align-items: flex-start; gap: 1rem;
       background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85);
@@ -307,17 +312,6 @@
 
     .genre-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
     .genre-tag { padding: 0.1rem 0.5rem; border-radius: 100px; font-size: 0.65rem; font-weight: 500; background: rgba(5,150,105,0.07); color: #059669; }
-
-    /* Pagination */
-    .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
-    .page-btn {
-      padding: 0.4rem 0.9rem; border-radius: 100px; font-size: 0.82rem; font-weight: 600;
-      background: rgba(5,150,105,0.07); color: var(--accent);
-      border: 1px solid rgba(5,150,105,0.18);
-      cursor: pointer; font-family: inherit; transition: all 0.2s;
-    }
-    .page-btn:hover, .page-btn.active { background: var(--grad); color: #fff; border-color: transparent; }
-    .page-btn:active { transform: scale(0.97); }
 
     /* Cache bar */
     .cache-bar {
@@ -945,7 +939,6 @@
               <div class="sk-line" style="width:100%;height:5rem;margin-bottom:0.75rem;border-radius:16px;"></div>
             </div>
           </div>
-          <div class="pagination" id="pagination"></div>
         </div>
     </div>
   </div>
@@ -964,8 +957,7 @@
     };
   })();
 
-  const PAGE_SIZE = 30;
-  let _books = [], _booksRaw = [], _page = 1;
+  let _books = [], _booksRaw = [];
   let _allGenres = [], _allAuthors = [];
   let _editPageId = null, _delBook = null;
   let _sortMode = 'status';
@@ -1097,35 +1089,21 @@
   /* ── Render book list ── */
   function renderBooks() {
     const list = document.getElementById('book-list');
-    const pag  = document.getElementById('pagination');
     if (!_books.length) {
-      list.className = 'book-list'; list.innerHTML = '<div class="empty">No books found.</div>'; pag.innerHTML = ''; return;
+      list.className = 'book-list'; list.innerHTML = '<div class="empty">No books found.</div>'; return;
     }
-
-    const totalPages = Math.ceil(_books.length / PAGE_SIZE);
-    const slice = _books.slice((_page - 1) * PAGE_SIZE, _page * PAGE_SIZE);
 
     if (_viewMode === 'grid') {
       list.className = 'book-list grid-view';
-      list.innerHTML = slice.map(_renderGridCard).join('');
+      list.innerHTML = _books.map(_renderGridCard).join('');
     } else if (_viewMode === 'compact') {
       list.className = 'book-list compact-view';
-      list.innerHTML = slice.map(_renderCompactRow).join('');
+      list.innerHTML = _books.map(_renderCompactRow).join('');
     } else {
       list.className = 'book-list';
-      list.innerHTML = slice.map(_renderListRow).join('');
+      list.innerHTML = _books.map(_renderListRow).join('');
     }
-
-    if (totalPages <= 1) { pag.innerHTML = ''; return; }
-    let html = '';
-    if (_page > 1) html += `<button class="page-btn" onclick="goPage(${_page-1})">‹ Prev</button>`;
-    for (let i=Math.max(1,_page-2); i<=Math.min(totalPages,_page+2); i++)
-      html += `<button class="page-btn${i===_page?' active':''}" onclick="goPage(${i})">${i}</button>`;
-    if (_page < totalPages) html += `<button class="page-btn" onclick="goPage(${_page+1})">Next ›</button>`;
-    pag.innerHTML = html;
   }
-
-  function goPage(p) { _page = p; renderBooks(); window.scrollTo({top:0,behavior:'smooth'}); }
 
   /* ── Sort ── */
   function sortBooks(books) {
@@ -1167,7 +1145,7 @@
   function _sortChange() {
     _sortMode = document.getElementById('sort-select').value;
     _books = sortBooks(_fbFilter(_booksRaw));
-    _page = 1; renderBooks();
+    renderBooks();
   }
 
   /* ── Top loader ── */
@@ -1187,7 +1165,7 @@
   /* ── Filters ── one filter set (the fb builder below) drives the list, live */
   function _applyFB() {
     _books = sortBooks(_fbFilter(_booksRaw));
-    _page = 1; renderBooks();
+    renderBooks();
     document.getElementById('cache-info').textContent = _books.length + ' books';
   }
 
