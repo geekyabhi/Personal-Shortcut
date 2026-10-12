@@ -281,9 +281,28 @@
     .btn-ghost:active { transform: scale(0.97); }
     .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* Header toggle buttons (Detail view / Bulk edit) swap between .btn-ghost and .btn-primary
-       at runtime — neutralize .btn-primary's standalone-button layout so they don't jump. */
-    #dv-toggle, #be-toggle { margin-top: 0; display: inline-block; width: auto; }
+    /* Compact toolbar buttons (Detail view / Bulk edit / Bulk insert / CSV export) — collapsed
+       to a plain icon circle at rest, and expand into a full labeled pill (same purple gradient
+       fill as "+ Add Expense") on hover/focus, revealing their name next to the icon. Several of
+       these also swap between .btn-ghost and .btn-primary at runtime when toggled on. */
+    .icon-btn {
+      width: 2.15rem; height: 2.15rem; padding: 0; margin: 0;
+      display: inline-flex; align-items: center; justify-content: flex-start; flex: none;
+      overflow: hidden; white-space: nowrap;
+      transition: width 0.22s ease, background 0.22s ease, color 0.22s ease, border-color 0.22s ease;
+    }
+    .icon-btn .ic { width: 1.05rem; height: 1.05rem; flex: none; margin: 0 0 0 0.55rem; }
+    .toolbar-group { display: flex; gap: 0.35rem; align-items: center; }
+    .icon-btn-label {
+      font-size: 0.8rem; font-weight: 600; white-space: nowrap;
+      margin-left: 0; opacity: 0; transition: opacity 0.15s ease, margin-left 0.22s ease;
+    }
+    .icon-btn:hover, .icon-btn:focus-visible {
+      width: 9.5rem; background: var(--grad); color: #fff; border-color: transparent;
+    }
+    .icon-btn:hover .icon-btn-label, .icon-btn:focus-visible .icon-btn-label {
+      margin-left: 0.5rem; opacity: 1;
+    }
 
     /* Period badge */
     .period-badge {
@@ -465,8 +484,10 @@
     [data-theme="dark"] .be-row.unproc { background: rgba(239,68,68,0.10); }
     .be-row.dirty { border-left-color: var(--accent); background: rgba(79,70,229,0.04); }
     .be-row.row-saving { opacity: 0.55; pointer-events: none; }
+    .be-row.bi-invalid { border-left-color: #DC2626; background: rgba(239,68,68,0.07); }
     [data-theme="dark"] .be-row { border-bottom-color: rgba(255,255,255,0.22); }
     [data-theme="dark"] .be-row.dirty { background: rgba(129,140,248,0.1); }
+    [data-theme="dark"] .be-row.bi-invalid { background: rgba(239,68,68,0.12); }
     .be-title {
       display: block; width: 100%; border: none; border-bottom: 1.5px solid transparent;
       background: transparent; font-size: 1rem; font-weight: 800; color: #111827;
@@ -638,8 +659,6 @@
     [data-theme="dark"] .tg { background: rgba(255,255,255,0.08); }
     [data-theme="dark"] .tb { color: #9CA3AF; }
     [data-theme="dark"] .tb.active { background: rgba(255,255,255,0.12); color: var(--accent); box-shadow: none; }
-    [data-theme="dark"] .icon-btn { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #9CA3AF; }
-    [data-theme="dark"] .icon-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,70,229,0.10); }
     [data-theme="dark"] .threshold-input { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB; }
     [data-theme="dark"] .threshold-input::placeholder { color: rgba(255,255,255,0.25); }
     [data-theme="dark"] .stats-row { border-bottom-color: rgba(255,255,255,0.07); }
@@ -723,14 +742,22 @@
     [data-theme="dark"] .ef-field textarea { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB; }
     [data-theme="dark"] .ef-checks label { color: #E5E7EB; }
     [data-theme="dark"] .ef-checks input[type="checkbox"] { accent-color: #818CF8; }
-    .ef-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .ef-pills {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; align-content: flex-start;
+      max-height: 7.5rem; overflow-y: auto; padding: 0.15rem 0.2rem 0.15rem 0;
+    }
+    .ef-field-divider { border-top: 1px solid #E5E7EB; padding-top: 0.9rem; margin-top: 0.05rem; }
+    [data-theme="dark"] .ef-field-divider { border-top-color: rgba(255,255,255,0.1); }
     .ef-pill {
       padding: 0.28rem 0.65rem; border-radius: 100px; border: 1.5px solid #E5E7EB;
       font-size: 0.75rem; font-weight: 600; cursor: pointer; user-select: none;
       color: #6B7280; background: transparent; transition: all 0.15s; font-family: inherit;
     }
     .ef-pill.on { background: #EEF2FF; border-color: #6366F1; color: #4F46E5; }
-    .be-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .be-pills {
+      display: flex; flex-wrap: wrap; gap: 0.35rem; align-content: flex-start;
+      max-height: 6.4rem; overflow-y: auto; padding: 0.15rem 0.2rem 0.15rem 0;
+    }
     .be-pill {
       padding: 0.22rem 0.6rem; border-radius: 100px; border: 1.5px solid #E5E7EB;
       font-size: 0.72rem; font-weight: 600; cursor: pointer; user-select: none;
@@ -1224,14 +1251,29 @@
     </div>
 
     <!-- ─── BROWSE EXPENSES (right below the filter) ─────────────── -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;gap:0.5rem;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;margin-bottom:1.1rem;gap:0.5rem;flex-wrap:wrap;">
       <div class="section-heading" style="margin-top:0;cursor:default;user-select:none;" onclick="_titleClick()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Browse Expenses</div>
-      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-        <button class="btn-ghost" id="dv-toggle" onclick="_detailViewToggle()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Show extra details per row, click a row to inspect"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Detail view</button>
-        <button class="btn-ghost" id="be-toggle" onclick="_bulkEditToggle()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Edit multiple rows inline"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Bulk edit</button>
-        <button class="btn-ghost" onclick="_exportCSV()" style="font-size:0.8rem;padding:0.4rem 1rem;" title="Export current list to CSV">↓ CSV</button>
-        <button class="btn-primary" onclick="_efOpen(null)" style="margin-top:0;">+ Add Expense</button>
+      <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+        <div class="toolbar-group">
+          <button class="btn-ghost icon-btn" id="dv-toggle" onclick="_detailViewToggle()" aria-label="Detail view — show extra details per row, click a row to inspect"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="icon-btn-label">Detail view</span></button>
+          <button class="btn-ghost icon-btn" id="be-toggle" onclick="_bulkEditToggle()" aria-label="Bulk edit — edit multiple rows inline"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span class="icon-btn-label">Bulk edit</span></button>
+          <button class="btn-ghost icon-btn" id="bi-toggle" onclick="_bulkInsertToggle()" aria-label="Bulk insert — add several expenses at once"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="icon-btn-label">Bulk insert</span></button>
+          <button class="btn-ghost icon-btn" id="csv-btn" onclick="_exportCSV()" aria-label="Export current list to CSV"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="icon-btn-label">Export CSV</span></button>
+        </div>
+        <button class="btn-primary icon-btn" onclick="_efOpen(null)" aria-label="Add Expense"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="icon-btn-label">Add Expense</span></button>
       </div>
+    </div>
+
+    <div class="card" id="bi-card" hidden style="margin-top:0.75rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+        <strong id="bi-count" style="font-size:1.05rem;font-weight:700;letter-spacing:-0.01em;">Bulk insert — 0 rows</strong>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <button class="btn-ghost" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_biAddRow()">+ Add row</button>
+          <button class="btn-primary" id="bi-create-btn" style="margin:0;padding:0.4rem 1rem;font-size:0.8rem;" onclick="_biCreateAll()" disabled>Create 0 expenses</button>
+          <button class="btn-ghost" style="padding:0.4rem 1rem;font-size:0.8rem;" onclick="_bulkInsertToggle()">Close</button>
+        </div>
+      </div>
+      <div id="bi-rows"></div>
     </div>
 
     <div id="loading-browse" class="spinner" style="display:none;">
@@ -2641,6 +2683,7 @@
     plus:     '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
     scissors: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>',
     x:        '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    download: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
     trash:    '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
   };
 
@@ -2702,11 +2745,226 @@
     _bulkEdit = !_bulkEdit;
     if (_bulkEdit && _detailView) _detailViewToggle();  // the two modes don't mix
     const btn = document.getElementById("be-toggle");
-    btn.innerHTML = _bulkEdit ? _IC.x + "Exit bulk edit" : _IC.edit + "Bulk edit";
+    btn.innerHTML = (_bulkEdit ? _IC.x : _IC.edit) + `<span class="icon-btn-label">${_bulkEdit ? "Exit bulk edit" : "Bulk edit"}</span>`;
+    btn.setAttribute("aria-label", _bulkEdit ? "Exit bulk edit" : "Bulk edit — edit multiple rows inline");
     btn.classList.toggle("btn-primary", _bulkEdit);
     btn.classList.toggle("btn-ghost", !_bulkEdit);
     document.getElementById("be-bar").hidden = !_bulkEdit;
     _paintBrowse(true);
+  }
+
+  /* ── Bulk insert: add several brand-new expenses at once ──
+     Unlike bulk edit (which re-renders the *existing* list as editable rows),
+     this is a standalone panel of blank rows above the list — it doesn't touch
+     browse-list/detail-view/bulk-edit state, so no mode is mutually exclusive
+     with it. Rows reuse the exact .be-row/.be-grid/.be-pill/.src-cbx markup and
+     CSS bulk edit already has, so new rows look and behave identically. */
+  let _bulkInsert = false, _biRows = [], _biNextId = 1;
+
+  function _bulkInsertToggle() {
+    _bulkInsert = !_bulkInsert;
+    const btn = document.getElementById("bi-toggle");
+    btn.innerHTML = (_bulkInsert ? _IC.x : _IC.plus) + `<span class="icon-btn-label">${_bulkInsert ? "Close bulk insert" : "Bulk insert"}</span>`;
+    btn.setAttribute("aria-label", _bulkInsert ? "Close bulk insert" : "Bulk insert — add several expenses at once");
+    btn.classList.toggle("btn-primary", _bulkInsert);
+    btn.classList.toggle("btn-ghost", !_bulkInsert);
+    document.getElementById("bi-card").hidden = !_bulkInsert;
+    if (_bulkInsert && !_biRows.length) { _biAddRow(); _biAddRow(); _biAddRow(); }
+  }
+
+  function _biTodayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${_pad2(d.getMonth() + 1)}-${_pad2(d.getDate())}`;
+  }
+
+  function _biNowTime() {
+    const d = new Date();
+    return `${_pad2(d.getHours())}:${_pad2(d.getMinutes())}`;
+  }
+
+  function _biCatPills() {
+    return _allCats.map(n => `<button type="button" class="be-pill" data-cat="${_esc(n)}">${_esc(n)}</button>`).join("")
+      + `<span class="be-pill-new"><input type="text" class="be-pill-new-input" placeholder="+ new category"><button type="button" class="be-pill-new-btn" title="Add category">+</button></span>`;
+  }
+
+  function _biRowHtml(id) {
+    return `
+      <div class="be-row" data-bi-id="${id}">
+        <input type="text" class="be-title" data-bif="name" placeholder="Expense name">
+        <div class="be-grid">
+          <div class="be-field"><label>Amount</label><input type="number" step="0.01" data-bif="amount"></div>
+          <div class="be-field"><label>Date</label><input type="date" data-bif="date" value="${_biTodayISO()}"></div>
+          <div class="be-field"><label>Time</label><input type="time" data-bif="time" value="${_biNowTime()}"></div>
+          <div class="be-field">
+            <label>Source</label>
+            <div class="src-cbx" data-src-cbx>
+              <input type="text" data-bif="source" class="src-cbx-input" placeholder="— None —" autocomplete="off">
+              <div class="src-cbx-list" hidden></div>
+            </div>
+          </div>
+          <div class="be-field">
+            <label>Mode</label>
+            <div class="src-cbx" data-cbx="mode">
+              <input type="text" data-bif="mode" class="src-cbx-input" placeholder="— None —" autocomplete="off">
+              <div class="src-cbx-list" hidden></div>
+            </div>
+          </div>
+          <div class="be-field"><label>Splitwise ID</label><input type="number" step="1" data-bif="splitwise_id"></div>
+          <div class="be-field wide"><label>Categories</label><div class="be-pills" data-bif="categories">${_biCatPills()}</div></div>
+          <div class="be-field wide"><label>Comment</label><input type="text" data-bif="comment"></div>
+          <div class="be-field wide"><label>Other Partner</label><input type="text" data-bif="other_partner"></div>
+          <div class="be-checks">
+            <label><input type="checkbox" data-bif="processed"> Processed</label>
+            <label><input type="checkbox" data-bif="add_to_split"> Add to Split</label>
+            <label><input type="checkbox" data-bif="from_split"> From Split</label>
+            <label><input type="checkbox" data-bif="split_added"> Split Added</label>
+          </div>
+          <button type="button" class="dv-split-link" data-bi-remove="${id}" style="grid-column:1/-1;">${_IC.x}Remove row</button>
+        </div>
+      </div>`;
+  }
+
+  function _biAddRow() {
+    const id = _biNextId++;
+    _biRows.unshift(id);
+    document.getElementById("bi-rows").insertAdjacentHTML("afterbegin", _biRowHtml(id));
+    _biSync();
+  }
+
+  function _biRemoveRow(id) {
+    _biRows = _biRows.filter(x => x !== id);
+    document.querySelector(`[data-bi-id="${id}"]`)?.remove();
+    _biSync();
+  }
+
+  function _biSync() {
+    const n = _biRows.length;
+    document.getElementById("bi-count").textContent = `Bulk insert — ${n} row${n === 1 ? "" : "s"}`;
+    document.getElementById("bi-create-btn").textContent = `Create ${n} expense${n === 1 ? "" : "s"}`;
+    document.getElementById("bi-create-btn").disabled = n === 0;
+  }
+
+  function _biPushNewCategory(input) {
+    const row = input.closest(".be-row");
+    const name = _registerNewCategory(input.value);
+    input.value = "";
+    if (!name || !row) return;
+    const container = row.querySelector('[data-bif="categories"]');
+    let pill = [...container.querySelectorAll(".be-pill")].find(p => p.dataset.cat === name);
+    if (!pill) {
+      pill = document.createElement("button");
+      pill.type = "button"; pill.className = "be-pill"; pill.dataset.cat = name; pill.textContent = name;
+      container.insertBefore(pill, container.querySelector(".be-pill-new"));
+    }
+    pill.classList.add("on");
+  }
+
+  document.getElementById("bi-rows").addEventListener("click", ev => {
+    const rm = ev.target.closest("[data-bi-remove]");
+    if (rm) { _biRemoveRow(Number(rm.dataset.biRemove)); return; }
+    const newCatBtn = ev.target.closest(".be-pill-new-btn");
+    if (newCatBtn) { _biPushNewCategory(newCatBtn.previousElementSibling); return; }
+    const pill = ev.target.closest(".be-pill");
+    if (pill) pill.classList.toggle("on");
+  });
+  document.getElementById("bi-rows").addEventListener("keydown", ev => {
+    if (ev.key === "Enter" && ev.target.classList.contains("be-pill-new-input")) {
+      ev.preventDefault();
+      _biPushNewCategory(ev.target);
+    }
+  });
+
+  function _biReadRow(el) {
+    const g = f => el.querySelector(`[data-bif="${f}"]`);
+    const cats = [...g("categories").querySelectorAll(".be-pill.on")].map(p => p.dataset.cat);
+    return {
+      name: g("name").value.trim(), amount: g("amount").value.trim(), date: g("date").value,
+      time: g("time").value,
+      source: g("source").value, mode: g("mode").value.trim(), categories: cats,
+      comment: g("comment").value, other_partner: g("other_partner").value,
+      splitwise_id: g("splitwise_id").value.trim(),
+      processed: g("processed").checked, add_to_split: g("add_to_split").checked,
+      from_split: g("from_split").checked, split_added: g("split_added").checked,
+    };
+  }
+
+  async function _biCreateAll() {
+    const rowEls = [...document.querySelectorAll("#bi-rows .be-row")];
+    if (!rowEls.length) return;
+
+    const jobs = [];
+    let skipped = 0;
+    for (const el of rowEls) {
+      const r = _biReadRow(el);
+      if (!r.name || !r.amount || !r.date) { el.classList.add("bi-invalid"); skipped++; continue; }
+      el.classList.remove("bi-invalid");
+      if (r.mode) _registerNewMode(r.mode);
+      // Combine date + time into a full timezone-aware ISO datetime, same as
+      // the single Add Expense modal, so the stored time isn't lost/zeroed.
+      const localDt = `${r.date}T${r.time || "00:00"}`;
+      const isoDt   = _localInputToNotion(localDt);
+      const payload = {
+        name: r.name, amount: parseFloat(r.amount) || 0, date: isoDt,
+        categories: r.categories, source: r.source, mode: r.mode,
+        comment: r.comment, other_partner: r.other_partner,
+        add_to_split: r.add_to_split, from_split: r.from_split,
+        split_added: r.split_added, processed: r.processed,
+        splitwise_id: r.splitwise_id === "" ? "" : Number(r.splitwise_id),
+      };
+      jobs.push({
+        id: Number(el.dataset.biId), el, payload,
+        fields: {
+          title: r.name, amount: payload.amount, date: r.date, datetime: isoDt,
+          categories: r.categories, source: r.source, mode: r.mode,
+          comment: r.comment, other_partner: r.other_partner,
+          add_to_split: r.add_to_split, from_split: r.from_split,
+          split_added: r.split_added, processed: r.processed,
+          splitwise_id: payload.splitwise_id,
+        },
+      });
+    }
+
+    if (!jobs.length) {
+      showToast(skipped ? `${skipped} row(s) need a name, amount and date` : "Nothing to create", "error");
+      return;
+    }
+
+    document.getElementById("bi-create-btn").disabled = true;
+    jobs.forEach(j => j.el.classList.add("row-saving"));
+
+    let done = 0, failed = 0; const fails = [];
+    await Promise.all(jobs.map(async job => {
+      try {
+        const res = await fetch("/expenses/create/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+          body: JSON.stringify(job.payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Create failed");
+        done++;
+        _browseFull.unshift({ page_id: data.page_id, ...job.fields });
+        _biRemoveRow(job.id);
+      } catch (err) {
+        failed++;
+        fails.push(`${job.payload.name}: ${err.message}`);
+        job.el.classList.remove("row-saving");
+        job.el.classList.add("bi-invalid");
+      }
+    }));
+
+    if (done) {
+      _browseShown = Math.min(_browseFull.length, _browseShown + done);
+      document.getElementById("results-browse").style.display = "block";
+      _paintBrowse(true);
+    }
+    _biSync();
+    showToast(
+      `${done} expense${done === 1 ? "" : "s"} created${failed ? `, ${failed} failed` : ""}${skipped ? `, ${skipped} skipped` : ""}`,
+      failed ? "info" : "success", 5000
+    );
+    if (failed) alert("Some rows failed to create (left in the bulk-insert panel so you can fix and retry):\n\n" + fails.join("\n"));
+    if (!_biRows.length) _biAddRow();  // keep at least one empty row ready
   }
 
   /* ── Detail view: extra per-row info + click-to-inspect modal ── */
@@ -2716,7 +2974,8 @@
     _detailView = !_detailView;
     if (_detailView && _bulkEdit) _bulkEditToggle();  // the two modes don't mix
     const btn = document.getElementById("dv-toggle");
-    btn.innerHTML = _detailView ? _IC.x + "Exit detail view" : _IC.search + "Detail view";
+    btn.innerHTML = (_detailView ? _IC.x : _IC.search) + `<span class="icon-btn-label">${_detailView ? "Exit detail view" : "Detail view"}</span>`;
+    btn.setAttribute("aria-label", _detailView ? "Exit detail view" : "Detail view — show extra details per row, click a row to inspect");
     btn.classList.toggle("btn-primary", _detailView);
     btn.classList.toggle("btn-ghost", !_detailView);
     _paintBrowse(true);
@@ -4226,7 +4485,7 @@
         <label for="ef-other-partner">Other Partner</label>
         <input type="text" id="ef-other-partner" autocomplete="off" />
       </div>
-      <div class="ef-field">
+      <div class="ef-field ef-field-divider">
         <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;text-transform:none;font-weight:600;color:#374151;">
           <input type="checkbox" id="ef-is-mandate" onchange="_efToggleMandate()"> 🔁 This is a recurring mandate
         </label>
@@ -4252,7 +4511,7 @@
           </div>
         </div>
       </div>
-      <div class="ef-field">
+      <div class="ef-field ef-field-divider">
         <label>Flags</label>
         <div class="ef-checks">
           <label><input type="checkbox" id="ef-add-to-split"> Add to Split</label>
