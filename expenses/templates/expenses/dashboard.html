@@ -2772,7 +2772,12 @@
     btn.setAttribute("aria-label", _bulkEdit ? "Exit bulk edit" : "Bulk edit — edit multiple rows inline");
     btn.classList.toggle("btn-primary", _bulkEdit);
     btn.classList.toggle("btn-ghost", !_bulkEdit);
-    document.getElementById("be-bar").hidden = !_bulkEdit;
+    const beBar = document.getElementById("be-bar");
+    beBar.hidden = !_bulkEdit;
+    // #be-bar carries an inline `style="display:flex"` (for when it's shown),
+    // which otherwise beats the `[hidden]` UA rule's `display:none` — so the
+    // `hidden` property above alone never actually hid it. Set display explicitly too.
+    beBar.style.display = _bulkEdit ? "flex" : "none";
     _paintBrowse(true);
   }
 
