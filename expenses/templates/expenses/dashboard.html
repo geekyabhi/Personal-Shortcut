@@ -3376,7 +3376,7 @@
       // of Bulk edit when "Save changed" is clicked.
       _catSplitSet(entry.page_id, { splits });
       _spClose();
-      _paintBrowse(true);  // repaints this row as a "split staged" summary + refreshes the count bar
+      _beRefreshRow(entry.page_id);  // repaints just this row as a "split staged" summary
       return;
     }
 
@@ -3541,6 +3541,18 @@
     document.getElementById("be-save-btn").disabled = n === 0 && m === 0;
   }
 
+  // Repaint one bulk-edit row from data (e.g. after staging/undoing a split).
+  // Deliberately scoped to a single row rather than `_paintBrowse` — that
+  // rebuilds every row's HTML from `_browseFull`, which would blow away any
+  // unsaved edits a user has live in *other* rows' inputs that haven't been
+  // committed back to `_browseFull` yet (that only happens on "Save changed").
+  function _beRefreshRow(pageId) {
+    const entry = _browseFull.find(x => x.page_id === pageId);
+    const row = document.querySelector(`#browse-list .be-row[data-be-id="${pageId}"]`);
+    if (entry && row) row.outerHTML = _bulkEditRow(entry);
+    _beRefreshCount();
+  }
+
   document.getElementById("browse-list").addEventListener("input", ev => {
     if (!_bulkEdit) return;
     const row = ev.target.closest(".be-row");
@@ -3582,7 +3594,7 @@
     const csUndoBtn = ev.target.closest(".cs-undo-btn");
     if (csUndoBtn) {
       _catSplitRemove(csUndoBtn.dataset.csId);
-      _paintBrowse(true);
+      _beRefreshRow(csUndoBtn.dataset.csId);
       return;
     }
     const splitBtn = ev.target.closest(".be-split-btn");
