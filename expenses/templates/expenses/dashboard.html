@@ -488,6 +488,12 @@
     [data-theme="dark"] .be-row { border-bottom-color: rgba(255,255,255,0.22); }
     [data-theme="dark"] .be-row.dirty { background: rgba(129,140,248,0.1); }
     [data-theme="dark"] .be-row.bi-invalid { background: rgba(239,68,68,0.12); }
+    .be-row.cs-staged { border-left-color: var(--accent); border-left-style: dashed; background: rgba(79,70,229,0.06); }
+    [data-theme="dark"] .be-row.cs-staged { background: rgba(129,140,248,0.12); }
+    .cs-lines { margin: 0.4rem 0 0.6rem; font-size: 0.82rem; color: #4B5563; }
+    [data-theme="dark"] .cs-lines { color: #D1D5DB; }
+    .cs-line { padding: 0.1rem 0; }
+    .cs-actions { display: flex; gap: 0.5rem; }
     .be-title {
       display: block; width: 100%; border: none; border-bottom: 1.5px solid transparent;
       background: transparent; font-size: 1rem; font-weight: 800; color: #111827;
@@ -1465,6 +1471,17 @@
   function _queueSet(id, cfg) { const q = _queueLoad(); q[id] = cfg; _queueSaveAll(q); }
   function _queueRemove(id) { const q = _queueLoad(); delete q[id]; _queueSaveAll(q); }
 
+  /* Staged category-splits — defined via the split modal while in Bulk edit,
+     held locally (not pushed to Notion) until "Save changed" is clicked.
+     Shape: { [page_id]: { entry, splits } }. Mirrors the Splitwise queue above. */
+  function _catSplitLoad()       { try { return JSON.parse(localStorage.getItem("ps_category_split_queue")) || {}; } catch { return {}; } }
+  function _catSplitSaveAll(q)   { try { localStorage.setItem("ps_category_split_queue", JSON.stringify(q)); } catch {} }
+  function _catSplitGet(id)      { return _catSplitLoad()[id] || null; }
+  function _catSplitSet(id, cfg) { const q = _catSplitLoad(); q[id] = cfg; _catSplitSaveAll(q); }
+  function _catSplitRemove(id)   { const q = _catSplitLoad(); delete q[id]; _catSplitSaveAll(q); }
+  function _catSplitClearAll()   { try { localStorage.removeItem("ps_category_split_queue"); } catch {} }
+  function _catSplitCount()      { return Object.keys(_catSplitLoad()).length; }
+
   function _splitLoadPrefs() {
     try { return JSON.parse(localStorage.getItem("ps_split_prefs")) || {}; } catch { return {}; }
   }
@@ -1957,6 +1974,7 @@
     { key: "add_to_split",  label: "Add to Split",  type: "bool"   },
     { key: "from_split",    label: "From Split",    type: "bool"   },
     { key: "split_added",   label: "Split Added",   type: "bool"   },
+    { key: "is_mandate",    label: "Is Mandate",    type: "bool"   },
   ];
   const FB_OPS = {
     text:   [["contains","contains"],["ncontains","doesn't contain"],["is","is"],["isnot","is not"],["empty","is empty"],["nempty","is not empty"]],
@@ -2212,6 +2230,7 @@
     partner: "other_partner", other_partner: "other_partner",
     splitwise_id: "splitwise_id", processed: "processed",
     add_to_split: "add_to_split", from_split: "from_split", split_added: "split_added",
+    mandate: "is_mandate", is_mandate: "is_mandate",
   };
 
   function _sqlTokenize(text) {
@@ -2744,6 +2763,10 @@
   function _bulkEditToggle() {
     _bulkEdit = !_bulkEdit;
     if (_bulkEdit && _detailView) _detailViewToggle();  // the two modes don't mix
+    // Leaving bulk edit (for any reason) discards unsaved work, same as dirty-row
+    // field edits already are — a save flow that needs staged splits captures its
+    // own list of them before calling this.
+    if (!_bulkEdit) _catSplitClearAll();
     const btn = document.getElementById("be-toggle");
     btn.innerHTML = (_bulkEdit ? _IC.x : _IC.edit) + `<span class="icon-btn-label">${_bulkEdit ? "Exit bulk edit" : "Bulk edit"}</span>`;
     btn.setAttribute("aria-label", _bulkEdit ? "Exit bulk edit" : "Bulk edit — edit multiple rows inline");
@@ -3018,6 +3041,7 @@
 
   /* ── Split expense into per-category rows ── */
   let _spEntry = null;
+  let _spStageOnly = false;  // true when opened from Bulk edit: Save stages locally instead of pushing
 
   /* Searchable, scrollable category combobox (plain text input + a fixed-height
      dropdown panel filtered as you type) — replaces a plain <select>, which can't
@@ -3225,13 +3249,20 @@
 
   function _spOpen(entry) {
     _spEntry = entry;
+    _spStageOnly = _bulkEdit;
     document.getElementById("sp-name").textContent = entry.title;
     document.getElementById("sp-total").textContent = fmt(entry.amount);
     const rows = document.getElementById("sp-rows");
-    // Pre-fill row 1 with the original name/category so a partial split is quick to finish.
-    rows.innerHTML =
-      _spRowHtml(entry.title, (entry.categories || [])[0] || "", "") +
-      _spRowHtml("", "", "");
+    const staged = _catSplitGet(entry.page_id);
+    if (staged && staged.splits && staged.splits.length) {
+      // Reopening a staged split — restore exactly what was entered so it can be edited further.
+      rows.innerHTML = staged.splits.map(s => _spRowHtml(s.name, s.category, s.amount, s)).join("");
+    } else {
+      // Pre-fill row 1 with the original name/category so a partial split is quick to finish.
+      rows.innerHTML =
+        _spRowHtml(entry.title, (entry.categories || [])[0] || "", "") +
+        _spRowHtml("", "", "");
+    }
     document.getElementById("sp-error").style.display = "none";
     document.getElementById("sp-save-btn").disabled = false;
     document.getElementById("sp-save-btn").textContent = "Split";
@@ -3333,10 +3364,20 @@
     }
     splits.forEach(s => { _registerNewCategory(s.category); if (s.mode) _registerNewMode(s.mode); });
 
+    const entry = _spEntry;
+
+    if (_spStageOnly) {
+      // Hold locally instead of hitting the API — pushed together with the rest
+      // of Bulk edit when "Save changed" is clicked.
+      _catSplitSet(entry.page_id, { splits });
+      _spClose();
+      _paintBrowse(true);  // repaints this row as a "split staged" summary + refreshes the count bar
+      return;
+    }
+
     // Close now — Notion has to be hit once per split row plus an archive call,
     // which is too slow to hold the modal open for. It runs in the background
     // with a row loader instead, same as edit/delete/bulk-edit already do.
-    const entry = _spEntry;
     _spClose();
     _spRunSplit(entry, splits);
   }
@@ -3420,7 +3461,29 @@
     return false;
   }
 
+  // A row with a category-split staged (not yet pushed) renders as a compact
+  // summary instead of editable fields — its real fields will be replaced by
+  // the split's new rows once pushed, so editing them here would be moot.
+  function _bulkEditStagedSplitRow(e, staged) {
+    const lines = staged.splits.map(s =>
+      `<div class="cs-line">${_esc(s.name)} → <strong>${_esc(s.category)}</strong>: ${fmt(s.amount)}</div>`
+    ).join("");
+    return `
+      <div class="be-row cs-staged" data-be-id="${e.page_id}">
+        <div class="be-title" style="font-weight:700;">${_esc(e.title)}
+          <span style="font-weight:400;color:#6B7280;">(${fmt(e.amount)}) — split staged, not yet pushed</span>
+        </div>
+        <div class="cs-lines">${lines}</div>
+        <div class="cs-actions">
+          <button type="button" class="btn-ghost cs-edit-btn" data-cs-id="${e.page_id}" style="padding:0.3rem 0.8rem;font-size:0.78rem;">Edit split</button>
+          <button type="button" class="btn-ghost cs-undo-btn" data-cs-id="${e.page_id}" style="padding:0.3rem 0.8rem;font-size:0.78rem;">Undo split</button>
+        </div>
+      </div>`;
+  }
+
   function _bulkEditRow(e) {
+    const staged = _catSplitGet(e.page_id);
+    if (staged) return _bulkEditStagedSplitRow(e, staged);
     const s = _beSnap(e);
     // Always include the row's own categories too, even if the all-time list hasn't loaded yet.
     const catSet = new Set(_allCats);
@@ -3466,8 +3529,11 @@
 
   function _beRefreshCount() {
     const n = document.querySelectorAll("#browse-list .be-row.dirty").length;
-    document.getElementById("be-count").textContent = `Bulk edit — ${n} changed`;
-    document.getElementById("be-save-btn").disabled = n === 0;
+    const m = _catSplitCount();
+    const parts = [`${n} changed`];
+    if (m) parts.push(`${m} split${m === 1 ? "" : "s"} staged`);
+    document.getElementById("be-count").textContent = `Bulk edit — ${parts.join(", ")}`;
+    document.getElementById("be-save-btn").disabled = n === 0 && m === 0;
   }
 
   document.getElementById("browse-list").addEventListener("input", ev => {
@@ -3502,6 +3568,18 @@
   // Category pills in bulk edit are buttons, not inputs — toggle + report as a change.
   document.getElementById("browse-list").addEventListener("click", ev => {
     if (!_bulkEdit) return;
+    const csEditBtn = ev.target.closest(".cs-edit-btn");
+    if (csEditBtn) {
+      const entry = _browseFull.find(x => x.page_id === csEditBtn.dataset.csId);
+      if (entry) _spOpen(entry);
+      return;
+    }
+    const csUndoBtn = ev.target.closest(".cs-undo-btn");
+    if (csUndoBtn) {
+      _catSplitRemove(csUndoBtn.dataset.csId);
+      _paintBrowse(true);
+      return;
+    }
     const splitBtn = ev.target.closest(".be-split-btn");
     if (splitBtn) {
       const row = splitBtn.closest(".be-row");
@@ -3527,7 +3605,9 @@
 
   function _bulkEditSave() {
     const dirtyRows = [...document.querySelectorAll("#browse-list .be-row.dirty")];
-    if (!dirtyRows.length) return;
+    const stagedSplits = _catSplitLoad();  // { [page_id]: { splits } }, drained below
+    const splitIds = Object.keys(stagedSplits);
+    if (!dirtyRows.length && !splitIds.length) return;
 
     // Snapshot + optimistically apply every dirty row *before* leaving edit mode,
     // so the normal row view we drop back into already shows the new values.
@@ -3562,37 +3642,91 @@
       });
       jobs.push({ id, name: cur.name, payload, prevSnapshot });
     }
-    if (!jobs.length) return;
+
+    const splitJobs = splitIds.map(id => ({
+      id,
+      name: (_browseFull.find(x => x.page_id === id) || {}).title || id,
+      splits: stagedSplits[id].splits,
+    }));
+
+    if (!jobs.length && !splitJobs.length) return;
 
     // Back to the normal row view immediately — saves continue in the background.
+    // (This also drains the staged-split queue; splitJobs above already has its own
+    // copy of what to run, and any that fail get re-staged in the catch below.)
     _bulkEditToggle();
     jobs.forEach(j => _rowSaving(j.id, true));
-    _bulkEditRunJobs(jobs);
+    splitJobs.forEach(j => _rowSaving(j.id, true));
+    _bulkEditRunJobs(jobs, splitJobs);
   }
 
-  async function _bulkEditRunJobs(jobs) {
+  async function _bulkEditRunJobs(jobs, splitJobs) {
+    splitJobs = splitJobs || [];
     let done = 0, failed = 0; const fails = [];
-    await Promise.all(jobs.map(async job => {
-      try {
-        const res = await fetch(`/expenses/${job.id}/update/`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
-          body: JSON.stringify(job.payload),
-        });
-        const d = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(d.error || "Save failed");
-        done++;
-        _rowSaving(job.id, false);
-      } catch (err) {
-        failed++;
-        fails.push(`${job.name || job.id}: ${err.message}`);
-        const entry = _browseFull.find(x => x.page_id === job.id);
-        if (entry) Object.assign(entry, job.prevSnapshot);
-        _splitRefreshRow(job.id);  // repaint reverted, also clears row-saving
-      }
-    }));
-    showToast(`${done} saved${failed ? `, ${failed} failed` : ""}`, failed ? "info" : "success", 5000);
-    if (failed) alert("Some bulk edits failed and were reverted:\n\n" + fails.join("\n"));
+    let splitDone = 0, splitFailed = 0;
+
+    await Promise.all([
+      ...jobs.map(async job => {
+        try {
+          const res = await fetch(`/expenses/${job.id}/update/`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+            body: JSON.stringify(job.payload),
+          });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(d.error || "Save failed");
+          done++;
+          _rowSaving(job.id, false);
+        } catch (err) {
+          failed++;
+          fails.push(`${job.name || job.id}: ${err.message}`);
+          const entry = _browseFull.find(x => x.page_id === job.id);
+          if (entry) Object.assign(entry, job.prevSnapshot);
+          _splitRefreshRow(job.id);  // repaint reverted, also clears row-saving
+        }
+      }),
+      ...splitJobs.map(async job => {
+        try {
+          const res = await fetch(`/expenses/${job.id}/split/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+            body: JSON.stringify({ splits: job.splits }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || "Split failed");
+
+          // Push any rows that had an inline Splitwise config, same as a single split does.
+          const newIds = data.page_ids || [];
+          for (let i = 0; i < job.splits.length; i++) {
+            if (!job.splits[i].splitwise || !newIds[i]) continue;
+            try {
+              await fetch(`/expenses/${newIds[i]}/push-split/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": _getCsrf() },
+                body: JSON.stringify(job.splits[i].splitwise),
+              });
+            } catch { /* category split itself still succeeded; Splitwise push can be retried from the list */ }
+          }
+          splitDone++;
+          _rowSaving(job.id, false);
+        } catch (err) {
+          splitFailed++;
+          fails.push(`${job.name || job.id} (split): ${err.message}`);
+          _catSplitSet(job.id, { splits: job.splits });  // keep it staged so the work isn't lost
+          _rowSaving(job.id, false);
+        }
+      }),
+    ]);
+
+    // A successful split changes row structure (archives the original, creates
+    // N new rows) — a targeted local patch isn't enough, so refetch once.
+    if (splitDone) await fetchList(true);
+
+    const parts = [];
+    if (jobs.length) parts.push(`${done} saved${failed ? `, ${failed} failed` : ""}`);
+    if (splitJobs.length) parts.push(`${splitDone} split${splitDone === 1 ? "" : "s"} applied${splitFailed ? `, ${splitFailed} failed` : ""}`);
+    showToast(parts.join(" · "), (failed || splitFailed) ? "info" : "success", 5000);
+    if (fails.length) alert("Some bulk edits failed:\n\n" + fails.join("\n") + "\n\nField edits were reverted; failed splits are still staged for retry.");
   }
 
   // Paint the currently-revealed slice of the fully-loaded list — no network.
