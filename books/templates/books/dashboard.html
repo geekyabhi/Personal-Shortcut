@@ -767,9 +767,11 @@
       </div>
       <div class="ab-field">
         <label>Author</label>
-        <select id="ab-author">
+        <select id="ab-author" onchange="_abAuthorChange()">
           <option value="">— Select author —</option>
+          <option value="__new__">+ Add new author…</option>
         </select>
+        <input type="text" id="ab-author-new" placeholder="New author name" style="display:none;margin-top:0.4rem;">
       </div>
       <div class="ab-field">
         <label>Genre (pick any)</label>
@@ -789,9 +791,9 @@
         <input type="hidden" id="ab-drive-url">
         <!-- Upload to Drive -->
         <div class="drive-upload-row">
-          <input type="file" id="ab-drive-file" accept=".pdf,.doc,.docx" style="display:none" onchange="_driveUpload()">
+          <input type="file" id="ab-drive-file" accept=".pdf,.doc,.docx,.epub" style="display:none" onchange="_driveUpload()">
           <button type="button" class="drive-upload-btn" id="drive-upload-btn" onclick="document.getElementById('ab-drive-file').click()">
-            ⬆ Upload PDF to Drive
+            ⬆ Upload File to Drive
           </button>
           <div class="drive-upload-progress" id="drive-upload-progress"><div class="drive-upload-progress-bar" id="drive-upload-bar"></div></div>
           <span class="drive-upload-status" id="drive-upload-status"></span>
@@ -1201,7 +1203,8 @@
 
         // Modal author dropdown
         const maSel = document.getElementById('ab-author');
-        maSel.innerHTML = '<option value="">— Select author —</option>' + d.all_authors.map(a=>`<option>${a}</option>`).join('');
+        maSel.innerHTML = '<option value="">— Select author —</option>' + d.all_authors.map(a=>`<option>${a}</option>`).join('')
+          + '<option value="__new__">+ Add new author…</option>';
 
         // Modal genre pills
         const pillGrid = document.getElementById('ab-genre-pills');
@@ -1236,10 +1239,10 @@
 
   function _driveRenderList(files) {
     const dd = document.getElementById('drive-dropdown');
-    if (!files.length) { dd.innerHTML = '<div class="drive-empty">No PDF or Doc files found.</div>'; return; }
+    if (!files.length) { dd.innerHTML = '<div class="drive-empty">No PDF, Doc, or EPUB files found.</div>'; return; }
     dd.innerHTML = files.map((f, i) =>
       `<div class="drive-opt" data-idx="${i}" data-url="${f.url}" data-name="${f.name.replace(/"/g,'&quot;')}" onclick="_driveSelect(${i})">
-        <span class="drive-opt-icon">${f.type === 'pdf' ? '📄' : '📝'}</span>
+        <span class="drive-opt-icon">${f.type === 'pdf' ? '📄' : f.type === 'epub' ? '📚' : '📝'}</span>
         <span class="drive-opt-name">${f.name}</span>
       </div>`
     ).join('');
@@ -1359,13 +1362,27 @@
   });
 
   /* ── Add / Edit Book Modal ── */
+  // Toggle the free-text "new author" input when "+ Add new author…" is picked.
+  function _abAuthorChange() {
+    const isNew = document.getElementById('ab-author').value === '__new__';
+    const newInput = document.getElementById('ab-author-new');
+    newInput.style.display = isNew ? 'block' : 'none';
+    if (isNew) newInput.focus(); else newInput.value = '';
+  }
+
+  function _abResetAuthor() {
+    document.getElementById('ab-author').value = '';
+    document.getElementById('ab-author-new').value = '';
+    document.getElementById('ab-author-new').style.display = 'none';
+  }
+
   function _abOpen() {
     _editPageId = null;
     document.getElementById('ab-modal-title').textContent = '📚 Add New Book';
     document.querySelector('.ab-save').textContent = 'Save Book';
     document.getElementById('ab-name').value = '';
     document.getElementById('ab-status').value = 'To Read';
-    document.getElementById('ab-author').value = '';
+    _abResetAuthor();
     document.getElementById('ab-summary').value = '';
     document.getElementById('ab-error').style.display = 'none';
     document.querySelectorAll('#ab-genre-pills .pill').forEach(p => p.classList.remove('selected'));
@@ -1384,8 +1401,8 @@
     document.getElementById('ab-name').value = book.name;
     document.getElementById('ab-status').value = book.status || 'To Read';
     // Set author (first author in list)
-    const maSel = document.getElementById('ab-author');
-    maSel.value = (book.author && book.author[0]) || '';
+    _abResetAuthor();
+    document.getElementById('ab-author').value = (book.author && book.author[0]) || '';
     document.getElementById('ab-summary').value = book.summary || '';
     document.getElementById('ab-error').style.display = 'none';
     // Pre-select genre pills
@@ -1424,15 +1441,22 @@
   }
 
   function _abSave() {
-    const name      = document.getElementById('ab-name').value.trim();
-    const status    = document.getElementById('ab-status').value;
-    const author    = document.getElementById('ab-author').value;
-    const drive_url = document.getElementById('ab-drive-url').value.trim();
-    const summary   = document.getElementById('ab-summary').value.trim();
-    const genres    = [...document.querySelectorAll('#ab-genre-pills .pill.selected')].map(p => p.textContent);
-    const errEl     = document.getElementById('ab-error');
+    const name       = document.getElementById('ab-name').value.trim();
+    const status     = document.getElementById('ab-status').value;
+    const authorSel  = document.getElementById('ab-author').value;
+    const authorNew  = document.getElementById('ab-author-new').value.trim();
+    const author     = authorSel === '__new__' ? authorNew : authorSel;
+    const drive_url  = document.getElementById('ab-drive-url').value.trim();
+    const summary    = document.getElementById('ab-summary').value.trim();
+    const genres     = [...document.querySelectorAll('#ab-genre-pills .pill.selected')].map(p => p.textContent);
+    const errEl      = document.getElementById('ab-error');
 
     if (!name) { errEl.textContent = 'Book title is required.'; errEl.style.display = 'block'; return; }
+    if (authorSel === '__new__' && !authorNew) {
+      errEl.textContent = "Enter the new author's name, or pick an existing one.";
+      errEl.style.display = 'block';
+      return;
+    }
     errEl.style.display = 'none';
 
     const saveBtn = document.querySelector('.ab-save');

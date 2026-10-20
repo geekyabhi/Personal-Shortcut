@@ -123,18 +123,23 @@ class DriveDataLayer:
         files, page_token = [], None
         while True:
             resp = service.files().list(
-                q="(mimeType='application/pdf' or mimeType='application/vnd.google-apps.document') and trashed=false",
+                q=(
+                    "(mimeType='application/pdf' or mimeType='application/vnd.google-apps.document'"
+                    " or mimeType='application/epub+zip') and trashed=false"
+                ),
                 fields="nextPageToken, files(id, name, webViewLink, mimeType)",
                 pageSize=100,
                 pageToken=page_token,
             ).execute()
 
             for f in resp.get("files", []):
+                mime = f["mimeType"]
+                file_type = "pdf" if mime == "application/pdf" else "epub" if mime == "application/epub+zip" else "doc"
                 files.append({
                     "id": f["id"],
                     "name": f.get("name", "Untitled"),
                     "url": f.get("webViewLink", ""),
-                    "type": "pdf" if f["mimeType"] == "application/pdf" else "doc",
+                    "type": file_type,
                 })
 
             page_token = resp.get("nextPageToken")
