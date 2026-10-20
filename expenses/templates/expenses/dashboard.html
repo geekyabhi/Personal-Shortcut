@@ -3470,9 +3470,10 @@
   // summary instead of editable fields — its real fields will be replaced by
   // the split's new rows once pushed, so editing them here would be moot.
   function _bulkEditStagedSplitRow(e, staged) {
-    const lines = staged.splits.map(s =>
-      `<div class="cs-line">${_esc(s.name)} → <strong>${_esc(s.category)}</strong>: ${fmt(s.amount)}</div>`
-    ).join("");
+    const lines = staged.splits.map(s => {
+      const proc = `<span class="tag ${s.processed ? "tag-cat" : "tag-flag-off"}">${s.processed ? "✓ processed" : "○ unprocessed"}</span>`;
+      return `<div class="cs-line">${_esc(s.name)} → <strong>${_esc(s.category)}</strong>: ${fmt(s.amount)} ${proc}</div>`;
+    }).join("");
     return `
       <div class="be-row cs-staged" data-be-id="${e.page_id}">
         <div class="be-title" style="font-weight:700;">${_esc(e.title)}
@@ -3699,7 +3700,7 @@
           fails.push(`${job.name || job.id}: ${err.message}`);
           const entry = _browseFull.find(x => x.page_id === job.id);
           if (entry) Object.assign(entry, job.prevSnapshot);
-          _splitRefreshRow(job.id);  // repaint reverted, also clears row-saving
+          _paintBrowse(true);  // reverted — reflect that against the active filters too
         }
       }),
       ...splitJobs.map(async job => {
@@ -3828,8 +3829,10 @@
       const d = await res.json().catch(() => ({}));
       if (!res.ok) { cb.checked = !want; showToast(d.error || "Update failed", "error"); return; }
       entry.processed = want;
-      const row = cb.closest(".expense-row");
-      if (row) { row.classList.toggle("proc", want); row.classList.toggle("unproc", !want); }
+      // Re-derive the view from the active filters against the now-updated data —
+      // e.g. a "Processed = false" filter should drop this row immediately,
+      // no refetch needed, since _browseFull already has the new value.
+      _paintBrowse(true);
       showToast(want ? "Marked processed" : "Unmarked processed", "success");
     } catch (e) {
       cb.checked = !want;
@@ -4282,7 +4285,7 @@
       if (!isMandate) {
         const en = (_lastBrowse?.entries || []).find(x => x.page_id === editId);
         if (en) { prev = { ...en }; Object.assign(en, fields); }
-        _splitRefreshRow(editId);
+        _paintBrowse(true);  // re-applies the active filters locally — no refetch
       }
       rowId = editId;
     } else if (isMandate) {
@@ -4321,7 +4324,7 @@
       if (!isMandate && editId) {
         const en = (_lastBrowse?.entries || []).find(x => x.page_id === editId);
         if (en && prev) Object.assign(en, prev);
-        _splitRefreshRow(editId);
+        _paintBrowse(true);  // reverted — reflect that against the active filters too
       } else if (!isMandate) {
         const i = _browseFull.findIndex(e => e.page_id === rowId);
         if (i >= 0) { _browseFull.splice(i, 1); _paintBrowse(true); }
