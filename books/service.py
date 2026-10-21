@@ -38,6 +38,9 @@ class BooksService:
         def multi(key):
             return [o["name"] for o in props.get(key, {}).get("multi_select", [])]
 
+        def url(key):
+            return props.get(key, {}).get("url") or ""
+
         return {
             "page_id": row.get("id", ""),
             "name": title("Book Name"),
@@ -48,6 +51,7 @@ class BooksService:
             "summary_status": sel("Summary Status"),
             "soft_copy": self._extract_files(props, "Soft Copy"),
             "key_points": self._extract_files(props, "Key Points"),
+            "epub_url": url("Epub"),
             "created_time": row.get("created_time", ""),
             "last_edited_time": row.get("last_edited_time", ""),
         }
@@ -163,6 +167,7 @@ class BooksService:
         genres: list,
         summary: str,
         drive_url: str,
+        epub_url: str = "",
     ) -> str:
         properties: dict = {
             "Book Name": {"title": [{"text": {"content": name}}]},
@@ -178,6 +183,8 @@ class BooksService:
             properties["Soft Copy"] = {
                 "files": [{"type": "external", "name": "Google Drive", "external": {"url": drive_url}}]
             }
+        if epub_url:
+            properties["Epub"] = {"url": epub_url}
 
         page = self.data_layer.create_page(properties)
         self.data_layer.bust_cache()
@@ -211,6 +218,9 @@ class BooksService:
                 }
             else:
                 properties["Soft Copy"] = {"files": []}
+
+        if "epub_url" in body:
+            properties["Epub"] = {"url": body["epub_url"].strip() or None}
 
         if not properties:
             raise ValueError("No fields to update")

@@ -77,6 +77,7 @@ class BooksCreateView(BooksBaseView):
                 genres=body.get("genres", []),
                 summary=body.get("summary", "").strip(),
                 drive_url=body.get("drive_url", "").strip(),
+                epub_url=body.get("epub_url", "").strip(),
             )
         except requests.HTTPError as exc:
             return self._api_error(exc)
@@ -98,6 +99,13 @@ class BooksDriveFilesView(BooksBaseView):
 
 
 class BooksDriveUploadView(BooksBaseView):
+    # Which env var holds the destination folder, keyed by the "kind" the
+    # frontend sends — keeps EPUBs physically separate from PDFs/docs in Drive.
+    FOLDER_ENV_BY_KIND = {
+        "soft_copy": "GOOGLE_DRIVE_UPLOAD_FOLDER_ID",
+        "epub": "GOOGLE_DRIVE_EPUB_FOLDER_ID",
+    }
+
     def post(self, request):
         if not self.drive_layer.is_configured:
             return JsonResponse({"error": "Google Drive not configured"}, status=400)
@@ -109,8 +117,11 @@ class BooksDriveUploadView(BooksBaseView):
         if upload.size > 50 * 1024 * 1024:
             return JsonResponse({"error": "File too large (max 50 MB)"}, status=400)
 
+        kind = request.POST.get("kind", "soft_copy")
+        env_key = self.FOLDER_ENV_BY_KIND.get(kind, self.FOLDER_ENV_BY_KIND["soft_copy"])
+
         try:
-            folder_id = os.environ.get("GOOGLE_DRIVE_UPLOAD_FOLDER_ID", "").strip()
+            folder_id = os.environ.get(env_key, "").strip()
             drive_file = self.service.upload_drive_file(upload, folder_id)
         except Exception as exc:
             return JsonResponse({"error": str(exc)}, status=502)
