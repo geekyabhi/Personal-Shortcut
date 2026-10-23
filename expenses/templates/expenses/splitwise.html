@@ -337,7 +337,7 @@
   <div class="container">
     <div class="topbar">
       <nav>
-        <a href="/">Home</a>
+        {% if not restricted %}<a href="/">Home</a>{% endif %}
         <a href="/expenses/">Dashboard</a>
         <a href="/expenses/charts/">Charts</a>
         <a href="/expenses/splitwise/" class="active">Splitwise</a>
@@ -348,7 +348,7 @@
           <span class="nav-drop-label">Menu</span>
         </button>
         <div class="nav-drop-menu" hidden>
-          <a href="/">Home</a>
+          {% if not restricted %}<a href="/">Home</a>{% endif %}
           <a href="/expenses/">Dashboard</a>
           <a href="/expenses/charts/">Charts</a>
           <a href="/expenses/splitwise/" class="active">Splitwise</a>

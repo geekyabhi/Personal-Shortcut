@@ -1,6 +1,7 @@
 import json
 
 import requests
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
@@ -32,7 +33,8 @@ class SplitwiseBaseView(View):
         return JsonResponse({"error": f"Splitwise API error: {exc}"}, status=502)
 
     def _expenses_service(self):
-        dl = ExpensesDataLayer.from_env()
+        profile = self.request.session.get("notion_profile") or settings.DEFAULT_EXPENSE_PROFILE
+        dl = ExpensesDataLayer.from_env(profile)
         if not dl.is_configured:
             return None
         return ExpensesService(dl)
@@ -48,7 +50,9 @@ class SplitwiseDashboardView(View):
     """Renders the Splitwise tab page (data is loaded client-side)."""
 
     def get(self, request):
-        return render(request, "expenses/splitwise.html")
+        profile = request.session.get("notion_profile")
+        restricted = bool(profile) and profile not in settings.FULL_ACCESS_PROFILES
+        return render(request, "expenses/splitwise.html", {"restricted": restricted})
 
 
 class SplitwiseOverviewView(SplitwiseBaseView):

@@ -1,6 +1,7 @@
 import json
 
 import requests
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
@@ -12,7 +13,11 @@ from .service import ExpensesService
 class ExpensesBaseView(View):
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
-        data_layer = ExpensesDataLayer.from_env()
+        # The open /api/ routes never log in, so they have no session profile —
+        # fall back to DEFAULT_EXPENSE_PROFILE there (today's single-user
+        # behavior, unchanged) rather than erroring out.
+        profile = request.session.get("notion_profile") or settings.DEFAULT_EXPENSE_PROFILE
+        data_layer = ExpensesDataLayer.from_env(profile)
         if data_layer.is_configured:
             self.service = ExpensesService(data_layer)
         else:
@@ -34,14 +39,21 @@ class ExpensesBaseView(View):
         )
 
 
+def _restricted(request) -> bool:
+    """True when this session's profile only has expenses access (see
+    settings.FULL_ACCESS_PROFILES) — used to hide the Home link in nav."""
+    profile = request.session.get("notion_profile")
+    return bool(profile) and profile not in settings.FULL_ACCESS_PROFILES
+
+
 class DashboardView(View):
     def get(self, request):
-        return render(request, "expenses/dashboard.html")
+        return render(request, "expenses/dashboard.html", {"restricted": _restricted(request)})
 
 
 class ChartsView(View):
     def get(self, request):
-        return render(request, "expenses/charts.html")
+        return render(request, "expenses/charts.html", {"restricted": _restricted(request)})
 
 
 class ExpensesSummaryView(ExpensesBaseView):

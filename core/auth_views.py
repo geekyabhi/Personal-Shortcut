@@ -72,14 +72,16 @@ def auth_callback(request):
     except Exception:
         return redirect("/login/?error=userinfo_failed")
 
-    email = info.get("email", "")
-    if email != getattr(settings, "ALLOWED_EMAIL", ""):
+    email = (info.get("email", "") or "").strip().lower()
+    profile = settings.ALLOWED_USERS.get(email)
+    if not profile:
         return redirect("/login/?error=unauthorized")
 
     request.session.pop("oauth_state", None)
-    request.session["user_email"]   = email
-    request.session["user_name"]    = info.get("name", email)
-    request.session["user_picture"] = info.get("picture", "")
+    request.session["user_email"]     = email
+    request.session["user_name"]      = info.get("name", email)
+    request.session["user_picture"]   = info.get("picture", "")
+    request.session["notion_profile"] = profile
     return redirect("/")
 
 

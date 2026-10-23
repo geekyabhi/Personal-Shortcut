@@ -18,22 +18,32 @@ class ExpensesDataLayer:
     MANDATE_TTL = 60  # seconds — cache for the small mandate-related queries
 
     # Full dataset + a small "recent months" slice used for the fast first paint.
-    _cache: dict = {"rows": None, "ts": 0.0}
-    _recent_cache: dict = {"rows": None, "ts": 0.0}
-    _swid_cache: dict = {"ids": None, "ts": 0.0, "exists": True}
-    _mandate_cache: dict = {"rows": None, "ts": 0.0}
-    _mandate_tagged_cache: dict = {"rows": None, "ts": 0.0}
+    # Each of these is keyed by db_id (set in __init__), not a flat dict — they
+    # live on the class so requests in the same process share a warm cache for
+    # speed, but with multiple Notion profiles now possible (see from_env),
+    # a flat shared dict would leak one person's cached rows into another
+    # person's response. bust_cache() only clears this instance's own bucket.
+    _cache: dict = {}
+    _recent_cache: dict = {}
+    _swid_cache: dict = {}
+    _mandate_cache: dict = {}
+    _mandate_tagged_cache: dict = {}
     _full_fetch_lock = threading.Lock()
 
     def __init__(self, token: str, db_id: str):
         self.token = token
         self.db_id = db_id
 
+    def _bucket(self, store: dict, default: dict) -> dict:
+        return store.setdefault(self.db_id, dict(default))
+
     @classmethod
-    def from_env(cls) -> "ExpensesDataLayer":
+    def from_env(cls, profile: str) -> "ExpensesDataLayer":
+        """``profile`` is an EXPENSE_PROFILES name (e.g. "ABHINAV") — reads
+        that profile's own <PROFILE>_NOTION_TOKEN / <PROFILE>_NOTION_DB."""
         return cls(
-            token=os.environ.get("NOTION_TOKEN", ""),
-            db_id=os.environ.get("NOTION_EXPENSES_DB_ID", ""),
+            token=os.environ.get(f"{profile}_NOTION_TOKEN", ""),
+            db_id=os.environ.get(f"{profile}_NOTION_DB", ""),
         )
 
     @property
@@ -88,7 +98,7 @@ class ExpensesDataLayer:
         id (a handful), never the whole table. Cached for `SWID_TTL`.
         """
         now = time.time()
-        cache = self.__class__._swid_cache
+        cache = self._bucket(self.__class__._swid_cache, {"ids": None, "ts": 0.0, "exists": True})
         if cache["ids"] is not None and (now - cache["ts"]) < self.SWID_TTL:
             return set(cache["ids"]), cache["exists"]
 
@@ -119,7 +129,7 @@ class ExpensesDataLayer:
         recent-months-only fetch). Cached briefly; returns [] before the
         column exists in Notion yet."""
         now = time.time()
-        cache = self.__class__._mandate_cache
+        cache = self._bucket(self.__class__._mandate_cache, {"rows": None, "ts": 0.0})
         if cache["rows"] is not None and (now - cache["ts"]) < self.MANDATE_TTL:
             return cache["rows"]
         try:
@@ -137,7 +147,7 @@ class ExpensesDataLayer:
         """Every already-backfilled expense row (`Mandate ID` set) — one
         query covering all mandates, rather than one per mandate."""
         now = time.time()
-        cache = self.__class__._mandate_tagged_cache
+        cache = self._bucket(self.__class__._mandate_tagged_cache, {"rows": None, "ts": 0.0})
         if cache["rows"] is not None and (now - cache["ts"]) < self.MANDATE_TTL:
             return cache["rows"]
         try:
@@ -160,7 +170,7 @@ class ExpensesDataLayer:
         fetches everything.
         """
         now = time.time()
-        full = self.__class__._cache
+        full = self._bucket(self.__class__._cache, {"rows": None, "ts": 0.0})
         if (
             not force
             and full["rows"] is not None
@@ -169,7 +179,7 @@ class ExpensesDataLayer:
             return full["rows"], full["ts"], True, False
 
         if partial and not force:
-            recent = self.__class__._recent_cache
+            recent = self._bucket(self.__class__._recent_cache, {"rows": None, "ts": 0.0})
             if (
                 recent["rows"] is not None
                 and (now - recent["ts"]) < self.CACHE_TTL
@@ -217,9 +227,9 @@ class ExpensesDataLayer:
         return resp.json()
 
     def bust_cache(self) -> None:
-        """Invalidate all caches so the next request re-fetches."""
-        self.__class__._cache["ts"] = 0.0
-        self.__class__._recent_cache["ts"] = 0.0
-        self.__class__._swid_cache["ids"] = None
-        self.__class__._mandate_cache["rows"] = None
-        self.__class__._mandate_tagged_cache["rows"] = None
+        """Invalidate this instance's (db_id's) caches so the next request re-fetches."""
+        self._bucket(self.__class__._cache, {"rows": None, "ts": 0.0})["ts"] = 0.0
+        self._bucket(self.__class__._recent_cache, {"rows": None, "ts": 0.0})["ts"] = 0.0
+        self._bucket(self.__class__._swid_cache, {"ids": None, "ts": 0.0, "exists": True})["ids"] = None
+        self._bucket(self.__class__._mandate_cache, {"rows": None, "ts": 0.0})["rows"] = None
+        self._bucket(self.__class__._mandate_tagged_cache, {"rows": None, "ts": 0.0})["rows"] = None

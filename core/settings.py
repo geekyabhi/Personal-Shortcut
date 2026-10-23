@@ -32,7 +32,32 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")       # Drive (Desktop
 GOOGLE_WEB_CLIENT_ID     = os.environ.get("GOOGLE_WEB_CLIENT_ID", "")
 GOOGLE_WEB_CLIENT_SECRET = os.environ.get("GOOGLE_WEB_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI      = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback/")
-ALLOWED_EMAIL = os.environ.get("ALLOWED_EMAIL", "abhi0strike@gmail.com")
+
+# Multi-user expenses: each name in EXPENSE_PROFILES has its own
+# <NAME>_EMAIL / <NAME>_NOTION_TOKEN / <NAME>_NOTION_DB env vars. Login
+# checks the signed-in email against ALLOWED_USERS; the matched profile name
+# is what expenses' DataLayer.from_env(profile) uses to pick that person's
+# own Notion credentials. DEFAULT_EXPENSE_PROFILE is used wherever there's no
+# logged-in session to resolve from (the open /api/ routes, the homepage
+# stats widget) — it preserves today's single-user behavior unchanged.
+EXPENSE_PROFILES = [p.strip().upper() for p in os.environ.get("EXPENSE_PROFILES", "ABHINAV").split(",") if p.strip()]
+DEFAULT_EXPENSE_PROFILE = EXPENSE_PROFILES[0] if EXPENSE_PROFILES else ""
+
+# Only these profiles get the full app (Home/Books/Habits/Todos/Blogs) — any
+# other profile (e.g. a second person added just for expense tracking) is
+# restricted to /expenses/ only, enforced in core/middleware.py. Deliberately
+# an explicit name, not "whichever profile is first" — EXPENSE_PROFILES'
+# order/contents can change (e.g. while testing) without silently handing
+# full access to the wrong person.
+FULL_ACCESS_PROFILES = {
+    p.strip().upper() for p in os.environ.get("FULL_ACCESS_PROFILES", "ABHINAV").split(",") if p.strip()
+}
+
+ALLOWED_USERS = {
+    os.environ.get(f"{p}_EMAIL", "").strip().lower(): p
+    for p in EXPENSE_PROFILES
+    if os.environ.get(f"{p}_EMAIL", "").strip()
+}
 
 TEMPLATES = [
     {

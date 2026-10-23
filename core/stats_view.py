@@ -2,7 +2,9 @@ import os
 import requests
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
 
+from django.conf import settings
 from django.http import JsonResponse
 from django.views import View
 
@@ -34,9 +36,9 @@ def _query_notion(db_id, token, payload=None):
     return rows
 
 
-def _expenses_stat():
-    token = os.environ.get("NOTION_TOKEN", "")
-    db_id = os.environ.get("NOTION_EXPENSES_DB_ID", "")
+def _expenses_stat(profile):
+    token = os.environ.get(f"{profile}_NOTION_TOKEN", "")
+    db_id = os.environ.get(f"{profile}_NOTION_DB", "")
     if not token or not db_id:
         return None
     today = date.today()
@@ -108,8 +110,9 @@ def _blogs_stat():
 
 class HomeStatsView(View):
     def get(self, request):
+        profile = request.session.get("notion_profile") or settings.DEFAULT_EXPENSE_PROFILE
         fetchers = {
-            "expenses": _expenses_stat,
+            "expenses": partial(_expenses_stat, profile),
             "habits":   _habits_stat,
             "books":    _books_stat,
             "todos":    _todos_stat,
