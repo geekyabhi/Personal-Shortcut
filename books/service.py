@@ -28,9 +28,6 @@ class BooksService:
         def title(key):
             return "".join(t.get("plain_text", "") for t in props.get(key, {}).get("title", [])).strip()
 
-        def rich(key):
-            return "".join(t.get("plain_text", "") for t in props.get(key, {}).get("rich_text", [])).strip()
-
         def sel(key):
             s = props.get(key, {}).get("select")
             return s["name"] if s else ""
@@ -47,7 +44,7 @@ class BooksService:
             "status": sel("Status"),
             "genre": multi("Genre"),
             "author": multi("Author"),
-            "summary": rich("Summary"),
+            "summary": self._extract_files(props, "Summary"),  # now a Drive-file link, not rich text
             "summary_status": sel("Summary Status"),
             "soft_copy": self._extract_files(props, "Soft Copy"),
             "key_points": self._extract_files(props, "Key Points"),
@@ -165,9 +162,9 @@ class BooksService:
         status: str,
         authors: list,
         genres: list,
-        summary: str,
         drive_url: str,
         epub_url: str = "",
+        summary_url: str = "",
     ) -> str:
         properties: dict = {
             "Book Name": {"title": [{"text": {"content": name}}]},
@@ -177,14 +174,16 @@ class BooksService:
             properties["Author"] = {"multi_select": [{"name": a} for a in authors]}
         if genres:
             properties["Genre"] = {"multi_select": [{"name": g} for g in genres]}
-        if summary:
-            properties["Summary"] = {"rich_text": [{"text": {"content": summary}}]}
         if drive_url:
             properties["Soft Copy"] = {
                 "files": [{"type": "external", "name": "Google Drive", "external": {"url": drive_url}}]
             }
         if epub_url:
             properties["Epub"] = {"url": epub_url}
+        if summary_url:
+            properties["Summary"] = {
+                "files": [{"type": "external", "name": "Google Drive", "external": {"url": summary_url}}]
+            }
 
         page = self.data_layer.create_page(properties)
         self.data_layer.bust_cache()
@@ -208,8 +207,13 @@ class BooksService:
         if "genres" in body:
             properties["Genre"] = {"multi_select": [{"name": g} for g in body["genres"]]}
 
-        if "summary" in body:
-            properties["Summary"] = {"rich_text": [{"text": {"content": body["summary"]}}]}
+        if "summary_url" in body:
+            if body["summary_url"].strip():
+                properties["Summary"] = {
+                    "files": [{"type": "external", "name": "Google Drive", "external": {"url": body["summary_url"].strip()}}]
+                }
+            else:
+                properties["Summary"] = {"files": []}
 
         if "drive_url" in body:
             if body["drive_url"].strip():

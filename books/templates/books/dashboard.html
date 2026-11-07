@@ -347,7 +347,7 @@
     .ab-overlay.open { display: flex; }
     .ab-modal {
       background: #fff; border-radius: 24px; padding: 1.75rem;
-      width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+      width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto;
       box-shadow: 0 24px 80px rgba(0,0,0,0.20);
       animation: _modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
     }
@@ -601,85 +601,8 @@
     .btn-delete { background: rgba(239,68,68,0.08); color: #DC2626; }
     .btn-delete:hover { background: rgba(239,68,68,0.18); transform: scale(1.08); }
     .btn-icon:active { transform: scale(0.92) !important; }
-    .btn-summary { background: rgba(99,102,241,0.08); color: #4F46E5; }
-    .btn-summary:hover { background: rgba(99,102,241,0.18); transform: scale(1.08); }
     [data-theme="dark"] .btn-edit     { background: rgba(5,150,105,0.14); }
     [data-theme="dark"] .btn-delete   { background: rgba(239,68,68,0.14); }
-    [data-theme="dark"] .btn-summary  { background: rgba(99,102,241,0.14); }
-
-    /* ── Summary full-screen overlay ── */
-    .sum-overlay {
-      display: none; position: fixed; inset: 0; z-index: 600;
-      background: rgba(15,15,20,0.6); backdrop-filter: blur(8px);
-      align-items: center; justify-content: center; padding: 1.5rem;
-    }
-    .sum-overlay.open { display: flex; }
-    .sum-panel {
-      background: #FAFAFA; border-radius: 20px;
-      width: 100%; max-width: 760px; height: 86vh;
-      display: flex; flex-direction: column;
-      box-shadow: 0 40px 120px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06);
-      animation: _modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
-      overflow: hidden;
-    }
-    .sum-header {
-      display: flex; align-items: center; gap: 1rem;
-      padding: 1.4rem 2rem 1.1rem; border-bottom: 1px solid rgba(0,0,0,0.06);
-      flex-shrink: 0; background: #fff;
-    }
-    .sum-title-wrap { flex: 1; min-width: 0; }
-    .sum-label { font-size: 0.65rem; font-weight: 500; color: #B0B7C3; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.2rem; }
-    .sum-book-name { font-size: 1rem; font-weight: 600; color: #1F2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sum-close {
-      width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
-      background: transparent; color: #C4CAD4; font-size: 0.9rem;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      transition: all 0.15s; font-family: inherit;
-    }
-    .sum-close:hover { background: rgba(239,68,68,0.08); color: #EF4444; }
-    .sum-body {
-      flex: 1; display: flex; flex-direction: column;
-      padding: 2rem 2.5rem 1rem; overflow: hidden; background: #FAFAFA;
-    }
-    .sum-textarea {
-      flex: 1; width: 100%; border: none; outline: none; resize: none;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 1.02rem; line-height: 1.85; color: #374151; font-weight: 400;
-      background: transparent; padding: 0; letter-spacing: 0.01em;
-    }
-    .sum-textarea::placeholder { color: #D1D5DB; font-weight: 400; }
-    .sum-footer {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0.85rem 2rem; border-top: 1px solid rgba(0,0,0,0.06);
-      flex-shrink: 0; background: #fff;
-    }
-    .sum-wordcount { font-size: 0.72rem; color: #C4CAD4; font-weight: 400; }
-    .sum-footer-btns { display: flex; align-items: center; gap: 0.75rem; }
-    .sum-status { font-size: 0.75rem; color: #059669; font-weight: 500; }
-    .sum-btn-cancel {
-      padding: 0.5rem 1.2rem; border-radius: 100px; border: 1px solid #E5E7EB;
-      cursor: pointer; font-size: 0.85rem; font-weight: 500; font-family: inherit;
-      background: transparent; color: #9CA3AF; transition: all 0.15s;
-    }
-    .sum-btn-cancel:hover { border-color: #D1D5DB; color: #6B7280; background: #F9FAFB; }
-    .sum-btn-save {
-      padding: 0.5rem 1.4rem; border-radius: 100px; border: none;
-      cursor: pointer; font-size: 0.85rem; font-weight: 600; font-family: inherit;
-      background: var(--grad); color: #fff;
-      box-shadow: 0 2px 10px rgba(5,150,105,0.30); transition: all 0.2s;
-    }
-    .sum-btn-save:hover { box-shadow: 0 6px 18px rgba(5,150,105,0.40); transform: translateY(-1px); }
-    .sum-btn-save:active, .sum-btn-cancel:active { transform: scale(0.97); }
-    [data-theme="dark"] .sum-panel { background: #16161E; box-shadow: 0 40px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06); }
-    [data-theme="dark"] .sum-header { background: #1C1C28; border-bottom-color: rgba(255,255,255,0.06); }
-    [data-theme="dark"] .sum-book-name { color: #E5E7EB; }
-    [data-theme="dark"] .sum-body { background: #16161E; }
-    [data-theme="dark"] .sum-textarea { color: #D1D5DB; }
-    [data-theme="dark"] .sum-footer { background: #1C1C28; border-top-color: rgba(255,255,255,0.06); }
-    [data-theme="dark"] .sum-btn-cancel { border-color: rgba(255,255,255,0.10); color: #6B7280; background: transparent; }
-    [data-theme="dark"] .sum-btn-cancel:hover { background: rgba(255,255,255,0.05); color: #9CA3AF; }
-    [data-theme="dark"] .sum-close { color: #4B5563; }
-    [data-theme="dark"] .sum-close:hover { background: rgba(239,68,68,0.12); color: #EF4444; }
 
     /* ── Sort row ── */
     .sort-row { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.65rem; flex-wrap: wrap; }
@@ -861,37 +784,31 @@
         </div>
       </div>
       <div class="ab-field">
-        <label>Summary (optional)</label>
-        <textarea id="ab-summary" rows="3" placeholder="Brief notes…"></textarea>
+        <label>Summary File (optional)</label>
+        <div class="drive-picker" id="summary-picker">
+          <div class="drive-search-wrap">
+            <input type="text" id="ab-summary-search" placeholder="Search your Drive files…" autocomplete="off"
+              oninput="_summaryFilter()" onfocus="_summaryOpen()" onmousedown="_summaryToggle(event)" onkeydown="_summaryKey(event)">
+            <button class="drive-clear" id="summary-clear" onclick="_summaryClear()" title="Clear">✕</button>
+          </div>
+          <div class="drive-dropdown" id="summary-dropdown"></div>
+          <div id="summary-selected-badge" style="display:none;"></div>
+        </div>
+        <input type="hidden" id="ab-summary-url">
+        <!-- Upload to Drive (separate "Summary" folder + the Notion "Summary" files column) -->
+        <div class="drive-upload-row">
+          <input type="file" id="ab-summary-file" accept=".pdf,.doc,.docx" style="display:none" onchange="_summaryUpload()">
+          <button type="button" class="drive-upload-btn" id="summary-upload-btn" onclick="document.getElementById('ab-summary-file').click()">
+            ⬆ Upload Summary to Drive
+          </button>
+          <div class="drive-upload-progress" id="summary-upload-progress"><div class="drive-upload-progress-bar" id="summary-upload-bar"></div></div>
+          <span class="drive-upload-status" id="summary-upload-status"></span>
+        </div>
       </div>
       <p id="ab-error" style="color:#DC2626;font-size:0.82rem;margin-top:0.5rem;display:none;"></p>
       <div class="ab-actions">
         <button class="ab-cancel" onclick="_abClose()">Cancel</button>
         <button class="ab-save" onclick="_abSave()">Save Book</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Summary Full-Screen Editor -->
-  <div class="sum-overlay" id="sum-overlay" onclick="_sumClose(event)">
-    <div class="sum-panel" onclick="event.stopPropagation()">
-      <div class="sum-header">
-        <div class="sum-title-wrap">
-          <div class="sum-label">📝 Summary</div>
-          <div class="sum-book-name" id="sum-book-name">—</div>
-        </div>
-        <button class="sum-close" onclick="_sumClose()" title="Close">✕</button>
-      </div>
-      <div class="sum-body">
-        <textarea class="sum-textarea" id="sum-textarea" placeholder="Write your notes, key takeaways, quotes, or thoughts about this book…" oninput="_sumWordCount()"></textarea>
-      </div>
-      <div class="sum-footer">
-        <span class="sum-wordcount" id="sum-wordcount">0 words</span>
-        <div class="sum-footer-btns">
-          <span class="sum-status" id="sum-status"></span>
-          <button class="sum-btn-cancel" onclick="_sumClose()">Cancel</button>
-          <button class="sum-btn-save" id="sum-save-btn" onclick="_sumSave()">Save Summary</button>
-        </div>
       </div>
     </div>
   </div>
@@ -1058,9 +975,11 @@
   function _fileLinks(b) {
     const links = [...(b.soft_copy||[]), ...(b.key_points||[])].filter(f => f.url);
     if (b.epub_url) links.push({ url: b.epub_url, isEpub: true });
+    (b.summary || []).filter(f => f.url).forEach(f => links.push({ ...f, isSummary: true }));
     if (!links.length) return { html: '<span class="drive-link drive-link-none">📭 No file</span>', compact: null };
     const html = links.map(f => {
       if (f.isEpub) return `<a class="drive-link" href="${f.url}" target="_blank" rel="noopener">📚 EPUB</a>`;
+      if (f.isSummary) return `<a class="drive-link" href="${f.url}" target="_blank" rel="noopener">📝 Summary</a>`;
       if (f.hosted) return `<a class="drive-link drive-link-notion" href="${f.url}" target="_blank" rel="noopener">📎 Notion PDF</a>`;
       const isGdrive = f.url.includes('drive.google') || f.url.includes('docs.google');
       const icon = isGdrive ? '🔗' : '📄';
@@ -1090,7 +1009,6 @@
       <div class="book-right">
         <span class="${_statusClass(b.status)}">${b.status||'Unknown'}</span>
         <div class="book-actions">
-          <button class="btn-icon btn-summary" onclick="_sumOpen('${b.page_id}')" title="Summary">📝</button>
           <button class="btn-icon btn-edit" onclick="_abEdit('${b.page_id}')" title="Edit">✏</button>
           <button class="btn-icon btn-delete" onclick="_delConfirm('${b.page_id}')" title="Delete">🗑</button>
         </div>
@@ -1117,7 +1035,6 @@
         <div class="book-card-files">${driveHtml}</div>
       </div>
       <div class="book-card-footer">
-        <button class="btn-icon btn-summary" onclick="_sumOpen('${b.page_id}')" title="Summary">📝</button>
         <button class="btn-icon btn-edit" onclick="_abEdit('${b.page_id}')" title="Edit">✏</button>
         <button class="btn-icon btn-delete" onclick="_delConfirm('${b.page_id}')" title="Delete">🗑</button>
       </div>
@@ -1136,7 +1053,6 @@
       ${fileBadge || noFileBadge}
       <span class="${_statusClass(b.status)}" style="font-size:0.65rem;">${b.status||'?'}</span>
       <div class="bc-actions">
-        <button class="btn-icon btn-summary" onclick="_sumOpen('${b.page_id}')" title="Summary">📝</button>
         <button class="btn-icon btn-edit" onclick="_abEdit('${b.page_id}')" title="Edit">✏</button>
         <button class="btn-icon btn-delete" onclick="_delConfirm('${b.page_id}')" title="Delete">🗑</button>
       </div>
@@ -1559,12 +1475,143 @@
     document.getElementById('ab-epub-search').focus();
   }
 
+  /* ── Summary file picker — same pattern as PDF/Doc (Soft Copy): no
+     distinct Drive mimeType to filter by, so "search existing files" shows
+     the same PDF/Doc candidates, just uploads go to their own folder and
+     write to their own Notion "Summary" files column. ── */
+  let _summaryHighlight = -1;
+
+  function _summaryRenderList(files) {
+    const dd = document.getElementById('summary-dropdown');
+    if (!files.length) { dd.innerHTML = '<div class="drive-empty">No PDF or Doc files found.</div>'; return; }
+    dd.innerHTML = files.map(f =>
+      `<div class="drive-opt" data-url="${f.url}" data-name="${f.name.replace(/"/g,'&quot;')}" onclick="_summarySelect(this)">
+        <span class="drive-opt-icon">${f.type === 'pdf' ? '📄' : '📝'}</span>
+        <span class="drive-opt-name">${f.name}</span>
+      </div>`
+    ).join('');
+  }
+
+  function _summaryFilter() {
+    const q = document.getElementById('ab-summary-search').value.toLowerCase();
+    document.getElementById('summary-clear').classList.toggle('visible', q.length > 0);
+    const base = _driveNonEpub(_driveFiles);
+    const filtered = q ? base.filter(f => f.name.toLowerCase().includes(q)) : base;
+    _summaryHighlight = -1;
+    document.getElementById('summary-dropdown').classList.add('open');
+    _summaryRenderList(filtered);
+  }
+
+  function _summaryOpen() {
+    _driveLoadFiles();  // shares the same cached /books/drive/files/ call
+    _summaryRenderList(_driveNonEpub(_driveFiles));
+    document.getElementById('summary-dropdown').classList.add('open');
+  }
+
+  function _summaryKey(e) {
+    const dd = document.getElementById('summary-dropdown');
+    const opts = dd.querySelectorAll('.drive-opt');
+    if (e.key === 'ArrowDown') { e.preventDefault(); _summaryHighlight = Math.min(_summaryHighlight+1, opts.length-1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); _summaryHighlight = Math.max(_summaryHighlight-1, 0); }
+    else if (e.key === 'Enter' && _summaryHighlight >= 0) { e.preventDefault(); opts[_summaryHighlight]?.click(); return; }
+    else if (e.key === 'Escape') {
+      e.stopPropagation();  // otherwise the page's global Escape handler closes the whole modal too
+      dd.classList.remove('open');
+      return;
+    }
+    opts.forEach((o,i) => o.classList.toggle('selected', i === _summaryHighlight));
+    if (_summaryHighlight >= 0) opts[_summaryHighlight]?.scrollIntoView({block:'nearest'});
+  }
+
+  function _summaryToggle(ev) {
+    if (document.activeElement !== ev.target) return;  // fresh focus — let onfocus open it
+    const dd = document.getElementById('summary-dropdown');
+    if (dd.classList.contains('open')) dd.classList.remove('open');
+    else _summaryOpen();
+  }
+
+  function _summarySelect(el) {
+    const url = el.dataset.url, name = el.dataset.name;
+    document.getElementById('ab-summary-url').value = url;
+    document.getElementById('ab-summary-search').value = name;
+    document.getElementById('summary-clear').classList.add('visible');
+    document.getElementById('summary-dropdown').classList.remove('open');
+    const badge = document.getElementById('summary-selected-badge');
+    badge.innerHTML = `<span class="drive-selected-badge">🔗 ${name}</span>`;
+    badge.style.display = 'block';
+  }
+
+  function _summaryUpload() {
+    const fileInput = document.getElementById('ab-summary-file');
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const btn      = document.getElementById('summary-upload-btn');
+    const progress = document.getElementById('summary-upload-progress');
+    const bar      = document.getElementById('summary-upload-bar');
+    const status   = document.getElementById('summary-upload-status');
+
+    btn.disabled = true;
+    progress.style.display = 'block';
+    status.textContent = 'Uploading…';
+    bar.style.width = '15%';
+
+    const form = new FormData();
+    form.append('file', file);
+    form.append('kind', 'summary');  // routes to GOOGLE_DRIVE_SUMMARY_FOLDER_ID server-side
+
+    let pct = 15;
+    const ticker = setInterval(() => { pct = Math.min(pct + 8, 85); bar.style.width = pct + '%'; }, 300);
+
+    fetch('/books/drive/upload/', { method: 'POST', body: form })
+      .then(r => r.json())
+      .then(data => {
+        clearInterval(ticker);
+        if (data.error) {
+          bar.style.width = '0%';
+          status.textContent = '✕ ' + data.error;
+          status.style.color = '#DC2626';
+          return;
+        }
+        bar.style.width = '100%';
+        status.textContent = '✓ Uploaded';
+        status.style.color = '#059669';
+        document.getElementById('ab-summary-url').value = data.url;
+        document.getElementById('ab-summary-search').value = data.name;
+        document.getElementById('summary-clear').classList.add('visible');
+        document.getElementById('summary-dropdown').classList.remove('open');
+        const badge = document.getElementById('summary-selected-badge');
+        badge.innerHTML = `<span class="drive-selected-badge">🔗 ${data.name}</span>`;
+        badge.style.display = 'block';
+        _driveLoaded = false; _driveFiles = null;  // refresh shared Drive file cache
+        setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0%'; status.textContent = ''; }, 2000);
+      })
+      .catch(() => {
+        clearInterval(ticker);
+        status.textContent = '✕ Upload failed';
+        status.style.color = '#DC2626';
+      })
+      .finally(() => { btn.disabled = false; fileInput.value = ''; });
+  }
+
+  function _summaryClear() {
+    document.getElementById('ab-summary-url').value = '';
+    document.getElementById('ab-summary-search').value = '';
+    document.getElementById('summary-clear').classList.remove('visible');
+    document.getElementById('summary-selected-badge').style.display = 'none';
+    document.getElementById('summary-dropdown').classList.remove('open');
+    _summaryRenderList(_driveNonEpub(_driveFiles));
+    document.getElementById('ab-summary-search').focus();
+  }
+
   // Close dropdowns on outside click
   document.addEventListener('click', e => {
     if (!document.getElementById('drive-picker')?.contains(e.target))
       document.getElementById('drive-dropdown')?.classList.remove('open');
     if (!document.getElementById('epub-picker')?.contains(e.target))
       document.getElementById('epub-dropdown')?.classList.remove('open');
+    if (!document.getElementById('summary-picker')?.contains(e.target))
+      document.getElementById('summary-dropdown')?.classList.remove('open');
   });
 
   /* ── Add / Edit Book Modal ── */
@@ -1692,10 +1739,10 @@
     document.getElementById('ab-status').value = 'To Read';
     _msReset('author', []);
     _msReset('genre', []);
-    document.getElementById('ab-summary').value = '';
     document.getElementById('ab-error').style.display = 'none';
     _abResetDrive();
     _abResetEpub();
+    _abResetSummary();
     document.getElementById('ab-overlay').classList.add('open');
     setTimeout(() => document.getElementById('ab-name').focus(), 50);
     _driveLoadFiles();
@@ -1711,7 +1758,6 @@
     document.getElementById('ab-status').value = book.status || 'To Read';
     _msReset('author', book.author || []);
     _msReset('genre', book.genre || []);
-    document.getElementById('ab-summary').value = book.summary || '';
     document.getElementById('ab-error').style.display = 'none';
     // Pre-fill Drive picker from first soft_copy entry
     const drive = (book.soft_copy || [])[0];
@@ -1733,6 +1779,17 @@
       const epubBadge = document.getElementById('epub-selected-badge');
       epubBadge.innerHTML = `<span class="drive-selected-badge">📚 EPUB file</span>`;
       epubBadge.style.display = 'block';
+    }
+    // Pre-fill Summary picker from first summary file entry
+    const summaryFile = (book.summary || [])[0];
+    _abResetSummary();
+    if (summaryFile && summaryFile.url) {
+      document.getElementById('ab-summary-url').value = summaryFile.url;
+      document.getElementById('ab-summary-search').value = summaryFile.name || 'Drive file';
+      document.getElementById('summary-clear').classList.add('visible');
+      const summaryBadge = document.getElementById('summary-selected-badge');
+      summaryBadge.innerHTML = `<span class="drive-selected-badge">🔗 ${summaryFile.name || 'Drive file'}</span>`;
+      summaryBadge.style.display = 'block';
     }
     document.getElementById('ab-overlay').classList.add('open');
     setTimeout(() => document.getElementById('ab-name').focus(), 50);
@@ -1761,6 +1818,17 @@
     document.getElementById('epub-upload-status').textContent = '';
   }
 
+  function _abResetSummary() {
+    document.getElementById('ab-summary-url').value = '';
+    document.getElementById('ab-summary-search').value = '';
+    document.getElementById('summary-clear').classList.remove('visible');
+    document.getElementById('summary-selected-badge').style.display = 'none';
+    document.getElementById('summary-dropdown').classList.remove('open');
+    document.getElementById('summary-upload-progress').style.display = 'none';
+    document.getElementById('summary-upload-bar').style.width = '0%';
+    document.getElementById('summary-upload-status').textContent = '';
+  }
+
   function _abClose(e) {
     if (!e || e.target === document.getElementById('ab-overlay'))
       document.getElementById('ab-overlay').classList.remove('open');
@@ -1771,7 +1839,7 @@
     const status     = document.getElementById('ab-status').value;
     const drive_url  = document.getElementById('ab-drive-url').value.trim();
     const epub_url   = document.getElementById('ab-epub-url').value.trim();
-    const summary    = document.getElementById('ab-summary').value.trim();
+    const summary_url = document.getElementById('ab-summary-url').value.trim();
     const errEl      = document.getElementById('ab-error');
 
     if (!name) { errEl.textContent = 'Book title is required.'; errEl.style.display = 'block'; return; }
@@ -1787,7 +1855,7 @@
     const isEdit  = !!_editPageId;
     saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
 
-    const payload = { name, status, authors, genres, summary, drive_url, epub_url };
+    const payload = { name, status, authors, genres, drive_url, epub_url, summary_url };
     const url     = isEdit ? `/books/${_editPageId}/update/` : '/books/create/';
     const method  = isEdit ? 'PATCH' : 'POST';
 
@@ -1807,60 +1875,6 @@
       saveBtn.disabled = false;
       saveBtn.textContent = isEdit ? 'Save Changes' : 'Save Book';
     });
-  }
-
-  /* ── Summary Editor ── */
-  let _sumPageId = null;
-
-  function _sumOpen(pid) {
-    const b = _booksRaw.find(x => x.page_id === pid);
-    if (!b) return;
-    _sumPageId = pid;
-    document.getElementById('sum-book-name').textContent = b.name || '—';
-    document.getElementById('sum-textarea').value = b.summary || '';
-    document.getElementById('sum-status').textContent = '';
-    document.getElementById('sum-save-btn').disabled = false;
-    document.getElementById('sum-save-btn').textContent = 'Save Summary';
-    _sumWordCount();
-    document.getElementById('sum-overlay').classList.add('open');
-    setTimeout(() => document.getElementById('sum-textarea').focus(), 80);
-  }
-
-  function _sumClose(e) {
-    if (!e || e.target === document.getElementById('sum-overlay')) {
-      document.getElementById('sum-overlay').classList.remove('open');
-      _sumPageId = null;
-    }
-  }
-
-  function _sumWordCount() {
-    const text = document.getElementById('sum-textarea').value.trim();
-    const words = text ? text.split(/\s+/).length : 0;
-    document.getElementById('sum-wordcount').textContent = words + (words === 1 ? ' word' : ' words');
-  }
-
-  function _sumSave() {
-    if (!_sumPageId) return;
-    const summary = document.getElementById('sum-textarea').value.trim();
-    const btn = document.getElementById('sum-save-btn');
-    const status = document.getElementById('sum-status');
-    btn.disabled = true; btn.textContent = 'Saving…'; status.textContent = '';
-    fetch(`/books/${_sumPageId}/update/`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ summary }),
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.error) { status.textContent = '✗ ' + d.error; showToast('Save failed', 'error'); return; }
-      const book = _booksRaw.find(x => x.page_id === _sumPageId);
-      if (book) book.summary = summary;
-      status.textContent = '✓ Saved';
-      showToast('Summary saved', 'success');
-      setTimeout(() => _sumClose(), 800);
-    })
-    .catch(() => { status.textContent = '✗ Network error'; showToast('Save failed', 'error'); })
-    .finally(() => { btn.disabled = false; btn.textContent = 'Save Summary'; });
   }
 
   /* ── Delete Modal ── */
@@ -1911,7 +1925,6 @@
   /* ── Keyboard shortcut ── */
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      _sumClose({target:document.getElementById('sum-overlay')});
       _abClose({target:document.getElementById('ab-overlay')});
       _delClose({target:document.getElementById('del-overlay')});
     }

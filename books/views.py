@@ -75,9 +75,9 @@ class BooksCreateView(BooksBaseView):
                 status=body.get("status", "To Read"),
                 authors=body.get("authors", []),
                 genres=body.get("genres", []),
-                summary=body.get("summary", "").strip(),
                 drive_url=body.get("drive_url", "").strip(),
                 epub_url=body.get("epub_url", "").strip(),
+                summary_url=body.get("summary_url", "").strip(),
             )
         except requests.HTTPError as exc:
             return self._api_error(exc)
@@ -104,6 +104,7 @@ class BooksDriveUploadView(BooksBaseView):
     FOLDER_ENV_BY_KIND = {
         "soft_copy": "GOOGLE_DRIVE_UPLOAD_FOLDER_ID",
         "epub": "GOOGLE_DRIVE_EPUB_FOLDER_ID",
+        "summary": "GOOGLE_DRIVE_SUMMARY_FOLDER_ID",
     }
 
     def post(self, request):
