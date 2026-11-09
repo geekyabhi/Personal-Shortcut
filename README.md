@@ -154,6 +154,30 @@ All checkbox properties are treated as habits. Their names come from the Notion 
 
 ---
 
+## Deploying to Railway
+
+`railway.json` configures the deploy: **before each release it runs `python manage.py migrate --noinput`**
+(a failed migration stops the release), then starts gunicorn (2 workers × 2 threads), and uses `/login/`
+as the health check (it doesn't touch the database). Python comes from `runtime.txt`; there are no static
+files to collect.
+
+Set these as Railway **Variables** (names only — values live in Railway, never in git):
+
+| Variable | Notes |
+|---|---|
+| `DATABASE_URL` | Neon connection string (the pooled one is fine). **Required** — expenses and accounts live here, and the migrate step fails without it. Don't include the local-only `hostaddr=` parameter. |
+| `SECRET_KEY`, `DEBUG=False` | `SECRET_KEY` must be a long random value |
+| `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_WEB_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | redirect URI = `https://<your-domain>/auth/callback/` (also add it in Google Cloud → Credentials) |
+| `EXPENSE_PROFILES`, `ABHINAV_EMAIL`, `ANCHAL_EMAIL`, `FULL_ACCESS_PROFILES` | who gets full access vs expenses-only |
+| `ABHINAV_NOTION_TOKEN`, `ABHINAV_NOTION_DB` (+ Anchal's) | only needed to run `import_notion_expenses` |
+| `NOTION_TOKEN`, `NOTION_HABITS_DB_ID`, `NOTION_BOOKS_DB_ID`, `NOTION_READ_BLOGS_DB_ID`, `NOTION_WRITE_BLOGS_DB_ID` | Habits / Books / Blogs |
+| `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_BASE_URL`, `JIRA_PROJECT_KEY` | Todos |
+| `SPLITWISE_CONSUMER_KEY`, `SPLITWISE_CONSUMER_SECRET`, `SPLITWISE_API_KEY` | Splitwise |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `GOOGLE_DRIVE_UPLOAD_FOLDER_ID`, `GOOGLE_DRIVE_SUMMARY_FOLDER_ID` | Books → Drive |
+| `SIGNUP_ENABLED` | set `False` once the accounts you want exist |
+
+---
+
 ## Key Design Decisions
 
 - **Expenses live in Postgres** (`expenses/models`, read/written through `expenses/data_services`); `DATABASES` is only set when `DATABASE_URL` is present. The other apps still fetch live from Notion. Existing Notion expenses are copied over with `python manage.py import_notion_expenses` (`--dry-run` first).

@@ -145,16 +145,20 @@ class ExpensesService:
                 result.append(row)
         return result
 
-    def _get_rows(self, force: bool = False, partial: bool = False):
-        """Every non-mandate entry, as ``(rows, cache_ts, from_cache, is_partial)``.
+    def _get_rows(self, force: bool = False, partial: bool = False, start=None, end=None):
+        """The non-mandate entries dated within [start, end] (all of them when
+        both are None), as ``(rows, cache_ts, from_cache, is_partial)``.
+
+        The date range is applied **in SQL**, so a one-month query only fetches
+        that month's rows — over a remote database fetching and then filtering
+        every row in Python was the whole cost of a request.
 
         The 4-tuple is kept for the API responses the UI reads. There is no
         cache any more — Postgres is queried directly — so ``force`` and
-        ``partial`` have nothing to do and the result is always complete and
-        fresh. Mandate templates are left out so they never appear as a
-        phantom line item; only their real backfilled occurrences count as
-        spending."""
-        return self.dl.list_entries(), time.time(), False, False
+        ``partial`` have nothing to do and the result is always fresh. Mandate
+        templates are left out so they never appear as a phantom line item; only
+        their real backfilled occurrences count as spending."""
+        return self.dl.list_entries(start, end), time.time(), False, False
 
     # ------------------------------------------------------------------ #
     #  Generic row-filter rules (the client-side "filter builder")        #
@@ -643,7 +647,7 @@ class ExpensesService:
             start=start or None, end=end or None,
         )
         all_rows, cache_ts, from_cache, is_partial = self._get_rows(
-            force=force, partial=partial
+            force=force, partial=partial, start=range_start, end=range_end
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
         rows = self._filter_by_rules(rows, locals().get("filters", ""))
@@ -702,7 +706,7 @@ class ExpensesService:
             start=start or None, end=end or None,
         )
         all_rows, cache_ts, from_cache, is_partial = self._get_rows(
-            force=force, partial=partial
+            force=force, partial=partial, start=range_start, end=range_end
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
         rows = self._filter_by_rules(rows, locals().get("filters", ""))
@@ -739,7 +743,7 @@ class ExpensesService:
             start=start or None, end=end or None,
         )
         all_rows, cache_ts, from_cache, is_partial = self._get_rows(
-            force=force, partial=partial
+            force=force, partial=partial, start=range_start, end=range_end
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
         rows = self._filter_by_rules(rows, locals().get("filters", ""))
@@ -810,7 +814,7 @@ class ExpensesService:
             start=start or None, end=end or None,
         )
         all_rows, cache_ts, from_cache, is_partial = self._get_rows(
-            force=force, partial=partial
+            force=force, partial=partial, start=range_start, end=range_end
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
         rows = self._filter_by_rules(rows, locals().get("filters", ""))
@@ -848,7 +852,7 @@ class ExpensesService:
             start=start or None, end=end or None,
         )
         all_rows, cache_ts, from_cache, is_partial = self._get_rows(
-            force=force, partial=partial
+            force=force, partial=partial, start=range_start, end=range_end
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
         rows = self._filter_by_rules(rows, locals().get("filters", ""))
@@ -959,7 +963,7 @@ class ExpensesService:
             start=start or None, end=end or None,
         )
         all_rows, cache_ts, from_cache, is_partial = self._get_rows(
-            force=force, partial=partial
+            force=force, partial=partial, start=range_start, end=range_end
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
         rows = self._filter_by_rules(rows, locals().get("filters", ""))
@@ -1046,7 +1050,7 @@ class ExpensesService:
             start=start or None, end=end or None,
         )
         all_rows, cache_ts, from_cache, is_partial = self._get_rows(
-            force=force, partial=partial
+            force=force, partial=partial, start=range_start, end=range_end
         )
         rows = self._filter_by_date(all_rows, range_start, range_end)
         rows = self._filter_by_rules(rows, locals().get("filters", ""))
