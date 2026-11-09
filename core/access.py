@@ -14,3 +14,11 @@ def is_full_access(session) -> bool:
 def is_authenticated(session) -> bool:
     # user_email alone is a session from before accounts existed; still valid.
     return bool(session.get("user_id") or session.get("user_email"))
+
+
+def user_has_full_access(user) -> bool:
+    """The account-level twin of ``is_full_access``: a Google-verified account
+    whose email is on the allow-list with a full-access profile."""
+    if not (user and user.google_sub and user.email_verified and user.email):
+        return False
+    return settings.ALLOWED_USERS.get(user.email) in settings.FULL_ACCESS_PROFILES

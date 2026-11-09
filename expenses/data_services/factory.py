@@ -6,26 +6,30 @@ from .expense import ExpensesDataService
 
 
 def data_service_for(request) -> ExpensesDataService:
-    """The data service for whoever is making ``request``.
+    """The data service for whoever is making ``request`` — always scoped to ONE person.
 
-    A signed-in account sees its own rows (scoped by user id). The open /api/
-    routes have no session, so they act as the DEFAULT_EXPENSE_PROFILE's owner —
-    today's single-user behaviour, unchanged. Where there's no account yet (a
-    session from before accounts existed, or the default profile's owner hasn't
-    signed in), it falls back to the legacy profile name.
+    * Bearer-token API call: the uid comes from the token (``request.auth_user``,
+      set by ``token_required``).
+    * Web session: the signed-in account's uid. A session from before accounts
+      existed only has an email, so look the account up by it (or fall back to
+      the legacy profile name for rows not linked to an account yet).
+    * Anything else gets a service that can see nothing — there is no default
+      owner any more.
     """
-    session = request.session
     if not settings.DATABASES:
         return ExpensesDataService()  # not configured; callers check is_configured
 
+    auth_user = getattr(request, "auth_user", None)
+    if auth_user is not None:
+        return ExpensesDataService.from_env("", auth_user.id)
+
+    session = request.session
     user_id = session.get("user_id")
     if user_id:
         return ExpensesDataService.from_env(session.get("notion_profile") or "", user_id)
 
     email = session.get("user_email")
-    profile = session.get("notion_profile") or ""
-    if not email:  # no session at all: the open /api/ routes
-        profile = settings.DEFAULT_EXPENSE_PROFILE
-        email = next((e for e, p in settings.ALLOWED_USERS.items() if p == profile), "")
-    user_id = User.objects.filter(email=email).values_list("id", flat=True).first() if email else None
-    return ExpensesDataService.from_env(profile, user_id)
+    if not email:
+        return ExpensesDataService()  # nobody identified: scope is empty
+    user_id = User.objects.filter(email=email).values_list("id", flat=True).first()
+    return ExpensesDataService.from_env(session.get("notion_profile") or "", user_id)

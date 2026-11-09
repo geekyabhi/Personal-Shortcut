@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import redirect
 
 from core.access import is_authenticated, is_full_access
@@ -20,6 +21,14 @@ class LoginRequiredMiddleware:
             and not is_authenticated(request.session)
         ):
             return redirect("/login/")
+
+        uid = request.session.get("user_id")
+        if uid and settings.DATABASES and request.path not in _PUBLIC and not request.path.startswith("/api/"):
+            from users.services import AuthService
+
+            if not AuthService.session_is_valid(uid, request.session.get("auth_token_id")):
+                request.session.flush()
+                return redirect("/login/")
 
         # Anyone without full access only gets the expenses app —
         # everything else (home, books, habits, todos, blogs) bounces back.

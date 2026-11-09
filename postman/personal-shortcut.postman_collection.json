@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Personal Shortcut",
-    "description": "REST API of the Personal Shortcut Django app.\n\n**Quick start**\n1. Import this collection and the *Personal Shortcut — Local* environment, then select the environment.\n2. Start the server (`python3 manage.py runserver`).\n3. Fill `userEmail` / `userPassword` in the environment, run **Users → Login** (or Signup) — the token is stored automatically.\n4. Run **Expenses → Create expense** to set `pageId`, then Update / Split / Delete.\n\nOnly `/api/users/me/` and `/api/users/logout/` require the bearer token; the other `/api/<app>/` routes are open by design.",
+    "description": "REST API of the Personal Shortcut Django app.\n\n**Authentication.** The Expenses API needs a bearer token (the account comes from the token). Users → Signup/Login are open; the Habits, Todos, Books and Blogs APIs are still unauthenticated.\n\n**Quick start**\n1. Import this collection and the *Personal Shortcut — Local* environment, then select the environment.\n2. Start the server (`python3 manage.py runserver`).\n3. Fill `userEmail` / `userPassword` in the environment, run **Users → Login** (or Signup) — the token is stored automatically.\n4. Run **Expenses → Create expense** to set `pageId`, then Update / Split / Delete.\n\nOnly `/api/users/me/` and `/api/users/logout/` require the bearer token; the other `/api/<app>/` routes are open by design.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -202,7 +202,18 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Logout (this token)",
@@ -247,7 +258,18 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Logout (all devices)",
@@ -292,7 +314,18 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                ]
+              }
+            }
+          ]
         }
       ],
       "description": "Bearer-token API. Send `Authorization: Bearer {{token}}`. Signup/Login save the token to the environment automatically."
@@ -428,7 +461,18 @@
                 },
                 "description": "Entries for a period. With `all=1` the response is the full list."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Summary",
@@ -504,7 +548,18 @@
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Time series",
@@ -574,7 +629,18 @@
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Chart data",
@@ -656,7 +722,18 @@
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Category time series",
@@ -732,7 +809,18 @@
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Insights",
@@ -803,7 +891,18 @@
                 },
                 "description": "Top categories / sources / modes + biggest entries."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Heatmap",
@@ -873,7 +972,18 @@
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         },
@@ -911,13 +1021,19 @@
                     }
                   }
                 },
-                "description": "`date` may be a bare day (`2026-11-09`) or a full datetime with offset. Saves the new id to `pageId`.",
-                "auth": {
-                  "type": "noauth"
-                }
+                "description": "`date` may be a bare day (`2026-11-09`) or a full datetime with offset. The row always belongs to the account that owns the token. Saves the new id to `pageId`."
               },
               "response": [],
               "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                },
                 {
                   "listen": "test",
                   "script": {
@@ -965,7 +1081,19 @@
                 },
                 "description": "An empty `date` leaves the stored date/time untouched."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('pageId')) { throw new Error(\"Run 'Expenses > Create expense' first - it saves the new row's id to pageId.\"); }",
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Delete expense",
@@ -987,7 +1115,19 @@
                 },
                 "description": "Permanent. Returns 404 if the id doesn't exist."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('pageId')) { throw new Error(\"Run 'Expenses > Create expense' first - it saves the new row's id to pageId.\"); }",
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         },
@@ -1015,6 +1155,15 @@
               },
               "response": [],
               "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                },
                 {
                   "listen": "test",
                   "script": {
@@ -1062,7 +1211,18 @@
                 },
                 "description": "Saves a value to the list (201). Adding one that already exists, in any letter case, is a no-op that returns 200. New values are also saved automatically whenever an expense is created or edited with them."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Add a source",
@@ -1097,7 +1257,18 @@
                   }
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Add a mode",
@@ -1132,7 +1303,18 @@
                   }
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Rename an entry",
@@ -1169,7 +1351,19 @@
                 },
                 "description": "Set `optionKind` to categories, sources or modes. The new name is carried onto every expense that uses the old one (`expenses_updated` in the reply). 409 if the new name already exists."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('optionId')) { throw new Error(\"Run 'Pick-lists > List my pick-lists' first - it saves the first category id to optionId.\"); }",
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Delete an entry",
@@ -1192,7 +1386,19 @@
                 },
                 "description": "Removes it from the list only. Expenses already saved with the value keep it; it stops being offered until it is used again."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('optionId')) { throw new Error(\"Run 'Pick-lists > List my pick-lists' first - it saves the first category id to optionId.\"); }",
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             }
           ],
           "description": "Each account's own categories, sources and modes (tables `expense_categories`, `expense_sources`, `expense_modes`). They feed the pickers in the Dashboard and Charts."
@@ -1219,7 +1425,18 @@
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Splitwise expenses",
@@ -1274,7 +1491,18 @@
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Groups",
@@ -1295,7 +1523,18 @@
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Create on Splitwise",
@@ -1322,16 +1561,27 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"description\": \"Dinner\",\n  \"amount\": 600,\n  \"date\": \"2026-11-09\",\n  \"group_id\": \"\",\n  \"participant_ids\": []\n}",
+                  "raw": "{\n  \"description\": \"Dinner\",\n  \"amount\": 600,\n  \"date\": \"2026-11-09\",\n  \"group_id\": \"\",\n  \"participant_ids\": [\n    111111,\n    222222\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
                 },
-                "description": "Example body — adjust participants/group. See `expenses/services/splitwise/splitwise_views.py`."
+                "description": "Creates the expense on Splitwise. `description`, `amount` and at least one id in `participant_ids` are required (ids come from the Splitwise overview / groups requests); `group_id` is optional."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Import a Splitwise expense",
@@ -1358,16 +1608,28 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"expense_id\": 0,\n  \"mode\": \"UPI\"\n}",
+                  "raw": "{\n  \"expense_id\": \"{{splitwiseExpenseId}}\",\n  \"mode\": \"UPI\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
                 },
-                "description": "Creates a local expense from a Splitwise expense id (rejects duplicates)."
+                "description": "Creates a local expense from a Splitwise expense id (`expense_id` is required; duplicates are rejected, settle-ups can't be imported). Set `splitwiseExpenseId` in the environment first."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('splitwiseExpenseId')) { throw new Error(\"Set splitwiseExpenseId in the environment to a Splitwise expense id (see 'Splitwise > Splitwise expenses').\"); }",
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Push an expense to Splitwise",
@@ -1403,12 +1665,351 @@
                 },
                 "description": "Pushes the row, then sets its amount to your share, notes the breakdown in Comment and ticks Split Added."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('pageId')) { throw new Error(\"Run 'Expenses > Create expense' first - it saves the new row's id to pageId.\"); }",
+                      "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         }
       ],
-      "description": "Open `/api/expenses/` routes — **no authentication**; they act as the default expense profile's owner. Don't expose them beyond localhost without adding auth."
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "description": "**Requires a bearer token** (`Authorization: Bearer {{token}}`, inherited from this folder). The account is taken from the token, so every request only ever sees and changes that account's own expenses. Get a token from **Users → Login** (email/phone + password) (a Google-only account first sets a password on the website's Profile page), then paste it into the `token` environment variable. The Splitwise requests run on the owner's Splitwise login and are owner-only (403 for other accounts)."
+    },
+    {
+      "name": "Internal tools (platform key)",
+      "item": [
+        {
+          "name": "Add expense — uid in header",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Internal-Token",
+                "value": "{{internalToken}}"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/internal/expenses/create/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "internal",
+                "expenses",
+                "create",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Internal tool lunch\",\n  \"amount\": 250,\n  \"date\": \"2026-11-10\",\n  \"categories\": [\n    \"Food\"\n  ],\n  \"source\": \"Card\",\n  \"mode\": \"UPI\",\n  \"comment\": \"added by an internal tool\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Creates the expense for the account named by the `X-User-Id` header. Same body as the user API. Saves the new id to `pageId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('internalToken')) { throw new Error(\"Set internalToken in the environment to the server's INTERNAL_API_TOKEN value.\"); }",
+                  "if (!pm.environment.get('userId')) { throw new Error(\"Set userId in the environment to the uid (UUID) of the account to act as - Users > Login/Signup saves yours.\"); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.page_id) { pm.environment.set('pageId', data.page_id); console.log('pageId =', data.page_id); }",
+                  "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add expense — uid in body",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Internal-Token",
+                "value": "{{internalToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/internal/expenses/create/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "internal",
+                "expenses",
+                "create",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Internal tool lunch\",\n  \"amount\": 250,\n  \"date\": \"2026-11-10\",\n  \"categories\": [\n    \"Food\"\n  ],\n  \"source\": \"Card\",\n  \"mode\": \"UPI\",\n  \"comment\": \"added by an internal tool\",\n  \"uid\": \"{{userId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Same, with the uid as `uid` (or `user_id`) in the JSON body. If several are given the header wins, then the body, then the query."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('internalToken')) { throw new Error(\"Set internalToken in the environment to the server's INTERNAL_API_TOKEN value.\"); }",
+                  "if (!pm.environment.get('userId')) { throw new Error(\"Set userId in the environment to the uid (UUID) of the account to act as - Users > Login/Signup saves yours.\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List expenses — uid in header",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Internal-Token",
+                "value": "{{internalToken}}"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/internal/expenses/list/?period=monthly&month=2026-11&sort=date_desc&all=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "internal",
+                "expenses",
+                "list",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly",
+                  "disabled": false,
+                  "description": "all | yearly | monthly | weekly | daily | custom"
+                },
+                {
+                  "key": "month",
+                  "value": "2026-11",
+                  "disabled": false,
+                  "description": "YYYY-MM (period=monthly)"
+                },
+                {
+                  "key": "year",
+                  "value": "2026",
+                  "disabled": true,
+                  "description": "YYYY (period=yearly)"
+                },
+                {
+                  "key": "week",
+                  "value": "2026-W45",
+                  "disabled": true,
+                  "description": "YYYY-Www (period=weekly)"
+                },
+                {
+                  "key": "day",
+                  "value": "2026-11-09",
+                  "disabled": true,
+                  "description": "YYYY-MM-DD (period=daily)"
+                },
+                {
+                  "key": "start",
+                  "value": "2026-11-01",
+                  "disabled": true,
+                  "description": "period=custom"
+                },
+                {
+                  "key": "end",
+                  "value": "2026-11-30",
+                  "disabled": true,
+                  "description": "period=custom"
+                },
+                {
+                  "key": "sort",
+                  "value": "date_desc",
+                  "disabled": false,
+                  "description": "date_desc | date_asc | amount_desc | amount_asc"
+                },
+                {
+                  "key": "all",
+                  "value": "1",
+                  "disabled": false,
+                  "description": "1 = every match"
+                }
+              ]
+            },
+            "description": "Lists that account's expenses. Accepts the same period / sort / search parameters as the user API."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('internalToken')) { throw new Error(\"Set internalToken in the environment to the server's INTERNAL_API_TOKEN value.\"); }",
+                  "if (!pm.environment.get('userId')) { throw new Error(\"Set userId in the environment to the uid (UUID) of the account to act as - Users > Login/Signup saves yours.\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List expenses — uid in query",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Internal-Token",
+                "value": "{{internalToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/internal/expenses/list/?uid={{userId}}&period=monthly&month=2026-11&all=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "internal",
+                "expenses",
+                "list",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "uid",
+                  "value": "{{userId}}",
+                  "disabled": false,
+                  "description": "the account to act as"
+                },
+                {
+                  "key": "period",
+                  "value": "monthly",
+                  "disabled": false,
+                  "description": "all | yearly | monthly | weekly | daily | custom"
+                },
+                {
+                  "key": "month",
+                  "value": "2026-11",
+                  "disabled": false,
+                  "description": "YYYY-MM (period=monthly)"
+                },
+                {
+                  "key": "year",
+                  "value": "2026",
+                  "disabled": true,
+                  "description": "YYYY (period=yearly)"
+                },
+                {
+                  "key": "week",
+                  "value": "2026-W45",
+                  "disabled": true,
+                  "description": "YYYY-Www (period=weekly)"
+                },
+                {
+                  "key": "day",
+                  "value": "2026-11-09",
+                  "disabled": true,
+                  "description": "YYYY-MM-DD (period=daily)"
+                },
+                {
+                  "key": "start",
+                  "value": "2026-11-01",
+                  "disabled": true,
+                  "description": "period=custom"
+                },
+                {
+                  "key": "end",
+                  "value": "2026-11-30",
+                  "disabled": true,
+                  "description": "period=custom"
+                },
+                {
+                  "key": "all",
+                  "value": "1",
+                  "disabled": false
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('internalToken')) { throw new Error(\"Set internalToken in the environment to the server's INTERNAL_API_TOKEN value.\"); }",
+                  "if (!pm.environment.get('userId')) { throw new Error(\"Set userId in the environment to the uid (UUID) of the account to act as - Users > Login/Signup saves yours.\"); }"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "For internal tools only (server-to-server). Authenticated with the **platform-wide key** in the `X-Internal-Token` header — not a user token — plus the uid of the account to act as (`X-User-Id` header, `uid` in the body, or `?uid=`). The key can act as ANY user, so keep it secret. It is the `INTERNAL_API_TOKEN` value from the server's `.env` / Railway variables; paste it into the `internalToken` environment variable. Only create and list exist here."
     },
     {
       "name": "Habits",
@@ -1449,9 +2050,23 @@
                 "list",
                 ""
               ]
-            }
+            },
+            "description": "Per-day entries. The first entry's `page_id` is saved to `habitPageId` for the Update entry request."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let d = {}; try { d = pm.response.json(); } catch (e) {}",
+                  "const v = ((d.entries || d.rows || d.data || [])[0] || {}).page_id;",
+                  "if (v) { pm.environment.set('habitPageId', v); console.log('habitPageId =', v); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Chart",
@@ -1803,7 +2418,18 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('habitPageId')) { throw new Error(\"Run 'Habits > List' first - it saves the first entry's page_id to habitPageId (or set it by hand).\"); }"
+                ]
+              }
+            }
+          ]
         }
       ],
       "description": "Notion-backed. Open `/api/habits/` routes (no auth)."
@@ -1841,9 +2467,23 @@
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Creates a real Jira issue. `summary` is required. The returned `key` is saved to `issueKey` for the issue requests below."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let d = {}; try { d = pm.response.json(); } catch (e) {}",
+                  "const v = d.key;",
+                  "if (v) { pm.environment.set('issueKey', v); console.log('issueKey =', v); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "List issues",
@@ -2070,7 +2710,18 @@
               ]
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('issueKey')) { throw new Error(\"Set issueKey in the environment to a Jira key such as TODO-5, or run 'Todos > Create issue' first.\"); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Issue — update",
@@ -2106,7 +2757,18 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('issueKey')) { throw new Error(\"Set issueKey in the environment to a Jira key such as TODO-5, or run 'Todos > Create issue' first.\"); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Issue — delete",
@@ -2142,7 +2804,18 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('issueKey')) { throw new Error(\"Set issueKey in the environment to a Jira key such as TODO-5, or run 'Todos > Create issue' first.\"); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Issue — transition",
@@ -2178,7 +2851,18 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('issueKey')) { throw new Error(\"Set issueKey in the environment to a Jira key such as TODO-5, or run 'Todos > Create issue' first.\"); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Issue — assignee",
@@ -2214,7 +2898,18 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('issueKey')) { throw new Error(\"Set issueKey in the environment to a Jira key such as TODO-5, or run 'Todos > Create issue' first.\"); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Issue — sprint",
@@ -2250,7 +2945,18 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('issueKey')) { throw new Error(\"Set issueKey in the environment to a Jira key such as TODO-5, or run 'Todos > Create issue' first.\"); }"
+                ]
+              }
+            }
+          ]
         }
       ],
       "description": "Jira-backed. Open `/api/todos/` routes (no auth)."
@@ -2365,15 +3071,29 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Book title\",\n  \"authors\": [\n    \"Author\"\n  ],\n  \"genres\": [\n    \"Fiction\"\n  ],\n  \"status\": \"Queued\",\n  \"summary_url\": \"\",\n  \"drive_url\": \"\",\n  \"epub_url\": \"\"\n}",
+              "raw": "{\n  \"name\": \"Book title\",\n  \"authors\": [\n    \"Author\"\n  ],\n  \"genres\": [\n    \"Fiction\"\n  ],\n  \"status\": \"To Read\",\n  \"summary_url\": \"\",\n  \"drive_url\": \"\",\n  \"epub_url\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "description": "Creates a book in Notion. `name` is required; `status` must be an option of your Status column (e.g. To Read, Reading). The new page id is saved to `bookPageId`."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let d = {}; try { d = pm.response.json(); } catch (e) {}",
+                  "const v = d.page_id;",
+                  "if (v) { pm.environment.set('bookPageId', v); console.log('bookPageId =', v); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Update",
@@ -2407,9 +3127,20 @@
                 }
               }
             },
-            "description": "Example body; see books/views.py for accepted fields."
+            "description": "Send only the fields to change: name, status, authors, genres, drive_url, epub_url, summary_url."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('bookPageId')) { throw new Error(\"Run 'Books > Create' first, or paste a book's page id into bookPageId.\"); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Delete",
@@ -2444,7 +3175,18 @@
               }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('bookPageId')) { throw new Error(\"Run 'Books > Create' first, or paste a book's page id into bookPageId.\"); }"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Drive files",
@@ -2652,9 +3394,23 @@
                       "language": "json"
                     }
                   }
-                }
+                },
+                "description": "`topic` is required. `status` must be an option of your Notion Status column (default \"To Read\"). The new page id is saved to `blogPageId`."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let d = {}; try { d = pm.response.json(); } catch (e) {}",
+                      "const v = d.page_id;",
+                      "if (v) { pm.environment.set('blogPageId', v); console.log('blogPageId =', v); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Update",
@@ -2682,15 +3438,27 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"status\": \"Read\"\n}",
+                  "raw": "{\n  \"status\": \"To Read\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
-                }
+                },
+                "description": "Send only the fields to change: topic, status, url."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('blogPageId')) { throw new Error(\"Run a Blogs 'Create' request first, or paste a blog's page id into blogPageId.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Delete",
@@ -2726,7 +3494,18 @@
                   }
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('blogPageId')) { throw new Error(\"Run a Blogs 'Create' request first, or paste a blog's page id into blogPageId.\"); }"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         },
@@ -2791,15 +3570,29 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"topic\": \"Topic\",\n  \"topic_to_cover\": \"\",\n  \"url\": \"\",\n  \"status\": \"Idea\"\n}",
+                  "raw": "{\n  \"topic\": \"Topic\",\n  \"topic_to_cover\": \"\",\n  \"url\": \"\",\n  \"status\": \"To Write\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
-                }
+                },
+                "description": "`topic` is required (default status \"To Write\"). The new page id is saved to `blogPageId`."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let d = {}; try { d = pm.response.json(); } catch (e) {}",
+                      "const v = d.page_id;",
+                      "if (v) { pm.environment.set('blogPageId', v); console.log('blogPageId =', v); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Update",
@@ -2827,15 +3620,27 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"status\": \"Drafting\"\n}",
+                  "raw": "{\n  \"status\": \"To Write\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
-                }
+                },
+                "description": "Send only the fields to change: topic, status, url, topic_to_cover."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('blogPageId')) { throw new Error(\"Run a Blogs 'Create' request first, or paste a blog's page id into blogPageId.\"); }"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Delete",
@@ -2871,7 +3676,18 @@
                   }
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('blogPageId')) { throw new Error(\"Run a Blogs 'Create' request first, or paste a blog's page id into blogPageId.\"); }"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         }
@@ -2883,6 +3699,18 @@
     {
       "key": "baseUrl",
       "value": "http://localhost:8000"
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Not a server error (status < 500)', () => pm.expect(pm.response.code).to.be.below(500));",
+          "pm.test('Response body is JSON', () => pm.response.to.be.json);"
+        ]
+      }
     }
   ]
 }

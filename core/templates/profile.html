@@ -96,10 +96,28 @@
     .msg.error { background: rgba(220,38,38,0.07); border: 1px solid rgba(220,38,38,0.18); color: #DC2626; }
     .msg.ok    { background: rgba(5,150,105,0.08); border: 1px solid rgba(5,150,105,0.22); color: #047857; }
 
+    .methods { list-style: none; margin: 0.6rem 0 0.9rem; display: flex; flex-direction: column; gap: 0.45rem; }
+    .methods li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem; color: #6B7280; font-weight: 500; flex-wrap: wrap; }
+    .methods li > span:first-child { width: 4.2rem; font-weight: 700; color: #374151; flex: none; }
+    .methods b { font-weight: 600; color: #111827; word-break: break-all; }
+    .methods .badge { margin-left: 0; }
+    .methods a.api-btn { text-decoration: none; padding: 0.35rem 0.8rem; font-size: 0.78rem; }
+    #pw-form { display: flex; flex-direction: column; gap: 0.55rem; margin-top: 0.4rem; }
+    .api-box { margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px solid #E5E7EB; }
+    .api-box h2 { font-size: 0.95rem; font-weight: 800; color: #111827; }
+    .api-box p { font-size: 0.78rem; color: #6B7280; font-weight: 500; margin: 0.3rem 0 0.8rem; line-height: 1.5; }
+    .api-box code { background: rgba(79,70,229,0.08); color: #4F46E5; padding: 0.05rem 0.35rem; border-radius: 6px; font-size: 0.74rem; }
+    .api-btn {
+      padding: 0.6rem 1.1rem; background: #fff; color: #4F46E5; border: 1.5px solid #C7D2FE; border-radius: 100px;
+      font-size: 0.82rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.2s;
+    }
+    .api-btn:hover { border-color: #4F46E5; background: rgba(79,70,229,0.06); }
+    .api-btn:disabled { opacity: 0.6; cursor: default; }
+
     .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 1.4rem; font-size: 0.8rem; font-weight: 600; }
     .foot a { color: #4F46E5; text-decoration: none; }
     .foot a:hover { text-decoration: underline; }
-    .foot .out { color: #6B7280; }
+    .foot .out { color: #6B7280; cursor: pointer; }
 
     @keyframes _fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
     @keyframes _float  { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
@@ -110,6 +128,12 @@
     [data-theme="dark"] input { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB; }
     [data-theme="dark"] input[readonly] { background: rgba(255,255,255,0.04); color: #9CA3AF; }
     [data-theme="dark"] .back, [data-theme="dark"] label, [data-theme="dark"] .foot .out { color: #9CA3AF; }
+    [data-theme="dark"] .methods li > span:first-child { color: #D1D5DB; }
+    [data-theme="dark"] .methods b { color: #F9FAFB; }
+    [data-theme="dark"] .api-box { border-top-color: rgba(255,255,255,0.1); }
+    [data-theme="dark"] .api-box h2 { color: #F9FAFB; }
+    [data-theme="dark"] .api-box p { color: #9CA3AF; }
+    [data-theme="dark"] .api-btn { background: rgba(255,255,255,0.06); border-color: rgba(129,140,248,0.4); color: #A5B4FC; }
     [data-theme="dark"] .msg.ok { color: #6EE7B7; }
     [data-theme="dark"] .msg.error { color: #FCA5A5; }
   </style>
@@ -135,6 +159,8 @@
       </div>
     </div>
 
+    {% if banner %}<div class="msg {{ banner.0 }}" style="margin-bottom:0.9rem">{{ banner.1 }}</div>{% endif %}
+
     <form id="profile-form" novalidate>
       <div>
         <label for="p-name">Name</label>
@@ -153,13 +179,34 @@
       <div class="msg" id="p-msg" hidden></div>
       <button class="save-btn" id="p-save" type="submit">Save changes</button>
     </form>
+
+    <div class="api-box">
+      <h2>Sign-in methods</h2>
+      <p>Use any of these to sign in — they all open this same account.</p>
+      <ul class="methods">
+        <li><span>Google</span>
+          {% if profile.google %}<span class="badge">Connected</span>
+          {% else %}<a class="api-btn" href="/profile/connect-google/">Connect Google</a>{% endif %}</li>
+        <li><span>Email</span> <b id="m-email">{{ profile.email|default:"Not added" }}</b>
+          {% if profile.email %}{% if profile.email_verified %}<span class="badge">Verified</span>{% else %}<span>not verified</span>{% endif %}{% endif %}</li>
+        <li><span>Phone</span> <b id="m-phone">{{ profile.phone|default:"Not added" }}</b></li>
+        <li><span>Password</span> <b id="pw-state">{% if profile.has_password %}Set{% else %}Not set{% endif %}</b></li>
+      </ul>
+      <form id="pw-form" novalidate>
+        <input id="pw-current" type="password" placeholder="Current password" autocomplete="current-password"{% if not profile.has_password %} hidden{% endif %}>
+        <input id="pw-new" type="password" placeholder="{% if profile.has_password %}New password{% else %}Set a password (min 8 characters){% endif %}" autocomplete="new-password">
+        <button class="api-btn" id="pw-save" type="submit">{% if profile.has_password %}Change password{% else %}Set password{% endif %}</button>
+        <div class="msg" id="pw-msg" hidden></div>
+      </form>
+    </div>
+
     {% else %}
     <div class="head"><div><h1>Profile unavailable</h1>
       <p class="meta">We couldn't find your account. Sign out and sign in again to set it up.</p></div></div>
     {% endif %}
 
     <div class="foot">
-      <span></span>
+      <a class="out all" id="logout-all" role="button" tabindex="0">Sign out from all devices</a>
       <a class="out" href="/auth/logout/">Sign out</a>
     </div>
   </div>
@@ -189,7 +236,48 @@
           $("title").textContent = p.name;
           var ini = $("avatar-initial"); if (ini) ini.textContent = (p.name || "?").charAt(0).toUpperCase();
           show("Saved.", "ok");
+          var me = $("m-email"), mp = $("m-phone");
+          if (me) me.textContent = p.email || "Not added";
+          if (mp) mp.textContent = p.phone || "Not added";
         }).catch(function () { btn.disabled = false; show("Network error. Please try again.", "error"); });
+      });
+    })();
+  </script>
+  <script>
+    (function () {
+      var f = document.getElementById("pw-form");
+      if (!f) return;
+      var $ = function (id) { return document.getElementById(id); };
+      f.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var m = $("pw-msg"), b = $("pw-save"); m.hidden = true; b.disabled = true;
+        fetch("/profile/password/", {
+          method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin",
+          body: JSON.stringify({ current_password: $("pw-current").value, new_password: $("pw-new").value })
+        }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; }); })
+          .then(function (res) {
+            b.disabled = false; m.hidden = false;
+            if (!res.ok) { m.textContent = res.d.error || "Couldn't save the password."; m.className = "msg error"; return; }
+            m.textContent = "Password saved. Any API tokens were signed out — create a new one if you use them.";
+            m.className = "msg ok";
+            $("pw-new").value = ""; $("pw-current").value = ""; $("pw-current").hidden = false;
+            $("pw-state").textContent = "Set"; b.textContent = "Change password"; $("pw-new").placeholder = "New password";
+          }).catch(function () { b.disabled = false; m.hidden = false; m.textContent = "Network error."; m.className = "msg error"; });
+      });
+    })();
+  </script>
+  <script>
+    (function () {
+      var all = document.getElementById("logout-all");
+      if (!all) return;
+      all.addEventListener("click", function () {
+        if (all.dataset.armed !== "1") {            // first click arms it, second confirms
+          all.dataset.armed = "1"; all.textContent = "Tap again to sign out everywhere";
+          setTimeout(function () { all.dataset.armed = ""; all.textContent = "Sign out from all devices"; }, 4000);
+          return;
+        }
+        fetch("/profile/logout-all/", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: "{}" })
+          .finally(function () { location.href = "/login/"; });
       });
     })();
   </script>

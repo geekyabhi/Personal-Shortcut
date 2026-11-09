@@ -19,6 +19,21 @@ def login_view(request):
 
 
 def auth_start(request):
+    return _google_redirect(request)
+
+
+def connect_google_start(request):
+    """Start Google sign-in in 'link' mode for an account that is already
+    signed in: the callback attaches the Google account to it instead of
+    logging in as whoever Google says."""
+    uid = request.session.get("user_id")
+    if not uid or not settings.DATABASES:
+        return redirect("/login/")
+    request.session["link_user_id"] = uid
+    return _google_redirect(request)
+
+
+def _google_redirect(request):
     state = secrets.token_urlsafe(32)
     request.session["oauth_state"] = state
     redirect_uri = settings.GOOGLE_REDIRECT_URI
@@ -34,12 +49,16 @@ def auth_start(request):
 
 
 def auth_callback(request):
+    linking = bool(request.session.get("link_user_id"))
+    back = "/profile/" if linking else "/login/"
     if request.GET.get("state") != request.session.get("oauth_state"):
-        return redirect("/login/?error=state_mismatch")
+        request.session.pop("link_user_id", None)
+        return redirect(f"{back}?error=state_mismatch")
 
     code = request.GET.get("code")
     if not code:
-        return redirect(f"/login/?error={request.GET.get('error', 'cancelled')}")
+        request.session.pop("link_user_id", None)
+        return redirect(f"{back}?error={request.GET.get('error', 'cancelled')}")
 
     redirect_uri = settings.GOOGLE_REDIRECT_URI
 
@@ -75,6 +94,10 @@ def auth_callback(request):
     except Exception:
         return redirect("/login/?error=userinfo_failed")
 
+    link_uid = request.session.pop("link_user_id", None)
+    if link_uid:
+        return _complete_link(request, link_uid, info)
+
     email = (info.get("email", "") or "").strip().lower()
 
     if not settings.DATABASES:
@@ -98,6 +121,25 @@ def auth_callback(request):
     return redirect("/")
 
 
+def _complete_link(request, link_uid, info):
+    """Attach the Google account to the signed-in account that asked for it."""
+    from users.models import User
+    from users.services import AuthError, AuthService
+
+    user = User.objects.filter(pk=link_uid, is_active=True).first()
+    if not user or str(user.id) != request.session.get("user_id"):
+        return redirect("/profile/?error=Please+sign+in+again+and+retry")
+    try:
+        AuthService().link_google(user, info)
+    except AuthError as exc:
+        return redirect("/profile/?error=" + urllib.parse.quote_plus(exc.message))
+    request.session.pop("oauth_state", None)
+    request.session["user_name"] = user.display_name
+    request.session["user_email"] = user.email or ""
+    request.session["user_picture"] = user.picture
+    return redirect("/profile/?linked=google")
+
+
 def _finish_login(request, user):
     """Start the session for ``user``.
 
@@ -108,13 +150,17 @@ def _finish_login(request, user):
     signs in.
     """
     from expenses.models import Expense
+    from users.services import AuthService
 
     profile = ""
     if user.google_sub and user.email_verified and user.email:
         profile = settings.ALLOWED_USERS.get(user.email, "")
 
     request.session.flush()  # drops oauth_state and any previous login
+    if getattr(user, "password_was_reset", False):
+        request.session["notice"] = "password_reset"
     request.session["user_id"]        = str(user.id)
+    request.session["auth_token_id"]  = AuthService().start_web_session(user)
     request.session["user_email"]     = user.email or ""
     request.session["user_name"]      = user.display_name
     request.session["user_picture"]   = user.picture
@@ -178,5 +224,24 @@ def password_signup(request):
 
 
 def logout_view(request):
+    from users.services import AuthService
+
+    if settings.DATABASES:
+        AuthService().end_web_session(request.session.get("auth_token_id"))
     request.session.flush()
     return redirect("/login/")
+
+
+def logout_all_view(request):
+    """Sign out of every device (web sessions and API tokens). POST + JSON only,
+    so a link on another site can't trigger it."""
+    from users.services import AuthService
+    from users.views.profile import session_user
+
+    if request.method != "POST" or request.content_type != "application/json":
+        return JsonResponse({"error": "POST application/json required"}, status=405)
+    user = session_user(request)
+    if user:
+        AuthService().logout_everywhere(user)
+    request.session.flush()
+    return JsonResponse({"ok": True, "redirect": "/login/"})

@@ -63,6 +63,20 @@ ALLOWED_USERS = {
 # Token auth for the users app (/api/users/). SIGNUP_ENABLED=False closes
 # public signup once the accounts you want exist.
 AUTH_TOKEN_TTL_DAYS = int(os.environ.get("AUTH_TOKEN_TTL_DAYS", "30"))
+# Platform-wide key for internal tools (server-to-server). It can act as ANY user
+# when the caller passes a uid, so keep it in the environment only. Anything
+# shorter than 32 characters is treated as "not configured" (endpoints refuse).
+INTERNAL_API_TOKEN = os.environ.get("INTERNAL_API_TOKEN", "").strip()
+
+# One line per internal call (who it acted as — never the token).
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"plain": {"format": "%(asctime)s %(name)s %(message)s"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "plain"}},
+    "loggers": {"internal_api": {"handlers": ["console"], "level": "INFO", "propagate": False}},
+}
+
 SIGNUP_ENABLED = os.environ.get("SIGNUP_ENABLED", "True") == "True"
 # A bare 10-digit phone number is assumed to belong to this country.
 DEFAULT_PHONE_COUNTRY_CODE = os.environ.get("DEFAULT_PHONE_COUNTRY_CODE", "+91")

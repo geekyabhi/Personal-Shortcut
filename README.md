@@ -154,6 +154,29 @@ All checkbox properties are treated as habits. Their names come from the Notion 
 
 ---
 
+## API authentication
+
+The **Expenses API** (`/api/expenses/…`) needs `Authorization: Bearer <token>`. The account is taken from the
+token (never from the request), so a caller only sees and changes its own expenses. Tokens are random 256-bit
+values; only their SHA-256 hash is stored. Get one from `POST /api/users/login/` (email or phone + password; a
+Google-only account first sets a password on the Profile page). The Splitwise routes run on the
+owner's own Splitwise login, so they are owner-only. The Habits / Todos / Books / Blogs APIs are not protected yet.
+
+**Internal API (for internal tools, not end users):** `POST /api/internal/expenses/create/` and
+`GET /api/internal/expenses/list/`. They authenticate with one platform-wide key in the `X-Internal-Token` header
+(the `INTERNAL_API_TOKEN` environment variable — 32+ random characters; unset means the endpoints refuse everything)
+and take the account to act as from the `X-User-Id` header, a `uid` / `user_id` field in the JSON body, or `?uid=`
+(header wins, then body, then query). The key can act as **any** user, so keep it in `.env` / Railway variables only
+and never in source. Each call is logged with the uid it acted as (never the key).
+
+**Sign out:** the Profile page has *Sign out* (this device) and *Sign out from all devices*, which deletes every
+bearer token. Each browser login is its own row in `auth_tokens` (the cookie holds only the row id), so signing out
+is just deleting rows; sessions from before this change ask for one fresh sign-in.
+
+**One account, any sign-in:** Google, email + password and phone + password all open the same account. Add a
+password and phone on the Profile page, and use **Connect Google** there to attach a Google account without losing
+any existing sign-in method.
+
 ## Deploying to Railway
 
 `railway.json` configures the deploy: **before each release it runs `python manage.py migrate --noinput`**

@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth.hashers import is_password_usable
 from django.db import IntegrityError
 
 from ..models import User
@@ -16,6 +17,8 @@ class ProfileService:
             "phone": user.phone or "",
             "picture": user.picture,
             "google": bool(user.google_sub),
+            "has_password": is_password_usable(user.password),
+            "email_verified": bool(user.email_verified),
             # A Google-verified email is the account's identity — and what unlocks
             # the full app for allow-listed addresses — so it can't be edited here.
             "email_locked": bool(user.email_verified),
