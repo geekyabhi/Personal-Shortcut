@@ -345,6 +345,7 @@ _EXTRA_KEYS = (
     "comment", "other_partner", "add_to_split", "from_split",
     "split_added", "processed", "splitwise_id",
     "is_mandate", "mandate_frequency", "mandate_start", "mandate_end",
+    "recurring",
 )
 
 

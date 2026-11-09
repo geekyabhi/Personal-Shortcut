@@ -24,6 +24,11 @@ class ExpensesService:
     MANDATE_START_PROP = "Mandate Start Date"
     MANDATE_END_PROP   = "Mandate End Date"
     MANDATE_ID_PROP    = "Mandate ID"
+    # Separate from MANDATE_PROP: marks a real expense row as a recurring
+    # occurrence (set automatically on backfill, or manually for legacy rows)
+    # — never set on the mandate template itself, which keeps MANDATE_PROP's
+    # existing "exclude from Browse Expenses / spend totals" meaning intact.
+    RECURRING_PROP     = "Recurring"
     MANDATE_STEP = {
         "Weekly":    relativedelta(weeks=1),
         "Monthly":   relativedelta(months=1),
@@ -397,6 +402,7 @@ class ExpensesService:
             "mandate_frequency": ((props.get(self.MANDATE_FREQ_PROP) or {}).get("select") or {}).get("name", ""),
             "mandate_start": (((props.get(self.MANDATE_START_PROP) or {}).get("date") or {}).get("start") or "")[:10],
             "mandate_end": (((props.get(self.MANDATE_END_PROP) or {}).get("date") or {}).get("start") or "")[:10],
+            "recurring": bool((props.get(self.RECURRING_PROP) or {}).get("checkbox")),
         }
 
     def _detect_title_prop(self, rows) -> str:
@@ -1242,6 +1248,7 @@ class ExpensesService:
         mandate_start=None,
         mandate_end=None,
         mandate_source_id=None,
+        recurring=None,
     ) -> dict:
         """Notion property payloads for the optional columns. A value of
         ``None`` means 'leave this column untouched'."""
@@ -1277,6 +1284,8 @@ class ExpensesService:
             props["Mandate ID"] = {
                 "rich_text": [{"text": {"content": mandate_source_id}}] if mandate_source_id else []
             }
+        if recurring is not None:
+            props["Recurring"] = {"checkbox": bool(recurring)}
         return props
 
     def create_entry(
@@ -1419,7 +1428,7 @@ class ExpensesService:
                 entry["title"], entry["amount"], d.isoformat(),
                 entry["categories"], entry["source"], mode=entry["mode"],
                 comment=entry["comment"], other_partner=entry["other_partner"],
-                mandate_source_id=mandate_page_id,
+                mandate_source_id=mandate_page_id, recurring=True,
             )
         return {"created": len(missing)}
 

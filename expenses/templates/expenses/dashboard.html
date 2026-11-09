@@ -1977,6 +1977,7 @@
     { key: "from_split",    label: "From Split",    type: "bool"   },
     { key: "split_added",   label: "Split Added",   type: "bool"   },
     { key: "is_mandate",    label: "Is Mandate",    type: "bool"   },
+    { key: "recurring",     label: "Recurring",     type: "bool"   },
   ];
   const FB_OPS = {
     text:   [["contains","contains"],["ncontains","doesn't contain"],["is","is"],["isnot","is not"],["empty","is empty"],["nempty","is not empty"]],
@@ -2233,6 +2234,7 @@
     splitwise_id: "splitwise_id", processed: "processed",
     add_to_split: "add_to_split", from_split: "from_split", split_added: "split_added",
     mandate: "is_mandate", is_mandate: "is_mandate",
+    recurring: "recurring",
   };
 
   function _sqlTokenize(text) {
@@ -3441,6 +3443,7 @@
       splitwise_id: e.splitwise_id == null ? "" : String(e.splitwise_id),
       processed: !!e.processed, add_to_split: !!e.add_to_split,
       from_split: !!e.from_split, split_added: !!e.split_added,
+      recurring: !!e.recurring,
     };
   }
 
@@ -3454,6 +3457,7 @@
       splitwise_id: g("splitwise_id").value.trim(),
       processed: g("processed").checked, add_to_split: g("add_to_split").checked,
       from_split: g("from_split").checked, split_added: g("split_added").checked,
+      recurring: g("recurring").checked,
     };
   }
 
@@ -3462,7 +3466,7 @@
     for (const k of ["name", "date", "source", "mode", "categories", "comment", "other_partner", "splitwise_id"]) {
       if (a[k] !== b[k]) return true;
     }
-    for (const k of ["processed", "add_to_split", "from_split", "split_added"]) {
+    for (const k of ["processed", "add_to_split", "from_split", "split_added", "recurring"]) {
       if (!!a[k] !== !!b[k]) return true;
     }
     return false;
@@ -3529,6 +3533,7 @@
             <label><input type="checkbox" data-bef="add_to_split" ${s.add_to_split ? "checked" : ""}> Add to Split</label>
             <label><input type="checkbox" data-bef="from_split" ${s.from_split ? "checked" : ""}> From Split</label>
             <label><input type="checkbox" data-bef="split_added" ${s.split_added ? "checked" : ""}> Split Added</label>
+            <label><input type="checkbox" data-bef="recurring" ${s.recurring ? "checked" : ""}> 🔁 Recurring</label>
           </div>
           <button type="button" class="dv-split-link be-split-btn" style="grid-column:1/-1;">${_IC.scissors}Split across categories</button>
         </div>
@@ -3649,6 +3654,7 @@
         comment: cur.comment, other_partner: cur.other_partner,
         add_to_split: cur.add_to_split, from_split: cur.from_split,
         split_added: cur.split_added, processed: cur.processed,
+        recurring: cur.recurring,
         splitwise_id: swid,
       };
       const prevSnapshot = { ...entry };
@@ -3658,6 +3664,7 @@
         categories: cats, source: cur.source, mode: cur.mode, comment: cur.comment,
         other_partner: cur.other_partner, processed: cur.processed,
         add_to_split: cur.add_to_split, from_split: cur.from_split, split_added: cur.split_added,
+        recurring: cur.recurring,
         splitwise_id: swid === "" ? null : swid,
       });
       jobs.push({ id, name: cur.name, payload, prevSnapshot });
@@ -4168,6 +4175,7 @@
     document.getElementById("ef-from-split").checked   = entry ? !!entry.from_split : false;
     document.getElementById("ef-split-added").checked  = entry ? !!entry.split_added : false;
     document.getElementById("ef-processed").checked    = entry ? !!entry.processed : false;
+    document.getElementById("ef-recurring").checked    = entry ? !!entry.recurring : false;
     document.getElementById("ef-swid").value = (entry && entry.splitwise_id != null) ? entry.splitwise_id : "";
     // Recurring mandate toggle + fields
     document.getElementById("ef-is-mandate").checked = isMandate;
@@ -4249,6 +4257,7 @@
       from_split: document.getElementById("ef-from-split").checked,
       split_added: document.getElementById("ef-split-added").checked,
       processed: document.getElementById("ef-processed").checked,
+      recurring: document.getElementById("ef-recurring").checked,
       splitwise_id: swidRaw === "" ? "" : swid,
       is_mandate: isMandate,
       mandate_frequency: isMandate ? document.getElementById("ef-mandate-freq").value : "",
@@ -4263,6 +4272,7 @@
       comment: payload.comment, other_partner: payload.other_partner,
       add_to_split: payload.add_to_split, from_split: payload.from_split,
       split_added: payload.split_added, processed: payload.processed,
+      recurring: payload.recurring,
       splitwise_id: swid,
       is_mandate: payload.is_mandate, mandate_frequency: payload.mandate_frequency,
       mandate_start: payload.mandate_start, mandate_end: payload.mandate_end,
@@ -4312,6 +4322,10 @@
 
       if (isMandate) {
         showToast(editId ? 'Mandate updated' : 'Mandate added', 'success');
+        // Adding/editing a mandate can immediately create pending occurrences
+        // (e.g. a start date in the past) — recheck now rather than waiting
+        // for the next full page load to offer the backfill prompt.
+        if (typeof checkMandateReconciliation === "function") checkMandateReconciliation();
       } else if (editId) {
         _rowSaving(rowId, false);
         showToast('Expense updated', 'success');
@@ -4674,6 +4688,7 @@
           <label><input type="checkbox" id="ef-from-split"> From Split</label>
           <label><input type="checkbox" id="ef-split-added"> Split Added</label>
           <label><input type="checkbox" id="ef-processed"> Processed</label>
+          <label><input type="checkbox" id="ef-recurring"> 🔁 Recurring occurrence</label>
         </div>
       </div>
       <div class="ef-field">
