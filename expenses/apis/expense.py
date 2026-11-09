@@ -1,13 +1,14 @@
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 
-from .views import (
+from ..views import (
+    OptionDetailView, OptionsCreateView, OptionsListView,
     ExpensesSummaryView, ExpensesListView, ExpensesCreateView,
     ExpensesUpdateView, ExpensesDeleteView, ExpensesTimeseriesView,
     ExpensesChartView, ExpensesCategoryTimeseriesView, ExpensesHeatmapView,
     ExpensesInsightsView,
 )
-from .splitwise_views import (
+from ..services.splitwise.splitwise_views import (
     SplitwiseCreateView, SplitwiseExpensesView, SplitwiseGroupsView,
     SplitwiseImportView, SplitwiseOverviewView, SplitwisePushEntryView,
 )
@@ -23,6 +24,9 @@ urlpatterns = [
     path("category-timeseries/",       csrf_exempt(ExpensesCategoryTimeseriesView.as_view()), name="api-expenses-category-timeseries"),
     path("heatmap/",                   csrf_exempt(ExpensesHeatmapView.as_view()),             name="api-expenses-heatmap"),
     path("insights/",                  csrf_exempt(ExpensesInsightsView.as_view()),            name="api-expenses-insights"),
+    path("options/",                    csrf_exempt(OptionsListView.as_view()),                 name="api-expenses-options"),
+    path("options/<str:kind>/",         csrf_exempt(OptionsCreateView.as_view()),               name="api-expenses-options-create"),
+    path("options/<str:kind>/<int:option_id>/", csrf_exempt(OptionDetailView.as_view()),        name="api-expenses-options-detail"),
     path("splitwise/overview/",         csrf_exempt(SplitwiseOverviewView.as_view()),           name="api-expenses-splitwise-overview"),
     path("splitwise/expenses/",         csrf_exempt(SplitwiseExpensesView.as_view()),           name="api-expenses-splitwise-expenses"),
     path("splitwise/groups/",           csrf_exempt(SplitwiseGroupsView.as_view()),             name="api-expenses-splitwise-groups"),

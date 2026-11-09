@@ -8,6 +8,7 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
+    "users",
     "expenses",
     "todos",
     "books",
@@ -59,6 +60,37 @@ ALLOWED_USERS = {
     if os.environ.get(f"{p}_EMAIL", "").strip()
 }
 
+# Token auth for the users app (/api/users/). SIGNUP_ENABLED=False closes
+# public signup once the accounts you want exist.
+AUTH_TOKEN_TTL_DAYS = int(os.environ.get("AUTH_TOKEN_TTL_DAYS", "30"))
+SIGNUP_ENABLED = os.environ.get("SIGNUP_ENABLED", "True") == "True"
+# A bare 10-digit phone number is assumed to belong to this country.
+DEFAULT_PHONE_COUNTRY_CODE = os.environ.get("DEFAULT_PHONE_COUNTRY_CODE", "+91")
+# After this many wrong passwords an account is locked for LOGIN_LOCK_MINUTES.
+LOGIN_MAX_FAILURES = int(os.environ.get("LOGIN_MAX_FAILURES", "5"))
+LOGIN_LOCK_MINUTES = int(os.environ.get("LOGIN_LOCK_MINUTES", "15"))
+
+# Postgres (currently only the expenses app's models use it). Left unset when
+# DATABASE_URL is absent so everything else keeps running as before — the rest
+# of the app doesn't touch the ORM, and Django falls back to a dummy backend.
+if os.environ.get("DATABASE_URL"):
+    import dj_database_url
+
+    DATABASES = {
+        "default": dj_database_url.config(
+            env="DATABASE_URL",
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=os.environ.get("DATABASE_SSL_REQUIRE", "True") == "True",
+        )
+    }
+    # A pooled endpoint (Neon's "-pooler" host) runs PgBouncer in transaction
+    # mode, where a server connection isn't tied to us between statements —
+    # so no server-side cursors and no prepared statements.
+    if "-pooler" in (DATABASES["default"].get("HOST") or ""):
+        DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+        DATABASES["default"].setdefault("OPTIONS", {})["prepare_threshold"] = None
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -71,7 +103,7 @@ TEMPLATES = [
             BASE_DIR / "blogs" / "templates",
         ],
         "APP_DIRS": False,
-        "OPTIONS": {"context_processors": []},
+        "OPTIONS": {"context_processors": ["core.context.account"]},
     },
 ]
 

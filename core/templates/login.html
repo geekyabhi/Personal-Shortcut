@@ -82,6 +82,42 @@
       margin-top: 1.25rem;
     }
 
+    [hidden] { display: none !important; }
+
+    .divider {
+      display: flex; align-items: center; gap: 0.8rem;
+      margin: 1.4rem 0 1.1rem; color: #9CA3AF; font-size: 0.75rem; font-weight: 600;
+    }
+    .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #E5E7EB; }
+
+    form { display: flex; flex-direction: column; gap: 0.7rem; text-align: left; }
+    input {
+      width: 100%; padding: 0.8rem 1.1rem;
+      background: #fff; color: #111827;
+      border: 1.5px solid #E5E7EB; border-radius: 100px;
+      font-size: 0.92rem; font-weight: 500; font-family: inherit;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input::placeholder { color: #9CA3AF; }
+    input:focus { border-color: #4F46E5; box-shadow: 0 0 0 4px rgba(79,70,229,0.12); }
+    .hint { font-size: 0.72rem; color: #9CA3AF; font-weight: 500; padding: 0 0.6rem; margin-top: -0.2rem; }
+
+    .submit-btn {
+      width: 100%; padding: 0.85rem 1.5rem; margin-top: 0.2rem;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: #fff;
+      border: none; border-radius: 100px;
+      font-size: 0.95rem; font-weight: 700; font-family: inherit; cursor: pointer;
+      box-shadow: 0 4px 18px rgba(79,70,229,0.28);
+      transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(79,70,229,0.34); }
+    .submit-btn:active { transform: scale(0.97); }
+    .submit-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+    .switch { margin-top: 1.1rem; font-size: 0.82rem; color: #6B7280; font-weight: 500; }
+    .switch a { color: #4F46E5; font-weight: 700; text-decoration: none; }
+    .switch a:hover { text-decoration: underline; }
+
     .footer { margin-top: 2rem; font-size: 0.72rem; color: #9CA3AF; font-weight: 500; }
 
     @keyframes _fadeUp  { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
@@ -90,6 +126,8 @@
 
     [data-theme="dark"] body { background: #0F0F14; }
     [data-theme="dark"] .card { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] input { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB; }
+    [data-theme="dark"] .divider::before, [data-theme="dark"] .divider::after { background: rgba(255,255,255,0.12); }
     [data-theme="dark"] .google-btn { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); color: #F9FAFB; }
   </style>
   <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
@@ -113,9 +151,24 @@
       Sign in with Google
     </a>
 
+    <div class="divider"><span>or</span></div>
+
+    <form id="auth-form" novalidate>
+      <input id="f-name"  type="text"     placeholder="Your name"              autocomplete="name" maxlength="150" hidden>
+      <input id="f-id"    type="text"     placeholder="Email or phone number"  autocomplete="username" required>
+      <input id="f-email" type="email"    placeholder="Email"                  autocomplete="email" hidden>
+      <input id="f-phone" type="tel"      placeholder="Phone, e.g. +91 98765 43210" autocomplete="tel" hidden>
+      <p class="hint" id="f-hint" hidden>Your name is required. Add an email, a phone number, or both.</p>
+      <input id="f-pw"    type="password" placeholder="Password"               autocomplete="current-password" required>
+      <button class="submit-btn" id="f-submit" type="submit">Sign in</button>
+    </form>
+    <p class="switch"><span id="sw-text">New here?</span> <a href="#" id="sw-link">Create an account</a></p>
+
+    <div class="error-msg" id="js-error" hidden></div>
+
     {% if error %}
       {% if error == "unauthorized" %}
-        <div class="error-msg">This Google account is not authorised.</div>
+        <div class="error-msg">This Google account can't sign in right now.</div>
       {% elif error == "cancelled" %}
         <div class="error-msg">Sign-in was cancelled.</div>
       {% else %}
@@ -123,8 +176,52 @@
       {% endif %}
     {% endif %}
 
-    <p class="footer">Only authorised accounts can sign in.</p>
+    <p class="footer">New accounts get access to Expenses.</p>
   </div>
+  <script>
+    (function () {
+      var signup = false;
+      var $ = function (id) { return document.getElementById(id); };
+      var form = $("auth-form"), err = $("js-error");
+
+      function setMode(on) {
+        signup = on;
+        $("f-name").hidden = $("f-email").hidden = $("f-phone").hidden = $("f-hint").hidden = !on;
+        $("f-id").hidden = on;
+        $("f-pw").autocomplete = on ? "new-password" : "current-password";
+        $("f-submit").textContent = on ? "Create account" : "Sign in";
+        $("sw-text").textContent = on ? "Already have an account?" : "New here?";
+        $("sw-link").textContent = on ? "Sign in" : "Create an account";
+        err.hidden = true;
+      }
+      $("sw-link").addEventListener("click", function (e) { e.preventDefault(); setMode(!signup); });
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var body = signup
+          ? { name: $("f-name").value, email: $("f-email").value, phone: $("f-phone").value, password: $("f-pw").value }
+          : { identifier: $("f-id").value, password: $("f-pw").value };
+        var btn = $("f-submit");
+        if (signup && !$("f-name").value.trim()) {
+          err.textContent = "Enter your name."; err.hidden = false; return;
+        }
+        btn.disabled = true; err.hidden = true;
+        fetch(signup ? "/auth/signup/" : "/auth/login/", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          credentials: "same-origin", body: JSON.stringify(body)
+        }).then(function (r) {
+          return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; });
+        }).then(function (res) {
+          if (res.ok && res.d.redirect) { window.location.href = res.d.redirect; return; }
+          err.textContent = res.d.error || "Something went wrong. Please try again.";
+          err.hidden = false; btn.disabled = false;
+        }).catch(function () {
+          err.textContent = "Network error. Please try again.";
+          err.hidden = false; btn.disabled = false;
+        });
+      });
+    })();
+  </script>
   <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/service-worker.js");</script>
 </body>
 </html>

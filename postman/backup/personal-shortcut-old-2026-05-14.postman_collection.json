@@ -1,0 +1,1038 @@
+{
+  "info": {
+    "_postman_id": "934c9f1e-2fac-4272-ae67-767cbd7dcb60",
+    "name": "Personal Shortcut",
+    "description": "All API endpoints for the Personal Shortcut Django app (Expenses, Habits, Jira Todos).\n\nSet the `base_url` variable to switch between local and production:\n\n- Local: [http://localhost:8000](http://localhost:8000)\n    \n- Production: [https://your-app.railway.app](https://your-app.railway.app)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "createdAt": "2026-05-14T14:53:04.000Z",
+    "updatedAt": "2026-05-14T14:55:02.000Z",
+    "lastUpdatedBy": "41183902",
+    "uid": "41183902-934c9f1e-2fac-4272-ae67-767cbd7dcb60"
+  },
+  "item": [
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "Summary — Monthly (default)",
+          "id": "e4217760-2d42-4d89-aded-ca6306d8f774",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/expenses/summary/?period=monthly",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly"
+                },
+                {
+                  "key": "month",
+                  "value": "2026-05",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns totals and group breakdown for a given period.\n\n`group_by=category` or `group_by=source` for breakdown."
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-e4217760-2d42-4d89-aded-ca6306d8f774"
+        },
+        {
+          "name": "Summary — Yearly",
+          "id": "67cf10fa-9922-4f73-9cba-5ffc653a37bc",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/expenses/summary/?period=yearly&year=2026",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "yearly"
+                },
+                {
+                  "key": "year",
+                  "value": "2026"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-67cf10fa-9922-4f73-9cba-5ffc653a37bc"
+        },
+        {
+          "name": "Summary — Weekly",
+          "id": "3935d4ce-2e65-4df0-ba9c-f3fa736d7772",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/expenses/summary/?period=weekly&week=2026-W20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "weekly"
+                },
+                {
+                  "key": "week",
+                  "value": "2026-W20"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-3935d4ce-2e65-4df0-ba9c-f3fa736d7772"
+        },
+        {
+          "name": "Summary — Daily",
+          "id": "34219be0-9914-4b5b-bcb1-e863f0b567c7",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/expenses/summary/?period=daily&day=2026-05-14",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "daily"
+                },
+                {
+                  "key": "day",
+                  "value": "2026-05-14"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-34219be0-9914-4b5b-bcb1-e863f0b567c7"
+        },
+        {
+          "name": "Summary — Custom Range",
+          "id": "9b0b0542-22cf-4195-974d-52f581710ee1",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/expenses/summary/?period=custom&start=2026-04-01&end=2026-05-14",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "custom"
+                },
+                {
+                  "key": "start",
+                  "value": "2026-04-01"
+                },
+                {
+                  "key": "end",
+                  "value": "2026-05-14"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-9b0b0542-22cf-4195-974d-52f581710ee1"
+        },
+        {
+          "name": "Summary — All Time",
+          "id": "f29ddd9c-03c4-49c1-8a46-9272fe4286c1",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/expenses/summary/?period=all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "all"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-f29ddd9c-03c4-49c1-8a46-9272fe4286c1"
+        },
+        {
+          "name": "Summary — Group by Category",
+          "id": "946d5a9d-3a1c-46dc-8327-32b461ceca5c",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/expenses/summary/?period=monthly&group_by=category",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly"
+                },
+                {
+                  "key": "group_by",
+                  "value": "category"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-946d5a9d-3a1c-46dc-8327-32b461ceca5c"
+        },
+        {
+          "name": "Summary — Group by Source",
+          "id": "b1217f82-f5d1-4c70-be90-fcf08e8d7432",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/expenses/summary/?period=monthly&group_by=source",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly"
+                },
+                {
+                  "key": "group_by",
+                  "value": "source"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-b1217f82-f5d1-4c70-be90-fcf08e8d7432"
+        },
+        {
+          "name": "Chart Data",
+          "id": "1a2cc52e-6e3f-4d07-9380-ce9012d25127",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/expenses/chart/?period=monthly",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "chart",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly"
+                },
+                {
+                  "key": "month",
+                  "value": "2026-05",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns trend + breakdown data used by both dashboard and charts pages."
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-1a2cc52e-6e3f-4d07-9380-ce9012d25127"
+        },
+        {
+          "name": "Timeseries",
+          "id": "f558ab3a-7176-43a5-84e1-460fda80be88",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/expenses/timeseries/?period=monthly",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "expenses",
+                "timeseries",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly"
+                },
+                {
+                  "key": "month",
+                  "value": "2026-05",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns time-series only (no breakdown)."
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-f558ab3a-7176-43a5-84e1-460fda80be88"
+        }
+      ],
+      "id": "33dd12dc-0cbc-4dcc-b900-fb2e5cac24fb",
+      "description": "Expense tracking — pulls data from the Notion Expenses database.",
+      "createdAt": "2026-05-14T14:53:05.000Z",
+      "updatedAt": "2026-05-14T14:53:05.000Z",
+      "uid": "41183902-33dd12dc-0cbc-4dcc-b900-fb2e5cac24fb"
+    },
+    {
+      "name": "Habits",
+      "item": [
+        {
+          "name": "Summary — Monthly (default)",
+          "id": "04c50770-4ed1-4d8a-83e4-3218e9ad7012",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/habits/summary/?period=monthly",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "habits",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly"
+                },
+                {
+                  "key": "month",
+                  "value": "2026-05",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns per-habit done/total/rate for a given period."
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-04c50770-4ed1-4d8a-83e4-3218e9ad7012"
+        },
+        {
+          "name": "Summary — Yearly",
+          "id": "df8ee599-5fe2-4c2f-9485-19b4c22ef32c",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/habits/summary/?period=yearly&year=2026",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "habits",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "yearly"
+                },
+                {
+                  "key": "year",
+                  "value": "2026"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-df8ee599-5fe2-4c2f-9485-19b4c22ef32c"
+        },
+        {
+          "name": "Summary — Weekly",
+          "id": "14c615f9-0f1e-40b8-999f-b4e6a35f6f12",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/habits/summary/?period=weekly&week=2026-W20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "habits",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "weekly"
+                },
+                {
+                  "key": "week",
+                  "value": "2026-W20"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-14c615f9-0f1e-40b8-999f-b4e6a35f6f12"
+        },
+        {
+          "name": "Summary — Daily",
+          "id": "2e7dfc8a-171b-4015-88a3-beb566914856",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/habits/summary/?period=daily&day=2026-05-14",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "habits",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "daily"
+                },
+                {
+                  "key": "day",
+                  "value": "2026-05-14"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-2e7dfc8a-171b-4015-88a3-beb566914856"
+        },
+        {
+          "name": "Summary — Custom Range",
+          "id": "31512f0e-27c6-48bc-b189-317459b25dd7",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/habits/summary/?period=custom&start=2026-04-01&end=2026-05-14",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "habits",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "custom"
+                },
+                {
+                  "key": "start",
+                  "value": "2026-04-01"
+                },
+                {
+                  "key": "end",
+                  "value": "2026-05-14"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-31512f0e-27c6-48bc-b189-317459b25dd7"
+        },
+        {
+          "name": "Summary — All Time",
+          "id": "b4219b3e-3f10-44e4-a4b0-cc742c92cc99",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/habits/summary/?period=all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "habits",
+                "summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "all"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-b4219b3e-3f10-44e4-a4b0-cc742c92cc99"
+        },
+        {
+          "name": "Chart Data",
+          "id": "e661a773-bb01-47a7-b5b3-bd2e640dcc8b",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/habits/chart/?period=monthly",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "habits",
+                "chart",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "monthly"
+                },
+                {
+                  "key": "month",
+                  "value": "2026-05",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns score_trend, habit_grid (≤60 day ranges), and habit_counts."
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-e661a773-bb01-47a7-b5b3-bd2e640dcc8b"
+        },
+        {
+          "name": "Backfill Current Year",
+          "id": "bb7bead3-fff8-44f2-92cd-8fb4e61224d6",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/habits/backfill/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "habits",
+                "backfill",
+                ""
+              ]
+            },
+            "description": "Finds all dates from Jan 1 of the current year to today that have no Notion entry and creates them.\n\nNo request body needed."
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-bb7bead3-fff8-44f2-92cd-8fb4e61224d6"
+        },
+        {
+          "name": "Check Habits for Today",
+          "id": "8e70a0ff-f595-4cf5-abf1-deb5bd1e6a5a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habits\": {\n    \"Exercise\": true,\n    \"Reading\": true,\n    \"Meditation\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/habits/check/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "habits",
+                "check",
+                ""
+              ]
+            },
+            "description": "Marks habits as done/not-done for today.\n\n- If today's Notion page doesn't exist, it is created first.\n- Habit names must exactly match the Notion property names (case-sensitive).\n- Use GET /habits/summary/?period=daily to see exact habit names."
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-8e70a0ff-f595-4cf5-abf1-deb5bd1e6a5a"
+        }
+      ],
+      "id": "dc17ef55-6549-4dcb-87c6-2f6e0568adc5",
+      "description": "Habit tracking — pulls data from the Notion Habits database. All checkbox properties in Notion are auto-detected as habits.",
+      "createdAt": "2026-05-14T14:53:05.000Z",
+      "updatedAt": "2026-05-14T14:53:05.000Z",
+      "uid": "41183902-dc17ef55-6549-4dcb-87c6-2f6e0568adc5"
+    },
+    {
+      "name": "Jira Todos",
+      "item": [
+        {
+          "name": "Create Issue",
+          "id": "8db55c21-9135-40ed-9aeb-7cc6e4481fae",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Your issue title here\",\n  \"description\": \"Optional description\",\n  \"issuetype\": \"Task\",\n  \"duedate\": \"2026-05-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/todos/create/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "todos",
+                "create",
+                ""
+              ]
+            },
+            "description": "Creates a new Jira issue in the TODO project.\n\n**Fields:**\n- `summary` (required) — issue title\n- `description` (optional) — plain text\n- `issuetype` (optional) — Task / Bug / Story (default: Task)\n- `duedate` (optional) — any date format e.g. \"2026-05-20\", \"20 May 2026\", \"14 May 2026 at 2:41 PM\"\n\n**Returns:** `{ \"key\": \"TODO-42\", \"url\": \"...\" }`"
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-8db55c21-9135-40ed-9aeb-7cc6e4481fae"
+        },
+        {
+          "name": "Create Issue — Bug",
+          "id": "66968c95-12f2-4bd9-8342-203fbc65839f",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Bug title here\",\n  \"description\": \"Steps to reproduce\",\n  \"issuetype\": \"Bug\",\n  \"duedate\": \"2026-05-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/todos/create/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "todos",
+                "create",
+                ""
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-66968c95-12f2-4bd9-8342-203fbc65839f"
+        },
+        {
+          "name": "List Issues — All",
+          "id": "ff63180c-d057-493c-904f-4f559f44d7e4",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/todos/issues/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "todos",
+                "issues",
+                ""
+              ]
+            },
+            "description": "Lists all issues in the TODO project ordered by created date."
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-ff63180c-d057-493c-904f-4f559f44d7e4"
+        },
+        {
+          "name": "List Issues — To Do",
+          "id": "c9135262-bf9f-4d8f-9e3d-e4b6598a6894",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/todos/issues/?status=To Do",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "todos",
+                "issues",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "To Do"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-c9135262-bf9f-4d8f-9e3d-e4b6598a6894"
+        },
+        {
+          "name": "List Issues — In Progress",
+          "id": "2e23f4cc-ad69-4ec5-b0a7-0cdca5df9b33",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/todos/issues/?status=In Progress",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "todos",
+                "issues",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "In Progress"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-2e23f4cc-ad69-4ec5-b0a7-0cdca5df9b33"
+        },
+        {
+          "name": "List Issues — Done",
+          "id": "5e83cb99-ed95-45f0-89f2-7ceec10a4d30",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/todos/issues/?status=Done",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "todos",
+                "issues",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "Done"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-5e83cb99-ed95-45f0-89f2-7ceec10a4d30"
+        },
+        {
+          "name": "Due Summary — Plain Text",
+          "id": "08a8503e-b3c7-4935-af0d-d6e81fb876b4",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/todos/due-summary/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "todos",
+                "due-summary",
+                ""
+              ]
+            },
+            "description": "Returns a plain text summary of all non-done issues that have a due date.\n\nCategories: OVERDUE / DUE IN NEXT 1 HOUR / DUE TODAY / DUE SOON (next 3 days) / UPCOMING.\n\nPerfect for Apple Shortcuts notifications."
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-08a8503e-b3c7-4935-af0d-d6e81fb876b4"
+        },
+        {
+          "name": "Due Summary — JSON",
+          "id": "27f6e04e-b964-4aee-86d7-0ec9e4f510b2",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/todos/due-summary/?format=json",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "todos",
+                "due-summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            },
+            "description": "Same as plain text but returns structured JSON with separate arrays for overdue, due_next_hour, due_today, due_soon, upcoming — plus a `text` field with the full plain text summary."
+          },
+          "response": [],
+          "createdAt": "2026-05-14T14:53:05.000Z",
+          "updatedAt": "2026-05-14T14:53:05.000Z",
+          "uid": "41183902-27f6e04e-b964-4aee-86d7-0ec9e4f510b2"
+        }
+      ],
+      "id": "5a1b6635-cae7-44b6-91b1-be513fe1f538",
+      "description": "Jira issue management — reads and writes to the TODO Jira project.",
+      "createdAt": "2026-05-14T14:53:05.000Z",
+      "updatedAt": "2026-05-14T14:53:05.000Z",
+      "uid": "41183902-5a1b6635-cae7-44b6-91b1-be513fe1f538"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "id": "14d9eef5-930f-4cad-808b-ed8cb575409b",
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "id": "d3ed0643-6914-468f-9492-08bbf66cf902",
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "base_url_hosted",
+      "value": ""
+    },
+    {
+      "key": "base_url_local",
+      "value": ""
+    }
+  ]
+}

@@ -1,12 +1,13 @@
 from django.urls import path
 from .views import (
+    OptionDetailView, OptionsCreateView, OptionsListView,
     ChartsView, DashboardView, ExpensesChartView, ExpensesCategoryTimeseriesView,
     ExpensesCreateView, ExpensesDeleteView, ExpensesHeatmapView, ExpensesInsightsView,
     ExpensesListView, ExpensesMandateBackfillView, ExpensesMandateReconcileView,
     ExpensesMandatesView, ExpensesSplitView, ExpensesSummaryView, ExpensesTimeseriesView,
     ExpensesUpdateView,
 )
-from .splitwise_views import (
+from .services.splitwise.splitwise_views import (
     SplitwiseCreateView, SplitwiseDashboardView, SplitwiseExpensesView,
     SplitwiseGroupsView, SplitwiseImportView, SplitwiseOverviewView,
     SplitwisePushEntryView,
@@ -32,6 +33,9 @@ urlpatterns = [
     path("splitwise/groups/", SplitwiseGroupsView.as_view(), name="expenses-splitwise-groups"),
     path("splitwise/create/", SplitwiseCreateView.as_view(), name="expenses-splitwise-create"),
     path("splitwise/import/", SplitwiseImportView.as_view(), name="expenses-splitwise-import"),
+    path("options/", OptionsListView.as_view(), name="expenses-options"),
+    path("options/<str:kind>/", OptionsCreateView.as_view(), name="expenses-options-create"),
+    path("options/<str:kind>/<int:option_id>/", OptionDetailView.as_view(), name="expenses-options-detail"),
     path("<str:page_id>/push-split/", SplitwisePushEntryView.as_view(), name="expenses-push-split"),
     path("<str:page_id>/update/", ExpensesUpdateView.as_view(), name="expenses-update"),
     path("<str:page_id>/delete/", ExpensesDeleteView.as_view(), name="expenses-delete"),

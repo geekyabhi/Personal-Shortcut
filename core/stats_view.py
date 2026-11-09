@@ -1,12 +1,14 @@
 import os
 import requests
-from datetime import date
+from datetime import date, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 
-from django.conf import settings
+from django.db import connections
 from django.http import JsonResponse
 from django.views import View
+
+from expenses.data_services import data_service_for
 
 NOTION_VERSION = "2022-06-28"
 
@@ -36,20 +38,18 @@ def _query_notion(db_id, token, payload=None):
     return rows
 
 
-def _expenses_stat(profile):
-    token = os.environ.get(f"{profile}_NOTION_TOKEN", "")
-    db_id = os.environ.get(f"{profile}_NOTION_DB", "")
-    if not token or not db_id:
-        return None
-    today = date.today()
-    s = today.replace(day=1)
-    e = date(s.year + 1, 1, 1) if s.month == 12 else date(s.year, s.month + 1, 1)
-    payload = {"filter": {"and": [
-        {"property": "Date", "date": {"on_or_after": s.isoformat()}},
-        {"property": "Date", "date": {"before": e.isoformat()}},
-    ]}}
-    rows = _query_notion(db_id, token, payload)
-    total = sum((r.get("properties", {}).get("Amount") or {}).get("number") or 0 for r in rows)
+def _expenses_stat(request):
+    try:
+        service = data_service_for(request)
+        if not service.is_configured:
+            return None
+        today = date.today()
+        s = today.replace(day=1)
+        e = date(s.year + 1, 1, 1) if s.month == 12 else date(s.year, s.month + 1, 1)
+        total = service.total(s, e - timedelta(days=1))
+    finally:
+        # This runs in a worker thread; don't leave its connection open.
+        connections.close_all()
     return f"₹{total:,.0f} this month"
 
 
@@ -110,9 +110,8 @@ def _blogs_stat():
 
 class HomeStatsView(View):
     def get(self, request):
-        profile = request.session.get("notion_profile") or settings.DEFAULT_EXPENSE_PROFILE
         fetchers = {
-            "expenses": partial(_expenses_stat, profile),
+            "expenses": partial(_expenses_stat, request),
             "habits":   _habits_stat,
             "books":    _books_stat,
             "todos":    _todos_stat,

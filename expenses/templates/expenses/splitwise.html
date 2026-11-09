@@ -341,7 +341,6 @@
         <a href="/expenses/">Dashboard</a>
         <a href="/expenses/charts/">Charts</a>
         <a href="/expenses/splitwise/" class="active">Splitwise</a>
-        <a href="/auth/logout/">Sign out</a>
       </nav>
       <div class="nav-drop">
         <button class="nav-drop-btn" type="button" aria-haspopup="true" aria-expanded="false" onclick="_navToggle(event)">
@@ -353,9 +352,9 @@
           <a href="/expenses/">Dashboard</a>
           <a href="/expenses/charts/">Charts</a>
           <a href="/expenses/splitwise/" class="active">Splitwise</a>
-          <a href="/auth/logout/">Sign out</a>
         </div>
       </div>
+      {% include "partials/account_menu.html" %}
       <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
     </div>
 
@@ -398,8 +397,8 @@
         </div>
         <div class="filter-row" id="d-filters">
           <button class="fchip active" data-f="all">All</button>
-          <button class="fchip" data-f="not-imported">Not in Notion</button>
-          <button class="fchip" data-f="imported">In Notion</button>
+          <button class="fchip" data-f="not-imported">Not imported</button>
+          <button class="fchip" data-f="imported">Imported</button>
           <button class="fchip" data-f="i-paid">I paid</button>
           <button class="fchip" data-f="other-paid">Someone else paid</button>
           <button class="fchip" data-f="i-owe">I owe on this</button>
@@ -416,7 +415,7 @@
             <option value="cost_desc">Cost: high → low</option>
             <option value="myshare_desc">My share: high → low</option>
           </select>
-          <input type="text" id="d-mode" placeholder="Mode (optional, e.g. UPI)" autocomplete="off" title="Applied to the Notion row for whatever you import next">
+          <input type="text" id="d-mode" placeholder="Mode (optional, e.g. UPI)" autocomplete="off" title="Applied to the expense for whatever you import next">
         </div>
         <div class="detail-summary" id="d-summary"></div>
         <div class="groupby-row">
@@ -431,7 +430,7 @@
         <div class="rank-list" id="d-groups" style="display:none;"></div>
         <div class="bulk-bar" id="bulk-bar" hidden>
           <span id="bulk-count">0 selected</span>
-          <button class="b-go" id="bulk-go" onclick="_bulkImport()">Import selected to Notion</button>
+          <button class="b-go" id="bulk-go" onclick="_bulkImport()">Import selected</button>
           <button class="b-plain" onclick="_bulkSelectShown()">Select all shown</button>
           <button class="b-plain" onclick="_bulkClear()">Clear</button>
         </div>
@@ -552,7 +551,7 @@
       { key: 'my_paid_share', label: 'I paid (amount)', type: 'number' },
       { key: 'my_owed_share', label: 'My owed share',  type: 'number' },
       { key: 'is_payment',    label: 'Is settle-up',   type: 'bool'   },
-      { key: 'in_notion',     label: 'In Notion',      type: 'bool'   },
+      { key: 'in_notion',     label: 'Imported',       type: 'bool'   },
     ];
     const FB_OPS = {
       text:   [['contains','contains'],['ncontains',"doesn't contain"],['is','is'],['isnot','is not'],['empty','is empty'],['nempty','is not empty']],
@@ -997,7 +996,7 @@
       if (!list.length) { el.innerHTML = '<div class="muted-note">Nothing matches these filters.</div>'; }
       else {
         const hint = S.dedupe ? '' :
-          '<div class="muted-note" style="margin-bottom:0.6rem;">Add a <strong>Splitwise ID</strong> (Number) column in Notion to block duplicate imports.</div>';
+          '<div class="muted-note" style="margin-bottom:0.6rem;">Duplicate-import protection is unavailable right now.</div>';
         // "Select all" over every importable row currently shown.
         const allPicked = S.shown.length > 0 && S.shown.every(id => S.picks.has(id));
         const selAll = S.shown.length
@@ -1022,7 +1021,7 @@
             ? `<label class="imp-pick-wrap"><input type="checkbox" class="imp-pick" data-pick="${e.id}" ${S.picks.has(Number(e.id)) ? 'checked' : ''}></label>`
             : `<span class="imp-pick-wrap" style="width:15px;"></span>`;
           const imp = e.is_payment ? '' :
-            `<button class="import-btn" data-import="${e.id}" ${done ? 'disabled' : ''}>${done ? '✓ In Notion' : 'Import to Notion'}</button>`;
+            `<button class="import-btn" data-import="${e.id}" ${done ? 'disabled' : ''}>${done ? '✓ Imported' : 'Import'}</button>`;
           return `<div class="row">
             <div style="display:flex;align-items:flex-start;gap:0.5rem;min-width:0;">
               ${pick}
@@ -1152,7 +1151,7 @@
         const d = await res.json();
         if (!res.ok) { btn.disabled = false; btn.textContent = orig; showToast(d.error || 'Import failed', 'error'); return; }
         S.imported.add(Number(btn.dataset.import));
-        btn.textContent = '✓ In Notion';
+        btn.textContent = '✓ Imported';
         showToast(`Imported "${d.name}" (${fmt(d.amount, 'INR')})`, 'success');
       } catch (err) {
         btn.disabled = false; btn.textContent = orig;

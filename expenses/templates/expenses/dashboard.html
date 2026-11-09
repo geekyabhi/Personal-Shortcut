@@ -1140,7 +1140,6 @@
         <a href="/expenses/" class="active">Dashboard</a>
         <a href="/expenses/charts/">Charts</a>
         {% if not restricted %}<a href="/expenses/splitwise/">Splitwise</a>{% endif %}
-        <a href="/auth/logout/">Sign out</a>
       </nav>
       <div class="nav-drop">
         <button class="nav-drop-btn" type="button" aria-haspopup="true" aria-expanded="false" onclick="_navToggle(event)">
@@ -1152,9 +1151,9 @@
           <a href="/expenses/" class="active">Dashboard</a>
           <a href="/expenses/charts/">Charts</a>
           {% if not restricted %}<a href="/expenses/splitwise/">Splitwise</a>{% endif %}
-          <a href="/auth/logout/">Sign out</a>
         </div>
       </div>
+      {% include "partials/account_menu.html" %}
       <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
     </div>
 
@@ -1761,7 +1760,7 @@
 
   function _clearQueue() {
     if (_pushingQueue || !Object.keys(_queueLoad()).length) return;
-    if (!confirm("Clear all queued splits? This doesn't touch Splitwise or Notion.")) return;
+    if (!confirm("Clear all queued splits? This doesn't touch Splitwise or your saved expenses.")) return;
     try { localStorage.removeItem("ps_split_queue"); } catch {}
     _rerenderRows();   // drop the "● queued" badges locally
   }
@@ -2753,7 +2752,7 @@
         </div>
         <div class="expense-btn-row">
           <input type="checkbox" class="proc-toggle" data-proc-id="${e.page_id}" ${e.processed ? "checked" : ""}
-                 title="${e.processed ? "Processed in Notion — click to unmark" : "Mark as processed in Notion"}">
+                 title="${e.processed ? "Processed — click to unmark" : "Mark as processed"}">
           <button class="expense-edit-btn" data-entry-id="${e.page_id}" title="Edit" aria-label="Edit">${_ICON.edit}</button>
           <button class="expense-edit-btn expense-del-btn" data-del-id="${e.page_id}" data-del-title="${e.title.replace(/"/g,'&quot;')}" title="Delete" aria-label="Delete">${_ICON.trash}</button>
         </div>
@@ -3962,14 +3961,10 @@
     }
     dl.innerHTML = _allModes.map(m => `<option value="${_esc(m)}"></option>`).join("");
   }
-  function _learnModes(entries) {
-    let changed = false;
-    (entries || []).forEach(e => {
-      const m = (e.mode || "").trim();
-      if (m && !_allModes.includes(m)) { _allModes.push(m); changed = true; }
-    });
-    if (changed) { _allModes.sort((a, b) => a.localeCompare(b)); _syncModeDatalist(); }
-  }
+  // Modes now come from the person's own saved list (GET /expenses/options/), which
+  // already includes every mode their expenses use — so don't re-learn them from
+  // the loaded rows (that would bring back a mode they removed from the list).
+  function _learnModes(entries) {}
   function _registerNewMode(raw) {
     const name = String(raw ?? "").trim();
     if (!name) return null;
@@ -3993,11 +3988,14 @@
   }
   (async function populateFilterDropdowns() {
     try {
-      const res  = await fetch("/expenses/insights/?period=all");
+      // The person's own saved lists (expense_categories / _sources / _modes).
+      const res  = await fetch("/expenses/options/");
       if (!res.ok) return;
       const data = await res.json();
-      _allCats = (data.by_category || []).map(c => c.name);
-      _allSrcs = (data.by_source   || []).map(s => s.name);
+      const names = list => (list || []).map(o => o.name);
+      _allCats  = names(data.categories);
+      _allSrcs  = names(data.sources);
+      _allModes = names(data.modes);
       _syncModeDatalist();
       _efBuildFormOptions();
       if (typeof _fbRender === "function") _fbRender();  // repopulate value dropdowns
@@ -4718,7 +4716,7 @@
   <div class="del-box">
     <div class="del-icon"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></div>
     <div class="del-heading">Delete Expense?</div>
-    <div class="del-sub">You're about to delete <strong id="del-name"></strong>.<br>This will archive it in Notion and cannot be undone.</div>
+    <div class="del-sub">You're about to delete <strong id="del-name"></strong>.<br>This will permanently delete it and cannot be undone.</div>
     <div class="del-actions">
       <button class="del-btn-cancel" onclick="_delClose()">Cancel</button>
       <button class="del-btn-confirm" id="del-confirm-btn" onclick="_delConfirm()">Delete</button>

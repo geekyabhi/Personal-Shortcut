@@ -1,10 +1,11 @@
 import json
 import re
+import time
 from datetime import date, datetime, timedelta, timezone
 
 from dateutil.relativedelta import relativedelta
 
-from .data_layer import ExpensesDataLayer
+from ..data_services import ExpensesDataService
 
 
 class ExpensesService:
@@ -19,16 +20,6 @@ class ExpensesService:
     DAY_RE   = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
 
     # ── Recurring mandates ── #
-    MANDATE_PROP       = "Is Mandate"
-    MANDATE_FREQ_PROP  = "Mandate Frequency"
-    MANDATE_START_PROP = "Mandate Start Date"
-    MANDATE_END_PROP   = "Mandate End Date"
-    MANDATE_ID_PROP    = "Mandate ID"
-    # Separate from MANDATE_PROP: marks a real expense row as a recurring
-    # occurrence (set automatically on backfill, or manually for legacy rows)
-    # — never set on the mandate template itself, which keeps MANDATE_PROP's
-    # existing "exclude from Browse Expenses / spend totals" meaning intact.
-    RECURRING_PROP     = "Recurring"
     MANDATE_STEP = {
         "Weekly":    relativedelta(weeks=1),
         "Monthly":   relativedelta(months=1),
@@ -36,7 +27,7 @@ class ExpensesService:
         "Yearly":    relativedelta(years=1),
     }
 
-    def __init__(self, data_layer: ExpensesDataLayer):
+    def __init__(self, data_layer: ExpensesDataService):
         self.dl = data_layer
 
     # ------------------------------------------------------------------ #
@@ -101,11 +92,11 @@ class ExpensesService:
         start: str = None,
         end: str = None,
     ):
-        """Returns (notion_filter_dict, range_start, range_end). All None for period='all'."""
+        """Returns (range_start, range_end), both inclusive. (None, None) for period='all'."""
         today = date.today()
 
         if period == "all":
-            return None, None, None
+            return None, None
 
         if period == "yearly":
             y = int(year) if year else today.year
@@ -136,13 +127,7 @@ class ExpensesService:
             s = date.fromisoformat(start) if start else date(today.year, 1, 1)
             e = date.fromisoformat(end) + timedelta(days=1) if end else today + timedelta(days=1)
 
-        notion_filter = {
-            "and": [
-                {"property": "Date", "date": {"on_or_after": s.isoformat()}},
-                {"property": "Date", "date": {"before": e.isoformat()}},
-            ]
-        }
-        return notion_filter, s, e - timedelta(days=1)
+        return s, e - timedelta(days=1)
 
     def _filter_by_date(self, rows: list, range_start, range_end) -> list:
         """Filter rows to [range_start, range_end] inclusive. Returns all if range_start is None."""
@@ -150,31 +135,26 @@ class ExpensesService:
             return rows
         result = []
         for row in rows:
-            d_str = (
-                ((row.get("properties", {}).get("Date") or {}).get("date") or {}).get("start") or ""
-            )[:10]
-            if not d_str:
+            if not row["date"]:
                 continue
             try:
-                d = date.fromisoformat(d_str)
+                d = date.fromisoformat(row["date"])
             except ValueError:
                 continue
             if range_start <= d <= range_end:
                 result.append(row)
         return result
 
-    def _is_mandate_row(self, row) -> bool:
-        return bool((row.get("properties", {}).get(self.MANDATE_PROP) or {}).get("checkbox"))
-
     def _get_rows(self, force: bool = False, partial: bool = False):
-        """Drop-in replacement for ``self.dl.get_cached_rows(...)`` for every
-        aggregation/browse method: same 4-tuple shape, with mandate-template
-        rows filtered out so they never appear as a phantom line item —
-        only their real backfilled occurrences (ordinary rows created by
-        ``backfill_mandate``) count as spending."""
-        rows, cache_ts, from_cache, is_partial = self.dl.get_cached_rows(force=force, partial=partial)
-        rows = [r for r in rows if not self._is_mandate_row(r)]
-        return rows, cache_ts, from_cache, is_partial
+        """Every non-mandate entry, as ``(rows, cache_ts, from_cache, is_partial)``.
+
+        The 4-tuple is kept for the API responses the UI reads. There is no
+        cache any more — Postgres is queried directly — so ``force`` and
+        ``partial`` have nothing to do and the result is always complete and
+        fresh. Mandate templates are left out so they never appear as a
+        phantom line item; only their real backfilled occurrences count as
+        spending."""
+        return self.dl.list_entries(), time.time(), False, False
 
     # ------------------------------------------------------------------ #
     #  Generic row-filter rules (the client-side "filter builder")        #
@@ -279,8 +259,7 @@ class ExpensesService:
         return self._rule_match(e, node)
 
     def _filter_by_rules(self, rows: list, filters_raw: str) -> list:
-        """Apply the client-side filter builder's rule tree (JSON) to raw Notion
-        rows. A node is either a leaf {field, op, value, value2} or a group
+        """Apply the client-side filter builder's rule tree (JSON) to entries. A node is either a leaf {field, op, value, value2} or a group
         {join: "and"|"or", rules: [node, ...]} — groups nest to express
         bracketed sub-expressions mixing AND/OR. A bare JSON array (the old
         flat format) is treated as an implicit top-level AND group. Unknown /
@@ -297,42 +276,19 @@ class ExpensesService:
             return rows
         if not self._rule_active(root):
             return rows
-        return [row for row in rows if self._node_match(self._row_to_entry(row), root)]
+        return [row for row in rows if self._node_match(row, root)]
 
     def _row_date(self, row) -> str:
-        return (
-            ((row.get("properties", {}).get("Date") or {}).get("date") or {}).get("start") or ""
-        )[:10]
+        return row["date"]
 
     def _row_amount(self, row) -> float:
-        return (row.get("properties", {}).get("Amount") or {}).get("number") or 0.0
+        return row["amount"]
 
     def _row_categories(self, row) -> list:
-        props = row.get("properties", {})
-        cats = [opt["name"] for opt in (props.get("Category") or {}).get("multi_select", [])]
-        return cats or ["Uncategorized"]
+        return row["categories"] or ["Uncategorized"]
 
     def _row_source(self, row) -> str:
-        src_prop = (row.get("properties", {}).get("Source") or {})
-        if src_prop.get("select"):
-            return src_prop["select"]["name"]
-        srcs = [opt["name"] for opt in src_prop.get("multi_select", [])]
-        return srcs[0] if srcs else ""
-
-    def _extract_title(self, props) -> str:
-        for key in ("Name", "Title"):
-            prop = props.get(key, {})
-            if prop and prop.get("title"):
-                text = "".join(t.get("plain_text", "") for t in prop["title"]).strip()
-                if text:
-                    return text
-        for prop in props.values():
-            if isinstance(prop, dict) and prop.get("type") == "title":
-                parts = prop.get("title") or []
-                text = "".join(t.get("plain_text", "") for t in parts).strip()
-                if text:
-                    return text
-        return "—"
+        return row["source"]
 
     _EPOCH = datetime.min.replace(tzinfo=timezone.utc)
 
@@ -352,123 +308,11 @@ class ExpensesService:
                 return self._EPOCH
         return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
 
-    def _row_to_entry(self, row) -> dict:
-        props = row.get("properties", {})
-        amount = (props.get("Amount") or {}).get("number") or 0.0
-        cats = [opt["name"] for opt in (props.get("Category") or {}).get("multi_select", [])]
-        src_prop = props.get("Source") or {}
-        if src_prop.get("select"):
-            src = src_prop["select"]["name"]
-        else:
-            srcs = [opt["name"] for opt in src_prop.get("multi_select", [])]
-            src = srcs[0] if srcs else ""
-        # "Mode" (how the money moved — UPI / Card / Cash …). Notion type is
-        # multi_select, but the app treats it as a single value like Source.
-        mode_prop = props.get("Mode") or {}
-        if mode_prop.get("select"):
-            mode = mode_prop["select"]["name"]
-        else:
-            modes = [opt["name"] for opt in mode_prop.get("multi_select", [])]
-            mode = modes[0] if modes else ""
-        # Notion's Date "start" is either a bare date ("2026-07-01") or a full
-        # datetime ("2026-07-01T14:23:00.000+05:30"). Keep both: `datetime` is the
-        # raw value (has the time when Notion recorded one), `date` stays the
-        # day-only form everything else in the app already relies on.
-        date_start = ((props.get("Date") or {}).get("date") or {}).get("start", "")
-        date_val = date_start[:10]
-        comment = "".join(
-            t.get("plain_text", "") for t in (props.get("Comment") or {}).get("rich_text", [])
-        ).strip()
-        other_partner = "".join(
-            t.get("plain_text", "") for t in (props.get("Other Partner") or {}).get("rich_text", [])
-        ).strip()
-        return {
-            "page_id": row.get("id", ""),
-            "title": self._extract_title(props),
-            "amount": round(amount, 2),
-            "date": date_val,
-            "datetime": date_start,
-            "categories": cats,
-            "source": src,
-            "mode": mode,
-            "comment": comment,
-            "other_partner": other_partner,
-            "add_to_split": bool((props.get("Add to Split") or {}).get("checkbox")),
-            "from_split": bool((props.get("From Split") or {}).get("checkbox")),
-            "split_added": bool((props.get("Split Added") or {}).get("checkbox")),
-            "processed": bool((props.get("Processed") or {}).get("checkbox")),
-            "splitwise_id": (props.get("Splitwise ID") or {}).get("number"),
-            "is_mandate": bool((props.get(self.MANDATE_PROP) or {}).get("checkbox")),
-            "mandate_frequency": ((props.get(self.MANDATE_FREQ_PROP) or {}).get("select") or {}).get("name", ""),
-            "mandate_start": (((props.get(self.MANDATE_START_PROP) or {}).get("date") or {}).get("start") or "")[:10],
-            "mandate_end": (((props.get(self.MANDATE_END_PROP) or {}).get("date") or {}).get("start") or "")[:10],
-            "recurring": bool((props.get(self.RECURRING_PROP) or {}).get("checkbox")),
-        }
-
-    def _detect_title_prop(self, rows) -> str:
-        for row in rows:
-            for key, val in row.get("properties", {}).items():
-                if isinstance(val, dict) and val.get("type") == "title":
-                    return key
-        return "Name"
-
-    def _detect_source_type(self, rows) -> str:
-        for row in rows:
-            src = (row.get("properties") or {}).get("Source") or {}
-            t = src.get("type")
-            if t in ("select", "multi_select"):
-                return t
-        return "select"
-
-    def _detect_prop_type(self, rows, prop_name: str, default: str = "multi_select") -> str:
-        for row in rows:
-            p = (row.get("properties") or {}).get(prop_name) or {}
-            t = p.get("type")
-            if t in ("select", "multi_select"):
-                return t
-        return default
-
-    def _build_page_properties(
-        self,
-        name: str,
-        amount,
-        date_str: str,
-        categories: list,
-        source: str,
-        title_prop: str,
-        source_type: str,
-        mode: str = "",
-        mode_type: str = "multi_select",
-    ) -> dict:
-        props = {
-            title_prop: {"title": [{"text": {"content": name}}]},
-            "Amount": {"number": float(amount)},
-            "Category": {"multi_select": [{"name": c} for c in categories]},
-        }
-        # Only touch Date when a value is given — an empty date_str leaves the
-        # existing Notion date (time + timezone) untouched on update.
-        if date_str:
-            props["Date"] = {"date": {"start": date_str}}
-        if source_type == "multi_select":
-            props["Source"] = {"multi_select": [{"name": source}] if source else []}
-        else:
-            props["Source"] = {"select": {"name": source} if source else None}
-        if mode_type == "select":
-            props["Mode"] = {"select": {"name": mode} if mode else None}
-        else:
-            props["Mode"] = {"multi_select": [{"name": mode}] if mode else []}
-        return props
-
-    def _extract_groups(self, props, group_by) -> list:
+    def _extract_groups(self, row, group_by) -> list:
         if group_by == "category":
-            values = [opt["name"] for opt in (props.get("Category") or {}).get("multi_select", [])]
-            return values or ["Uncategorized"]
+            return row["categories"] or ["Uncategorized"]
         if group_by == "source":
-            prop = props.get("Source") or {}
-            if prop.get("select"):
-                return [prop["select"]["name"]]
-            values = [opt["name"] for opt in prop.get("multi_select", [])]
-            return values or ["Unknown"]
+            return row["sources"] or ["Unknown"]
         return []
 
     def _build_display(
@@ -793,7 +637,7 @@ class ExpensesService:
         filters: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, group_by=group_by)
-        notion_filter, range_start, range_end = self._build_date_filter(
+        range_start, range_end = self._build_date_filter(
             period, year=year or None, month=month or None,
             week=week or None, day=day or None,
             start=start or None, end=end or None,
@@ -808,11 +652,10 @@ class ExpensesService:
         grand_total = 0.0
 
         for row in rows:
-            props = row.get("properties", {})
-            amount = (props.get("Amount") or {}).get("number") or 0.0
+            amount = row["amount"]
             grand_total += amount
             if group_by:
-                for g in self._extract_groups(props, group_by):
+                for g in self._extract_groups(row, group_by):
                     group_totals[g] = group_totals.get(g, 0.0) + amount
 
         response: dict = {
@@ -853,7 +696,7 @@ class ExpensesService:
         filters: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
-        notion_filter, range_start, range_end = self._build_date_filter(
+        range_start, range_end = self._build_date_filter(
             period, year=year or None, month=month or None,
             week=week or None, day=day or None,
             start=start or None, end=end or None,
@@ -890,7 +733,7 @@ class ExpensesService:
         bucket: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, group_by=group_by, bucket=bucket)
-        notion_filter, range_start, range_end = self._build_date_filter(
+        range_start, range_end = self._build_date_filter(
             period, year=year or None, month=month or None,
             week=week or None, day=day or None,
             start=start or None, end=end or None,
@@ -901,10 +744,7 @@ class ExpensesService:
         rows = self._filter_by_date(all_rows, range_start, range_end)
         rows = self._filter_by_rules(rows, locals().get("filters", ""))
 
-        grand_total = round(sum(
-            (row.get("properties", {}).get("Amount") or {}).get("number") or 0.0
-            for row in rows
-        ), 2)
+        grand_total = round(sum(row["amount"] for row in rows), 2)
 
         trend_labels, trend_values = self._build_timeseries(period, year, rows, range_start, range_end, bucket)
 
@@ -912,8 +752,8 @@ class ExpensesService:
         if group_by:
             group_totals: dict[str, float] = {}
             for row in rows:
-                amount = (row.get("properties", {}).get("Amount") or {}).get("number") or 0.0
-                for g in self._extract_groups(row.get("properties", {}), group_by):
+                amount = row["amount"]
+                for g in self._extract_groups(row, group_by):
                     group_totals[g] = round(group_totals.get(g, 0.0) + amount, 2)
             sorted_groups = sorted(group_totals.items(), key=lambda x: -x[1])
             breakdown = {
@@ -964,7 +804,7 @@ class ExpensesService:
         bucket: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, bucket=bucket)
-        notion_filter, range_start, range_end = self._build_date_filter(
+        range_start, range_end = self._build_date_filter(
             period, year=year or None, month=month or None,
             week=week or None, day=day or None,
             start=start or None, end=end or None,
@@ -1002,7 +842,7 @@ class ExpensesService:
         filters: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
-        notion_filter, range_start, range_end = self._build_date_filter(
+        range_start, range_end = self._build_date_filter(
             period, year=year or None, month=month or None,
             week=week or None, day=day or None,
             start=start or None, end=end or None,
@@ -1020,7 +860,7 @@ class ExpensesService:
         entries = []
 
         for row in rows:
-            e = self._row_to_entry(row)
+            e = row
             grand_total += e["amount"]
             entries.append(e)
 
@@ -1113,7 +953,7 @@ class ExpensesService:
         processed: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end, sort=sort)
-        notion_filter, range_start, range_end = self._build_date_filter(
+        range_start, range_end = self._build_date_filter(
             period, year=year or None, month=month or None,
             week=week or None, day=day or None,
             start=start or None, end=end or None,
@@ -1128,7 +968,7 @@ class ExpensesService:
 
         entries = []
         for row in rows:
-            e = self._row_to_entry(row)
+            e = row
 
             if min_amount is not None and e["amount"] < min_amount:
                 continue
@@ -1200,7 +1040,7 @@ class ExpensesService:
         filters: str = "",
     ) -> dict:
         self._validate_period(period, year, month, week, day, start, end)
-        _, range_start, range_end = self._build_date_filter(
+        range_start, range_end = self._build_date_filter(
             period, year=year or None, month=month or None,
             week=week or None, day=day or None,
             start=start or None, end=end or None,
@@ -1234,59 +1074,34 @@ class ExpensesService:
             "partial": is_partial,
         }
 
-    @staticmethod
-    def _extra_props(
-        comment=None,
-        other_partner=None,
-        add_to_split=None,
-        from_split=None,
-        split_added=None,
-        processed=None,
-        splitwise_id=None,
-        is_mandate=None,
-        mandate_frequency=None,
-        mandate_start=None,
-        mandate_end=None,
-        mandate_source_id=None,
-        recurring=None,
-    ) -> dict:
-        """Notion property payloads for the optional columns. A value of
-        ``None`` means 'leave this column untouched'."""
-        props: dict = {}
-        if comment is not None:
-            props["Comment"] = {
-                "rich_text": [{"text": {"content": comment[:2000]}}] if comment else []
-            }
-        if other_partner is not None:
-            props["Other Partner"] = {
-                "rich_text": [{"text": {"content": other_partner[:2000]}}] if other_partner else []
-            }
-        if add_to_split is not None:
-            props["Add to Split"] = {"checkbox": bool(add_to_split)}
-        if from_split is not None:
-            props["From Split"] = {"checkbox": bool(from_split)}
-        if split_added is not None:
-            props["Split Added"] = {"checkbox": bool(split_added)}
-        if processed is not None:
-            props["Processed"] = {"checkbox": bool(processed)}
-        if splitwise_id is not None:
-            s = str(splitwise_id).strip()
-            props["Splitwise ID"] = {"number": int(float(s)) if s else None}
-        if is_mandate is not None:
-            props["Is Mandate"] = {"checkbox": bool(is_mandate)}
-        if mandate_frequency is not None:
-            props["Mandate Frequency"] = {"select": {"name": mandate_frequency} if mandate_frequency else None}
-        if mandate_start is not None:
-            props["Mandate Start Date"] = {"date": {"start": mandate_start} if mandate_start else None}
-        if mandate_end is not None:
-            props["Mandate End Date"] = {"date": {"start": mandate_end} if mandate_end else None}
-        if mandate_source_id is not None:
-            props["Mandate ID"] = {
-                "rich_text": [{"text": {"content": mandate_source_id}}] if mandate_source_id else []
-            }
-        if recurring is not None:
-            props["Recurring"] = {"checkbox": bool(recurring)}
-        return props
+    # Optional per-row columns a caller may send; ``None`` means "leave as is".
+    _BOOL_FIELDS = (
+        "add_to_split", "from_split", "split_added", "processed",
+        "is_mandate", "recurring",
+    )
+
+    @classmethod
+    def _write_fields(cls, name, amount, date_str, categories, source, mode, extra) -> dict:
+        """Entry arguments -> the field dict ExpensesDataService writes. An empty
+        ``date_str`` leaves the stored date (and its time) untouched on update."""
+        fields = {
+            "title": name,
+            "amount": float(amount),
+            "categories": list(categories or []),
+            "sources": [source] if source else [],
+            "mode": mode,
+        }
+        if date_str:
+            fields["date"] = date_str
+        for key, value in extra.items():
+            if value is None:
+                continue
+            if key in cls._BOOL_FIELDS:
+                value = bool(value)
+            if key == "mandate_source_id":  # the mandate template this row came from
+                key = "mandate_id"
+            fields[key] = value
+        return fields
 
     def create_entry(
         self,
@@ -1298,80 +1113,44 @@ class ExpensesService:
         mode: str = "",
         **extra,
     ) -> str:
-        """Validates fields, creates the Notion page, busts cache. Returns page_id.
+        """Validates fields and inserts the row. Returns its page_id.
         ``extra`` may carry comment / other_partner / add_to_split / from_split /
-        split_added / splitwise_id."""
+        split_added / processed / splitwise_id / the mandate_* fields / recurring."""
         if not name:
             raise ValueError("Name is required")
         if amount is None:
             raise ValueError("Amount is required")
         if not date_str:
             raise ValueError("Date is required")
-
-        cached_rows, _, _, _ = self.dl.get_cached_rows()
-        title_prop = self._detect_title_prop(cached_rows)
-        source_type = self._detect_source_type(cached_rows)
-        mode_type = self._detect_prop_type(cached_rows, "Mode")
-        properties = self._build_page_properties(
-            name, amount, date_str, categories, source, title_prop, source_type,
-            mode=mode, mode_type=mode_type,
+        return self.dl.create_entry(
+            **self._write_fields(name, amount, date_str, categories, source, mode, extra)
         )
-        properties.update(self._extra_props(**extra))
-        result = self.dl.create_page(properties)
-        self.dl.bust_cache()
-        return result.get("id", "")
 
     # ------------------------------------------------------------------ #
     #  Recurring mandates — reconciliation / backfill                     #
     # ------------------------------------------------------------------ #
 
-    def _mandate_last_logged(self, tagged_rows: list) -> dict:
-        """{mandate_page_id: latest occurrence date already logged for it},
-        built from every row carrying a ``Mandate ID``."""
-        last: dict = {}
-        for row in tagged_rows:
-            props = row.get("properties", {})
-            mid = "".join(
-                t.get("plain_text", "") for t in (props.get(self.MANDATE_ID_PROP) or {}).get("rich_text", [])
-            ).strip()
-            if not mid:
-                continue
-            d_str = ((props.get("Date") or {}).get("date") or {}).get("start", "")[:10]
-            if not d_str:
-                continue
-            try:
-                d = date.fromisoformat(d_str)
-            except ValueError:
-                continue
-            if mid not in last or d > last[mid]:
-                last[mid] = d
-        return last
-
-    def _mandate_missing_dates(self, mandate_row: dict, last_logged: dict, cap) -> list:
-        """Occurrence dates for ``mandate_row`` that fall on/before ``cap``
+    def _mandate_missing_dates(self, mandate: dict, last_logged: dict, cap) -> list:
+        """Occurrence dates for ``mandate`` that fall on/before ``cap``
         (further capped by the mandate's own End Date, if set) but have no
         real expense row logged for them yet. [] for a misconfigured mandate
         (unknown frequency / unparseable start) — it must never be treated
         as having infinite/undefined occurrences."""
-        props = mandate_row.get("properties", {})
-        freq = ((props.get(self.MANDATE_FREQ_PROP) or {}).get("select") or {}).get("name", "")
-        step = self.MANDATE_STEP.get(freq)
-        start_str = ((props.get(self.MANDATE_START_PROP) or {}).get("date") or {}).get("start")
-        if not step or not start_str:
+        step = self.MANDATE_STEP.get(mandate["mandate_frequency"])
+        if not step or not mandate["mandate_start"]:
             return []
         try:
-            start = date.fromisoformat(start_str[:10])
+            start = date.fromisoformat(mandate["mandate_start"])
         except ValueError:
             return []
 
-        end_str = ((props.get(self.MANDATE_END_PROP) or {}).get("date") or {}).get("start")
-        if end_str:
+        if mandate["mandate_end"]:
             try:
-                cap = min(cap, date.fromisoformat(end_str[:10]))
+                cap = min(cap, date.fromisoformat(mandate["mandate_end"]))
             except ValueError:
                 pass
 
-        cursor = last_logged.get(mandate_row.get("id", ""), start - step)
+        cursor = last_logged.get(mandate["page_id"], start - step)
         missing = []
         nxt = cursor + step
         while nxt <= cap:
@@ -1383,20 +1162,18 @@ class ExpensesService:
         """What's pending: every mandate with at least one occurrence that
         should have happened by today but has no matching expense row yet."""
         today = date.today()
-        mandate_rows = self.dl.fetch_mandate_rows()
-        last_logged = self._mandate_last_logged(self.dl.fetch_mandate_tagged_rows())
+        last_logged = self.dl.mandate_last_logged()
 
         pending = []
-        for row in mandate_rows:
-            missing = self._mandate_missing_dates(row, last_logged, today)
+        for mandate in self.dl.list_mandates():
+            missing = self._mandate_missing_dates(mandate, last_logged, today)
             if not missing:
                 continue
-            entry = self._row_to_entry(row)
             pending.append({
-                "page_id": row.get("id", ""),
-                "title": entry["title"],
-                "amount": entry["amount"],
-                "frequency": entry["mandate_frequency"],
+                "page_id": mandate["page_id"],
+                "title": mandate["title"],
+                "amount": mandate["amount"],
+                "frequency": mandate["mandate_frequency"],
                 "missing_dates": [d.isoformat() for d in missing],
             })
         return {"pending": pending}
@@ -1405,11 +1182,12 @@ class ExpensesService:
         """Creates one real expense row per missing occurrence, through
         today (``cutoff_date`` empty — "still running") or through
         ``cutoff_date`` (the mandate ended then; nothing beyond it is
-        created, and — deliberately — the mandate's own End Date property is
-        left untouched here; see the recurring-mandates plan)."""
-        mandate_rows = self.dl.fetch_mandate_rows()
-        row = next((r for r in mandate_rows if r.get("id") == mandate_page_id), None)
-        if not row:
+        created, and — deliberately — the mandate's own End Date is left
+        untouched here; see the recurring-mandates plan)."""
+        entry = next(
+            (m for m in self.dl.list_mandates() if m["page_id"] == mandate_page_id), None
+        )
+        if not entry:
             raise ValueError("Mandate not found")
 
         cap = date.today()
@@ -1419,9 +1197,7 @@ class ExpensesService:
             except ValueError:
                 raise ValueError(f"Invalid cutoff date: {cutoff_date}")
 
-        last_logged = self._mandate_last_logged(self.dl.fetch_mandate_tagged_rows())
-        missing = self._mandate_missing_dates(row, last_logged, cap)
-        entry = self._row_to_entry(row)
+        missing = self._mandate_missing_dates(entry, self.dl.mandate_last_logged(), cap)
 
         for d in missing:
             self.create_entry(
@@ -1434,20 +1210,11 @@ class ExpensesService:
 
     def list_mandates(self) -> dict:
         """Every mandate template, for the management panel."""
-        rows = self.dl.fetch_mandate_rows()
-        return {"mandates": [self._row_to_entry(r) for r in rows]}
+        return {"mandates": self.dl.list_mandates()}
 
-    SPLITWISE_ID_PROP = "Splitwise ID"
-
-    def imported_splitwise_ids(self):
-        """Set of Splitwise expense ids already present in Notion, or None if
-        the 'Splitwise ID' column does not exist (dedupe unavailable).
-
-        Uses a narrow filtered query (rows that carry a Splitwise id), not
-        the full dataset.
-        """
-        ids, exists = self.dl.imported_splitwise_ids(self.SPLITWISE_ID_PROP)
-        return ids if exists else None
+    def imported_splitwise_ids(self) -> set:
+        """Splitwise expense ids already recorded as expenses."""
+        return self.dl.imported_splitwise_ids()
 
     def create_from_split(
         self,
@@ -1459,10 +1226,10 @@ class ExpensesService:
         splitwise_id=None,
         mode: str = "",
     ) -> str:
-        """Create a Notion row from a Splitwise import: Category fixed to
+        """Create a row from a Splitwise import: Category fixed to
         'Splitwise', 'From Split' ticked, Source = the payer(s), the
-        breakdown in Comment, and the Splitwise expense id recorded (if the
-        'Splitwise ID' column exists). Returns the page_id."""
+        breakdown in Comment, and the Splitwise expense id recorded.
+        Returns the page_id."""
         if not name:
             raise ValueError("Name is required")
         if amount is None:
@@ -1470,37 +1237,12 @@ class ExpensesService:
         if not date_str:
             raise ValueError("Date is required")
 
-        cached_rows, _, _, _ = self.dl.get_cached_rows()
-        title_prop = self._detect_title_prop(cached_rows)
-        source_type = self._detect_source_type(cached_rows)
-        mode_type = self._detect_prop_type(cached_rows, "Mode")
-        sources = [s for s in (sources or []) if s]
-
-        properties = {
-            title_prop: {"title": [{"text": {"content": name}}]},
-            "Amount": {"number": float(amount)},
-            "Date": {"date": {"start": date_str}},
-            "Category": {"multi_select": [{"name": "Splitwise"}]},
-            "From Split": {"checkbox": True},
-            "Comment": {"rich_text": [{"text": {"content": (comment or "")[:2000]}}]},
-        }
-        if source_type == "multi_select":
-            properties["Source"] = {"multi_select": [{"name": s} for s in sources]}
-        else:
-            properties["Source"] = {"select": {"name": sources[0]} if sources else None}
-        if mode_type == "select":
-            properties["Mode"] = {"select": {"name": mode} if mode else None}
-        else:
-            properties["Mode"] = {"multi_select": [{"name": mode}] if mode else []}
-
-        if splitwise_id is not None:
-            _, has_swid = self.dl.imported_splitwise_ids(self.SPLITWISE_ID_PROP)
-            if has_swid:
-                properties[self.SPLITWISE_ID_PROP] = {"number": int(splitwise_id)}
-
-        result = self.dl.create_page(properties)
-        self.dl.bust_cache()
-        return result.get("id", "")
+        fields = self._write_fields(
+            name, amount, date_str, ["Splitwise"], "", mode,
+            {"from_split": True, "comment": comment or "", "splitwise_id": splitwise_id},
+        )
+        fields["sources"] = [s for s in (sources or []) if s]
+        return self.dl.create_entry(**fields)
 
     def update_entry(
         self,
@@ -1513,38 +1255,22 @@ class ExpensesService:
         mode: str = "",
         **extra,
     ) -> None:
-        """Patches the Notion page, busts cache. An empty ``date_str`` leaves
-        the page's existing Date untouched. ``extra`` may carry comment /
-        other_partner / add_to_split / from_split / split_added / splitwise_id."""
+        """Updates the row. An empty ``date_str`` leaves its existing date
+        untouched. ``extra`` may carry the same optional columns as create."""
         if not name:
             raise ValueError("Name is required")
         if amount is None:
             raise ValueError("Amount is required")
-
-        cached_rows, _, _, _ = self.dl.get_cached_rows()
-        title_prop = self._detect_title_prop(cached_rows)
-        source_type = self._detect_source_type(cached_rows)
-        mode_type = self._detect_prop_type(cached_rows, "Mode")
-        properties = self._build_page_properties(
-            name, amount, date_str, categories, source, title_prop, source_type,
-            mode=mode, mode_type=mode_type,
+        self.dl.update_entry(
+            page_id, **self._write_fields(name, amount, date_str, categories, source, mode, extra)
         )
-        properties.update(self._extra_props(**extra))
-        self.dl.patch_page(page_id, {"properties": properties})
-        self.dl.bust_cache()
 
     def delete_entry(self, page_id: str) -> None:
-        """Archives the Notion page and busts cache."""
-        self.dl.patch_page(page_id, {"archived": True})
-        self.dl.bust_cache()
+        self.dl.delete_entry(page_id)
 
     def get_entry(self, page_id: str) -> dict:
-        """Return a single entry (as `_row_to_entry`) from the cached rows."""
-        rows, _, _, _ = self.dl.get_cached_rows()
-        for row in rows:
-            if row.get("id") == page_id:
-                return self._row_to_entry(row)
-        raise ValueError("Expense not found")
+        """A single entry, as listed by ``list_entries``."""
+        return self.dl.get_entry(page_id)
 
     def split_entry(self, page_id: str, splits: list) -> list:
         """Break one mixed-category purchase into several single-category rows
@@ -1557,30 +1283,15 @@ class ExpensesService:
         entry's amount. Every field besides category/amount/name is optional
         per split — an omitted one falls back to the original entry's value,
         so a caller that only sends category/amount/name keeps today's
-        inherit-everything behavior. Creates one new Notion page per split
-        (never carrying over the Splitwise ID — it can only belong to one
-        row), then archives the original. Returns the new
-        page_ids. Raises ValueError before creating anything if the splits
-        don't validate, but a failure partway through creation leaves any
-        already-created rows in place and does NOT touch the original."""
+        inherit-everything behavior. Replaces the original with one new row
+        per split (never carrying over the Splitwise ID — it can only belong
+        to one row) in a single transaction, so a failure leaves the original
+        untouched. Returns the new page_ids. Raises ValueError before writing
+        anything if the splits don't validate."""
         if not splits or len(splits) < 2:
             raise ValueError("Provide at least two splits")
 
         original = self.get_entry(page_id)
-
-        # `original["date"]` is truncated to YYYY-MM-DD by `_row_to_entry` (that's
-        # all the rest of the UI ever needs), which would silently drop the
-        # purchase's actual time-of-day/timezone on every split row. Pull the
-        # untouched "start" value straight off the raw Notion row instead, so
-        # the splits land on the exact same instant as the original.
-        raw_rows, _, _, _ = self.dl.get_cached_rows()
-        raw_row = next((r for r in raw_rows if r.get("id") == page_id), None)
-        if raw_row is None:
-            raise ValueError("Expense not found")
-        original_date = (
-            ((raw_row.get("properties", {}).get("Date") or {}).get("date") or {}).get("start")
-            or original["date"]
-        )
 
         total = 0.0
         for s in splits:
@@ -1600,11 +1311,11 @@ class ExpensesService:
                 f"expense is {original['amount']:.2f}"
             )
 
-        new_ids = []
+        new_rows = []
         for i, s in enumerate(splits, start=1):
             name = (s.get("name") or "").strip() or original["title"]
             # Ties this row back to the purchase it came from, since the original
-            # page is archived and won't otherwise show up anywhere.
+            # row is deleted and won't otherwise show up anywhere.
             trace_note = (
                 f"Split {i}/{len(splits)} of \"{original['title']}\" — "
                 f"total {original['amount']:.2f} on {original['date']}"
@@ -1614,43 +1325,41 @@ class ExpensesService:
             # work); anything the caller does send (comment included) overrides it.
             row_comment = s.get("comment", original["comment"])
             comment = f"{trace_note}\n{row_comment}" if row_comment else trace_note
-            source = s.get("source", original["source"])
-            mode = s.get("mode", original.get("mode", ""))
-            other_partner = s.get("other_partner", original["other_partner"])
-            add_to_split = s.get("add_to_split", original["add_to_split"])
-            from_split = s.get("from_split", original["from_split"])
-            split_added = s.get("split_added", original["split_added"])
-            processed = s.get("processed", original["processed"])
-            new_id = self.create_entry(
-                name, float(s["amount"]), original_date,
-                [s["category"].strip()], source, mode,
-                comment=comment, other_partner=other_partner,
-                add_to_split=add_to_split, from_split=from_split,
-                split_added=split_added, processed=processed,
+            fields = self._write_fields(
+                name, float(s["amount"]), original["date"],
+                [s["category"].strip()],
+                s.get("source", original["source"]),
+                s.get("mode", original.get("mode", "")),
+                {
+                    "comment": comment,
+                    "other_partner": s.get("other_partner", original["other_partner"]),
+                    "add_to_split": s.get("add_to_split", original["add_to_split"]),
+                    "from_split": s.get("from_split", original["from_split"]),
+                    "split_added": s.get("split_added", original["split_added"]),
+                    "processed": s.get("processed", original["processed"]),
+                },
             )
-            new_ids.append(new_id)
+            # `date` above is the bare day; carry the exact moment (time and
+            # UTC offset) over so the splits land on the same instant.
+            fields["occurred_at"] = original["datetime"] if len(original["datetime"]) > 10 else None
+            new_rows.append(fields)
 
-        self.delete_entry(page_id)
-        return new_ids
+        return self.dl.replace_entry(page_id, new_rows)
 
     def mark_split_added(self, page_id: str, value: bool = True) -> None:
-        """Tick / untick the Notion 'Split Added' checkbox and bust cache."""
-        self.dl.patch_page(
-            page_id, {"properties": {"Split Added": {"checkbox": value}}}
-        )
-        self.dl.bust_cache()
+        """Tick / untick 'Split Added'."""
+        self.dl.update_entry(page_id, split_added=bool(value))
 
     def finalize_split_push(
         self, page_id: str, my_share, existing_comment: str, note: str
     ) -> None:
         """Run after a row is pushed to Splitwise: drop its Amount to the user's
         own share, prepend ``note`` (the split breakdown) to the Comment, and
-        tick 'Split Added' — all in one patch, one cache bust."""
+        tick 'Split Added' — all in one update."""
         comment = f"{note}\n{existing_comment}" if existing_comment else note
-        props = {
-            "Amount": {"number": round(float(my_share or 0), 2)},
-            "Split Added": {"checkbox": True},
-        }
-        props.update(self._extra_props(comment=comment))
-        self.dl.patch_page(page_id, {"properties": props})
-        self.dl.bust_cache()
+        self.dl.update_entry(
+            page_id,
+            amount=round(float(my_share or 0), 2),
+            split_added=True,
+            comment=comment,
+        )

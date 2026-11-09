@@ -9,10 +9,10 @@ A personal Django web app that pulls data from Notion databases and renders dash
 | Layer | Choice |
 |---|---|
 | Backend | Django 4.2, Python 3.11 |
-| Data source | Notion API (Internal Integration) |
+| Data source | Postgres for Expenses (`DATABASE_URL`); Notion API for the other apps |
 | Frontend | Vanilla JS + Chart.js 4.4 |
 | Deployment | Railway (gunicorn via Procfile) |
-| No database | All data lives in Notion; Django has no DB |
+| Database | Postgres (expenses + users). Local: `docker compose up -d db`, then `python manage.py migrate` |
 
 ---
 
@@ -57,7 +57,8 @@ Stored in `.env` locally (never committed). Set as Railway Variables in producti
 | Variable | Used by |
 |---|---|
 | `NOTION_TOKEN` | Both apps — Notion Internal Integration token |
-| `NOTION_EXPENSES_DB_ID` | Expenses app — 32-char Notion database ID |
+| `DATABASE_URL` | Expenses + users — Postgres connection string (`DATABASE_SSL_REQUIRE=False` for local) |
+| `<PROFILE>_NOTION_TOKEN` / `<PROFILE>_NOTION_DB` | Only the one-time `import_notion_expenses` command now |
 | `NOTION_HABITS_DB_ID` | Habits app — 32-char Notion database ID |
 | `SECRET_KEY` | Django |
 | `DEBUG` | `True` locally, `False` in production |
@@ -155,7 +156,7 @@ All checkbox properties are treated as habits. Their names come from the Notion 
 
 ## Key Design Decisions
 
-- **No Django ORM / database** — settings has no `DATABASES` key; all data is fetched live from Notion on each request.
+- **Expenses live in Postgres** (`expenses/models`, read/written through `expenses/data_services`); `DATABASES` is only set when `DATABASE_URL` is present. The other apps still fetch live from Notion. Existing Notion expenses are copied over with `python manage.py import_notion_expenses` (`--dry-run` first).
 - **No CSRF middleware** — `settings.py` only has `SecurityMiddleware` and `CommonMiddleware`, so POST endpoints (backfill) work from plain `fetch()` calls without tokens.
 - **Templates use `APP_DIRS: False`** with explicit `DIRS` pointing to each app's template folder.
 - **Chart.js served from CDN** — no build step, no bundler.

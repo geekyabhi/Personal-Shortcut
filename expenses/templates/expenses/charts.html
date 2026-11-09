@@ -774,7 +774,6 @@
         <a href="/expenses/">Dashboard</a>
         <a href="/expenses/charts/" class="active">Charts</a>
         {% if not restricted %}<a href="/expenses/splitwise/">Splitwise</a>{% endif %}
-        <a href="/auth/logout/">Sign out</a>
       </nav>
       <div class="nav-drop">
         <button class="nav-drop-btn" type="button" aria-haspopup="true" aria-expanded="false" onclick="_navToggle(event)">
@@ -786,9 +785,9 @@
           <a href="/expenses/">Dashboard</a>
           <a href="/expenses/charts/" class="active">Charts</a>
           {% if not restricted %}<a href="/expenses/splitwise/">Splitwise</a>{% endif %}
-          <a href="/auth/logout/">Sign out</a>
         </div>
       </div>
+      {% include "partials/account_menu.html" %}
       <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
     </div>
 
@@ -870,7 +869,7 @@
 
     <div id="loading" class="spinner" style="display:none;">
       <div class="spinner-ring"></div>
-      <span class="spinner-text">Fetching from Notion…</span>
+      <span class="spinner-text">Loading expenses…</span>
     </div>
     <div id="error-box" class="error-box" style="display:none;"></div>
 
@@ -1377,12 +1376,14 @@
   let _allCats = [], _allSrcs = [], _allModes = [], _fbOptsLoaded = false;
   (async function _fbLoadOptions() {
     try {
-      const res = await fetch('/expenses/insights/?period=all');
+      // The person's own saved lists (expense_categories / _sources / _modes).
+      const res = await fetch('/expenses/options/');
       if (!res.ok) return;
       const data = await res.json();
-      _allCats  = (data.by_category || []).map(c => c.name);
-      _allSrcs  = (data.by_source   || []).map(s => s.name);
-      _allModes = (data.by_mode     || []).map(m => m.name);
+      const names = list => (list || []).map(o => o.name);
+      _allCats  = names(data.categories);
+      _allSrcs  = names(data.sources);
+      _allModes = names(data.modes);
     } catch {}
     _fbOptsLoaded = true;
     _fbRender();
@@ -2778,7 +2779,7 @@
     btn.disabled = true;
     document.getElementById("loading").style.display = "flex";
     document.getElementById("loading").querySelector(".spinner-text").textContent =
-      force ? "Refreshing from Notion…" : "Loading expenses…";
+      force ? "Refreshing…" : "Loading expenses…";
     document.getElementById("results").style.display = "none";
     document.getElementById("error-box").style.display = "none";
 

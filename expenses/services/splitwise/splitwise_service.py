@@ -201,7 +201,7 @@ class SplitwiseService:
 
         already = expenses_service.imported_splitwise_ids()
         if already is not None and int(e["id"]) in already:
-            raise ValueError("This Splitwise expense is already imported into Notion")
+            raise ValueError("This Splitwise expense is already imported")
 
         my_share = round(e["my_owed_share"] or 0.0, 2)
         if my_share <= 0:

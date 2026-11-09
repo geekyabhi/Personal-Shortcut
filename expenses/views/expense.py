@@ -6,26 +6,22 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
 
-from .data_layer import ExpensesDataLayer
-from .service import ExpensesService
+from core.access import is_full_access
+from ..data_services import data_service_for
+from ..services import ExpensesService
 
 
 class ExpensesBaseView(View):
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         # The open /api/ routes never log in, so they have no session profile —
-        # fall back to DEFAULT_EXPENSE_PROFILE there (today's single-user
-        # behavior, unchanged) rather than erroring out.
-        profile = request.session.get("notion_profile") or settings.DEFAULT_EXPENSE_PROFILE
-        data_layer = ExpensesDataLayer.from_env(profile)
-        if data_layer.is_configured:
-            self.service = ExpensesService(data_layer)
-        else:
-            self.service = None
+        # data_service_for falls back to DEFAULT_EXPENSE_PROFILE there.
+        data_service = data_service_for(request)
+        self.service = ExpensesService(data_service) if data_service.is_configured else None
 
     def _creds_error(self):
         return JsonResponse(
-            {"error": "NOTION_TOKEN and NOTION_EXPENSES_DB_ID must be set"}, status=500
+            {"error": "Expenses database is not configured (set DATABASE_URL)"}, status=500
         )
 
     @staticmethod
@@ -42,8 +38,7 @@ class ExpensesBaseView(View):
 def _restricted(request) -> bool:
     """True when this session's profile only has expenses access (see
     settings.FULL_ACCESS_PROFILES) — used to hide the Home link in nav."""
-    profile = request.session.get("notion_profile")
-    return bool(profile) and profile not in settings.FULL_ACCESS_PROFILES
+    return not is_full_access(request.session)
 
 
 class DashboardView(View):
@@ -423,6 +418,8 @@ class ExpensesDeleteView(ExpensesBaseView):
 
         try:
             self.service.delete_entry(page_id)
+        except ValueError as exc:
+            return JsonResponse({"error": str(exc)}, status=404)
         except requests.HTTPError as exc:
             return self._api_error(exc)
         except requests.RequestException as exc:

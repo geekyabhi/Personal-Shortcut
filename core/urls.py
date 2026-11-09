@@ -1,8 +1,11 @@
 from django.shortcuts import render
 from django.urls import path, include
 
-from core.auth_views import login_view, auth_start, auth_callback, logout_view
+from core.auth_views import (
+    login_view, auth_start, auth_callback, logout_view, password_login, password_signup,
+)
 from core.stats_view import HomeStatsView
+from users.views import ProfileDataView, ProfilePageView
 from core.views_pwa import manifest, service_worker, pwa_icon, apple_touch_icon
 
 
@@ -22,6 +25,10 @@ urlpatterns = [
     path("auth/google/",    auth_start,    name="auth-start"),
     path("auth/callback/",  auth_callback, name="auth-callback"),
     path("auth/logout/",    logout_view,   name="logout"),
+    path("auth/login/",     password_login,  name="auth-login"),
+    path("auth/signup/",    password_signup, name="auth-signup"),
+    path("profile/",        ProfilePageView.as_view(), name="profile"),
+    path("profile/data/",   ProfileDataView.as_view(),  name="profile-data"),
     path("manifest.json",      manifest,       name="manifest"),
     path("service-worker.js",  service_worker, name="service-worker"),
     path("pwa-icon.svg",       pwa_icon,       name="pwa-icon"),
@@ -33,7 +40,8 @@ urlpatterns = [
     path("books/",    include("books.urls")),
     path("blogs/",    include("blogs.urls")),
     # Auth-free API (no session or CSRF required — see each app's api_urls.py)
-    path("api/expenses/", include("expenses.api_urls")),
+    path("api/users/",    include("users.apis")),
+    path("api/expenses/", include("expenses.apis")),
     path("api/habits/",   include("habits.api_urls")),
     path("api/todos/",    include("todos.api_urls")),
     path("api/books/",    include("books.api_urls")),

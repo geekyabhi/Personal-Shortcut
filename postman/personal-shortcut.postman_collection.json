@@ -1,0 +1,2888 @@
+{
+  "info": {
+    "name": "Personal Shortcut",
+    "description": "REST API of the Personal Shortcut Django app.\n\n**Quick start**\n1. Import this collection and the *Personal Shortcut — Local* environment, then select the environment.\n2. Start the server (`python3 manage.py runserver`).\n3. Fill `userEmail` / `userPassword` in the environment, run **Users → Login** (or Signup) — the token is stored automatically.\n4. Run **Expenses → Create expense** to set `pageId`, then Update / Split / Delete.\n\nOnly `/api/users/me/` and `/api/users/logout/` require the bearer token; the other `/api/<app>/` routes are open by design.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Users (token auth)",
+      "item": [
+        {
+          "name": "Signup — email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/signup/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "signup",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Your Name\",\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Creates an account and returns `user`, `token`, `expires_at`. The token is saved to the `token` environment variable. Email addresses on the owner allow-list must use Google sign-in instead (409). Closed when SIGNUP_ENABLED=False (403).",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) {",
+                  "  pm.environment.set('token', data.token);",
+                  "  pm.environment.set('userId', data.user && data.user.id);",
+                  "  console.log('Saved token for', data.user && (data.user.email || data.user.phone));",
+                  "}",
+                  "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Signup — phone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/signup/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "signup",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Your Name\",\n  \"phone\": \"+91 98765 43210\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Phone-number account. A bare 10-digit number is assumed to be +91.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) {",
+                  "  pm.environment.set('token', data.token);",
+                  "  pm.environment.set('userId', data.user && data.user.id);",
+                  "  console.log('Saved token for', data.user && (data.user.email || data.user.phone));",
+                  "}",
+                  "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "login",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "`identifier` is an email or a phone number. Returns a fresh bearer token (one per device). 5 wrong passwords lock the account for 15 minutes (429).",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) {",
+                  "  pm.environment.set('token', data.token);",
+                  "  pm.environment.set('userId', data.user && data.user.id);",
+                  "  console.log('Saved token for', data.user && (data.user.email || data.user.phone));",
+                  "}",
+                  "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                ""
+              ]
+            },
+            "description": "Returns the account for the bearer token.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout (this token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/logout/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "logout",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Revokes the token being sent.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout (all devices)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/logout/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "logout",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"all\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Revokes every token for the account.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Bearer-token API. Send `Authorization: Bearer {{token}}`. Signup/Login save the token to the environment automatically."
+    },
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "Browse & analytics",
+          "item": [
+            {
+              "name": "List expenses",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/list/?period=monthly&month=2026-11&sort=date_desc&all=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "list",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "monthly",
+                      "disabled": false,
+                      "description": "all | yearly | monthly | weekly | daily | custom"
+                    },
+                    {
+                      "key": "month",
+                      "value": "2026-11",
+                      "disabled": false,
+                      "description": "YYYY-MM (period=monthly)"
+                    },
+                    {
+                      "key": "year",
+                      "value": "2026",
+                      "disabled": true,
+                      "description": "YYYY (period=yearly)"
+                    },
+                    {
+                      "key": "week",
+                      "value": "2026-W45",
+                      "disabled": true,
+                      "description": "YYYY-Www (period=weekly)"
+                    },
+                    {
+                      "key": "day",
+                      "value": "2026-11-09",
+                      "disabled": true,
+                      "description": "YYYY-MM-DD (period=daily)"
+                    },
+                    {
+                      "key": "start",
+                      "value": "2026-11-01",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "end",
+                      "value": "2026-11-30",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "date_desc",
+                      "disabled": false,
+                      "description": "date_desc | date_asc | amount_desc | amount_asc"
+                    },
+                    {
+                      "key": "all",
+                      "value": "1",
+                      "disabled": false,
+                      "description": "1 = return every match (no pagination)"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "disabled": true
+                    },
+                    {
+                      "key": "page_size",
+                      "value": "25",
+                      "disabled": true,
+                      "description": "1–100"
+                    },
+                    {
+                      "key": "category",
+                      "value": "",
+                      "disabled": true,
+                      "description": "comma-separated"
+                    },
+                    {
+                      "key": "source",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "min_amount",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "max_amount",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "search",
+                      "value": "",
+                      "disabled": true,
+                      "description": "title contains"
+                    },
+                    {
+                      "key": "split",
+                      "value": "",
+                      "disabled": true,
+                      "description": "needs | done | flagged | unflagged"
+                    },
+                    {
+                      "key": "processed",
+                      "value": "",
+                      "disabled": true,
+                      "description": "true | false"
+                    }
+                  ]
+                },
+                "description": "Entries for a period. With `all=1` the response is the full list."
+              },
+              "response": []
+            },
+            {
+              "name": "Summary",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/summary/?period=monthly&month=2026-11&group_by=category",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "summary",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "monthly",
+                      "disabled": false,
+                      "description": "all | yearly | monthly | weekly | daily | custom"
+                    },
+                    {
+                      "key": "month",
+                      "value": "2026-11",
+                      "disabled": false,
+                      "description": "YYYY-MM (period=monthly)"
+                    },
+                    {
+                      "key": "year",
+                      "value": "2026",
+                      "disabled": true,
+                      "description": "YYYY (period=yearly)"
+                    },
+                    {
+                      "key": "week",
+                      "value": "2026-W45",
+                      "disabled": true,
+                      "description": "YYYY-Www (period=weekly)"
+                    },
+                    {
+                      "key": "day",
+                      "value": "2026-11-09",
+                      "disabled": true,
+                      "description": "YYYY-MM-DD (period=daily)"
+                    },
+                    {
+                      "key": "start",
+                      "value": "2026-11-01",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "end",
+                      "value": "2026-11-30",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "group_by",
+                      "value": "category",
+                      "disabled": false,
+                      "description": "category | source"
+                    },
+                    {
+                      "key": "filters",
+                      "value": "",
+                      "disabled": true,
+                      "description": "URL-encoded JSON rule tree, e.g. {\"join\":\"and\",\"rules\":[{\"field\":\"amount\",\"op\":\"gt\",\"value\":\"500\"}]}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Time series",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/timeseries/?period=monthly&month=2026-11",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "timeseries",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "monthly",
+                      "disabled": false,
+                      "description": "all | yearly | monthly | weekly | daily | custom"
+                    },
+                    {
+                      "key": "month",
+                      "value": "2026-11",
+                      "disabled": false,
+                      "description": "YYYY-MM (period=monthly)"
+                    },
+                    {
+                      "key": "year",
+                      "value": "2026",
+                      "disabled": true,
+                      "description": "YYYY (period=yearly)"
+                    },
+                    {
+                      "key": "week",
+                      "value": "2026-W45",
+                      "disabled": true,
+                      "description": "YYYY-Www (period=weekly)"
+                    },
+                    {
+                      "key": "day",
+                      "value": "2026-11-09",
+                      "disabled": true,
+                      "description": "YYYY-MM-DD (period=daily)"
+                    },
+                    {
+                      "key": "start",
+                      "value": "2026-11-01",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "end",
+                      "value": "2026-11-30",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "filters",
+                      "value": "",
+                      "disabled": true,
+                      "description": "URL-encoded JSON rule tree, e.g. {\"join\":\"and\",\"rules\":[{\"field\":\"amount\",\"op\":\"gt\",\"value\":\"500\"}]}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Chart data",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/chart/?period=monthly&month=2026-11&group_by=category",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "chart",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "monthly",
+                      "disabled": false,
+                      "description": "all | yearly | monthly | weekly | daily | custom"
+                    },
+                    {
+                      "key": "month",
+                      "value": "2026-11",
+                      "disabled": false,
+                      "description": "YYYY-MM (period=monthly)"
+                    },
+                    {
+                      "key": "year",
+                      "value": "2026",
+                      "disabled": true,
+                      "description": "YYYY (period=yearly)"
+                    },
+                    {
+                      "key": "week",
+                      "value": "2026-W45",
+                      "disabled": true,
+                      "description": "YYYY-Www (period=weekly)"
+                    },
+                    {
+                      "key": "day",
+                      "value": "2026-11-09",
+                      "disabled": true,
+                      "description": "YYYY-MM-DD (period=daily)"
+                    },
+                    {
+                      "key": "start",
+                      "value": "2026-11-01",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "end",
+                      "value": "2026-11-30",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "group_by",
+                      "value": "category",
+                      "disabled": false,
+                      "description": "category | source"
+                    },
+                    {
+                      "key": "bucket",
+                      "value": "",
+                      "disabled": true,
+                      "description": "day | week | month | year"
+                    },
+                    {
+                      "key": "filters",
+                      "value": "",
+                      "disabled": true,
+                      "description": "URL-encoded JSON rule tree, e.g. {\"join\":\"and\",\"rules\":[{\"field\":\"amount\",\"op\":\"gt\",\"value\":\"500\"}]}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Category time series",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/category-timeseries/?period=monthly&month=2026-11",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "category-timeseries",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "monthly",
+                      "disabled": false,
+                      "description": "all | yearly | monthly | weekly | daily | custom"
+                    },
+                    {
+                      "key": "month",
+                      "value": "2026-11",
+                      "disabled": false,
+                      "description": "YYYY-MM (period=monthly)"
+                    },
+                    {
+                      "key": "year",
+                      "value": "2026",
+                      "disabled": true,
+                      "description": "YYYY (period=yearly)"
+                    },
+                    {
+                      "key": "week",
+                      "value": "2026-W45",
+                      "disabled": true,
+                      "description": "YYYY-Www (period=weekly)"
+                    },
+                    {
+                      "key": "day",
+                      "value": "2026-11-09",
+                      "disabled": true,
+                      "description": "YYYY-MM-DD (period=daily)"
+                    },
+                    {
+                      "key": "start",
+                      "value": "2026-11-01",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "end",
+                      "value": "2026-11-30",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "bucket",
+                      "value": "",
+                      "disabled": true,
+                      "description": "day | week | month | year"
+                    },
+                    {
+                      "key": "filters",
+                      "value": "",
+                      "disabled": true,
+                      "description": "URL-encoded JSON rule tree, e.g. {\"join\":\"and\",\"rules\":[{\"field\":\"amount\",\"op\":\"gt\",\"value\":\"500\"}]}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Insights",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/insights/?period=monthly&month=2026-11",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "insights",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "monthly",
+                      "disabled": false,
+                      "description": "all | yearly | monthly | weekly | daily | custom"
+                    },
+                    {
+                      "key": "month",
+                      "value": "2026-11",
+                      "disabled": false,
+                      "description": "YYYY-MM (period=monthly)"
+                    },
+                    {
+                      "key": "year",
+                      "value": "2026",
+                      "disabled": true,
+                      "description": "YYYY (period=yearly)"
+                    },
+                    {
+                      "key": "week",
+                      "value": "2026-W45",
+                      "disabled": true,
+                      "description": "YYYY-Www (period=weekly)"
+                    },
+                    {
+                      "key": "day",
+                      "value": "2026-11-09",
+                      "disabled": true,
+                      "description": "YYYY-MM-DD (period=daily)"
+                    },
+                    {
+                      "key": "start",
+                      "value": "2026-11-01",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "end",
+                      "value": "2026-11-30",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "filters",
+                      "value": "",
+                      "disabled": true,
+                      "description": "URL-encoded JSON rule tree, e.g. {\"join\":\"and\",\"rules\":[{\"field\":\"amount\",\"op\":\"gt\",\"value\":\"500\"}]}"
+                    }
+                  ]
+                },
+                "description": "Top categories / sources / modes + biggest entries."
+              },
+              "response": []
+            },
+            {
+              "name": "Heatmap",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/heatmap/?period=monthly&month=2026-11",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "heatmap",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "monthly",
+                      "disabled": false,
+                      "description": "all | yearly | monthly | weekly | daily | custom"
+                    },
+                    {
+                      "key": "month",
+                      "value": "2026-11",
+                      "disabled": false,
+                      "description": "YYYY-MM (period=monthly)"
+                    },
+                    {
+                      "key": "year",
+                      "value": "2026",
+                      "disabled": true,
+                      "description": "YYYY (period=yearly)"
+                    },
+                    {
+                      "key": "week",
+                      "value": "2026-W45",
+                      "disabled": true,
+                      "description": "YYYY-Www (period=weekly)"
+                    },
+                    {
+                      "key": "day",
+                      "value": "2026-11-09",
+                      "disabled": true,
+                      "description": "YYYY-MM-DD (period=daily)"
+                    },
+                    {
+                      "key": "start",
+                      "value": "2026-11-01",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "end",
+                      "value": "2026-11-30",
+                      "disabled": true,
+                      "description": "period=custom"
+                    },
+                    {
+                      "key": "filters",
+                      "value": "",
+                      "disabled": true,
+                      "description": "URL-encoded JSON rule tree, e.g. {\"join\":\"and\",\"rules\":[{\"field\":\"amount\",\"op\":\"gt\",\"value\":\"500\"}]}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Create / update / delete",
+          "item": [
+            {
+              "name": "Create expense",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/create/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "create",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Chai\",\n  \"amount\": 20,\n  \"date\": \"2026-11-09T10:00:00+05:30\",\n  \"categories\": [\n    \"Food\"\n  ],\n  \"source\": \"Cash\",\n  \"mode\": \"Cash\",\n  \"comment\": \"\",\n  \"other_partner\": \"\",\n  \"add_to_split\": false,\n  \"processed\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "`date` may be a bare day (`2026-11-09`) or a full datetime with offset. Saves the new id to `pageId`.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const data = pm.response.json();",
+                      "if (data.page_id) { pm.environment.set('pageId', data.page_id); console.log('pageId =', data.page_id); }",
+                      "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update expense",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/{{pageId}}/update/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "{{pageId}}",
+                    "update",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Chai (edited)\",\n  \"amount\": 20,\n  \"date\": \"\",\n  \"categories\": [\n    \"Food\"\n  ],\n  \"source\": \"Cash\",\n  \"mode\": \"Cash\",\n  \"comment\": \"\",\n  \"other_partner\": \"\",\n  \"add_to_split\": false,\n  \"processed\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "An empty `date` leaves the stored date/time untouched."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete expense",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/{{pageId}}/delete/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "{{pageId}}",
+                    "delete",
+                    ""
+                  ]
+                },
+                "description": "Permanent. Returns 404 if the id doesn't exist."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Pick-lists (categories · sources · modes)",
+          "item": [
+            {
+              "name": "List my pick-lists",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/options/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "options",
+                    ""
+                  ]
+                },
+                "description": "The categories, sources and modes this account has saved, each with `id`, `name` and `uses` (how many expenses use it). The first category id is saved to `optionId`."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const d = pm.response.json();",
+                      "if (d.categories && d.categories.length) pm.environment.set('optionId', d.categories[0].id);",
+                      "pm.test('status 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add a category",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/options/categories/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "options",
+                    "categories",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Groceries\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Saves a value to the list (201). Adding one that already exists, in any letter case, is a no-op that returns 200. New values are also saved automatically whenever an expense is created or edited with them."
+              },
+              "response": []
+            },
+            {
+              "name": "Add a source",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/options/sources/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "options",
+                    "sources",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"HDFC Credit Card\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Add a mode",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/options/modes/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "options",
+                    "modes",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"UPI\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Rename an entry",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/options/{{optionKind}}/{{optionId}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "options",
+                    "{{optionKind}}",
+                    "{{optionId}}",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"New name\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Set `optionKind` to categories, sources or modes. The new name is carried onto every expense that uses the old one (`expenses_updated` in the reply). 409 if the new name already exists."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete an entry",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/options/{{optionKind}}/{{optionId}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "options",
+                    "{{optionKind}}",
+                    "{{optionId}}",
+                    ""
+                  ]
+                },
+                "description": "Removes it from the list only. Expenses already saved with the value keep it; it stops being offered until it is used again."
+              },
+              "response": []
+            }
+          ],
+          "description": "Each account's own categories, sources and modes (tables `expense_categories`, `expense_sources`, `expense_modes`). They feed the pickers in the Dashboard and Charts."
+        },
+        {
+          "name": "Splitwise",
+          "item": [
+            {
+              "name": "Overview (me, groups, friends)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/splitwise/overview/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "splitwise",
+                    "overview",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Splitwise expenses",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/splitwise/expenses/?limit=50",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "splitwise",
+                    "expenses",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "50",
+                      "disabled": false
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0",
+                      "disabled": true
+                    },
+                    {
+                      "key": "group_id",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "friend_id",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dated_after",
+                      "value": "",
+                      "disabled": true,
+                      "description": "YYYY-MM-DD"
+                    },
+                    {
+                      "key": "dated_before",
+                      "value": "",
+                      "disabled": true,
+                      "description": "YYYY-MM-DD"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Groups",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/splitwise/groups/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "splitwise",
+                    "groups",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create on Splitwise",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/splitwise/create/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "splitwise",
+                    "create",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Dinner\",\n  \"amount\": 600,\n  \"date\": \"2026-11-09\",\n  \"group_id\": \"\",\n  \"participant_ids\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Example body — adjust participants/group. See `expenses/services/splitwise/splitwise_views.py`."
+              },
+              "response": []
+            },
+            {
+              "name": "Import a Splitwise expense",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/splitwise/import/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "splitwise",
+                    "import",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expense_id\": 0,\n  \"mode\": \"UPI\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Creates a local expense from a Splitwise expense id (rejects duplicates)."
+              },
+              "response": []
+            },
+            {
+              "name": "Push an expense to Splitwise",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/expenses/{{pageId}}/push-split/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "expenses",
+                    "{{pageId}}",
+                    "push-split",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mode\": \"group\",\n  \"group_id\": \"0\",\n  \"shares\": {\n    \"MY_SPLITWISE_ID\": 150,\n    \"FRIEND_SPLITWISE_ID\": 150\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Pushes the row, then sets its amount to your share, notes the breakdown in Comment and ticks Split Added."
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "description": "Open `/api/expenses/` routes — **no authentication**; they act as the default expense profile's owner. Don't expose them beyond localhost without adding auth."
+    },
+    {
+      "name": "Habits",
+      "item": [
+        {
+          "name": "Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/summary/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "summary",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/list/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "list",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Chart",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/chart/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "chart",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "bucket",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Today",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/today/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "today",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Habit names",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/names/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "names",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check habits",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/check/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "check",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habits\": {\n    \"Gym\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Example body; see habits/views.py."
+          },
+          "response": []
+        },
+        {
+          "name": "Backfill — preview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/backfill/preview/?start=2026-01-01&end=2026-11-09",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "backfill",
+                "preview",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "2026-01-01",
+                  "disabled": false
+                },
+                {
+                  "key": "end",
+                  "value": "2026-11-09",
+                  "disabled": false
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Backfill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/backfill/?start=2026-01-01&end=2026-11-09",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "backfill",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "2026-01-01",
+                  "disabled": false
+                },
+                {
+                  "key": "end",
+                  "value": "2026-11-09",
+                  "disabled": false
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add habit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/add/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "add",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Read\",\n  \"default_checked\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove habit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/remove/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "remove",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Read\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rename habit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/rename/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "rename",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_name\": \"Read\",\n  \"new_name\": \"Read 20 pages\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk set",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/bulk-set/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "bulk-set",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habit\": \"Gym\",\n  \"start\": \"2026-11-01\",\n  \"end\": \"2026-11-09\",\n  \"value\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/habits/{{habitPageId}}/update/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "habits",
+                "{{habitPageId}}",
+                "update",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habits\": {\n    \"Gym\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Notion-backed. Open `/api/habits/` routes (no auth)."
+    },
+    {
+      "name": "Todos (Jira)",
+      "item": [
+        {
+          "name": "Create issue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/create/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "create",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Fix bug\",\n  \"description\": \"\",\n  \"issuetype\": \"Task\",\n  \"duedate\": \"\",\n  \"parent_key\": \"\",\n  \"assignee_account_id\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List issues",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/issues/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "issues",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Meta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/meta/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "meta",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Due summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/due-summary/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "due-summary",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sprint — get",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/sprint/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "sprint",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "sprint_id",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sprint — new",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/sprint/new/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "sprint",
+                "new",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sprint 1\",\n  \"goal\": \"\",\n  \"start_date\": \"\",\n  \"end_date\": \"\",\n  \"duration_days\": 14\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sprint — close",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/sprint/close/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "sprint",
+                "close",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sprint_id\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sprint — delete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/sprint/delete/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "sprint",
+                "delete",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sprint_id\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Issue — detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/issues/{{issueKey}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "issues",
+                "{{issueKey}}",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Issue — update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/issues/{{issueKey}}/update/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "issues",
+                "{{issueKey}}",
+                "update",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"summary\": \"Updated\",\n  \"description\": \"\",\n  \"duedate\": \"\",\n  \"issuetype\": \"Task\",\n  \"parent_key\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Issue — delete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/issues/{{issueKey}}/delete/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "issues",
+                "{{issueKey}}",
+                "delete",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Issue — transition",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/issues/{{issueKey}}/transition/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "issues",
+                "{{issueKey}}",
+                "transition",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Progress\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Issue — assignee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/issues/{{issueKey}}/assignee/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "issues",
+                "{{issueKey}}",
+                "assignee",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"account_id\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Issue — sprint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/todos/issues/{{issueKey}}/sprint/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "todos",
+                "issues",
+                "{{issueKey}}",
+                "sprint",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sprint_id\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Jira-backed. Open `/api/todos/` routes (no auth)."
+    },
+    {
+      "name": "Books",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/list/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "books",
+                "list",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "author",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "genre",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/stats/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "books",
+                "stats",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Chart data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/charts/data/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "books",
+                "charts",
+                "data",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/create/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "books",
+                "create",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Book title\",\n  \"authors\": [\n    \"Author\"\n  ],\n  \"genres\": [\n    \"Fiction\"\n  ],\n  \"status\": \"Queued\",\n  \"summary_url\": \"\",\n  \"drive_url\": \"\",\n  \"epub_url\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{bookPageId}}/update/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "books",
+                "{{bookPageId}}",
+                "update",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Reading\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Example body; see books/views.py for accepted fields."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/{{bookPageId}}/delete/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "books",
+                "{{bookPageId}}",
+                "delete",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Drive files",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/drive/files/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "books",
+                "drive",
+                "files",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Drive upload",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/drive/upload/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "books",
+                "drive",
+                "upload",
+                ""
+              ]
+            },
+            "description": "multipart upload — attach a file in the Body tab (form-data)."
+          },
+          "response": []
+        },
+        {
+          "name": "Cache bust",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/books/cache/bust/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "books",
+                "cache",
+                "bust",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Notion + Google Drive. Open `/api/books/` routes (no auth)."
+    },
+    {
+      "name": "Blogs",
+      "item": [
+        {
+          "name": "Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/blogs/stats/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "blogs",
+                "stats",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cache bust",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/blogs/cache/bust/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "blogs",
+                "cache",
+                "bust",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Read list",
+          "item": [
+            {
+              "name": "List",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/blogs/read/list/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "blogs",
+                    "read",
+                    "list",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/blogs/read/create/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "blogs",
+                    "read",
+                    "create",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"topic\": \"Topic\",\n  \"url\": \"https://example.com\",\n  \"status\": \"To Read\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/blogs/read/{{blogPageId}}/update/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "blogs",
+                    "read",
+                    "{{blogPageId}}",
+                    "update",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"Read\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/blogs/read/{{blogPageId}}/delete/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "blogs",
+                    "read",
+                    "{{blogPageId}}",
+                    "delete",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Write list",
+          "item": [
+            {
+              "name": "List",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/blogs/write/list/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "blogs",
+                    "write",
+                    "list",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/blogs/write/create/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "blogs",
+                    "write",
+                    "create",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"topic\": \"Topic\",\n  \"topic_to_cover\": \"\",\n  \"url\": \"\",\n  \"status\": \"Idea\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/blogs/write/{{blogPageId}}/update/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "blogs",
+                    "write",
+                    "{{blogPageId}}",
+                    "update",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"Drafting\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/blogs/write/{{blogPageId}}/delete/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "blogs",
+                    "write",
+                    "{{blogPageId}}",
+                    "delete",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "description": "Notion-backed. Open `/api/blogs/` routes (no auth)."
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    }
+  ]
+}

@@ -2,12 +2,14 @@ import json
 
 import requests
 from django.conf import settings
+from django.db import DatabaseError
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
 
-from .data_layer import ExpensesDataLayer
-from .service import ExpensesService
+from core.access import is_full_access
+from ...data_services import data_service_for
+from ..expense import ExpensesService
 from .splitwise_client import SplitwiseClient, SplitwiseError, SplitwiseNotConfigured
 from .splitwise_service import SplitwiseService
 
@@ -33,11 +35,10 @@ class SplitwiseBaseView(View):
         return JsonResponse({"error": f"Splitwise API error: {exc}"}, status=502)
 
     def _expenses_service(self):
-        profile = self.request.session.get("notion_profile") or settings.DEFAULT_EXPENSE_PROFILE
-        dl = ExpensesDataLayer.from_env(profile)
-        if not dl.is_configured:
+        data_service = data_service_for(self.request)
+        if not data_service.is_configured:
             return None
-        return ExpensesService(dl)
+        return ExpensesService(data_service)
 
     def _body(self, request):
         try:
@@ -50,9 +51,7 @@ class SplitwiseDashboardView(View):
     """Renders the Splitwise tab page (data is loaded client-side)."""
 
     def get(self, request):
-        profile = request.session.get("notion_profile")
-        restricted = bool(profile) and profile not in settings.FULL_ACCESS_PROFILES
-        return render(request, "expenses/splitwise.html", {"restricted": restricted})
+        return render(request, "expenses/splitwise.html", {"restricted": not is_full_access(request.session)})
 
 
 class SplitwiseOverviewView(SplitwiseBaseView):
@@ -87,7 +86,7 @@ class SplitwiseExpensesView(SplitwiseBaseView):
         except SplitwiseError as exc:
             return self._sw_error(exc)
 
-        # Flag which of these are already imported into Notion (for the UI)
+        # Flag which of these are already imported as expenses (for the UI)
         expenses_service = self._expenses_service()
         if expenses_service:
             try:
@@ -145,8 +144,8 @@ class SplitwiseCreateView(SplitwiseBaseView):
 
 
 class SplitwisePushEntryView(SplitwiseBaseView):
-    """Push a Notion expense row (flagged 'Add to Split') to Splitwise, then
-    tick its 'Split Added' checkbox in Notion."""
+    """Push an expense row (flagged 'Add to Split') to Splitwise, then
+    tick its 'Split Added' flag."""
 
     def post(self, request, page_id):
         if not self.svc:
@@ -158,7 +157,7 @@ class SplitwisePushEntryView(SplitwiseBaseView):
         expenses_service = self._expenses_service()
         if not expenses_service:
             return JsonResponse(
-                {"error": "NOTION_TOKEN and NOTION_EXPENSES_DB_ID must be set"},
+                {"error": "Expenses database is not configured (set DATABASE_URL)"},
                 status=500,
             )
 
@@ -188,18 +187,18 @@ class SplitwisePushEntryView(SplitwiseBaseView):
 
         my_share = created.get("my_share")
         try:
-            # Reduce the Notion Amount to just my share, note the breakdown, tick 'Split Added'.
+            # Reduce the Amount to just my share, note the breakdown, tick 'Split Added'.
             expenses_service.finalize_split_push(
                 page_id, my_share, entry.get("comment", ""), created.get("note", "")
             )
-        except requests.RequestException as exc:
+        except DatabaseError as exc:
             return JsonResponse(
                 {
                     "ok": True,
                     "splitwise_expense_id": created.get("id"),
                     "split_added": False,
-                    "warning": "Pushed to Splitwise, but couldn't update the Notion "
-                    f"row ({exc}). Set its amount to your share and tick "
+                    "warning": "Pushed to Splitwise, but couldn't update the "
+                    f"expense ({exc}). Set its amount to your share and tick "
                     "'Split Added' manually.",
                 },
                 status=201,
@@ -231,7 +230,7 @@ class SplitwiseImportView(SplitwiseBaseView):
         expenses_service = self._expenses_service()
         if not expenses_service:
             return JsonResponse(
-                {"error": "NOTION_TOKEN and NOTION_EXPENSES_DB_ID must be set"},
+                {"error": "Expenses database is not configured (set DATABASE_URL)"},
                 status=500,
             )
 

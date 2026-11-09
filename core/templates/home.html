@@ -56,6 +56,21 @@
       text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;
     }
     .user-chip:hover { transform: scale(1.03); box-shadow: 0 4px 18px rgba(0,0,0,0.13); }
+    button.user-chip { font-family: inherit; cursor: pointer; }
+    .user-menu { position: relative; }
+    .user-menu-pop {
+      position: absolute; top: calc(100% + 8px); right: 0; min-width: 150px;
+      background: rgba(255,255,255,0.94); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.92); border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.14); padding: 0.35rem;
+      display: flex; flex-direction: column;
+    }
+    .user-menu-pop[hidden] { display: none; }
+    .user-menu-pop a {
+      padding: 0.55rem 0.8rem; border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+      color: #374151; text-decoration: none;
+    }
+    .user-menu-pop a:hover { background: rgba(79,70,229,0.09); color: #4F46E5; }
     .user-chip img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
     .user-chip-avatar {
       width: 24px; height: 24px; border-radius: 50%;
@@ -808,6 +823,9 @@
     [data-theme="dark"] .tile-blogs    .tile-icon-wrap { background: linear-gradient(135deg, rgba(124,58,237,0.22), rgba(99,102,241,0.16)); }
 
     [data-theme="dark"] .theme-btn { background: rgba(20,20,28,0.85); border-color: rgba(255,255,255,0.12); box-shadow: 0 2px 14px rgba(0,0,0,0.5); }
+    [data-theme="dark"] .user-menu-pop { background: rgba(20,20,28,0.96); border-color: rgba(255,255,255,0.12); box-shadow: 0 8px 32px rgba(0,0,0,0.55); }
+    [data-theme="dark"] .user-menu-pop a { color: #E5E7EB; }
+    [data-theme="dark"] .user-menu-pop a:hover { background: rgba(255,255,255,0.08); color: #A5B4FC; }
     [data-theme="dark"] .user-chip { background: rgba(20,20,28,0.85); border-color: rgba(255,255,255,0.12); color: #E5E7EB; box-shadow: 0 2px 14px rgba(0,0,0,0.45); }
 
     [data-theme="dark"] .toast { box-shadow: 0 8px 32px rgba(0,0,0,0.55); }
@@ -825,17 +843,20 @@
 
   <!-- Top-right controls -->
   <div class="top-bar">
-    {% if user.picture %}
-    <a class="user-chip" href="/auth/logout/" title="Sign out">
-      <img src="{{ user.picture }}" alt="{{ user.name }}">
-      {{ user.name|truncatechars:14 }}
-    </a>
-    {% else %}
-    <a class="user-chip" href="/auth/logout/" title="Sign out">
-      <div class="user-chip-avatar">{{ user.name|first|upper }}</div>
-      {{ user.name|truncatechars:14 }}
-    </a>
-    {% endif %}
+    <div class="user-menu">
+      <button class="user-chip" type="button" aria-haspopup="true" aria-expanded="false" onclick="_toggleUserMenu(event)" title="Account">
+        {% if user.picture %}
+        <img src="{{ user.picture }}" alt="{{ user.name }}" referrerpolicy="no-referrer">
+        {% else %}
+        <div class="user-chip-avatar">{{ user.name|first|upper }}</div>
+        {% endif %}
+        {{ user.name|truncatechars:14 }}
+      </button>
+      <div class="user-menu-pop" id="user-menu-pop" hidden>
+        <a href="/profile/">Profile</a>
+        <a href="/auth/logout/">Sign out</a>
+      </div>
+    </div>
     <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme">☀️</button>
   </div>
 
@@ -1095,6 +1116,19 @@
     const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
     const btn = document.getElementById('theme-btn');
     if (btn) btn.textContent = isDark() ? '🌙' : '☀️';
+    window._toggleUserMenu = function(e){
+      e.stopPropagation();
+      var pop = document.getElementById('user-menu-pop');
+      var open = pop.hidden;
+      pop.hidden = !open;
+      e.currentTarget.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    document.addEventListener('click', function(){
+      var pop = document.getElementById('user-menu-pop'); if (pop) pop.hidden = true;
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') { var pop = document.getElementById('user-menu-pop'); if (pop) pop.hidden = true; }
+    });
     window._toggleTheme = function(){
       const dark = !isDark();
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
