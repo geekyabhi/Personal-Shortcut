@@ -169,6 +169,12 @@ and take the account to act as from the `X-User-Id` header, a `uid` / `user_id` 
 (header wins, then body, then query). The key can act as **any** user, so keep it in `.env` / Railway variables only
 and never in source. Each call is logged with the uid it acted as (never the key).
 
+**Grouping the list:** `GET /api/expenses/list/` and `GET /api/internal/expenses/list/` accept
+`group_by=category|source|mode|date|week|month|year`. The response then has `groups` (each with `key`, `count`, `total`
+and its `entries`), `group_count` and `grand_total`; `page` / `page_size` page the groups and `entries` is empty.
+Time groups come newest first (`sort=date_asc` flips them), the others largest total first. An entry with several
+categories appears in each, so group totals can overlap; `grand_total` counts every entry once.
+
 **Sign out:** the Profile page has *Sign out* (this device) and *Sign out from all devices*, which deletes every
 bearer token. Each browser login is its own row in `auth_tokens` (the cookie holds only the row id), so signing out
 is just deleting rows; sessions from before this change ask for one fresh sign-in.

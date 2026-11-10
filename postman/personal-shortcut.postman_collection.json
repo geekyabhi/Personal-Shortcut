@@ -456,10 +456,16 @@
                       "value": "",
                       "disabled": true,
                       "description": "true | false"
+                    },
+                    {
+                      "key": "group_by",
+                      "value": "category",
+                      "disabled": true,
+                      "description": "category | source | mode | date | week | month | year — returns `groups` (key, count, total, entries) and `grand_total`; page/page_size then page the groups"
                     }
                   ]
                 },
-                "description": "Entries for a period. With `all=1` the response is the full list."
+                "description": "Entries for a period. With `all=1` the response is the full list. Tick `group_by` to get the entries bucketed instead (an entry with several categories appears in each, so group totals can overlap; `grand_total` counts each entry once)."
               },
               "response": [],
               "event": [
@@ -1221,6 +1227,17 @@
                       "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
                     ]
                   }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const d = pm.response.json();",
+                      "if (d.option) { pm.environment.set('optionId', String(d.option.id)); pm.environment.set('optionKind', 'categories'); console.log('optionId =', d.option.id); }",
+                      "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                    ]
+                  }
                 }
               ]
             },
@@ -1255,7 +1272,8 @@
                       "language": "json"
                     }
                   }
-                }
+                },
+                "description": "Saves the new entry's id to `optionId` (and `optionKind`), so Rename / Delete below act on it."
               },
               "response": [],
               "event": [
@@ -1265,6 +1283,17 @@
                     "type": "text/javascript",
                     "exec": [
                       "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const d = pm.response.json();",
+                      "if (d.option) { pm.environment.set('optionId', String(d.option.id)); pm.environment.set('optionKind', 'sources'); console.log('optionId =', d.option.id); }",
+                      "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"
                     ]
                   }
                 }
@@ -1301,7 +1330,8 @@
                       "language": "json"
                     }
                   }
-                }
+                },
+                "description": "Saves the new entry's id to `optionId` (and `optionKind`), so Rename / Delete below act on it."
               },
               "response": [],
               "event": [
@@ -1311,6 +1341,17 @@
                     "type": "text/javascript",
                     "exec": [
                       "if (!pm.environment.get('token')) { throw new Error(\"Run 'Users > Login' first - it saves the bearer token.\"); }"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const d = pm.response.json();",
+                      "if (d.option) { pm.environment.set('optionId', String(d.option.id)); pm.environment.set('optionKind', 'modes'); console.log('optionId =', d.option.id); }",
+                      "pm.test('status is 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"
                     ]
                   }
                 }
@@ -1896,6 +1937,12 @@
                   "value": "1",
                   "disabled": false,
                   "description": "1 = every match"
+                },
+                {
+                  "key": "group_by",
+                  "value": "category",
+                  "disabled": true,
+                  "description": "category | source | mode | date | week | month | year — returns `groups` (key, count, total, entries) and `grand_total`; page/page_size then page the groups"
                 }
               ]
             },
@@ -1990,6 +2037,12 @@
                   "key": "all",
                   "value": "1",
                   "disabled": false
+                },
+                {
+                  "key": "group_by",
+                  "value": "category",
+                  "disabled": true,
+                  "description": "category | source | mode | date | week | month | year — returns `groups` (key, count, total, entries) and `grand_total`; page/page_size then page the groups"
                 }
               ]
             }

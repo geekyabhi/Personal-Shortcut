@@ -955,7 +955,10 @@ class ExpensesService:
         partial: bool = False,
         unpaginated: bool = False,
         processed: str = "",
+        group_by: str = "",
     ) -> dict:
+        if group_by and group_by not in self.GROUP_BY_FIELDS:
+            raise ValueError("group_by must be one of: " + ", ".join(self.GROUP_BY_FIELDS))
         self._validate_period(period, year, month, week, day, start, end, sort=sort)
         range_start, range_end = self._build_date_filter(
             period, year=year or None, month=month or None,
@@ -1010,15 +1013,26 @@ class ExpensesService:
 
         total_count = len(entries)
 
-        if unpaginated:
-            page_out, total_pages, page_entries = 1, 1, entries
+        # Grouped: pagination applies to the groups, not the flat list.
+        groups = None
+        if group_by:
+            groups = self._group_entries(entries, group_by, sort)
+            paged, page_out, total_pages = self._paginate(groups, page, page_size, unpaginated)
+            page_entries = []
         else:
-            total_pages = max(1, (total_count + page_size - 1) // page_size)
-            page_out = min(page, total_pages)
-            start_idx = (page_out - 1) * page_size
-            page_entries = entries[start_idx: start_idx + page_size]
+            page_entries, page_out, total_pages = self._paginate(entries, page, page_size, unpaginated)
+
+        extra = {}
+        if groups is not None:
+            extra = {
+                "group_by": group_by,
+                "group_count": len(groups),
+                "grand_total": round(sum(e["amount"] for e in entries), 2),
+                "groups": paged,
+            }
 
         return {
+            **extra,
             "total_count": total_count,
             "page": page_out,
             "page_size": page_size,
@@ -1029,6 +1043,63 @@ class ExpensesService:
             "partial": is_partial,
             "total_rows": len(all_rows),
         }
+
+    GROUP_BY_FIELDS = ("category", "source", "mode", "date", "week", "month", "year")
+
+    @staticmethod
+    def _paginate(items, page, page_size, unpaginated):
+        if unpaginated:
+            return items, 1, 1
+        total_pages = max(1, (len(items) + page_size - 1) // page_size)
+        page_out = min(page, total_pages)
+        start_idx = (page_out - 1) * page_size
+        return items[start_idx: start_idx + page_size], page_out, total_pages
+
+    @staticmethod
+    def _group_keys(e: dict, group_by: str) -> list:
+        if group_by == "category":
+            return e["categories"] or [""]
+        if group_by == "source":
+            return e["sources"] or [""]
+        if group_by == "mode":
+            return [e["mode"] or ""]
+        raw = (e.get("date") or "")[:10]
+        try:
+            d = datetime.strptime(raw, "%Y-%m-%d")
+        except ValueError:
+            return [""]
+        if group_by == "date":
+            return [raw]
+        if group_by == "month":
+            return [raw[:7]]
+        if group_by == "year":
+            return [raw[:4]]
+        iso = d.isocalendar()
+        return [f"{iso[0]}-W{iso[1]:02d}"]
+
+    def _group_entries(self, entries: list, group_by: str, sort: str) -> list:
+        """Buckets the (already filtered) entries. An entry with several categories
+        or sources appears in each of them, so per-group totals can overlap;
+        ``grand_total`` on the response counts each entry once. Time groups come
+        out chronologically (newest first unless sort=date_asc), the others by
+        total (largest first unless sort=amount_asc). Entries with nothing to
+        group on land in a group whose key is ""."""
+        buckets = {}
+        for e in entries:
+            for key in self._group_keys(e, group_by):
+                b = buckets.setdefault(key, {"key": key, "count": 0, "total": 0.0, "entries": []})
+                b["count"] += 1
+                b["total"] += e["amount"]
+                b["entries"].append(e)
+        out = list(buckets.values())
+        for b in out:
+            b["total"] = round(b["total"], 2)
+        if group_by in ("date", "week", "month", "year"):
+            out.sort(key=lambda b: (b["key"] == "", b["key"]), reverse=sort != "date_asc")
+            out.sort(key=lambda b: b["key"] == "")      # undated group always last
+        else:
+            out.sort(key=lambda b: b["total"], reverse=sort != "amount_asc")
+        return out
 
     def get_heatmap(
         self,
