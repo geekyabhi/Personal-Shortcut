@@ -50,10 +50,6 @@ class AuthService:
         phone = self._clean_phone(phone) if (phone or "").strip() else None
         if not email and not phone:
             raise AuthError("Enter an email or a phone number")
-        if email and email in settings.ALLOWED_USERS:
-            # These addresses unlock the whole app and a typed-in email proves
-            # nothing, so they can only be claimed through Google.
-            raise AuthError("This email signs in with Google — use the Google button", 409)
         if not isinstance(password, str) or not (self.MIN_PASSWORD <= len(password) <= self.MAX_PASSWORD):
             raise AuthError(f"Password must be {self.MIN_PASSWORD}-{self.MAX_PASSWORD} characters")
         try:
@@ -117,7 +113,7 @@ class AuthService:
                 user.google_sub = sub
                 user.email_verified = True
             else:
-                if not (settings.SIGNUP_ENABLED or email in settings.ALLOWED_USERS):
+                if not settings.SIGNUP_ENABLED:
                     raise AuthError("Signup is disabled", 403)
                 user = User(email=email, google_sub=sub, email_verified=True,
                             password=make_password(None))
@@ -187,6 +183,37 @@ class AuthService:
         user = self.authenticate(identifier, password)
         user.tokens.filter(expires_at__lt=timezone.now()).delete()  # tidy expired ones
         return user, *self._issue_token(user)
+
+    def google_token_login(self, id_token: str) -> tuple:
+        """Sign in with a Google ID token obtained on a device (Android / iOS).
+
+        The token is verified (signature, expiry, issuer, audience) before
+        anything is trusted, then handled exactly like the web Google sign-in —
+        same account matching, allow-list and signup rules — and answered with
+        a bearer token."""
+        info = self._verify_google_id_token(id_token)
+        user = self.google_login(info)
+        user.tokens.filter(expires_at__lt=timezone.now()).delete()
+        return user, *self._issue_token(user)
+
+    @staticmethod
+    def _verify_google_id_token(id_token: str) -> dict:
+        if not isinstance(id_token, str) or not id_token.strip():
+            raise AuthError("id_token is required")
+        audiences = settings.GOOGLE_ID_TOKEN_AUDIENCES
+        if not audiences:
+            raise AuthError("Google sign-in is not configured", 503)
+        from google.auth.transport import requests as google_requests
+        from google.oauth2 import id_token as google_id_token
+
+        try:
+            # Checks signature (Google's certs), expiry and issuer; the audience
+            # must be one of ours, so a token minted for another app is refused.
+            return google_id_token.verify_oauth2_token(
+                id_token.strip(), google_requests.Request(), audience=audiences
+            )
+        except ValueError:
+            raise AuthError("Invalid Google token", 401)
 
     def logout(self, raw_token: str, everywhere: bool = False) -> int:
         """Revoke the presented token (or all of the user's tokens)."""

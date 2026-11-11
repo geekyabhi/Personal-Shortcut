@@ -1,14 +1,20 @@
 from django.conf import settings
 
 
-def is_full_access(session) -> bool:
-    """True only for a session whose verified profile is in FULL_ACCESS_PROFILES.
+def _is_owner(user_id) -> bool:
+    # Fails closed: with OWNER_USER_ID unset, nobody is the owner.
+    owner = settings.OWNER_USER_ID
+    return bool(owner) and str(user_id or "") == owner
 
-    Everyone else — a new password signup, a Google account that isn't on the
-    allow-list — gets the expenses app only. Default is "restricted": having no
-    profile at all is the restricted case.
+
+def is_full_access(session) -> bool:
+    """True only for a session signed in as the owner account.
+
+    Everyone else — a new password signup, any other Google account — gets the
+    expenses app only. Default is "restricted": no signed-in account at all is
+    the restricted case.
     """
-    return session.get("notion_profile") in settings.FULL_ACCESS_PROFILES
+    return _is_owner(session.get("user_id"))
 
 
 def is_authenticated(session) -> bool:
@@ -17,8 +23,5 @@ def is_authenticated(session) -> bool:
 
 
 def user_has_full_access(user) -> bool:
-    """The account-level twin of ``is_full_access``: a Google-verified account
-    whose email is on the allow-list with a full-access profile."""
-    if not (user and user.google_sub and user.email_verified and user.email):
-        return False
-    return settings.ALLOWED_USERS.get(user.email) in settings.FULL_ACCESS_PROFILES
+    """The account-level twin of ``is_full_access`` (bearer-token requests)."""
+    return bool(user) and _is_owner(user.id)

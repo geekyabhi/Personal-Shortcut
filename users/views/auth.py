@@ -63,6 +63,18 @@ class LoginView(_AuthView):
         return _token_response(user, token, expires)
 
 
+class GoogleLoginView(_AuthView):
+    """``{"id_token": "<Google ID token from the device>"}`` → the same payload
+    as login. Lands in the same account as the web Google sign-in."""
+
+    http_method_names = ["post"]
+
+    def post(self, request):
+        data = _body(request)
+        user, token, expires = AuthService().google_token_login(data.get("id_token"))
+        return _token_response(user, token, expires)
+
+
 @method_decorator(token_required, name="post")
 class LogoutView(_AuthView):
     """Revokes the presented token; ``{"all": true}`` revokes every token."""

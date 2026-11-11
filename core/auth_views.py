@@ -98,19 +98,8 @@ def auth_callback(request):
     if link_uid:
         return _complete_link(request, link_uid, info)
 
-    email = (info.get("email", "") or "").strip().lower()
-
     if not settings.DATABASES:
-        # No database configured: the original Google-only, allow-list login.
-        profile = settings.ALLOWED_USERS.get(email)
-        if not profile:
-            return redirect("/login/?error=unauthorized")
-        request.session.pop("oauth_state", None)
-        request.session["user_email"]     = email
-        request.session["user_name"]      = info.get("name", email)
-        request.session["user_picture"]   = info.get("picture", "")
-        request.session["notion_profile"] = profile
-        return redirect("/")
+        return redirect("/login/?error=not_configured")
 
     from users.services import AuthError, AuthService
     try:
@@ -141,20 +130,8 @@ def _complete_link(request, link_uid, info):
 
 
 def _finish_login(request, user):
-    """Start the session for ``user``.
-
-    ``notion_profile`` (the full-access marker) is only ever set for an
-    allow-listed email that Google verified — never for a typed-in email or a
-    phone number — so password signups can't claim it. Rows from the old
-    per-profile databases are attached to the account the first time its owner
-    signs in.
-    """
-    from expenses.models import Expense
+    """Start the session for ``user``."""
     from users.services import AuthService
-
-    profile = ""
-    if user.google_sub and user.email_verified and user.email:
-        profile = settings.ALLOWED_USERS.get(user.email, "")
 
     request.session.flush()  # drops oauth_state and any previous login
     if getattr(user, "password_was_reset", False):
@@ -164,13 +141,6 @@ def _finish_login(request, user):
     request.session["user_email"]     = user.email or ""
     request.session["user_name"]      = user.display_name
     request.session["user_picture"]   = user.picture
-    request.session["notion_profile"] = profile
-
-    if profile:
-        linked = Expense.objects.filter(profile=profile, user__isnull=True).update(user=user)
-        if linked:  # their old expenses just became theirs — build their pick-lists from them
-            from expenses.data_services.options import sync_from_expenses
-            sync_from_expenses(user.id)
 
 
 def _json_body(request):

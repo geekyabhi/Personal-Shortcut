@@ -26,10 +26,10 @@ def data_service_for(request) -> ExpensesDataService:
     session = request.session
     user_id = session.get("user_id")
     if user_id:
-        return ExpensesDataService.from_env(session.get("notion_profile") or "", user_id)
+        return ExpensesDataService.from_env("", user_id)
 
     email = session.get("user_email")
     if not email:
         return ExpensesDataService()  # nobody identified: scope is empty
     user_id = User.objects.filter(email=email).values_list("id", flat=True).first()
-    return ExpensesDataService.from_env(session.get("notion_profile") or "", user_id)
+    return ExpensesDataService.from_env("", user_id)

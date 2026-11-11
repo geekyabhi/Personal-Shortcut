@@ -41,8 +41,6 @@ class ProfileService:
             new_email = user.email
         elif new_email:
             new_email = auth._clean_email(new_email)
-            if new_email != user.email and new_email in settings.ALLOWED_USERS:
-                raise AuthError("This email signs in with Google — it can't be added to a password account", 409)
         else:
             new_email = None
 

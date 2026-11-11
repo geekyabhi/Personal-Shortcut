@@ -14,8 +14,6 @@ from ..services import ExpensesService
 class ExpensesBaseView(View):
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
-        # The open /api/ routes never log in, so they have no session profile —
-        # data_service_for falls back to DEFAULT_EXPENSE_PROFILE there.
         data_service = data_service_for(request)
         self.service = ExpensesService(data_service) if data_service.is_configured else None
 
@@ -36,8 +34,8 @@ class ExpensesBaseView(View):
 
 
 def _restricted(request) -> bool:
-    """True when this session's profile only has expenses access (see
-    settings.FULL_ACCESS_PROFILES) — used to hide the Home link in nav."""
+    """True when this session only has expenses access (anyone but the owner
+    account, see core/access.py) — used to hide the Home link in nav."""
     return not is_full_access(request.session)
 
 

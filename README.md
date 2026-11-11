@@ -58,7 +58,6 @@ Stored in `.env` locally (never committed). Set as Railway Variables in producti
 |---|---|
 | `NOTION_TOKEN` | Both apps — Notion Internal Integration token |
 | `DATABASE_URL` | Expenses + users — Postgres connection string (`DATABASE_SSL_REQUIRE=False` for local) |
-| `<PROFILE>_NOTION_TOKEN` / `<PROFILE>_NOTION_DB` | Only the one-time `import_notion_expenses` command now |
 | `NOTION_HABITS_DB_ID` | Habits app — 32-char Notion database ID |
 | `SECRET_KEY` | Django |
 | `DEBUG` | `True` locally, `False` in production |
@@ -197,9 +196,9 @@ Set these as Railway **Variables** (names only — values live in Railway, never
 | `DATABASE_URL` | Neon connection string (the pooled one is fine). **Required** — expenses and accounts live here, and the migrate step fails without it. Don't include the local-only `hostaddr=` parameter. |
 | `SECRET_KEY`, `DEBUG=False` | `SECRET_KEY` must be a long random value |
 | `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_WEB_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | redirect URI = `https://<your-domain>/auth/callback/` (also add it in Google Cloud → Credentials) |
-| `EXPENSE_PROFILES`, `ABHINAV_EMAIL`, `ANCHAL_EMAIL`, `FULL_ACCESS_PROFILES` | who gets full access vs expenses-only |
-| `ABHINAV_NOTION_TOKEN`, `ABHINAV_NOTION_DB` (+ Anchal's) | only needed to run `import_notion_expenses` |
+| `GOOGLE_ANDROID_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID` (optional) | extra audiences accepted by `POST /api/users/google/` (the web client ID is always accepted) |
 | `NOTION_TOKEN`, `NOTION_HABITS_DB_ID`, `NOTION_BOOKS_DB_ID`, `NOTION_READ_BLOGS_DB_ID`, `NOTION_WRITE_BLOGS_DB_ID` | Habits / Books / Blogs |
+| `OWNER_USER_ID` | user id of the one account with every app; everyone else gets expenses only (unset = nobody) |
 | `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_BASE_URL`, `JIRA_PROJECT_KEY` | Todos |
 | `SPLITWISE_CONSUMER_KEY`, `SPLITWISE_CONSUMER_SECRET`, `SPLITWISE_API_KEY` | Splitwise |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `GOOGLE_DRIVE_UPLOAD_FOLDER_ID`, `GOOGLE_DRIVE_SUMMARY_FOLDER_ID` | Books → Drive |
@@ -209,7 +208,7 @@ Set these as Railway **Variables** (names only — values live in Railway, never
 
 ## Key Design Decisions
 
-- **Expenses live in Postgres** (`expenses/models`, read/written through `expenses/data_services`); `DATABASES` is only set when `DATABASE_URL` is present. The other apps still fetch live from Notion. Existing Notion expenses are copied over with `python manage.py import_notion_expenses` (`--dry-run` first).
+- **Expenses live in Postgres** (`expenses/models`, read/written through `expenses/data_services`); `DATABASES` is only set when `DATABASE_URL` is present. The other apps still fetch live from Notion.
 - **No CSRF middleware** — `settings.py` only has `SecurityMiddleware` and `CommonMiddleware`, so POST endpoints (backfill) work from plain `fetch()` calls without tokens.
 - **Templates use `APP_DIRS: False`** with explicit `DIRS` pointing to each app's template folder.
 - **Chart.js served from CDN** — no build step, no bundler.
