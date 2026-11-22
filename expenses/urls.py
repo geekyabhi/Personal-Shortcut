@@ -5,7 +5,7 @@ from .views import (
     ExpensesCreateView, ExpensesDeleteView, ExpensesHeatmapView, ExpensesInsightsView,
     ExpensesListView, ExpensesMandateBackfillView, ExpensesMandateReconcileView,
     ExpensesMandatesView, ExpensesSplitView, ExpensesSummaryView, ExpensesTimeseriesView,
-    ExpensesUpdateView,
+    ExpensesUpdateView, ListsView,
 )
 from .services.splitwise.splitwise_views import (
     SplitwiseCreateView, SplitwiseDashboardView, SplitwiseExpensesView,
@@ -16,6 +16,7 @@ from .services.splitwise.splitwise_views import (
 urlpatterns = [
     path("", DashboardView.as_view(), name="expenses-dashboard"),
     path("charts/", ChartsView.as_view(), name="expenses-charts"),
+    path("lists/", ListsView.as_view(), name="expenses-lists"),
     path("splitwise/", SplitwiseDashboardView.as_view(), name="expenses-splitwise"),
     path("summary/", ExpensesSummaryView.as_view(), name="expenses-summary"),
     path("timeseries/", ExpensesTimeseriesView.as_view(), name="expenses-timeseries"),

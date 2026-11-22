@@ -4,5 +4,5 @@ from .expense import (
     ExpensesChartView, ExpensesCreateView, ExpensesDeleteView, ExpensesHeatmapView,
     ExpensesInsightsView, ExpensesListView, ExpensesMandateBackfillView,
     ExpensesMandateReconcileView, ExpensesMandatesView, ExpensesSplitView,
-    ExpensesSummaryView, ExpensesTimeseriesView, ExpensesUpdateView,
+    ExpensesSummaryView, ExpensesTimeseriesView, ExpensesUpdateView, ListsView,
 )

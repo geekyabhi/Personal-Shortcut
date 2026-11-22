@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lists</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234F46E5'/><text x='16' y='22' text-anchor='middle' font-family='system-ui' font-weight='800' font-size='14' fill='white'>PS</text></svg>">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Shortcut">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { overflow-x: hidden; }
+    :root { --accent: #4F46E5; --accent-2: #7C3AED; --grad: linear-gradient(135deg, #4F46E5, #7C3AED); }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F5F4FA; color: #111827;
+      min-height: 100vh; padding: 1.25rem 0.75rem; position: relative; overflow-x: hidden;
+    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); z-index: 0; pointer-events: none; }
+    .orb-1 { width: 450px; height: 450px; background: rgba(79,70,229,0.10); top: -120px; right: -80px; }
+    .orb-2 { width: 350px; height: 350px; background: rgba(124,58,237,0.08); bottom: -100px; left: -80px; }
+
+    .container { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; animation: fadeUp 0.5s ease both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 2rem; position: relative; z-index: 50; }
+    nav {
+      display: inline-flex; gap: 0.2rem; flex-wrap: wrap;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: 100px;
+      padding: 0.3rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    }
+    nav a { padding: 0.45rem 1.1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.2s ease; color: #6B7280; }
+    nav a.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
+    nav a:not(.active):hover { background: rgba(79,70,229,0.07); color: var(--accent); }
+
+    .nav-drop { display: none; position: relative; z-index: 60; }
+    .nav-drop-btn {
+      display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.95rem; border-radius: 100px; cursor: pointer; font: inherit;
+      font-size: 0.85rem; font-weight: 700; color: #374151; background: rgba(255,255,255,0.78); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    }
+    .nav-drop-btn svg { width: 17px; height: 17px; flex: none; }
+    .nav-drop-menu {
+      position: absolute; top: calc(100% + 8px); left: 0; z-index: 10; width: 224px; max-width: calc(100vw - 2.2rem);
+      max-height: 70vh; overflow-y: auto; padding: 0.35rem; display: flex; flex-direction: column; gap: 0.12rem;
+      background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; box-shadow: 0 14px 44px rgba(0,0,0,0.18);
+    }
+    .nav-drop-menu[hidden] { display: none; }
+    .nav-drop-menu a { padding: 0.6rem 0.8rem; border-radius: 9px; text-decoration: none; font-size: 0.88rem; font-weight: 600; color: #6B7280; }
+    .nav-drop-menu a.active { background: var(--grad); color: #fff; }
+    .nav-drop-menu a:not(.active):hover { background: rgba(79,70,229,0.08); color: var(--accent); }
+    @media (max-width: 640px) { .topbar { margin-bottom: 1.5rem; } nav { display: none; } .nav-drop { display: block; } }
+
+    .theme-btn {
+      flex: none; width: 38px; height: 38px; border-radius: 50%; border: none; background: #fff;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .ic { width: 1em; height: 1em; display: inline-block; flex: none; vertical-align: -0.15em; stroke: currentColor; }
+    .theme-btn .ic { width: 1.1rem; height: 1.1rem; }
+
+    .head-row { display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 500; letter-spacing: -0.03em;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .sub { font-size: 0.85rem; color: #6B7280; margin-bottom: 1.5rem; max-width: 62ch; line-height: 1.5; }
+
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; align-items: start; }
+    .card {
+      background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.9);
+      border-radius: 20px; padding: 1.25rem; box-shadow: 0 10px 40px rgba(0,0,0,0.06); min-width: 0;
+    }
+    .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.2rem; }
+    .card-head h2 { font-size: 1rem; font-weight: 700; color: #374151; }
+    .count { font-size: 0.75rem; font-weight: 600; color: #9CA3AF; }
+    .hint { font-size: 0.76rem; color: #9CA3AF; margin-bottom: 0.9rem; line-height: 1.4; }
+
+    .add-row { display: flex; gap: 0.5rem; margin-bottom: 0.7rem; }
+    input[type=text] {
+      flex: 1; min-width: 0; font: inherit; font-size: 0.88rem; padding: 0.5rem 0.75rem; border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.14); background: #fff; color: inherit; outline: none;
+    }
+    input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,0.14); }
+    .btn {
+      font: inherit; font-size: 0.8rem; font-weight: 700; padding: 0.48rem 0.9rem; border-radius: 10px; border: none;
+      cursor: pointer; background: var(--grad); color: #fff; white-space: nowrap;
+    }
+    .btn:disabled { opacity: 0.55; cursor: default; }
+    .btn.ghost { background: transparent; color: #6B7280; border: 1px solid rgba(0,0,0,0.14); }
+    .btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.danger { background: #DC2626; }
+    .btn.small { padding: 0.32rem 0.65rem; font-size: 0.74rem; border-radius: 8px; }
+    .err { color: #DC2626; font-size: 0.76rem; min-height: 1rem; margin: -0.3rem 0 0.4rem; }
+
+    .filter { margin-bottom: 0.4rem; }
+    .rows { list-style: none; max-height: 56vh; overflow-y: auto; }
+    .row { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.2rem; border-bottom: 1px solid rgba(0,0,0,0.06); flex-wrap: wrap; }
+    .row:last-child { border-bottom: none; }
+    .name { flex: 1; min-width: 0; font-size: 0.9rem; font-weight: 600; overflow-wrap: anywhere; }
+    .uses { font-size: 0.72rem; font-weight: 600; color: #6B7280; background: rgba(0,0,0,0.05); border-radius: 999px; padding: 0.15rem 0.55rem; white-space: nowrap; }
+    .actions { display: flex; gap: 0.3rem; }
+    .confirm { flex-basis: 100%; font-size: 0.78rem; color: #92400E; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); border-radius: 10px; padding: 0.55rem 0.7rem; }
+    .confirm .actions { margin-top: 0.5rem; }
+    .edit-form { display: flex; gap: 0.4rem; flex: 1 1 100%; }
+    .empty { font-size: 0.84rem; color: #9CA3AF; padding: 0.8rem 0.2rem; }
+
+    #toast-container { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast { background: #111827; color: #fff; font-size: 0.82rem; font-weight: 600; padding: 0.6rem 1rem; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
+    .toast.success { background: #059669; } .toast.error { background: #DC2626; }
+
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } .rows { max-height: none; } .container { max-width: 100%; } }
+
+    [data-theme="dark"] body { background: #0F0F14; color: #F9FAFB; }
+    [data-theme="dark"] .card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
+    [data-theme="dark"] .card-head h2 { color: #E5E7EB; }
+    [data-theme="dark"] .sub { color: #9CA3AF; }
+    [data-theme="dark"] nav { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] nav a { color: #9CA3AF; }
+    [data-theme="dark"] .nav-drop-btn { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: #E5E7EB; }
+    [data-theme="dark"] .nav-drop-menu { background: #1B1B28; border-color: rgba(255,255,255,0.1); }
+    [data-theme="dark"] .nav-drop-menu a { color: #9CA3AF; }
+    [data-theme="dark"] .theme-btn { background: #1F2430; color: #F9FAFB; }
+    [data-theme="dark"] input[type=text] { background: #1B1B28; color: #F9FAFB; border-color: rgba(255,255,255,0.14); }
+    [data-theme="dark"] .row { border-bottom-color: rgba(255,255,255,0.07); }
+    [data-theme="dark"] .uses { background: rgba(255,255,255,0.08); color: #9CA3AF; }
+    [data-theme="dark"] .btn.ghost { color: #9CA3AF; border-color: rgba(255,255,255,0.18); }
+    [data-theme="dark"] .confirm { color: #FCD34D; }
+  </style>
+  <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="container">
+    <div class="topbar">
+      <nav>
+        {% if not restricted %}<a href="/">Home</a>{% endif %}
+        <a href="/expenses/">Dashboard</a>
+        <a href="/expenses/charts/">Charts</a>
+        {% if not restricted %}<a href="/expenses/splitwise/">Splitwise</a>{% endif %}
+        <a href="/expenses/lists/" class="active">Lists</a>
+      </nav>
+      <div class="nav-drop">
+        <button class="nav-drop-btn" type="button" aria-haspopup="true" aria-expanded="false" onclick="_navToggle(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          <span class="nav-drop-label">Menu</span>
+        </button>
+        <div class="nav-drop-menu" hidden>
+          {% if not restricted %}<a href="/">Home</a>{% endif %}
+          <a href="/expenses/">Dashboard</a>
+          <a href="/expenses/charts/">Charts</a>
+          {% if not restricted %}<a href="/expenses/splitwise/">Splitwise</a>{% endif %}
+          <a href="/expenses/lists/" class="active">Lists</a>
+        </div>
+      </div>
+      {% include "partials/account_menu.html" %}
+      <button id="theme-btn" class="theme-btn" onclick="_toggleTheme()" title="Toggle theme"></button>
+    </div>
+
+    <div class="head-row"><h1>Lists</h1></div>
+    <p class="sub">The categories, sources and modes offered when you add an expense. Renaming one also updates the expenses that use it. Removing one only stops it being offered; expenses already saved with it keep it.</p>
+
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    (function () {
+      const btn = document.getElementById('theme-btn');
+      const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+      const ICON_SUN = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+      const ICON_MOON = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+      btn.innerHTML = isDark() ? ICON_MOON : ICON_SUN;
+      window._toggleTheme = function () {
+        const dark = !isDark();
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        try { localStorage.setItem('ps_theme', dark ? 'dark' : 'light'); } catch (e) {}
+        btn.innerHTML = dark ? ICON_MOON : ICON_SUN;
+      };
+    })();
+
+    (function () {
+      const menu = document.querySelector('.nav-drop-menu');
+      const nbtn = document.querySelector('.nav-drop-btn');
+      const label = document.querySelector('.nav-drop-label');
+      const act = menu.querySelector('a.active');
+      if (act && label) label.textContent = act.textContent;
+      window._navToggle = function (ev) {
+        if (ev) ev.stopPropagation();
+        menu.hidden = !menu.hidden;
+        nbtn.setAttribute('aria-expanded', String(!menu.hidden));
+      };
+      document.addEventListener('click', e => {
+        if (!menu.hidden && !nbtn.parentElement.contains(e.target)) { menu.hidden = true; nbtn.setAttribute('aria-expanded', 'false'); }
+      });
+    })();
+
+    const KINDS = [
+      { key: 'categories', title: 'Categories', one: 'category', hint: 'What an expense is for, e.g. Food, Travel.' },
+      { key: 'sources',    title: 'Sources',    one: 'source',   hint: 'Where the money came from or whose it is.' },
+      { key: 'modes',      title: 'Modes',      one: 'mode',     hint: 'How you paid, e.g. Cash, Paytm, Card.' },
+    ];
+    const DATA = { categories: [], sources: [], modes: [] };
+    const UI = {};   // per kind: { filter, editing: id|null, removing: id|null }
+    KINDS.forEach(k => UI[k.key] = { filter: '', editing: null, removing: null });
+
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    function showToast(msg, type) {
+      const el = document.createElement('div');
+      el.className = 'toast ' + (type || '');
+      el.textContent = msg;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+    function _getCsrf() {
+      return document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
+    }
+    async function api(method, path, body) {
+      const res = await fetch('/expenses/options/' + path, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _getCsrf() },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      let data = {};
+      try { data = await res.json(); } catch (e) {}
+      if (!res.ok) throw new Error(data.error || ('Request failed (' + res.status + ')'));
+      return data;
+    }
+
+    function rowHtml(k, o) {
+      const u = UI[k.key];
+      const uses = '<span class="uses">' + o.uses + (o.uses === 1 ? ' expense' : ' expenses') + '</span>';
+      if (u.editing === o.id) {
+        return '<li class="row"><form class="edit-form" data-act="save" data-kind="' + k.key + '" data-id="' + o.id + '">' +
+          '<input type="text" maxlength="100" value="' + esc(o.name) + '" aria-label="New name">' +
+          '<button class="btn small" type="submit">Save</button>' +
+          '<button class="btn small ghost" type="button" data-act="cancel" data-kind="' + k.key + '">Cancel</button></form>' +
+          (o.uses ? '<div class="confirm">Renaming updates the ' + o.uses + (o.uses === 1 ? ' expense that uses' : ' expenses that use') + ' it.</div>' : '') + '</li>';
+      }
+      let html = '<li class="row"><span class="name">' + esc(o.name) + '</span>' + uses +
+        '<span class="actions"><button class="btn small ghost" type="button" data-act="edit" data-kind="' + k.key + '" data-id="' + o.id + '">Edit</button>' +
+        '<button class="btn small ghost" type="button" data-act="ask-remove" data-kind="' + k.key + '" data-id="' + o.id + '">Remove</button></span>';
+      if (u.removing === o.id) {
+        html += '<div class="confirm">Stop offering “' + esc(o.name) + '”? ' +
+          (o.uses ? 'The ' + o.uses + (o.uses === 1 ? ' expense' : ' expenses') + ' using it keep the value.' : 'No expenses use it.') +
+          '<div class="actions"><button class="btn small danger" type="button" data-act="remove" data-kind="' + k.key + '" data-id="' + o.id + '">Remove</button>' +
+          '<button class="btn small ghost" type="button" data-act="cancel" data-kind="' + k.key + '">Cancel</button></div></div>';
+      }
+      return html + '</li>';
+    }
+
+    function renderCard(k) {
+      const u = UI[k.key], all = DATA[k.key];
+      const q = u.filter.trim().toLowerCase();
+      const shown = q ? all.filter(o => o.name.toLowerCase().includes(q)) : all;
+      const card = document.getElementById('card-' + k.key);
+      const keepFocus = document.activeElement && card.contains(document.activeElement) ? document.activeElement.getAttribute('data-keep') : null;
+      const addVal = (card.querySelector('[data-keep="add"]') || {}).value || '';
+      const addErr = (card.querySelector('.err') || {}).textContent || '';
+      card.innerHTML =
+        '<div class="card-head"><h2>' + k.title + '</h2><span class="count">' + all.length + '</span></div>' +
+        '<p class="hint">' + k.hint + '</p>' +
+        '<form class="add-row" data-act="add" data-kind="' + k.key + '"><input type="text" maxlength="100" data-keep="add" placeholder="Add a ' + k.one + '…" aria-label="Add a ' + k.one + '" value="' + esc(addVal) + '">' +
+        '<button class="btn" type="submit">Add</button></form><div class="err">' + esc(addErr) + '</div>' +
+        (all.length > 8 ? '<input class="filter" type="text" data-keep="filter" data-act="filter" data-kind="' + k.key + '" placeholder="Filter…" aria-label="Filter ' + k.title.toLowerCase() + '" value="' + esc(u.filter) + '">' : '') +
+        '<ul class="rows">' + (shown.length ? shown.map(o => rowHtml(k, o)).join('') : '<li class="empty">' + (all.length ? 'Nothing matches.' : 'No ' + k.title.toLowerCase() + ' yet.') + '</li>') + '</ul>';
+      if (keepFocus) { const el = card.querySelector('[data-keep="' + keepFocus + '"]'); if (el) { el.focus(); const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) {} } }
+      const ed = card.querySelector('.edit-form input'); if (ed && u.editing !== null && !keepFocus) { ed.focus(); ed.select(); }
+    }
+
+    function setErr(kind, msg) { const e = document.querySelector('#card-' + kind + ' .err'); if (e) e.textContent = msg || ''; }
+
+    async function load() {
+      try {
+        const d = await api('GET', '');
+        KINDS.forEach(k => DATA[k.key] = d[k.key] || []);
+        KINDS.forEach(renderCard);
+      } catch (e) { showToast('Could not load lists: ' + e.message, 'error'); }
+    }
+
+    document.getElementById('grid').innerHTML = KINDS.map(k => '<section class="card" id="card-' + k.key + '"></section>').join('');
+    KINDS.forEach(renderCard);
+
+    const grid = document.getElementById('grid');
+    grid.addEventListener('input', e => {
+      if (e.target.dataset.act === 'filter') { UI[e.target.dataset.kind].filter = e.target.value; renderCard(KINDS.find(k => k.key === e.target.dataset.kind)); }
+      else if (e.target.dataset.keep === 'add') setErr(e.target.closest('.card').id.slice(5), '');
+    });
+    grid.addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = e.target, kind = f.dataset.kind, k = KINDS.find(x => x.key === kind), btn = f.querySelector('button[type=submit]');
+      const val = f.querySelector('input').value;
+      btn.disabled = true;
+      try {
+        if (f.dataset.act === 'add') {
+          const r = await api('POST', kind + '/', { name: val });
+          showToast(r.created ? 'Added “' + r.option.name + '”' : '“' + r.option.name + '” is already in the list', r.created ? 'success' : '');
+          setErr(kind, ''); f.querySelector('input').value = '';
+        } else if (f.dataset.act === 'save') {
+          const r = await api('PATCH', kind + '/' + f.dataset.id + '/', { name: val });
+          showToast('Renamed to “' + r.option.name + '”' + (r.expenses_updated ? ' · ' + r.expenses_updated + ' expense' + (r.expenses_updated === 1 ? '' : 's') + ' updated' : ''), 'success');
+          UI[kind].editing = null;
+        }
+        await load();
+      } catch (err) {
+        if (f.dataset.act === 'add') { setErr(kind, err.message); btn.disabled = false; }
+        else showToast(err.message, 'error'), btn.disabled = false;
+      }
+    });
+    grid.addEventListener('click', async e => {
+      const b = e.target.closest('button[data-act]'); if (!b) return;
+      const kind = b.dataset.kind, k = KINDS.find(x => x.key === kind), id = Number(b.dataset.id), u = UI[kind];
+      const act = b.dataset.act;
+      if (act === 'edit') { u.editing = id; u.removing = null; renderCard(k); }
+      else if (act === 'ask-remove') { u.removing = id; u.editing = null; renderCard(k); }
+      else if (act === 'cancel') { u.editing = null; u.removing = null; renderCard(k); }
+      else if (act === 'remove') {
+        b.disabled = true;
+        try { await api('DELETE', kind + '/' + id + '/'); u.removing = null; showToast('Removed', 'success'); await load(); }
+        catch (err) { showToast(err.message, 'error'); b.disabled = false; }
+      }
+    });
+
+    load();
+  </script>
+</body>
+</html>

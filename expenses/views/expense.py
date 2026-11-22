@@ -49,6 +49,13 @@ class ChartsView(View):
         return render(request, "expenses/charts.html", {"restricted": _restricted(request)})
 
 
+class ListsView(View):
+    """The page for managing your categories, sources and modes (data comes from /expenses/options/)."""
+
+    def get(self, request):
+        return render(request, "expenses/lists.html", {"restricted": _restricted(request)})
+
+
 class ExpensesSummaryView(ExpensesBaseView):
     def get(self, request):
         if not self.service:
