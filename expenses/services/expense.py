@@ -8,6 +8,41 @@ from dateutil.relativedelta import relativedelta
 from ..data_services import ExpensesDataService
 
 
+class MissingFieldsError(ValueError):
+    """An expense can't be marked processed while its category, source or mode is
+    empty (or the placeholder "None"). ``missing`` names which ones."""
+
+    code = "processed_blocked"
+
+    def __init__(self, missing):
+        self.missing = list(missing)
+        super().__init__(
+            "Can't mark as processed — set " + _join_words(self.missing)
+            + " first (it's empty or \"None\")."
+        )
+
+
+def _join_words(items):
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def _is_blank(value) -> bool:
+    return not str(value or "").strip() or str(value).strip().lower() == "none"
+
+
+def missing_for_processed(categories, source, mode) -> list:
+    """The fields (of category / source / mode) that block marking a row processed."""
+    cats = [c for c in (categories or []) if not _is_blank(c)]
+    out = []
+    if not cats:
+        out.append("category")
+    if _is_blank(source):
+        out.append("source")
+    if _is_blank(mode):
+        out.append("mode")
+    return out
+
+
 class ExpensesService:
     VALID_PERIODS = ("all", "yearly", "monthly", "weekly", "daily", "custom")
     VALID_GROUPS = ("category", "source")
@@ -1178,6 +1213,14 @@ class ExpensesService:
             fields[key] = value
         return fields
 
+    @staticmethod
+    def _check_processed(processed, categories, source, mode) -> None:
+        """Refuse to set Processed on a row whose category, source or mode is empty / None."""
+        if processed:
+            missing = missing_for_processed(categories, source, mode)
+            if missing:
+                raise MissingFieldsError(missing)
+
     def create_entry(
         self,
         name: str,
@@ -1197,6 +1240,7 @@ class ExpensesService:
             raise ValueError("Amount is required")
         if not date_str:
             raise ValueError("Date is required")
+        self._check_processed(extra.get("processed"), categories, source, mode)
         return self.dl.create_entry(
             **self._write_fields(name, amount, date_str, categories, source, mode, extra)
         )
@@ -1336,6 +1380,8 @@ class ExpensesService:
             raise ValueError("Name is required")
         if amount is None:
             raise ValueError("Amount is required")
+        if extra.get("processed") and not self.dl.get_entry(page_id).get("processed"):
+            self._check_processed(True, categories, source, mode)   # only the unprocessed -> processed step is gated
         self.dl.update_entry(
             page_id, **self._write_fields(name, amount, date_str, categories, source, mode, extra)
         )
@@ -1414,6 +1460,11 @@ class ExpensesService:
                     "processed": s.get("processed", original["processed"]),
                 },
             )
+            if not original["processed"]:
+                self._check_processed(
+                    fields.get("processed"), fields.get("categories"),
+                    (fields.get("sources") or [""])[0], fields.get("mode"),
+                )
             # `date` above is the bare day; carry the exact moment (time and
             # UTC offset) over so the splits land on the same instant.
             fields["occurred_at"] = original["datetime"] if len(original["datetime"]) > 10 else None

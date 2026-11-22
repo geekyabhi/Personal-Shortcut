@@ -980,6 +980,10 @@
       align-items: center; justify-content: center;
     }
     .del-overlay.open { display: flex; }
+    .pb-icon { background: #FFFBEB !important; color: #D97706; }
+    .pb-list { margin: 0 0 1.4rem; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }
+    .pb-list li { background: #FEF3C7; color: #92400E; font-size: 0.78rem; font-weight: 700; border-radius: 999px; padding: 0.2rem 0.7rem; }
+    .pb-primary { flex: 1; padding: 0.6rem; border-radius: 10px; border: none; background: var(--accent, #4F46E5); color: #fff; font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: inherit; }
     .del-box {
       background: #fff; border-radius: 20px; padding: 2rem 1.75rem 1.5rem;
       width: 100%; max-width: 360px; margin: 1rem;
@@ -1014,6 +1018,8 @@
     .del-btn-confirm:disabled { opacity: 0.55; cursor: not-allowed; }
     [data-theme="dark"] .del-box { background: #1B1B28; }
     [data-theme="dark"] .del-icon { background: rgba(239,68,68,0.12); }
+    [data-theme="dark"] .pb-icon { background: rgba(245,158,11,0.14) !important; color: #FBBF24; }
+    [data-theme="dark"] .pb-list li { background: rgba(245,158,11,0.16); color: #FCD34D; }
     [data-theme="dark"] .del-heading { color: #F9FAFB; }
     [data-theme="dark"] .del-sub { color: #9CA3AF; }
     [data-theme="dark"] .del-sub strong { color: #E5E7EB; }
@@ -3637,6 +3643,14 @@
 
     // Snapshot + optimistically apply every dirty row *before* leaving edit mode,
     // so the normal row view we drop back into already shows the new values.
+    // Nothing is saved (and edit mode stays open) if a row marked processed lacks a category, source or mode.
+    for (const row of dirtyRows) {
+      const cur = _beRead(row);
+      const _was = _browseFull.find(x => x.page_id === row.dataset.beId);
+      if (!cur.processed || (_was && _was.processed)) continue;   // only newly-marked rows are checked
+      const miss = _missingForProcessed(cur.categories.split(",").map(c => c.trim()).filter(Boolean), cur.source, cur.mode);
+      if (miss.length) { _pbShow(cur.name, miss, null); return; }
+    }
     const jobs = [];
     for (const row of dirtyRows) {
       const id = row.dataset.beId;
@@ -3813,6 +3827,31 @@
     }
   });
 
+  /* ── "Can't mark as processed" ── a row needs a real category, source and mode first ── */
+  function _blankVal(v) { const t = String(v == null ? "" : v).trim(); return !t || t.toLowerCase() === "none"; }
+  function _missingForProcessed(cats, source, mode) {
+    const out = [];
+    if (!(cats || []).some(c => !_blankVal(c))) out.push("category");
+    if (_blankVal(source)) out.push("source");
+    if (_blankVal(mode))   out.push("mode");
+    return out;
+  }
+  let _pbEntry = null;
+  function _pbShow(title, missing, entry) {
+    _pbEntry = entry || null;
+    document.getElementById("pb-sub").innerHTML =
+      "<strong></strong> can't be marked processed until these are set (empty or “None” doesn't count):";
+    document.querySelector("#pb-sub strong").textContent = title || "This expense";
+    document.getElementById("pb-list").innerHTML = "";
+    for (const m of (missing || [])) {
+      const li = document.createElement("li"); li.textContent = m; document.getElementById("pb-list").appendChild(li);
+    }
+    document.getElementById("pb-edit").style.display = _pbEntry ? "" : "none";
+    document.getElementById("pb-overlay").classList.add("open");
+  }
+  function _pbClose() { document.getElementById("pb-overlay").classList.remove("open"); _pbEntry = null; }
+  function _pbEdit() { const e = _pbEntry; _pbClose(); if (e) _efOpen(e); }
+
   // Toggle the Notion "Processed" checkbox straight from a row
   document.getElementById("browse-list").addEventListener("change", async ev => {
     const cb = ev.target.closest(".proc-toggle");
@@ -3821,6 +3860,10 @@
     const entry  = _lastBrowse && (_lastBrowse.entries || []).find(x => x.page_id === pageId);
     if (!entry) { cb.checked = !cb.checked; return; }
     const want = cb.checked;
+    if (want) {
+      const miss = _missingForProcessed(entry.categories, entry.source, entry.mode);
+      if (miss.length) { cb.checked = false; _pbShow(entry.title, miss, entry); return; }
+    }
     cb.disabled = true;
     _showLoader();
     try {
@@ -3837,7 +3880,12 @@
         }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) { cb.checked = !want; showToast(d.error || "Update failed", "error"); return; }
+      if (!res.ok) {
+        cb.checked = !want;
+        if (d.code === "processed_blocked") _pbShow(entry.title, d.missing, entry);
+        else showToast(d.error || "Update failed", "error");
+        return;
+      }
       entry.processed = want;
       // Re-derive the view from the active filters against the now-updated data —
       // e.g. a "Processed = false" filter should drop this row immediately,
@@ -4237,6 +4285,11 @@
     if (!amount)        { errEl.textContent = "Amount is required."; errEl.style.display = "block"; return; }
     if (!date && !editId) { errEl.textContent = "Date is required.";   errEl.style.display = "block"; return; }
     if (isMandate && !mandateStart) { errEl.textContent = "Start date is required for a recurring mandate."; errEl.style.display = "block"; return; }
+    const _prevEntry = editId ? (_lastBrowse?.entries || []).find(x => x.page_id === editId) : null;
+    if (document.getElementById("ef-processed").checked && !(_prevEntry && _prevEntry.processed)) {
+      const miss = _missingForProcessed(cats, source, mode);
+      if (miss.length) { _pbShow(name, miss, null); return; }   // form stays open so they can fix it
+    }
     errEl.style.display = "none";
 
     // Only send Date if it's a new expense or the user actually changed it —
@@ -4318,7 +4371,7 @@
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Save failed");
+      if (!res.ok) { const err = new Error(data.error || "Save failed"); err.code = data.code; err.missing = data.missing; throw err; }
 
       if (isMandate) {
         showToast(editId ? 'Mandate updated' : 'Mandate added', 'success');
@@ -4345,7 +4398,8 @@
         const i = _browseFull.findIndex(e => e.page_id === rowId);
         if (i >= 0) { _browseFull.splice(i, 1); _paintBrowse(true); }
       }
-      showToast(e.message || "Network error", "error", 5000);
+      if (e.code === "processed_blocked") _pbShow(fields.title, e.missing, null);
+      else showToast(e.message || "Network error", "error", 5000);
     }
   }
 
@@ -4722,6 +4776,19 @@
     <div class="del-actions">
       <button class="del-btn-cancel" onclick="_delClose()">Cancel</button>
       <button class="del-btn-confirm" id="del-confirm-btn" onclick="_delConfirm()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="del-overlay" id="pb-overlay" onclick="if (event.target === this) _pbClose()">
+  <div class="del-box" role="alertdialog" aria-labelledby="pb-heading">
+    <div class="del-icon pb-icon"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.5rem;height:1.5rem"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+    <div class="del-heading" id="pb-heading">Can't mark as processed</div>
+    <div class="del-sub" id="pb-sub"></div>
+    <ul class="pb-list" id="pb-list"></ul>
+    <div class="del-actions">
+      <button class="del-btn-cancel" onclick="_pbClose()">OK</button>
+      <button class="pb-primary" id="pb-edit" onclick="_pbEdit()" style="display:none">Edit expense</button>
     </div>
   </div>
 </div>

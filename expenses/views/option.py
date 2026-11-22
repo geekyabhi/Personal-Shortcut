@@ -21,7 +21,7 @@ class _OptionView(ExpensesBaseView):
         try:
             return super().dispatch(request, *args, **kwargs)
         except OptionError as exc:
-            return JsonResponse({"error": str(exc)}, status=exc.status)
+            return JsonResponse({"error": str(exc), **exc.extra}, status=exc.status)
 
 
 class OptionsListView(_OptionView):
@@ -57,8 +57,18 @@ class OptionDetailView(_OptionView):
                              "expenses_updated": result["expenses_updated"]})
 
     def delete(self, request, kind, option_id):
-        """Stop offering it. Expenses already saved with it are not changed."""
+        """Stop offering it. If expenses use it, send {"replace_with": "<name>"} (or
+        ?replace_with=) — they are moved to that name first. Without it, an entry
+        that is in use is refused with 409 (needs_replacement, uses)."""
         if not self.service:
             return self._creds_error()
-        self.service.dl.delete_option(kind, option_id)
-        return JsonResponse({"ok": True})
+        replace_with = request.GET.get("replace_with")
+        if replace_with is None and request.body:
+            try:
+                body = json.loads(request.body)
+            except (json.JSONDecodeError, ValueError):
+                raise OptionError("Invalid JSON")
+            if isinstance(body, dict):
+                replace_with = body.get("replace_with")
+        result = self.service.dl.delete_option(kind, option_id, replace_with)
+        return JsonResponse({"ok": True, **result})

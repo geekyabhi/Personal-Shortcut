@@ -255,9 +255,9 @@ class ExpensesDataService:
         self._need_user()
         return options.rename_option(self.user_id, kind, option_id, name)
 
-    def delete_option(self, kind: str, option_id) -> None:
+    def delete_option(self, kind: str, option_id, replace_with=None) -> dict:
         self._need_user()
-        options.delete_option(self.user_id, kind, option_id)
+        return options.delete_option(self.user_id, kind, option_id, replace_with)
 
     # ------------------------------------------------------------------ #
     #  Splitwise                                                           #

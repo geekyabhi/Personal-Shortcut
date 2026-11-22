@@ -23,9 +23,10 @@ MAX_LEN = 100
 class OptionError(ValueError):
     """Bad input (400), unknown id (404) or a name clash (409)."""
 
-    def __init__(self, message: str, status: int = 400):
+    def __init__(self, message: str, status: int = 400, **extra):
         super().__init__(message)
         self.status = status
+        self.extra = extra   # merged into the JSON error body (e.g. needs_replacement, uses)
 
 
 def clean_name(name) -> str:
@@ -134,13 +135,63 @@ def rename_option(user_id, kind: str, option_id, new_name) -> dict:
     return {"option": obj, "expenses_updated": changed}
 
 
-def delete_option(user_id, kind: str, option_id) -> None:
-    """Remove an entry from the person's list. Expenses already saved with the
-    value keep it; it simply stops being offered (until it's used again)."""
+def delete_option(user_id, kind: str, option_id, replace_with=None) -> dict:
+    """Remove an entry from the person's list.
+
+    An unused entry is simply removed. One that expenses still use needs
+    ``replace_with`` (the name those expenses should use instead; a name not in
+    the list yet is added) — they are switched to it and the entry is removed,
+    all in one transaction. Without it this raises a 409 saying how many use it.
+    Returns {"expenses_updated": n, "replaced_with": name or None}."""
     model = _model(kind)
-    n, _ = model.objects.filter(pk=option_id, user_id=user_id).delete()
-    if not n:
+    _, column, is_list = KINDS[kind]
+    try:
+        obj = model.objects.get(pk=int(option_id), user_id=user_id)
+    except (model.DoesNotExist, ValueError, TypeError):
         raise OptionError("Not found", 404)
+
+    uses = _usage(user_id, kind).get(obj.name.lower(), 0)
+    if not uses:
+        obj.delete()
+        return {"expenses_updated": 0, "replaced_with": None}
+
+    if replace_with is None or not str(replace_with).strip():
+        raise OptionError(
+            f"{uses} expense{'s' if uses != 1 else ''} use '{obj.name}'. Choose what they should use instead.",
+            409, needs_replacement=True, uses=uses,
+        )
+    new_name = clean_name(replace_with)
+    if new_name.lower() == obj.name.lower():
+        raise OptionError("Pick a different one — it can't replace itself", 400)
+
+    old, table, now = obj.name, Expense._meta.db_table, timezone.now()
+    with transaction.atomic():
+        target = model.objects.filter(user_id=user_id, name__iexact=new_name).first()
+        if target:
+            new_name = target.name   # keep the list's own spelling
+        else:
+            model.objects.create(user_id=user_id, name=new_name)
+        with connection.cursor() as cur:
+            if is_list:   # swap the element in place, keep order, and drop a duplicate if the row already had the new one
+                cur.execute(
+                    f"""update {table} set {column} = (
+                          select array_agg(v order by first_ord) from (
+                            select v, min(ord) as first_ord from (
+                              select case when lower(x) = lower(%s) then %s else x end as v, ord
+                              from unnest({column}) with ordinality as t(x, ord)) s
+                            group by v) g),
+                        updated_at = %s
+                        where user_id = %s and exists (select 1 from unnest({column}) x where lower(x) = lower(%s))""",
+                    [old, new_name, now, user_id, old],
+                )
+            else:
+                cur.execute(
+                    f"update {table} set {column} = %s, updated_at = %s where user_id = %s and lower({column}) = lower(%s)",
+                    [new_name, now, user_id, old],
+                )
+            changed = cur.rowcount
+        obj.delete()
+    return {"expenses_updated": changed, "replaced_with": new_name}
 
 
 def sync_from_expenses(user_id) -> dict:

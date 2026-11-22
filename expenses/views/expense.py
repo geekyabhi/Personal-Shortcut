@@ -350,6 +350,14 @@ _EXTRA_KEYS = (
 )
 
 
+def _bad_request(exc):
+    """400 for a validation error; a blocked "processed" also says which fields are missing."""
+    body = {"error": str(exc)}
+    if getattr(exc, "code", None):
+        body.update(code=exc.code, missing=exc.missing)
+    return JsonResponse(body, status=400)
+
+
 def _extra_fields(data):
     """Only the optional-column keys the client actually sent (absent = untouched)."""
     return {k: data[k] for k in _EXTRA_KEYS if k in data}
@@ -377,7 +385,7 @@ class ExpensesCreateView(ExpensesBaseView):
                 name, amount, date_str, categories, source, mode, **_extra_fields(data)
             )
         except ValueError as exc:
-            return JsonResponse({"error": str(exc)}, status=400)
+            return _bad_request(exc)
         except requests.HTTPError as exc:
             return self._api_error(exc)
         except requests.RequestException as exc:
@@ -408,7 +416,7 @@ class ExpensesUpdateView(ExpensesBaseView):
                 page_id, name, amount, date_str, categories, source, mode, **_extra_fields(data)
             )
         except ValueError as exc:
-            return JsonResponse({"error": str(exc)}, status=400)
+            return _bad_request(exc)
         except requests.HTTPError as exc:
             return self._api_error(exc)
         except requests.RequestException as exc:
@@ -449,7 +457,7 @@ class ExpensesSplitView(ExpensesBaseView):
         try:
             new_ids = self.service.split_entry(page_id, splits)
         except ValueError as exc:
-            return JsonResponse({"error": str(exc)}, status=400)
+            return _bad_request(exc)
         except requests.HTTPError as exc:
             return self._api_error(exc)
         except requests.RequestException as exc:

@@ -108,6 +108,8 @@
     .actions { display: flex; gap: 0.3rem; }
     .confirm { flex-basis: 100%; font-size: 0.78rem; color: #92400E; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); border-radius: 10px; padding: 0.55rem 0.7rem; }
     .confirm .actions { margin-top: 0.5rem; }
+    .confirm select, .confirm input[type=text] { width: 100%; margin-top: 0.45rem; font: inherit; font-size: 0.84rem; padding: 0.45rem 0.6rem; border-radius: 9px; border: 1px solid rgba(0,0,0,0.18); background: #fff; color: #111827; }
+    .confirm .rep-err { color: #DC2626; margin: 0.35rem 0 0; min-height: 0; font-size: 0.76rem; }
     .edit-form { display: flex; gap: 0.4rem; flex: 1 1 100%; }
     .empty { font-size: 0.84rem; color: #9CA3AF; padding: 0.8rem 0.2rem; }
 
@@ -132,6 +134,7 @@
     [data-theme="dark"] .uses { background: rgba(255,255,255,0.08); color: #9CA3AF; }
     [data-theme="dark"] .btn.ghost { color: #9CA3AF; border-color: rgba(255,255,255,0.18); }
     [data-theme="dark"] .confirm { color: #FCD34D; }
+    [data-theme="dark"] .confirm select, [data-theme="dark"] .confirm input[type=text] { background: #1B1B28; color: #F9FAFB; border-color: rgba(255,255,255,0.18); }
   </style>
   <script>(function(){ var t=localStorage.getItem('ps_theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();</script>
 </head>
@@ -211,7 +214,7 @@
     ];
     const DATA = { categories: [], sources: [], modes: [] };
     const UI = {};   // per kind: { filter, editing: id|null, removing: id|null }
-    KINDS.forEach(k => UI[k.key] = { filter: '', editing: null, removing: null });
+    KINDS.forEach(k => UI[k.key] = { filter: '', editing: null, removing: null, rep: '', repNew: '', repErr: '' });
 
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     function showToast(msg, type) {
@@ -250,10 +253,21 @@
         '<span class="actions"><button class="btn small ghost" type="button" data-act="edit" data-kind="' + k.key + '" data-id="' + o.id + '">Edit</button>' +
         '<button class="btn small ghost" type="button" data-act="ask-remove" data-kind="' + k.key + '" data-id="' + o.id + '">Remove</button></span>';
       if (u.removing === o.id) {
-        html += '<div class="confirm">Stop offering “' + esc(o.name) + '”? ' +
-          (o.uses ? 'The ' + o.uses + (o.uses === 1 ? ' expense' : ' expenses') + ' using it keep the value.' : 'No expenses use it.') +
-          '<div class="actions"><button class="btn small danger" type="button" data-act="remove" data-kind="' + k.key + '" data-id="' + o.id + '">Remove</button>' +
-          '<button class="btn small ghost" type="button" data-act="cancel" data-kind="' + k.key + '">Cancel</button></div></div>';
+        if (o.uses) {
+          const others = DATA[k.key].filter(x => x.id !== o.id);
+          html += '<div class="confirm"><b>' + o.uses + (o.uses === 1 ? ' expense uses' : ' expenses use') + ' “' + esc(o.name) + '”.</b> Choose what ' + (o.uses === 1 ? 'it' : 'they') + ' should use instead:' +
+            '<select class="rep-select" data-act="rep" data-kind="' + k.key + '" aria-label="New ' + k.one + '"><option value="">Choose a ' + k.one + '…</option>' +
+            others.map(x => '<option value="' + esc(x.name) + '"' + (u.rep === x.name ? ' selected' : '') + '>' + esc(x.name) + '</option>').join('') +
+            '<option value="__new__"' + (u.rep === '__new__' ? ' selected' : '') + '>＋ New ' + k.one + '…</option></select>' +
+            (u.rep === '__new__' ? '<input type="text" class="rep-new" maxlength="100" data-keep="repnew" data-act="repnew" data-kind="' + k.key + '" placeholder="New ' + k.one + ' name" value="' + esc(u.repNew) + '">' : '') +
+            '<div class="rep-err">' + esc(u.repErr) + '</div>' +
+            '<div class="actions"><button class="btn small danger" type="button" data-act="remove-replace" data-kind="' + k.key + '" data-id="' + o.id + '">Move &amp; remove</button>' +
+            '<button class="btn small ghost" type="button" data-act="cancel" data-kind="' + k.key + '">Cancel</button></div></div>';
+        } else {
+          html += '<div class="confirm">Stop offering “' + esc(o.name) + '”? No expenses use it.' +
+            '<div class="actions"><button class="btn small danger" type="button" data-act="remove" data-kind="' + k.key + '" data-id="' + o.id + '">Remove</button>' +
+            '<button class="btn small ghost" type="button" data-act="cancel" data-kind="' + k.key + '">Cancel</button></div></div>';
+        }
       }
       return html + '</li>';
     }
@@ -293,7 +307,14 @@
     const grid = document.getElementById('grid');
     grid.addEventListener('input', e => {
       if (e.target.dataset.act === 'filter') { UI[e.target.dataset.kind].filter = e.target.value; renderCard(KINDS.find(k => k.key === e.target.dataset.kind)); }
+      else if (e.target.dataset.act === 'repnew') { UI[e.target.dataset.kind].repNew = e.target.value; UI[e.target.dataset.kind].repErr = ''; }
       else if (e.target.dataset.keep === 'add') setErr(e.target.closest('.card').id.slice(5), '');
+    });
+    grid.addEventListener('change', e => {
+      if (e.target.dataset.act !== 'rep') return;
+      const u = UI[e.target.dataset.kind]; u.rep = e.target.value; u.repErr = '';
+      renderCard(KINDS.find(k => k.key === e.target.dataset.kind));
+      const ni = document.querySelector('#card-' + e.target.dataset.kind + ' .rep-new'); if (ni) ni.focus();
     });
     grid.addEventListener('submit', async e => {
       e.preventDefault();
@@ -321,8 +342,19 @@
       const kind = b.dataset.kind, k = KINDS.find(x => x.key === kind), id = Number(b.dataset.id), u = UI[kind];
       const act = b.dataset.act;
       if (act === 'edit') { u.editing = id; u.removing = null; renderCard(k); }
-      else if (act === 'ask-remove') { u.removing = id; u.editing = null; renderCard(k); }
-      else if (act === 'cancel') { u.editing = null; u.removing = null; renderCard(k); }
+      else if (act === 'ask-remove') { u.removing = id; u.editing = null; u.rep = ''; u.repNew = ''; u.repErr = ''; renderCard(k); }
+      else if (act === 'cancel') { u.editing = null; u.removing = null; u.rep = ''; u.repNew = ''; u.repErr = ''; renderCard(k); }
+      else if (act === 'remove-replace') {
+        const target = u.rep === '__new__' ? u.repNew.trim() : u.rep;
+        if (!target) { u.repErr = u.rep === '__new__' ? 'Type the new ' + k.one + ' name.' : 'Choose a ' + k.one + ' first.'; renderCard(k); return; }
+        b.disabled = true;
+        try {
+          const r = await api('DELETE', kind + '/' + id + '/', { replace_with: target });
+          u.removing = null; u.rep = ''; u.repNew = ''; u.repErr = '';
+          showToast('Moved ' + r.expenses_updated + (r.expenses_updated === 1 ? ' expense' : ' expenses') + ' to “' + r.replaced_with + '” and removed it', 'success');
+          await load();
+        } catch (err) { u.repErr = err.message; renderCard(k); }
+      }
       else if (act === 'remove') {
         b.disabled = true;
         try { await api('DELETE', kind + '/' + id + '/'); u.removing = null; showToast('Removed', 'success'); await load(); }
